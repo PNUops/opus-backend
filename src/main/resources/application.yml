@@ -1,0 +1,27 @@
+spring:
+  config:
+    import: "classpath:application-secret.yml"
+
+  sql:
+    init:
+      mode: always
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 30MB
+
+cors:
+  allow:
+    origins: https://test.url
+    methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+
