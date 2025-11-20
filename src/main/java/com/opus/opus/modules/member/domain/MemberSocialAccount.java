@@ -20,7 +20,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
 @SQLDelete(sql = "UPDATE social_account SET is_deleted = true where id = ?")
-public class SocialAccount extends BaseEntity {
+public class MemberSocialAccount extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,7 +37,7 @@ public class SocialAccount extends BaseEntity {
     private Member member;
 
     @Builder
-    private SocialAccount(final String socialEmail, final Member member) {
+    private MemberSocialAccount(final String socialEmail, final Member member) {
         this.socialEmail = socialEmail;
         this.isDeleted = false;
         this.member = member;

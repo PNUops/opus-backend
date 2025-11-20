@@ -54,14 +54,14 @@ public class Member extends BaseEntity {
     private Boolean isDeleted;
 
     @OneToOne(mappedBy = "member")
-    private GeneralAccount generalAccount;
+    private MemberGeneralAccount generalAccount;
 
     @OneToOne(mappedBy = "member")
-    private SocialAccount socialAccount;
+    private MemberSocialAccount socialAccount;
 
     @Builder
     private Member(final String name, final String password, final String studentId, final Set<MemberRoleType> roles,
-                  final GeneralAccount generalAccount, final SocialAccount socialAccount) {
+                   final MemberGeneralAccount generalAccount, final MemberSocialAccount socialAccount) {
         this.name = name;
         this.password = password;
         this.studentId = studentId;
