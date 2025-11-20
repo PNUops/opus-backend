@@ -1,9 +1,10 @@
 package com.opus.opus.modules.team.domain;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,7 +34,7 @@ public class TeamComment extends BaseEntity {
     @Column(nullable = false)
     private Long memberId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 

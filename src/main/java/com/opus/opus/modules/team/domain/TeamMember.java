@@ -1,5 +1,7 @@
 package com.opus.opus.modules.team.domain;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -7,7 +9,6 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,11 +39,11 @@ public class TeamMember extends BaseEntity {
     @Column(nullable = false)
     private Long memberId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = LAZY)
     @CollectionTable(name = "team_member_roles", joinColumns = @JoinColumn(name = "team_member_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = MAX_ROLE_NAME_LENGTH)

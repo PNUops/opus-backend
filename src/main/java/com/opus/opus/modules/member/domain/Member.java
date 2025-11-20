@@ -1,5 +1,7 @@
 package com.opus.opus.modules.member.domain;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -7,7 +9,6 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -44,7 +45,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String studentId;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = LAZY)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = MAX_ROLE_NAME_LENGTH)
@@ -53,10 +54,10 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @OneToOne(mappedBy = "member")
+    @OneToOne(mappedBy = "member", fetch = LAZY)
     private MemberGeneralAccount generalAccount;
 
-    @OneToOne(mappedBy = "member")
+    @OneToOne(mappedBy = "member", fetch = LAZY)
     private MemberSocialAccount socialAccount;
 
     @Builder
