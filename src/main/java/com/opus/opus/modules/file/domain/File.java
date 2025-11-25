@@ -47,4 +47,8 @@ public class File extends BaseEntity {
         this.isWebpConverted = false;
     }
 
+    public void updateIsWebpConverted(boolean isWebpConverted) {
+        this.isWebpConverted = isWebpConverted;
+    }
+
 }

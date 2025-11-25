@@ -1,6 +1,6 @@
 package com.opus.opus.global.util;
 
-import com.ops.ops.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;
 import java.io.IOException;

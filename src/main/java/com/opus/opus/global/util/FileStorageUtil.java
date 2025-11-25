@@ -1,13 +1,14 @@
 package com.opus.opus.global.util;
 
-import com.ops.ops.global.error.FileDeleteFailedException;
-import com.ops.ops.global.error.FileNotFoundException;
-import com.ops.ops.global.error.FileSaveFailedException;
-import com.ops.ops.modules.file.domain.File;
-import com.ops.ops.modules.file.domain.FileImageType;
-import com.ops.ops.modules.file.domain.dao.FileRepository;
-import com.ops.ops.modules.file.exception.FileException;
-import com.ops.ops.modules.file.exception.FileExceptionType;
+
+import com.opus.opus.global.error.FileDeleteFailedException;
+import com.opus.opus.global.error.FileNotFoundException;
+import com.opus.opus.global.error.FileSaveFailedException;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.FileImageType;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.file.exception.FileExceptionType;
 import jakarta.activation.MimetypesFileTypeMap;
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
