@@ -2,8 +2,10 @@ package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -32,10 +34,24 @@ public class TeamCommandService {
         }
     }
 
+    public void deletePreviewImages(Long teamId, List<Long> ids) {
+        teamConvenience.validateExistTeam(teamId);
+        ids.forEach(fileId -> {
+            fileRepository.findById(fileId).ifPresent(this::checkWebpConverted);
+            fileStorageUtil.deleteFile(fileId);
+        });
+    }
+
     private void checkPreviewLimit(Long teamId, List<MultipartFile> images) {
         long savedCount = fileRepository.countByTeamIdAndType(teamId, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
+        }
+    }
+
+    private void checkWebpConverted(File existingFile) {
+        if (!existingFile.getIsWebpConverted()) {
+            throw new FileException(NOT_WEBP_CONVERTED);
         }
     }
 }
