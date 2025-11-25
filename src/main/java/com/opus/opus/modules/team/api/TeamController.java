@@ -2,6 +2,7 @@ package com.opus.opus.modules.team.api;
 
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -24,12 +25,11 @@ public class TeamController {
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> findPreviewImage(@PathVariable Long teamId, @PathVariable Long imageId) {
-        Pair<Resource, String> result = teamQueryService.findPreviewImage(teamId, imageId);
-        String mimeType = result.b;
-        MediaType mediaType = (mimeType != null) ? MediaType.parseMediaType(mimeType) : MediaType.IMAGE_JPEG;
+        ImageResponse imageResponse = teamQueryService.findPreviewImage(teamId, imageId);
+
         return ResponseEntity.ok()
-                .contentType(mediaType)
-                .body(result.a);
+                .contentType(imageResponse.getMediaType())
+                .body(imageResponse.resource());
     }
 
 
