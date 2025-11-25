@@ -36,6 +36,10 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// 이미지 변환 라이브러리
+	implementation 'com.sksamuel.scrimage:scrimage-core:4.3.0'
+	implementation 'com.sksamuel.scrimage:scrimage-webp:4.3.0'
 }
 
 tasks.named('test') {
