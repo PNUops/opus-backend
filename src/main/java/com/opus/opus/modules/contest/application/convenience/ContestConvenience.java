@@ -25,31 +25,4 @@ public class ContestConvenience {
         return contestRepository.findById(contestId).orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
     }
 
-    public void validateCurrentContest(final Contest contest) {
-        if (contest.getIsCurrent()) {
-            throw new ContestException(CANNOT_UPDATE_TEAM_INFO_FOR_CURRENT);
-        }
-    }
-
-    public Contest get6thContest() {
-        return contestRepository.findByIsCurrentTrue().orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
-    }
-
-    public void checkDuplicateContestName(String contestName) {
-        if (contestRepository.existsByContestName(contestName)) {
-            throw new ContestException(CONTEST_NAME_ALREADY_EXIST);
-        }
-    }
-
-    public void checkVotePeriodNow(Long contestId, LocalDateTime now) {
-        Contest contest = getValidateExistContest(contestId);
-        if (!(now.isAfter(contest.getVoteStartAt()) && now.isBefore(contest.getVoteEndAt()))) {
-            throw new ContestException(NOT_VOTE_PERIOD_NOW);
-        }
-    }
-
-    @Transactional(propagation = MANDATORY)
-    public Contest findByIdForUpdate(final Long contestId) {
-        return contestRepository.findByIdForUpdate(contestId).orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
-    }
 }
