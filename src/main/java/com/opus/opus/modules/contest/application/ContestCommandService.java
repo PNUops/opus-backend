@@ -27,4 +27,11 @@ public class ContestCommandService {
                 .build();
         contestRepository.save(contest);
     }
+
+    public void updateContest(final Long contestId, final ContestRequest request) {
+        contestConvenience.validateDuplicateContestName(request.contestName());
+        contestCategoryConvenience.getValidateExistCategory(request.categoryId());
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        contest.updateContest(request.categoryId(), request.contestName());
+    }
 }

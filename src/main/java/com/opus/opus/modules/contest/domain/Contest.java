@@ -57,4 +57,8 @@ public class Contest extends BaseEntity {
         this.maxVotesLimit = 0;
     }
 
+    public void updateContest(final Long categoryId, final String contestName) {
+        this.categoryId = categoryId;
+        this.contestName = contestName;
+    }
 }

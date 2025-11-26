@@ -42,11 +42,9 @@ public class ContestController {
 
     @PatchMapping("/{contestId}")
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> updateContest(
-            @PathVariable final Long contestId,
-            @Valid @RequestBody final ContestRequest request
-    ) {
-        contestCommandService.updateContest(contestId, request.contestName());
+    public ResponseEntity<Void> updateContest(@PathVariable final Long contestId,
+                                              @Valid @RequestBody final ContestRequest request) {
+        contestCommandService.updateContest(contestId, request);
         return ResponseEntity.noContent().build();
     }
 
