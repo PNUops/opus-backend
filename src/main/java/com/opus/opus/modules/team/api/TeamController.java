@@ -66,4 +66,12 @@ public class TeamController {
                 .contentType(imageResponse.getMediaType())
                 .body(imageResponse.resource());
     }
+
+    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @PostMapping("/{teamId}/image/thumbnail")
+    public ResponseEntity<Void> saveThumbnailImage(@PathVariable final Long teamId,
+                                                   @RequestPart("image") final MultipartFile image) {
+        teamCommandService.saveThumbnailImage(teamId, image);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }

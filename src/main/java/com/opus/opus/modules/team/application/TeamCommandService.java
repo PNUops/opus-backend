@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
+import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
@@ -40,6 +41,15 @@ public class TeamCommandService {
             fileRepository.findById(fileId).ifPresent(this::checkWebpConverted);
             fileStorageUtil.deleteFile(fileId);
         });
+    }
+
+    public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
+        teamConvenience.validateExistTeam(teamId);
+        fileRepository.findByTeamIdAndType(teamId, THUMBNAIL).ifPresent(existingFile -> {
+            checkWebpConverted(existingFile);
+            fileStorageUtil.deleteFile(existingFile.getId());
+        });
+        fileStorageUtil.storeFile(image, teamId, THUMBNAIL);
     }
 
     private void checkPreviewLimit(Long teamId, List<MultipartFile> images) {
