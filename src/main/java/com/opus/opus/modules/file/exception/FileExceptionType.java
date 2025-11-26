@@ -12,6 +12,7 @@ public enum FileExceptionType implements BaseExceptionType {
     EXCEED_PREVIEW_LIMIT(HttpStatus.BAD_REQUEST, "프리뷰 이미지는 6장 이하입니다"),
     NOT_EXISTS_PHYSICAL_FILE(HttpStatus.NOT_FOUND, "물리적 파일이 존재하지 않습니다"),
     NOT_WEBP_CONVERTED(HttpStatus.ACCEPTED, "이미지 변환중 입니다"),
+    NOT_EXISTS_BANNER(HttpStatus.BAD_REQUEST, "배너가 존재하지 않습니다")
     ;
 
     private final HttpStatus httpStatus;
