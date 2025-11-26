@@ -35,4 +35,8 @@ public class ContestCategory extends BaseEntity {
         this.categoryName = categoryName;
         this.isDeleted = false;
     }
+
+    public void updateCategory(final String categoryName) {
+        this.categoryName = categoryName;
+    }
 }
