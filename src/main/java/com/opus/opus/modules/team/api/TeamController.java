@@ -57,4 +57,13 @@ public class TeamController {
         teamCommandService.deletePreviewImages(teamId, previewDeleteRequest.imageIds());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{teamId}/image/thumbnail")
+    public ResponseEntity<Resource> getThumbnailImage(@PathVariable Long teamId) {
+        ImageResponse imageResponse = teamQueryService.findThumbnailImage(teamId);
+
+        return ResponseEntity.ok()
+                .contentType(imageResponse.getMediaType())
+                .body(imageResponse.resource());
+    }
 }

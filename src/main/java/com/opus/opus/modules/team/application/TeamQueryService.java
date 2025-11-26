@@ -34,6 +34,15 @@ public class TeamQueryService {
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
+    public ImageResponse findThumbnailImage(final Long teamId) {
+        teamConvenience.validateExistTeam(teamId);
+        final File findFile = fileRepository.findByTeamIdAndType(teamId, THUMBNAIL)
+                .orElseThrow(() -> new FileException(NOT_EXISTS_THUMBNAIL));
+        checkImageConverted(findFile);
+        Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
+        return new ImageResponse(storageResult.a, storageResult.b);
+    }
+
     private void checkImageConverted(File findFile) {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
