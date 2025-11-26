@@ -28,8 +28,9 @@ public class File extends BaseEntity {
     @Column(nullable = false) // todo: default 경로 고려 필요
     private String filePath;
 
-    @Column(nullable = false)
     private Long teamId;
+
+    private Long contestId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -39,10 +40,11 @@ public class File extends BaseEntity {
     private Boolean isWebpConverted;
 
     @Builder
-    private File(final String name, final String filePath, final Long teamId, final FileImageType type) {
+    private File(final String name, final String filePath, final Long teamId, Long contestId, final FileImageType type) {
         this.name = name;
         this.filePath = filePath;
         this.teamId = teamId;
+        this.contestId = contestId;
         this.type = type;
         this.isWebpConverted = false;
     }
