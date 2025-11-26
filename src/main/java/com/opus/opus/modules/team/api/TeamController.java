@@ -74,4 +74,11 @@ public class TeamController {
         teamCommandService.saveThumbnailImage(teamId, image);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @DeleteMapping("/{teamId}/image/thumbnail")
+    public ResponseEntity<Void> deleteThumbnailImage(@PathVariable Long teamId) {
+        teamCommandService.deleteThumbnailImage(teamId);
+        return ResponseEntity.noContent().build();
+    }
 }

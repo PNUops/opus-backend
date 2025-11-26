@@ -52,6 +52,14 @@ public class TeamCommandService {
         fileStorageUtil.storeFile(image, teamId, THUMBNAIL);
     }
 
+    public void deleteThumbnailImage(Long teamId) {
+        teamConvenience.validateExistTeam(teamId);
+        fileRepository.findByTeamIdAndType(teamId, THUMBNAIL).ifPresent(existingFile -> {
+            checkWebpConverted(existingFile);
+            fileStorageUtil.deleteFile(existingFile.getId());
+        });
+    }
+
     private void checkPreviewLimit(Long teamId, List<MultipartFile> images) {
         long savedCount = fileRepository.countByTeamIdAndType(teamId, PREVIEW);
         if (savedCount + images.size() > 5) {
