@@ -50,9 +50,7 @@ public class ContestController {
 
     @DeleteMapping("/{contestId}")
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> deleteContest(
-            @PathVariable final Long contestId
-    ) {
+    public ResponseEntity<Void> deleteContest(@PathVariable final Long contestId) {
         contestCommandService.deleteContest(contestId);
         return ResponseEntity.noContent().build();
     }
