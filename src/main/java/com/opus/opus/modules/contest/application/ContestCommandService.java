@@ -3,7 +3,9 @@ package com.opus.opus.modules.contest.application;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +22,16 @@ public class ContestCommandService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final TeamConvenience teamConvenience;
 
-    public void createContest(final ContestRequest request) {
+    public ContestResponse createContest(final ContestRequest request) {
         contestConvenience.validateDuplicateContestName(request.contestName());
-        contestCategoryConvenience.getValidateExistCategory(request.categoryId());
+        ContestCategory contestCategory = contestCategoryConvenience.getValidateExistCategory(request.categoryId());
         final Contest contest = Contest.builder()
                 .contestName(request.contestName())
                 .categoryId(request.categoryId())
                 .build();
         contestRepository.save(contest);
+
+        return ContestResponse.from(contest, contestCategory.getCategoryName());
     }
 
     public void updateContest(final Long contestId, final ContestRequest request) {

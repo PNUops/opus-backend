@@ -1,7 +1,5 @@
 package com.opus.opus.modules.contest.api;
 
-import static org.springframework.http.HttpStatus.CREATED;
-
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
@@ -35,9 +33,9 @@ public class ContestController {
 
     @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> createContest(@Valid @RequestBody final ContestRequest request) {
-        contestCommandService.createContest(request);
-        return ResponseEntity.status(CREATED).build();
+    public ResponseEntity<ContestResponse> createContest(@Valid @RequestBody final ContestRequest request) {
+        ContestResponse response = contestCommandService.createContest(request);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{contestId}")
