@@ -31,15 +31,12 @@ public class ContestTrackCommandService {
     }
 
     public void updateTrack(final Long contestId, final Long trackId, final ContestTrackRequest request) {
-        contestConvenience.getValidateExistContest(contestId);
         contestTrackConvenience.validateDuplicateTrackName(contestId, request.trackName());
-
         final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
         contestTrack.updateTrack(contestId, request.trackName());
     }
 
     public void deleteTrack(final Long contestId, final Long trackId) {
-        contestConvenience.getValidateExistContest(contestId);
         final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
         teamConvenience.validateAllTeamsDeletedInTrack(trackId);
         contestTrackRepository.delete(contestTrack);
