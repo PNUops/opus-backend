@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.application;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestCategoryRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestCategoryResponse;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +20,14 @@ public class ContestCategoryCommandService {
 
     private final ContestConvenience contestConvenience;
 
-    public void createCategory(final ContestCategoryRequest request) {
+    public ContestCategoryResponse createCategory(final ContestCategoryRequest request) {
         contestCategoryConvenience.validateDuplicateCategoryName(request.categoryName());
         final ContestCategory contestCategory = ContestCategory.builder()
                 .categoryName(request.categoryName())
                 .build();
         contestCategoryRepository.save(contestCategory);
+
+        return ContestCategoryResponse.from(contestCategory);
     }
 
     public void updateCategory(final Long categoryId, final ContestCategoryRequest request) {
