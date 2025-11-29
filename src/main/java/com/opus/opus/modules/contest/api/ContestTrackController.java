@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.api;
 import com.opus.opus.modules.contest.application.ContestTrackCommandService;
 import com.opus.opus.modules.contest.application.ContestTrackQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestTrackRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestTrackResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
