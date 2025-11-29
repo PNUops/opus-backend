@@ -38,4 +38,9 @@ public class ContestTrack extends BaseEntity {
         this.contestId = contestId;
         this.isDeleted = false;
     }
+
+    public void updateTrack(final Long contestId, final String trackName) {
+        this.contestId = contestId;
+        this.trackName = trackName;
+    }
 }

@@ -18,7 +18,6 @@ public class ContestTrackCommandService {
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestConvenience contestConvenience;
 
-
     public void createTrack(final Long contestId, final ContestTrackRequest request) {
         contestConvenience.getValidateExistContest(contestId);
         contestTrackConvenience.validateDuplicateTrackName(contestId, request.trackName());
@@ -27,5 +26,13 @@ public class ContestTrackCommandService {
                 .contestId(contestId)
                 .build();
         contestTrackRepository.save(contestTrack);
+    }
+
+    public void updateTrack(final Long contestId, final Long trackId, final ContestTrackRequest request) {
+        contestConvenience.getValidateExistContest(contestId);
+        contestTrackConvenience.validateDuplicateTrackName(contestId, request.trackName());
+
+        final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
+        contestTrack.updateTrack(contestId, request.trackName());
     }
 }

@@ -1,7 +1,9 @@
 package com.opus.opus.modules.contest.application.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.NOT_FOUND_TRACK;
 import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.TRACKNAME_DUPLICATED;
 
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestTrackException;
 import lombok.RequiredArgsConstructor;
@@ -18,5 +20,10 @@ public class ContestTrackConvenience {
         if (contestTrackRepository.existsByContestIdAndTrackName(contestId, trackName)) {
             throw new ContestTrackException(TRACKNAME_DUPLICATED);
         }
+    }
+
+    public ContestTrack getValidateExistTrack(final Long contestId, final Long trackId) {
+        return contestTrackRepository.findByIdAndContestId(trackId, contestId)
+                .orElseThrow(() -> new ContestTrackException(NOT_FOUND_TRACK));
     }
 }
