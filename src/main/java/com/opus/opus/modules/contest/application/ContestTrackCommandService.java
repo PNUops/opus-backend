@@ -5,6 +5,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestTrackConveni
 import com.opus.opus.modules.contest.application.dto.request.ContestTrackRequest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ public class ContestTrackCommandService {
 
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestConvenience contestConvenience;
+    private final TeamConvenience teamConvenience;
 
     public void createTrack(final Long contestId, final ContestTrackRequest request) {
         contestConvenience.getValidateExistContest(contestId);
@@ -34,5 +36,12 @@ public class ContestTrackCommandService {
 
         final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
         contestTrack.updateTrack(contestId, request.trackName());
+    }
+
+    public void deleteTrack(final Long contestId, final Long trackId) {
+        contestConvenience.getValidateExistContest(contestId);
+        final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
+        teamConvenience.validateAllTeamsDeletedInTrack(trackId);
+        contestTrackRepository.delete(contestTrack);
     }
 }

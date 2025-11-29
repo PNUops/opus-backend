@@ -5,7 +5,8 @@ import org.springframework.http.HttpStatus;
 
 public enum TeamExceptionType implements BaseExceptionType {
 
-    CONTEST_HAS_TEAM(HttpStatus.CONFLICT, "해당 대회에 속한 팀이 존재합니다.");
+    CONTEST_HAS_TEAM(HttpStatus.CONFLICT, "해당 대회에 속한 팀이 존재합니다."),
+    TRACK_HAS_TEAM(HttpStatus.CONFLICT, "해당 분과에 속한 팀이 존재합니다.");
 
     private final HttpStatus httpStatus;
     private final String errorMessage;
