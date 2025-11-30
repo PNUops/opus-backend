@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,5 +41,14 @@ public class ContestAwardController {
             @PathVariable Long contestId) {
         List<ContestAwardResponse> responses = contestAwardQueryService.getContestAwards(contestId);
         return ResponseEntity.ok(responses);
+    }
+
+    @PutMapping("/{awardId}")
+    public ResponseEntity<Void> updateContestAward(
+            @PathVariable Long contestId,
+            @PathVariable Long awardId,
+            @Valid @RequestBody ContestAwardRequest request) {
+        contestAwardCommandService.updateContestAward(contestId, awardId, request);
+        return ResponseEntity.ok().build();
     }
 }

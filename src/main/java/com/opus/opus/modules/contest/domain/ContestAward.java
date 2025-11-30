@@ -47,4 +47,9 @@ public class ContestAward extends BaseEntity {
         this.awardColor = awardColor;
         this.isDeleted = false;
     }
+
+    public void update(String awardName, String awardColor) {
+        this.awardName = awardName;
+        this.awardColor = awardColor;
+    }
 }

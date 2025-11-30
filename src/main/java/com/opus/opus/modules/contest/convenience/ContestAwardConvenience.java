@@ -1,7 +1,10 @@
 package com.opus.opus.modules.contest.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.NOT_FOUND_CONTEST_AWARD;
+
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
+import com.opus.opus.modules.contest.exception.ContestAwardException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +14,12 @@ public class ContestAwardConvenience {
 
     private final ContestAwardRepository contestAwardRepository;
 
-    public boolean existsByContestIdAndAwardName(Long contestId, String awardName) {
+    public ContestAward getContestAwardById(Long awardId) {
+        return contestAwardRepository.findById(awardId)
+                .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
+    }
+
+    public boolean isDuplicateAwardName(Long contestId, String awardName) {
         return contestAwardRepository.existsByContestIdAndAwardName(contestId, awardName);
     }
 
