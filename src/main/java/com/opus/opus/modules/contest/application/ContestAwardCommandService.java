@@ -52,4 +52,15 @@ public class ContestAwardCommandService {
 
         contestAward.update(request.getAwardName(), request.getAwardColor());
     }
+
+    public void deleteContestAward(Long contestId, Long awardId) {
+        contestConvenience.getContestById(contestId);
+
+        ContestAward contestAward = contestAwardConvenience.getContestAwardById(awardId);
+        if (!contestAward.getContest().getId().equals(contestId)) {
+            throw new ContestAwardException(NOT_FOUND_CONTEST_AWARD);
+        }
+
+        contestAwardConvenience.delete(contestAward);
+    }
 }

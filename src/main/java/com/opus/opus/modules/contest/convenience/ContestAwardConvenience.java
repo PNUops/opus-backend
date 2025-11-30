@@ -26,4 +26,8 @@ public class ContestAwardConvenience {
     public void save(ContestAward contestAward) {
         contestAwardRepository.save(contestAward);
     }
+
+    public void delete(ContestAward contestAward) {
+        contestAwardRepository.delete(contestAward);
+    }
 }

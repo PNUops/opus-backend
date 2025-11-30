@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,5 +51,13 @@ public class ContestAwardController {
             @Valid @RequestBody ContestAwardRequest request) {
         contestAwardCommandService.updateContestAward(contestId, awardId, request);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{awardId}")
+    public ResponseEntity<Void> deleteContestAward(
+            @PathVariable Long contestId,
+            @PathVariable Long awardId) {
+        contestAwardCommandService.deleteContestAward(contestId, awardId);
+        return ResponseEntity.noContent().build();
     }
 }
