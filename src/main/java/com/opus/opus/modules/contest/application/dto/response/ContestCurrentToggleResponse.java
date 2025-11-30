@@ -5,4 +5,7 @@ public record ContestCurrentToggleResponse(
         Boolean isCurrent,
         String message
 ) {
+    public static ContestCurrentToggleResponse of(Long id, Boolean isCurrent, String message) {
+        return new ContestCurrentToggleResponse(id, isCurrent, message);
+    }
 }

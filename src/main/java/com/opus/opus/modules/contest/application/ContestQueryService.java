@@ -1,5 +1,7 @@
 package com.opus.opus.modules.contest.application;
 
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
+import java.util.List;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
@@ -14,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestQueryService {
+    public List<ContestCurrentResponse> getCurrentContests()
+        return;
+    }
 
     private final ContestRepository contestRepository;
     private final ContestCategoryConvenience contestCategoryConvenience;

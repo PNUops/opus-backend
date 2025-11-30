@@ -2,6 +2,8 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
@@ -62,7 +64,7 @@ public class ContestController {
     @Secured("ROLE_관리자")
     public ResponseEntity<ContestCurrentToggleResponse> toggleCurrent(@PathVariable final Long contestId,
                                                                       @Valid @RequestBody final ContestCurrentToggleRequest request) {
-        ContestCurrentToggleResponse response = contestCommandService.toggleCurrent(contestId, request);
+        ContestCurrentToggleResponse response = contestCommandService.toggleCurrent(contestId, request.isCurrent());
         return ResponseEntity.ok(response);
     }
 
@@ -71,4 +73,5 @@ public class ContestController {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
     }
+
 }

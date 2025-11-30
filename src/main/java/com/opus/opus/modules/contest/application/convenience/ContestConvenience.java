@@ -34,4 +34,8 @@ public class ContestConvenience {
         return contestRepository.findById(contestId)
                 .orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
     }
+
+    public long countCurrentContests() {
+        return contestRepository.countByIsCurrentTrue();
+    }
 }
