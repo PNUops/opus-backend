@@ -4,6 +4,9 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -64,8 +67,8 @@ public class ContestController {
     }
 
     @GetMapping("/current")
-    public ResponseEntity<List<ContestCurrentResponse>> getAllCurrentContests() {
-        List<ContestCurrentResponse> responses = contestQueryService.getAllCurrentContests();
+    public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
+        List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
     }
 }
