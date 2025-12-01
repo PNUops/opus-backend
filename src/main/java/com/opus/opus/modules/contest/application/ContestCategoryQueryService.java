@@ -18,11 +18,7 @@ public class ContestCategoryQueryService {
         List<ContestCategory> ContestCategories = contestCategoryRepository.findAll();
 
         return ContestCategories.stream()
-                .map(contestcategory -> new ContestCategoryResponse(
-                        contestcategory.getId(),
-                        contestcategory.getCategoryName(),
-                        contestcategory.getUpdatedAt()
-                ))
+                .map(ContestCategoryResponse::from)
                 .toList();
     }
 }

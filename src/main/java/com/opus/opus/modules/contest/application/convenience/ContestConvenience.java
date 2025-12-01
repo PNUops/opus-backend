@@ -12,10 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestConvenience {
-    private final ContestRepository contestCRepository;
+    private final ContestRepository contestRepository;
 
     public void validateAllContestsDeleted(final Long categoryId) {
-        if (contestCRepository.existsByCategoryId(categoryId)) {
+        if (contestRepository.existsByCategoryId(categoryId)) {
             throw new ContestException(CATEGORY_HAS_CONTEST);
         }
     }

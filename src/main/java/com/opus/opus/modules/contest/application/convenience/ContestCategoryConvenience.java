@@ -21,7 +21,7 @@ public class ContestCategoryConvenience {
                 .orElseThrow(() -> new ContestCategoryException(NOT_FOUND_CATEGORY));
     }
 
-    public void validateDuplicateCategoryName(String categoryName) {
+    public void validateDuplicateCategoryName(final String categoryName) {
         if (contestCategoryRepository.existsByCategoryName(categoryName)) {
             throw new ContestCategoryException(CATEGORY_NAME_ALREADY_EXIST);
         }
