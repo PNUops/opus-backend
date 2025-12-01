@@ -2,19 +2,21 @@ package com.opus.opus.modules.team.domain;
 
 import com.opus.opus.global.base.BaseEntity;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE team_award SET is_deleted = true WHERE id = ?")
 public class TeamAward extends BaseEntity {
 
     @Id
@@ -29,13 +31,9 @@ public class TeamAward extends BaseEntity {
     @JoinColumn(name = "contest_award_id", nullable = false)
     private ContestAward contestAward;
 
-    @Column(nullable = false)
-    private Boolean isDeleted = false;
-
     @Builder
     private TeamAward(Team team, ContestAward contestAward) {
         this.team = team;
         this.contestAward = contestAward;
-        this.isDeleted = false;
     }
 }

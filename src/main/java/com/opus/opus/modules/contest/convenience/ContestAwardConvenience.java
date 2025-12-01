@@ -5,6 +5,7 @@ import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.exception.ContestAwardException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,10 @@ public class ContestAwardConvenience {
     public ContestAward getContestAwardById(Long awardId) {
         return contestAwardRepository.findById(awardId)
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
+    }
+
+    public List<ContestAward> findAllById(List<Long> awardIds) {
+        return contestAwardRepository.findAllById(awardIds);
     }
 
     public boolean isDuplicateAwardName(Long contestId, String awardName) {
