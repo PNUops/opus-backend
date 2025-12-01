@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface TeamAwardRepository extends JpaRepository<TeamContestAward, Long> {
+public interface TeamContestAwardRepository extends JpaRepository<TeamContestAward, Long> {
     List<TeamContestAward> findByTeamId(Long teamId);
 }

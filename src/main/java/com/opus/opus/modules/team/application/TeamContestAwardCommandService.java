@@ -7,7 +7,7 @@ import static com.opus.opus.modules.team.exception.TeamAwardExceptionType.DUPLIC
 import com.opus.opus.modules.contest.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.exception.ContestAwardException;
-import com.opus.opus.modules.team.convenience.TeamAwardConvenience;
+import com.opus.opus.modules.team.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamContestAward;
@@ -25,10 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class TeamAwardCommandService {
+public class TeamContestAwardCommandService {
 
     private final TeamConvenience teamConvenience;
-    private final TeamAwardConvenience teamAwardConvenience;
+    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
 
     public TeamAwardResponse updateTeamAwards(Long teamId, TeamAwardUpdateRequest request) {
@@ -37,7 +37,7 @@ public class TeamAwardCommandService {
         List<Long> awardIds = request.awardIds();
         validateNoDuplicates(awardIds);
 
-        teamAwardConvenience.deleteAllByTeamId(teamId);
+        teamContestAwardConvenience.deleteAllByTeamId(teamId);
 
         if (awardIds.isEmpty()) {
             return new TeamAwardResponse(team, List.of());
@@ -52,7 +52,7 @@ public class TeamAwardCommandService {
                         .contestAwardId(award.getId())
                         .build())
                 .toList();
-        teamAwardConvenience.saveAll(teamAwards);
+        teamContestAwardConvenience.saveAll(teamAwards);
 
         List<AwardInfo> awardInfos = contestAwards.stream()
                 .map(award -> new AwardInfo(
