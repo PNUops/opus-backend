@@ -25,15 +25,7 @@ public class ContestQueryService {
                 .map(contest -> {
                     ContestCategory category = contestCategoryConvenience.getValidateExistCategory(
                             contest.getCategoryId());
-
-                    return new ContestResponse(
-                            contest.getId(),
-                            contest.getContestName(),
-                            contest.getCategoryId(),
-                            category.getCategoryName(),
-                            contest.getIsCurrent(),
-                            contest.getUpdatedAt()
-                    );
+                    return ContestResponse.from(contest, category.getCategoryName());
                 })
                 .toList();
     }

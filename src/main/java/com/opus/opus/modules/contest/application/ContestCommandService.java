@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestCommandService {
 
     private final ContestRepository contestRepository;
+    
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final TeamConvenience teamConvenience;
