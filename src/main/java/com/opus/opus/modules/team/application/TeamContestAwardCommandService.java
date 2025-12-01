@@ -40,7 +40,7 @@ public class TeamContestAwardCommandService {
         teamContestAwardConvenience.deleteAllByTeamId(teamId);
 
         if (awardIds.isEmpty()) {
-            return new TeamAwardResponse(team, List.of());
+            return new TeamAwardResponse(List.of());
         }
 
         List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
@@ -62,7 +62,7 @@ public class TeamContestAwardCommandService {
                 ))
                 .toList();
 
-        return new TeamAwardResponse(team, awardInfos);
+        return new TeamAwardResponse(awardInfos);
     }
 
     private void validateNoDuplicates(List<Long> awardIds) {

@@ -20,4 +20,8 @@ public class TeamContestAwardConvenience {
     public void saveAll(List<TeamContestAward> teamAwards) {
         teamContestAwardRepository.saveAll(teamAwards);
     }
+
+    public List<TeamContestAward> findByTeamId(Long teamId) {
+        return teamContestAwardRepository.findByTeamId(teamId);
+    }
 }
