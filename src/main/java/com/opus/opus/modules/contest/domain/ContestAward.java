@@ -1,7 +1,6 @@
 package com.opus.opus.modules.contest.domain;
 
 import com.opus.opus.global.base.BaseEntity;
-import com.opus.opus.modules.team.domain.TeamAward;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -9,9 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -36,9 +32,6 @@ public class ContestAward extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean isDeleted = false;
-
-    @OneToMany(mappedBy = "contestAward")
-    private List<TeamAward> teamAwards = new ArrayList<>();
 
     @Builder
     private ContestAward(Contest contest, String awardName, String awardColor) {
