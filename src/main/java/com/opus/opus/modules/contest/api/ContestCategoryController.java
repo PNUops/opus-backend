@@ -7,6 +7,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCategoryRes
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
@@ -30,10 +31,10 @@ public class ContestCategoryController {
 
     @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<ContestCategoryResponse> createContestCategory(
+    public ResponseEntity<Void> createContestCategory(
             @Valid @RequestBody final ContestCategoryRequest request) {
-        ContestCategoryResponse response = contestCategoryCommandService.createCategory(request);
-        return ResponseEntity.ok(response);
+        contestCategoryCommandService.createCategory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PatchMapping("/{categoryId}")
