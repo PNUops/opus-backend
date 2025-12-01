@@ -24,14 +24,14 @@ public class ContestAwardCommandService {
     public void createContestAward(Long contestId, ContestAwardRequest request) {
         Contest contest = contestConvenience.getContestById(contestId);
 
-        if (contestAwardConvenience.isDuplicateAwardName(contestId, request.getAwardName())) {
+        if (contestAwardConvenience.isDuplicateAwardName(contestId, request.awardName())) {
             throw new ContestAwardException(DUPLICATE_CONTEST_AWARD_NAME);
         }
 
         ContestAward contestAward = ContestAward.builder()
                 .contest(contest)
-                .awardName(request.getAwardName())
-                .awardColor(request.getAwardColor())
+                .awardName(request.awardName())
+                .awardColor(request.awardColor())
                 .build();
 
         contestAwardConvenience.save(contestAward);
@@ -46,11 +46,11 @@ public class ContestAwardCommandService {
             throw new ContestAwardException(NOT_FOUND_CONTEST_AWARD);
         }
 
-        if (!contestAward.getAwardName().equals(request.getAwardName()) && contestAwardConvenience.isDuplicateAwardName(contestId, request.getAwardName())) {
+        if (!contestAward.getAwardName().equals(request.awardName()) && contestAwardConvenience.isDuplicateAwardName(contestId, request.awardName())) {
             throw new ContestAwardException(DUPLICATE_CONTEST_AWARD_NAME);
         }
 
-        contestAward.update(request.getAwardName(), request.getAwardColor());
+        contestAward.update(request.awardName(), request.awardColor());
     }
 
     public void deleteContestAward(Long contestId, Long awardId) {
