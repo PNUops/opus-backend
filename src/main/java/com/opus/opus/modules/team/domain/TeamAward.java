@@ -1,7 +1,6 @@
 package com.opus.opus.modules.team.domain;
 
 import com.opus.opus.global.base.BaseEntity;
-import com.opus.opus.modules.contest.domain.ContestAward;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,17 +24,16 @@ public class TeamAward extends BaseEntity {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contest_award_id", nullable = false)
-    private ContestAward contestAward;
+    @Column(name = "contest_award_id", nullable = false)
+    private Long contestAwardId;
 
     @Column(nullable = false)
     private Boolean isDeleted = false;
 
     @Builder
-    private TeamAward(Team team, ContestAward contestAward) {
+    private TeamAward(Team team, Long contestAwardId) {
         this.team = team;
-        this.contestAward = contestAward;
+        this.contestAwardId = contestAwardId;
         this.isDeleted = false;
     }
 }
