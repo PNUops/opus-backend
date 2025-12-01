@@ -69,7 +69,7 @@ public class Team extends BaseEntity {
     private List<TeamComment> teamComments = new ArrayList<>();
 
     @OneToMany(mappedBy = "team")
-    private List<TeamAward> teamAwards = new ArrayList<>();
+    private List<TeamContestAward> teamAwards = new ArrayList<>();
 
     @OneToMany(mappedBy = "team")
     private List<TeamLike> teamLikes = new ArrayList<>();

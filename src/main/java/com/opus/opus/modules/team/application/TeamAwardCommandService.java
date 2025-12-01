@@ -10,7 +10,7 @@ import com.opus.opus.modules.contest.exception.ContestAwardException;
 import com.opus.opus.modules.team.convenience.TeamAwardConvenience;
 import com.opus.opus.modules.team.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamAward;
+import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.dto.request.TeamAwardUpdateRequest;
 import com.opus.opus.modules.team.dto.response.TeamAwardResponse;
 import com.opus.opus.modules.team.dto.response.TeamAwardResponse.AwardInfo;
@@ -38,6 +38,7 @@ public class TeamAwardCommandService {
         validateNoDuplicates(awardIds);
 
         teamAwardConvenience.deleteAllByTeamId(teamId);
+
         if (awardIds.isEmpty()) {
             return new TeamAwardResponse(team, List.of());
         }
@@ -45,13 +46,14 @@ public class TeamAwardCommandService {
         List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
         validateContestAwards(contestAwards, awardIds, team.getContestId());
 
-        List<TeamAward> teamAwards = contestAwards.stream()
-                .map(award -> TeamAward.builder()
+        List<TeamContestAward> teamAwards = contestAwards.stream()
+                .map(award -> TeamContestAward.builder()
                         .team(team)
-                        .contestAward(award)
+                        .contestAwardId(award.getId())
                         .build())
                 .toList();
         teamAwardConvenience.saveAll(teamAwards);
+
         List<AwardInfo> awardInfos = contestAwards.stream()
                 .map(award -> new AwardInfo(
                         award.getId(),
