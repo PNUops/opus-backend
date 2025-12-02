@@ -5,8 +5,8 @@ import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.team.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.TeamContestAward;
-import com.opus.opus.modules.team.dto.response.TeamAwardResponse;
-import com.opus.opus.modules.team.dto.response.TeamAwardResponse.AwardInfo;
+import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse.AwardInfo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,12 +20,12 @@ public class TeamContestAwardQueryService {
     private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
 
-    public TeamAwardResponse getTeamAwards(Long teamId) {
+    public TeamContestAwardResponse getTeamAwards(Long teamId) {
         teamConvenience.getTeamById(teamId);
 
         List<TeamContestAward> teamAwards = teamContestAwardConvenience.findByTeamId(teamId);
         if (teamAwards.isEmpty()) {
-            return new TeamAwardResponse(List.of());
+            return new TeamContestAwardResponse(List.of());
         }
 
         List<Long> awardIds = teamAwards.stream()
@@ -42,6 +42,6 @@ public class TeamContestAwardQueryService {
                 ))
                 .toList();
 
-        return new TeamAwardResponse(awardInfos);
+        return new TeamContestAwardResponse(awardInfos);
     }
 }

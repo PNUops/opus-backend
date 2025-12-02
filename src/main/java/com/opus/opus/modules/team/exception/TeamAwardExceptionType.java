@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 
 public enum TeamAwardExceptionType implements BaseExceptionType {
     DUPLICATE_AWARD_IDS(HttpStatus.BAD_REQUEST, "중복된 ID가 포함되어 있습니다."),
-    AWARD_NOT_IN_TEAM_CONTEST(HttpStatus.BAD_REQUEST, "해당 팀의 대회에 속하지 않은 수상이 포함되어 있습니다. ");
+    AWARD_NOT_IN_TEAM_CONTEST(HttpStatus.BAD_REQUEST, "해당 팀의 대회에 속하지 않은 수상이 포함되어 있습니다.");
 
     private final HttpStatus httpStatus;
     private final String errorMessage;

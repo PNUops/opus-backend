@@ -2,7 +2,7 @@ package com.opus.opus.modules.team.dto.response;
 
 import java.util.List;
 
-public record TeamAwardResponse(
+public record TeamContestAwardResponse(
         List<AwardInfo> awards
 ) {
     public record AwardInfo(
