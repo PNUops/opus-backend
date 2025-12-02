@@ -6,6 +6,7 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
@@ -41,13 +42,13 @@ public class ContestController {
     public ResponseEntity<Void> saveContestBanner(@PathVariable Long contestId,
                                                   @RequestPart("image") final MultipartFile image) {
         contestCommandService.saveBannerImage(contestId, image);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Secured({"ROLE_관리자"})
     @DeleteMapping("/{contestId}/image/banner")
     public ResponseEntity<Void> deleteContestBanner(@PathVariable Long contestId) {
         contestCommandService.deleteBannerImage(contestId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }
