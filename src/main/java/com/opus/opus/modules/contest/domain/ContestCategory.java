@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,43 +18,24 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
 @SQLDelete(sql = "UPDATE contest SET is_deleted = true where id = ?")
-public class Contest extends BaseEntity {
-
+public class ContestCategory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String contestName;
-
-    @Column(nullable = false)
-    private Long categoryId;
-
-    @Column(nullable = false)
-    private Boolean isCurrent;
+    private String categoryName;
 
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @Column(nullable = false)
-    private LocalDateTime voteStartAt;
-
-    @Column(nullable = false)
-    private LocalDateTime voteEndAt;
-
-    @Column(nullable = false)
-    private Integer maxVotesLimit;
-
     @Builder
-    private Contest(final String contestName, final Long categoryId, final Boolean isCurrent,
-                    final Integer maxVotesLimit) {
-        this.contestName = contestName;
-        this.categoryId = categoryId;
-        this.isCurrent = isCurrent;
+    private ContestCategory(final String categoryName) {
+        this.categoryName = categoryName;
         this.isDeleted = false;
-        this.voteStartAt = LocalDateTime.now();
-        this.voteEndAt = LocalDateTime.now();
-        this.maxVotesLimit = maxVotesLimit;
     }
 
+    public void updateCategory(final String categoryName) {
+        this.categoryName = categoryName;
+    }
 }
