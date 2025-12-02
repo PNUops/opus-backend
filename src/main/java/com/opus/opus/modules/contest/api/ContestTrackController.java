@@ -1,8 +1,12 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.modules.contest.application.ContestTrackCommandService;
+import com.opus.opus.modules.contest.application.ContestTrackQueryService;
+import com.opus.opus.modules.contest.application.dto.request.ContestTrackRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
@@ -27,11 +31,11 @@ public class ContestTrackController {
 
     @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<ContestTrackResponse> createContestTrack(
+    public ResponseEntity<Void> createContestTrack(
             @Valid @RequestBody final ContestTrackRequest request,
             @PathVariable final Long contestId) {
-        ContestTrackResponse response = contestTrackCommandService.createTrack(contestId, request);
-        return ResponseEntity.ok(response);
+        contestTrackCommandService.createTrack(contestId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PatchMapping("/{trackId}")
