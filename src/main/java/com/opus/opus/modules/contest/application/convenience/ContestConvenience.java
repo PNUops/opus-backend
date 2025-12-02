@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestConvenience {
     private final ContestRepository contestRepository;
 
-    public void validateAllContestsDeleted(final Long categoryId) {
+    public void validateAllContestsDeletedInCategory(final Long categoryId) {
         if (contestRepository.existsByCategoryId(categoryId)) {
             throw new ContestException(CATEGORY_HAS_CONTEST);
         }

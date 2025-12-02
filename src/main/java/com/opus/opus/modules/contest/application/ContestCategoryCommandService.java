@@ -35,7 +35,7 @@ public class ContestCategoryCommandService {
 
     public void deleteCategory(final Long categoryId) {
         final ContestCategory contestCategory = contestCategoryConvenience.getValidateExistCategory(categoryId);
-        contestConvenience.validateAllContestsDeleted(categoryId);
+        contestConvenience.validateAllContestsDeletedInCategory(categoryId);
         contestCategoryRepository.delete(contestCategory);
     }
 }
