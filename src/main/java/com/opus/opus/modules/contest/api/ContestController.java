@@ -54,4 +54,18 @@ public class ContestController {
         contestCommandService.deleteContest(contestId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{contestId}/current")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<ContestCurrentToggleResponse> toggleCurrent(@PathVariable final Long contestId,
+                                                                      @Valid @RequestBody final ContestCurrentToggleRequest request) {
+        ContestCurrentToggleResponse response = contestCommandService.toggleCurrent(contestId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/current")
+    public ResponseEntity<List<ContestCurrentResponse>> getAllCurrentContests() {
+        List<ContestCurrentResponse> responses = contestQueryService.getAllCurrentContests();
+        return ResponseEntity.ok(responses);
+    }
 }
