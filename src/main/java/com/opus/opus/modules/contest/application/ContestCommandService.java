@@ -14,16 +14,6 @@ import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
-import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
-import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestCategory;
-import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.exception.ContestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,17 +67,12 @@ public class ContestCommandService {
         }
         // 변경
         contest.updateIsCurrent(isCurrent);
-        String message = isCurrent ? "현재 대회로 등록되었습니다." : "현재 대회 지정이 해제되었습니다.";
-        return ContestCurrentToggleResponse.of(contest.getId(), isCurrent, message);
+        return ContestCurrentToggleResponse.of(contest.getId(), isCurrent);
     }
 
     private void validateSameCurrentRequest(final Boolean currentValue, final Boolean requestValue) {
-        if (currentValue.equals(requestValue)) {
-            if (currentValue) {
-                throw new ContestException(ALREADY_CURRENT_CONTEST);
-            } else {
-                throw new ContestException(ALREADY_NOT_CURRENT_CONTEST);
-            }
+        if (currentValue == requestValue) {
+            throw new ContestException(currentValue ? ALREADY_CURRENT_CONTEST : ALREADY_NOT_CURRENT_CONTEST);
         }
     }
 
