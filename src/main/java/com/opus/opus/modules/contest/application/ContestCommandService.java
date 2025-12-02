@@ -4,10 +4,16 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREA
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
 
+import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
@@ -56,7 +62,7 @@ public class ContestCommandService {
 
     public void deleteContest(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        teamConvenience.validateAllTeamsDeleted(contestId);
+        teamConvenience.validateAllTeamsDeletedInContest(contestId);
         contestRepository.delete(contest);
     }
 
