@@ -47,15 +47,14 @@ public class Contest extends BaseEntity {
     private Integer maxVotesLimit;
 
     @Builder
-    private Contest(final String contestName, final Long categoryId, final Boolean isCurrent,
-                    final Integer maxVotesLimit) {
+    private Contest(final String contestName, final Long categoryId) {
         this.contestName = contestName;
         this.categoryId = categoryId;
-        this.isCurrent = isCurrent;
+        this.isCurrent = false;
         this.isDeleted = false;
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
-        this.maxVotesLimit = maxVotesLimit;
+        this.maxVotesLimit = 0;
     }
 
 }

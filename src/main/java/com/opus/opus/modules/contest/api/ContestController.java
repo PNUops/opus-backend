@@ -35,10 +35,8 @@ public class ContestController {
 
     @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> createContest(
-            @Valid @RequestBody final ContestRequest request
-    ) {
-        contestCommandService.createContest(request.contestName());
+    public ResponseEntity<Void> createContest(@Valid @RequestBody final ContestRequest request) {
+        contestCommandService.createContest(request);
         return ResponseEntity.status(CREATED).build();
     }
 

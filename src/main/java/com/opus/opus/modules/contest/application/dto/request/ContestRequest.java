@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public record ContestRequest(
         @NotBlank(message = "대회명은 비어 있을 수 없습니다.")
-        String contestName
+        String contestName,
+        @NotBlank(message = "카테고리ID는 비어 있을 수 없습니다.")
+        Long categoryId
 ) {
 }

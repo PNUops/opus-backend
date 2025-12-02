@@ -1,6 +1,7 @@
 package com.opus.opus.modules.contest.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CATEGORY_HAS_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -17,6 +18,12 @@ public class ContestConvenience {
     public void validateAllContestsDeletedInCategory(final Long categoryId) {
         if (contestRepository.existsByCategoryId(categoryId)) {
             throw new ContestException(CATEGORY_HAS_CONTEST);
+        }
+    }
+
+    public void validateDuplicateContestName(final String contestName) {
+        if (contestRepository.existsByContestName(contestName)) {
+            throw new ContestException(CONTEST_NAME_ALREADY_EXIST);
         }
     }
 }
