@@ -6,7 +6,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import lombok.RequiredArgsConstructor;

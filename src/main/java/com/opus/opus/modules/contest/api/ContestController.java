@@ -3,7 +3,6 @@ package com.opus.opus.modules.contest.api;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
