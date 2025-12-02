@@ -31,12 +31,20 @@ public class ContestCommandService {
             checkWebpConverted(file);
             fileStorageUtil.deleteFile(file.getId());
         });
-        fileStorageUtil.storeFile(image, contestId,BANNER);
+        fileStorageUtil.storeFile(image, contestId, BANNER);
     }
 
     private void checkWebpConverted(File existingFile) {
         if (!existingFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
+    }
+
+    public void deleteBannerImage(Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+
+        fileRepository.findByContestIdAndType(contestId, BANNER).ifPresent(file ->
+                fileStorageUtil.deleteFile(file.getId())
+        );
     }
 }
