@@ -8,6 +8,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,5 +34,13 @@ public class ContestConvenience {
     public Contest getValidateExistContest(final Long contestId) {
         return contestRepository.findById(contestId)
                 .orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
+    }
+
+    public long countCurrentContests() {
+        return contestRepository.countByIsCurrentTrue();
+    }
+
+    public List<Contest> getCurrentContests() {
+        return contestRepository.findAllByIsCurrentTrue();
     }
 }

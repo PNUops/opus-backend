@@ -2,8 +2,13 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -54,4 +59,19 @@ public class ContestController {
         contestCommandService.deleteContest(contestId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{contestId}/current")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<ContestCurrentToggleResponse> toggleCurrent(@PathVariable final Long contestId,
+                                                                      @Valid @RequestBody final ContestCurrentToggleRequest request) {
+        ContestCurrentToggleResponse response = contestCommandService.toggleCurrent(contestId, request.isCurrent());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/current")
+    public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
+        List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
+        return ResponseEntity.ok(responses);
+    }
+
 }

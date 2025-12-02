@@ -1,6 +1,8 @@
 package com.opus.opus.modules.contest.application;
 
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
@@ -16,7 +18,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestQueryService {
 
     private final ContestRepository contestRepository;
+
+    private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
+
+    public List<ContestCurrentResponse> getCurrentContests() {
+        List<Contest> contests = contestConvenience.getCurrentContests();
+
+        return contests.stream()
+                .map(contest -> {
+                    String categoryName = contestCategoryConvenience.getValidateExistCategory(contest.getCategoryId())
+                            .getCategoryName();
+                    return ContestCurrentResponse.of(contest, categoryName);
+                })
+                .toList();
+    }
 
     public List<ContestResponse> getAllContests() {
         List<Contest> contests = contestRepository.findAll();

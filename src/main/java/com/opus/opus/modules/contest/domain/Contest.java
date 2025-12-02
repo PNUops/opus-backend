@@ -55,6 +55,11 @@ public class Contest extends BaseEntity {
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
         this.maxVotesLimit = 0;
+        this.maxVotesLimit = 0;
+    }
+
+    public void updateIsCurrent(final Boolean isCurrent) {
+        this.isCurrent = isCurrent;
     }
 
     public void updateContest(final Long categoryId, final String contestName) {

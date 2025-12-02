@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 public enum ContestExceptionType implements BaseExceptionType {
 
     NOT_FOUND_CONTEST(HttpStatus.NOT_FOUND, "존재하지 않는 대회입니다."),
+    CURRENT_CONTEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "현재 진행 중인 대회는 최대 2개까지 설정할 수 있습니다."),
+    ALREADY_CURRENT_CONTEST(HttpStatus.BAD_REQUEST, "이미 현재 대회입니다."),
+    ALREADY_NOT_CURRENT_CONTEST(HttpStatus.BAD_REQUEST, "이미 현재 대회가 아닙니다."),
     CATEGORY_HAS_CONTEST(HttpStatus.CONFLICT, "해당 카테고리에 속한 대회가 존재합니다."),
     CONTEST_NAME_ALREADY_EXIST(HttpStatus.CONFLICT, "동일한 대회명이 있습니다.");
 
