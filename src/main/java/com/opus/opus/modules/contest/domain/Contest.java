@@ -46,9 +46,6 @@ public class Contest extends BaseEntity {
     @Column(nullable = false)
     private Integer maxVotesLimit;
 
-    @Column
-    private Long bannerId;
-
     @Builder
     private Contest(final String contestName, final Long categoryId) {
         this.contestName = contestName;
@@ -58,7 +55,6 @@ public class Contest extends BaseEntity {
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
         this.maxVotesLimit = 0;
-        this.bannerId = null;
         this.maxVotesLimit = 0;
     }
 

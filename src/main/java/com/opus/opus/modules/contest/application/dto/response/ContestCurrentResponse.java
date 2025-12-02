@@ -8,8 +8,7 @@ public record ContestCurrentResponse(
         String categoryName,
         String contestName,
         LocalDateTime voteStartAt,
-        LocalDateTime voteEndAt,
-        Long bannerId
+        LocalDateTime voteEndAt
 ) {
     public static ContestCurrentResponse of(
             Contest contest,
@@ -20,8 +19,7 @@ public record ContestCurrentResponse(
                 categoryName,
                 contest.getContestName(),
                 contest.getVoteStartAt(),
-                contest.getVoteEndAt(),
-                contest.getBannerId()
+                contest.getVoteEndAt()
         );
     }
 }
