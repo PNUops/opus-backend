@@ -53,7 +53,7 @@ public class Team extends BaseEntity {
     @Column(nullable = false)
     private Long contestId;
 
-    @Column(nullable = false)
+    @Column
     private Long trackId;
 
     @Column(nullable = false)

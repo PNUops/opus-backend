@@ -32,9 +32,8 @@ public class ContestTrackController {
 
     @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> createContestTrack(
-            @Valid @RequestBody final ContestTrackRequest request,
-            @PathVariable final Long contestId) {
+    public ResponseEntity<Void> createContestTrack(@Valid @RequestBody final ContestTrackRequest request,
+                                                   @PathVariable final Long contestId) {
         contestTrackCommandService.createTrack(contestId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
