@@ -20,7 +20,12 @@ public class ContestAwardConvenience {
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
     }
 
-    public List<ContestAward> findAllById(List<Long> awardIds) {
-        return contestAwardRepository.findAllById(awardIds);
-    }
-}
+    public List<ContestAward> findAllById(final List<Long> awardIds) {
+        final List<ContestAward> contestAwards = contestAwardRepository.findAllById(awardIds);
+
+        if (contestAwards.size() != awardIds.size()) {
+            throw new ContestAwardException(NOT_FOUND_CONTEST_AWARD);
+        }
+
+        return contestAwards;
+    }}
