@@ -51,7 +51,7 @@ public class ContestAwardController {
             @PathVariable Long awardId,
             @Valid @RequestBody ContestAwardRequest request) {
         contestAwardCommandService.updateContestAward(contestId, awardId, request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{awardId}")
