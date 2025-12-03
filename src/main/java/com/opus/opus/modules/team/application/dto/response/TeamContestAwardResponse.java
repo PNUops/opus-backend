@@ -1,4 +1,4 @@
-package com.opus.opus.modules.team.dto.response;
+package com.opus.opus.modules.team.application.dto.response;
 
 import java.util.List;
 

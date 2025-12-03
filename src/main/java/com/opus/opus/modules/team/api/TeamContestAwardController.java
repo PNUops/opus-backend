@@ -2,8 +2,8 @@ package com.opus.opus.modules.team.api;
 
 import com.opus.opus.modules.team.application.TeamContestAwardCommandService;
 import com.opus.opus.modules.team.application.TeamContestAwardQueryService;
-import com.opus.opus.modules.team.dto.request.TeamContestAwardUpdateRequest;
-import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.application.dto.request.TeamContestAwardUpdateRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,14 +28,14 @@ public class TeamContestAwardController {
 
     @PutMapping
     public ResponseEntity<TeamContestAwardResponse> updateTeamContestAwards(
-            @PathVariable Long teamId,
-            @Valid @RequestBody TeamContestAwardUpdateRequest request) {
+            @PathVariable final Long teamId,
+            @Valid @RequestBody final TeamContestAwardUpdateRequest request) {
         TeamContestAwardResponse response = teamContestAwardCommandService.updateTeamAwards(teamId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<TeamContestAwardResponse> getTeamContestAwards(@PathVariable Long teamId) {
+    public ResponseEntity<TeamContestAwardResponse> getTeamContestAwards(@PathVariable final Long teamId) {
         TeamContestAwardResponse response = teamContestAwardQueryService.getTeamAwards(teamId);
         return ResponseEntity.ok(response);
     }

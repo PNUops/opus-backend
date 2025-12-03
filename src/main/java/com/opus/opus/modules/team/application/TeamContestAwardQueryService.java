@@ -1,12 +1,12 @@
 package com.opus.opus.modules.team.application;
 
-import com.opus.opus.modules.contest.convenience.ContestAwardConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.team.convenience.TeamContestAwardConvenience;
-import com.opus.opus.modules.team.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.TeamContestAward;
-import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse;
-import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse.AwardInfo;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class TeamContestAwardQueryService {
     private final ContestAwardConvenience contestAwardConvenience;
 
     public TeamContestAwardResponse getTeamAwards(Long teamId) {
-        teamConvenience.getTeamById(teamId);
+        teamConvenience.getValidateExistTeam(teamId);
 
         List<TeamContestAward> teamAwards = teamContestAwardConvenience.findByTeamId(teamId);
         if (teamAwards.isEmpty()) {

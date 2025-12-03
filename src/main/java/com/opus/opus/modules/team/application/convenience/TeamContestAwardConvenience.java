@@ -1,4 +1,4 @@
-package com.opus.opus.modules.team.convenience;
+package com.opus.opus.modules.team.application.convenience;
 
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;

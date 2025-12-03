@@ -3,15 +3,15 @@ package com.opus.opus.modules.team.application;
 import static com.opus.opus.modules.team.exception.TeamAwardExceptionType.AWARD_NOT_IN_TEAM_CONTEST;
 import static com.opus.opus.modules.team.exception.TeamAwardExceptionType.DUPLICATE_AWARD_IDS;
 
-import com.opus.opus.modules.contest.convenience.ContestAwardConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.team.convenience.TeamContestAwardConvenience;
-import com.opus.opus.modules.team.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamContestAward;
-import com.opus.opus.modules.team.dto.request.TeamContestAwardUpdateRequest;
-import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse;
-import com.opus.opus.modules.team.dto.response.TeamContestAwardResponse.AwardInfo;
+import com.opus.opus.modules.team.application.dto.request.TeamContestAwardUpdateRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import com.opus.opus.modules.team.exception.TeamAwardException;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +30,7 @@ public class TeamContestAwardCommandService {
     private final ContestAwardConvenience contestAwardConvenience;
 
     public TeamContestAwardResponse updateTeamAwards(Long teamId, TeamContestAwardUpdateRequest request) {
-        Team team = teamConvenience.getTeamById(teamId);
+        Team team = teamConvenience.getValidateExistTeam(teamId);
 
         List<Long> awardIds = request.awardIds();
         validateDuplicate(awardIds);
