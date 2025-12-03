@@ -1,9 +1,10 @@
-package com.opus.opus.modules.contest.dto.request;
+package com.opus.opus.modules.contest.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 public record ContestAwardRequest(
+
         @NotBlank(message = "수상명 또는 색상 정보가 올바르지 않습니다.")
         String awardName,
 

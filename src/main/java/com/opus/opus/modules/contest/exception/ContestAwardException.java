@@ -4,6 +4,7 @@ import com.opus.opus.global.base.BaseException;
 import com.opus.opus.global.base.BaseExceptionType;
 
 public class ContestAwardException extends BaseException {
+
     private final ContestAwardExceptionType exceptionType;
 
     public ContestAwardException(final ContestAwardExceptionType exceptionType) {

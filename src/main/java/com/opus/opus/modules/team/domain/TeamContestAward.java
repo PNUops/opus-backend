@@ -28,10 +28,10 @@ public class TeamContestAward extends BaseEntity {
     private Long contestAwardId;
 
     @Column(nullable = false)
-    private Boolean isDeleted = false;
+    private Boolean isDeleted;
 
     @Builder
-    private TeamContestAward(Team team, Long contestAwardId) {
+    private TeamContestAward(final Team team, final Long contestAwardId) {
         this.team = team;
         this.contestAwardId = contestAwardId;
         this.isDeleted = false;

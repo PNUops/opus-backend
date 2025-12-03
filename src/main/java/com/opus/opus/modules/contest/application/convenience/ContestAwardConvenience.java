@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.convenience;
+package com.opus.opus.modules.contest.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.NOT_FOUND_CONTEST_AWARD;
 
@@ -15,24 +15,12 @@ public class ContestAwardConvenience {
 
     private final ContestAwardRepository contestAwardRepository;
 
-    public ContestAward getContestAwardById(Long awardId) {
+    public ContestAward getValidateContestAward(final Long awardId) {
         return contestAwardRepository.findById(awardId)
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
     }
 
     public List<ContestAward> findAllById(List<Long> awardIds) {
         return contestAwardRepository.findAllById(awardIds);
-    }
-
-    public boolean isDuplicateAwardName(Long contestId, String awardName) {
-        return contestAwardRepository.existsByContestIdAndAwardName(contestId, awardName);
-    }
-
-    public void save(ContestAward contestAward) {
-        contestAwardRepository.save(contestAward);
-    }
-
-    public void delete(ContestAward contestAward) {
-        contestAwardRepository.delete(contestAward);
     }
 }

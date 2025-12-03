@@ -53,6 +53,9 @@ public class Team extends BaseEntity {
     @Column(nullable = false)
     private Long contestId;
 
+    @Column
+    private Long trackId;
+
     @Column(nullable = false)
     private Integer itemOrder;
 
@@ -76,9 +79,8 @@ public class Team extends BaseEntity {
 
     @Builder
     private Team(final String teamName, final String projectName, final String professorName, final String overview,
-                 final String githubPath,
-                 final String productionPath, final String youTubePath, final Long contestId, final Integer itemOrder,
-                 final List<TeamMember> teamMembers) {
+                 final String githubPath, final String productionPath, final String youTubePath, final Long contestId,
+                 final Long trackId, final Integer itemOrder, final List<TeamMember> teamMembers) {
         this.teamName = teamName;
         this.projectName = projectName;
         this.professorName = professorName;
@@ -87,6 +89,7 @@ public class Team extends BaseEntity {
         this.productionPath = productionPath;
         this.youTubePath = youTubePath;
         this.contestId = contestId;
+        this.trackId = trackId;
         this.itemOrder = itemOrder;
         this.isDeleted = false;
         this.isSubmitted = false;

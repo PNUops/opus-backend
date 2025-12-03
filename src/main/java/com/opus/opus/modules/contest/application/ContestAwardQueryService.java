@@ -1,10 +1,9 @@
 package com.opus.opus.modules.contest.application;
 
-import com.opus.opus.modules.contest.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
-import com.opus.opus.modules.contest.dto.response.ContestAwardResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestAwardResponse;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +16,11 @@ public class ContestAwardQueryService {
     private final ContestConvenience contestConvenience;
     private final ContestAwardRepository contestAwardRepository;
 
-    public List<ContestAwardResponse> getContestAwards(Long contestId) {
-        contestConvenience.getContestById(contestId);
+    public List<ContestAwardResponse> getContestAwards(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
 
         return contestAwardRepository.findByContestId(contestId).stream()
-                .map(ContestAwardResponse::new)
-                .collect(Collectors.toList());
+                .map(ContestAwardResponse::from)
+                .toList();
     }
 }
