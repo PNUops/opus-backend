@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.dto.response;
 import com.opus.opus.modules.contest.domain.ContestAward;
 
 public record ContestAwardResponse(
+
         Long awardId,
         String awardName,
         String awardColor

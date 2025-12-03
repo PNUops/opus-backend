@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/contests/{contestId}/awards")
 @Secured("ROLE_관리자")
 public class ContestAwardController {
+
     private final ContestAwardCommandService contestAwardCommandService;
     private final ContestAwardQueryService contestAwardQueryService;
 
