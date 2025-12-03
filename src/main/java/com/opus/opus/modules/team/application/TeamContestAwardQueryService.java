@@ -28,14 +28,10 @@ public class TeamContestAwardQueryService {
             return new TeamContestAwardResponse(List.of());
         }
 
-        final List<Long> awardIds = extractAwardIds(teamAwards);
-        final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
-        return TeamContestAwardResponse.from(contestAwards);
-    }
-
-    private List<Long> extractAwardIds(final List<TeamContestAward> teamAwards) {
-        return teamAwards.stream()
+        final List<Long> awardIds = teamAwards.stream()
                 .map(TeamContestAward::getContestAwardId)
                 .toList();
+        final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
+        return TeamContestAwardResponse.from(contestAwards);
     }
 }
