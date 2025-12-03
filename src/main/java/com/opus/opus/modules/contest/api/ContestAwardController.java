@@ -40,7 +40,7 @@ public class ContestAwardController {
 
     @GetMapping
     public ResponseEntity<List<ContestAwardResponse>> getContestAwards(
-            @PathVariable Long contestId) {
+            @PathVariable final Long contestId) {
         List<ContestAwardResponse> responses = contestAwardQueryService.getContestAwards(contestId);
         return ResponseEntity.ok(responses);
     }
