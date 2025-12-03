@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.domain.dao;
 
 import com.opus.opus.modules.team.domain.Team;
+
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,4 +17,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query("select coalesce(max(t.itemOrder), 0) from Team t where t.contestId = :contestId")
     Integer findMaxItemOrderByContestId(final Long contestId);
+
+    boolean existsByTrackId(final Long trackId);
+
 }
