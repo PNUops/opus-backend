@@ -17,7 +17,7 @@ public class ContestAwardQueryService {
     private final ContestConvenience contestConvenience;
     private final ContestAwardRepository contestAwardRepository;
 
-    public List<ContestAwardResponse> getContestAwards(Long contestId) {
+    public List<ContestAwardResponse> getContestAwards(final Long contestId) {
         contestConvenience.getContestById(contestId);
 
         return contestAwardRepository.findByContestId(contestId).stream()
