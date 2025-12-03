@@ -6,6 +6,7 @@ import com.opus.opus.global.error.FileNotFoundException;
 import com.opus.opus.global.error.FileSaveFailedException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
+import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
@@ -73,7 +74,8 @@ public class FileStorageUtil {
         return new ByteArrayResource(fileBytes);
     }
 
-    public File storeFile(final MultipartFile multipartFile, final Long teamId, final FileImageType type) {
+    public File storeFile(final MultipartFile multipartFile, final Long referenceId,
+                          final ReferenceDomainType referenceType, final FileImageType type) {
         if (multipartFile == null || multipartFile.isEmpty()) {
             throw new FileSaveFailedException("업로드할 파일이 비어 있거나 존재하지 않습니다.");
         }
@@ -101,8 +103,9 @@ public class FileStorageUtil {
             File savedFile = fileRepository.save(File.builder()
                     .name(originalFilename)
                     .filePath(filePathForDb)
-                    .teamId(teamId)
-                    .type(type)
+                    .referenceId(referenceId)
+                    .referenceType(referenceType)
+                    .imageType(type)
                     .build());
             em.flush();
 

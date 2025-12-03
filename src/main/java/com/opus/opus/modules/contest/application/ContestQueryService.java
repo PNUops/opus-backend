@@ -1,11 +1,13 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
@@ -27,7 +29,7 @@ public class ContestQueryService {
 
     public ImageResponse findContestBanner(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        File findBanner = fileRepository.findByContestIdAndType(contestId, BANNER)
+        File findBanner = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_EXISTS_BANNER));
 
         checkImageConverted(findBanner);

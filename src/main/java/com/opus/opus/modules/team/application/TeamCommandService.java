@@ -2,11 +2,13 @@ package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -31,7 +33,7 @@ public class TeamCommandService {
         teamConvenience.validateExistTeam(teamId);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
-            fileStorageUtil.storeFile(image, teamId, PREVIEW);
+            fileStorageUtil.storeFile(image, teamId, TEAM, PREVIEW);
         }
     }
 
@@ -45,23 +47,23 @@ public class TeamCommandService {
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByTeamIdAndType(teamId, THUMBNAIL).ifPresent(existingFile -> {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL).ifPresent(existingFile -> {
             checkWebpConverted(existingFile);
             fileStorageUtil.deleteFile(existingFile.getId());
         });
-        fileStorageUtil.storeFile(image, teamId, THUMBNAIL);
+        fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(Long teamId) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByTeamIdAndType(teamId, THUMBNAIL).ifPresent(existingFile -> {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL).ifPresent(existingFile -> {
             checkWebpConverted(existingFile);
             fileStorageUtil.deleteFile(existingFile.getId());
         });
     }
 
     private void checkPreviewLimit(Long teamId, List<MultipartFile> images) {
-        long savedCount = fileRepository.countByTeamIdAndType(teamId, PREVIEW);
+        long savedCount = fileRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
         }
