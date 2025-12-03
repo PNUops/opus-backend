@@ -31,7 +31,7 @@ public class TeamContestAwardController {
     public ResponseEntity<TeamContestAwardResponse> updateTeamContestAwards(
             @PathVariable final Long teamId,
             @Valid @RequestBody final TeamContestAwardUpdateRequest request) {
-        TeamContestAwardResponse response = teamContestAwardCommandService.updateTeamAwards(teamId, request);
+        TeamContestAwardResponse response = teamContestAwardCommandService.updateTeamContestAwards(teamId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -43,7 +43,7 @@ public class TeamContestAwardController {
 
     @DeleteMapping
     public ResponseEntity<Void> deleteTeamContestAwards(@PathVariable final Long teamId) {
-        teamContestAwardCommandService.deleteTeamAwards(teamId);
+        teamContestAwardCommandService.deleteExistingTeamAwards(teamId);
         return ResponseEntity.noContent().build();
     }
 }
