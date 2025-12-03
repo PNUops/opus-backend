@@ -2,7 +2,7 @@ package com.opus.opus.modules.contest.application;
 
 import com.opus.opus.modules.contest.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
-import com.opus.opus.modules.contest.dto.response.ContestAwardResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestAwardResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

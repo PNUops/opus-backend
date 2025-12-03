@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.convenience;
+package com.opus.opus.modules.contest.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.NOT_FOUND_CONTEST_AWARD;
 

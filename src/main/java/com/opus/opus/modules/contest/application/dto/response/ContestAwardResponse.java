@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.dto.response;
+package com.opus.opus.modules.contest.application.dto.response;
 
 import com.opus.opus.modules.contest.domain.ContestAward;
 

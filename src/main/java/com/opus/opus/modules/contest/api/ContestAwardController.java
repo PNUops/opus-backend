@@ -2,8 +2,8 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestAwardCommandService;
 import com.opus.opus.modules.contest.application.ContestAwardQueryService;
-import com.opus.opus.modules.contest.dto.request.ContestAwardRequest;
-import com.opus.opus.modules.contest.dto.response.ContestAwardResponse;
+import com.opus.opus.modules.contest.application.dto.request.ContestAwardRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestAwardResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

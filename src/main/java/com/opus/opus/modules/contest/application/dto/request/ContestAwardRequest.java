@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.dto.request;
+package com.opus.opus.modules.contest.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
