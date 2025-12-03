@@ -4,7 +4,6 @@ import com.opus.opus.modules.contest.application.convenience.ContestAwardConveni
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import java.util.List;
@@ -25,31 +24,18 @@ public class TeamContestAwardQueryService {
         teamConvenience.getValidateExistTeam(teamId);
 
         final List<TeamContestAward> teamAwards = teamContestAwardRepository.findByTeamId(teamId);
-
         if (teamAwards.isEmpty()) {
             return new TeamContestAwardResponse(List.of());
         }
 
         final List<Long> awardIds = extractAwardIds(teamAwards);
         final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
-
-        return createTeamAwardResponse(contestAwards);
+        return TeamContestAwardResponse.from(contestAwards);
     }
 
     private List<Long> extractAwardIds(final List<TeamContestAward> teamAwards) {
         return teamAwards.stream()
                 .map(TeamContestAward::getContestAwardId)
                 .toList();
-    }
-
-    private TeamContestAwardResponse createTeamAwardResponse(final List<ContestAward> contestAwards) {
-        final List<AwardInfo> awardInfos = contestAwards.stream()
-                .map(award -> new AwardInfo(
-                        award.getId(),
-                        award.getAwardName(),
-                        award.getAwardColor()
-                ))
-                .toList();
-        return new TeamContestAwardResponse(awardInfos);
     }
 }

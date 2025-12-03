@@ -8,7 +8,6 @@ import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.request.TeamContestAwardUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
@@ -45,8 +44,7 @@ public class TeamContestAwardCommandService {
         validateTeamContestAwardsBelonging(contestAwards, team.getContestId());
 
         saveTeamContestAwards(team, contestAwards);
-
-        return createTeamAwardResponse(contestAwards);
+        return TeamContestAwardResponse.from(contestAwards);
     }
 
     public void deleteExistingTeamAwards(final Long teamId) {
@@ -77,16 +75,5 @@ public class TeamContestAwardCommandService {
                         .build())
                 .toList();
         teamContestAwardRepository.saveAll(teamAwards);
-    }
-
-    private TeamContestAwardResponse createTeamAwardResponse(final List<ContestAward> contestAwards) {
-        final List<AwardInfo> awardInfos = contestAwards.stream()
-                .map(award -> new AwardInfo(
-                        award.getId(),
-                        award.getAwardName(),
-                        award.getAwardColor()
-                ))
-                .toList();
-        return new TeamContestAwardResponse(awardInfos);
     }
 }
