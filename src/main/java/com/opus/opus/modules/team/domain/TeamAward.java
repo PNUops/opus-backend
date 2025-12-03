@@ -28,7 +28,7 @@ public class TeamAward extends BaseEntity {
     private Long contestAwardId;
 
     @Column(nullable = false)
-    private Boolean isDeleted = false;
+    private Boolean isDeleted;
 
     @Builder
     private TeamAward(Team team, Long contestAwardId) {

@@ -9,8 +9,8 @@ public record ContestAwardResponse(
         String awardColor
 ) {
 
-    public ContestAwardResponse(ContestAward contestAward) {
-        this(
+    public static ContestAwardResponse from(final ContestAward contestAward) {
+        return new ContestAwardResponse(
                 contestAward.getId(),
                 contestAward.getAwardName(),
                 contestAward.getAwardColor()

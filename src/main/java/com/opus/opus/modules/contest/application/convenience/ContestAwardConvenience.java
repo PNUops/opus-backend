@@ -14,20 +14,8 @@ public class ContestAwardConvenience {
 
     private final ContestAwardRepository contestAwardRepository;
 
-    public ContestAward getContestAwardById(Long awardId) {
+    public ContestAward getValidateContestAward(Long awardId) {
         return contestAwardRepository.findById(awardId)
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
-    }
-
-    public boolean isDuplicateAwardName(Long contestId, String awardName) {
-        return contestAwardRepository.existsByContestIdAndAwardName(contestId, awardName);
-    }
-
-    public void save(ContestAward contestAward) {
-        contestAwardRepository.save(contestAward);
-    }
-
-    public void delete(ContestAward contestAward) {
-        contestAwardRepository.delete(contestAward);
     }
 }

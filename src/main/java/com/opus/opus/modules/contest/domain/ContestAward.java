@@ -31,7 +31,7 @@ public class ContestAward extends BaseEntity {
     private String awardColor;
 
     @Column(nullable = false)
-    private Boolean isDeleted = false;
+    private Boolean isDeleted;
 
     @Builder
     private ContestAward(Contest contest, String awardName, String awardColor) {
