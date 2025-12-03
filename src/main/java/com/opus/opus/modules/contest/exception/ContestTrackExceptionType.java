@@ -1,17 +1,16 @@
-package com.opus.opus.modules.team.exception;
+package com.opus.opus.modules.contest.exception;
 
 import com.opus.opus.global.base.BaseExceptionType;
 import org.springframework.http.HttpStatus;
 
-public enum TeamExceptionType implements BaseExceptionType {
+public enum ContestTrackExceptionType implements BaseExceptionType {
 
-    CONTEST_HAS_TEAM(HttpStatus.CONFLICT, "해당 대회에 속한 팀이 존재합니다."),
-    TRACK_HAS_TEAM(HttpStatus.CONFLICT, "해당 분과에 속한 팀이 존재합니다.");
-
+    TRACKNAME_DUPLICATED(HttpStatus.CONFLICT, "해당 대회에 동일한 트랙명이 있습니다."),
+    NOT_FOUND_TRACK(HttpStatus.NOT_FOUND, "존재하지 않는 분과입니다.");
     private final HttpStatus httpStatus;
     private final String errorMessage;
 
-    TeamExceptionType(final HttpStatus httpStatus, final String errorMessage) {
+    ContestTrackExceptionType(final HttpStatus httpStatus, final String errorMessage) {
         this.httpStatus = httpStatus;
         this.errorMessage = errorMessage;
     }
