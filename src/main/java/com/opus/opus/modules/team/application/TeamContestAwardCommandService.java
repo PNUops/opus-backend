@@ -5,13 +5,13 @@ import static com.opus.opus.modules.team.exception.TeamAwardExceptionType.DUPLIC
 
 import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.application.dto.request.TeamContestAwardUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
+import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import com.opus.opus.modules.team.exception.TeamAwardException;
 import java.util.HashSet;
 import java.util.List;
@@ -26,23 +26,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamContestAwardCommandService {
 
     private final TeamConvenience teamConvenience;
-    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
+    private final TeamContestAwardRepository teamContestAwardRepository;
 
-    public TeamContestAwardResponse updateTeamAwards(Long teamId, TeamContestAwardUpdateRequest request) {
+    public TeamContestAwardResponse updateTeamAwards(final Long teamId, final TeamContestAwardUpdateRequest request) {
         Team team = teamConvenience.getValidateExistTeam(teamId);
 
         List<Long> awardIds = request.awardIds();
         validateDuplicate(awardIds);
 
-        teamContestAwardConvenience.deleteAllByTeamId(teamId);
+        deleteTeamAwards(teamId);
 
         if (awardIds.isEmpty()) {
             return new TeamContestAwardResponse(List.of());
         }
 
         List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
-        validateContestAwards(contestAwards, awardIds, team.getContestId());
+        validateContestAwards(contestAwards, team.getContestId());
 
         List<TeamContestAward> teamAwards = contestAwards.stream()
                 .map(award -> TeamContestAward.builder()
@@ -50,7 +50,7 @@ public class TeamContestAwardCommandService {
                         .contestAwardId(award.getId())
                         .build())
                 .toList();
-        teamContestAwardConvenience.saveAll(teamAwards);
+        teamContestAwardRepository.saveAll(teamAwards);
 
         List<AwardInfo> awardInfos = contestAwards.stream()
                 .map(award -> new AwardInfo(
@@ -62,6 +62,11 @@ public class TeamContestAwardCommandService {
         return new TeamContestAwardResponse(awardInfos);
     }
 
+    public void deleteTeamAwards(final Long teamId) {
+        List<TeamContestAward> existingAwards = teamContestAwardRepository.findByTeamId(teamId);
+        teamContestAwardRepository.deleteAll(existingAwards);
+    }
+
     private void validateDuplicate(List<Long> awardIds) {
         Set<Long> uniqueIds = new HashSet<>(awardIds);
         if (uniqueIds.size() != awardIds.size()) {
@@ -69,7 +74,7 @@ public class TeamContestAwardCommandService {
         }
     }
 
-    private void validateContestAwards(List<ContestAward> contestAwards, List<Long> awardIds, Long teamContestId) {
+    private void validateContestAwards(List<ContestAward> contestAwards, final Long teamContestId) {
         boolean hasInvalidContestAward = contestAwards.stream()
                 .anyMatch(award -> !award.getContest().getId().equals(teamContestId));
         if (hasInvalidContestAward) {

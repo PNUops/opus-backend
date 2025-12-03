@@ -2,11 +2,11 @@ package com.opus.opus.modules.team.application;
 
 import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
+import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TeamContestAwardQueryService {
     private final TeamConvenience teamConvenience;
-    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
+    private final TeamContestAwardRepository teamContestAwardRepository;
 
-    public TeamContestAwardResponse getTeamAwards(Long teamId) {
+    public TeamContestAwardResponse getTeamAwards(final Long teamId) {
         teamConvenience.getValidateExistTeam(teamId);
 
-        List<TeamContestAward> teamAwards = teamContestAwardConvenience.findByTeamId(teamId);
+        List<TeamContestAward> teamAwards = teamContestAwardRepository.findByTeamId(teamId);
         if (teamAwards.isEmpty()) {
             return new TeamContestAwardResponse(List.of());
         }
