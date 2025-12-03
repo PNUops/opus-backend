@@ -14,7 +14,7 @@ public class ContestAwardConvenience {
 
     private final ContestAwardRepository contestAwardRepository;
 
-    public ContestAward getValidateContestAward(Long awardId) {
+    public ContestAward getValidateContestAward(final Long awardId) {
         return contestAwardRepository.findById(awardId)
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
     }

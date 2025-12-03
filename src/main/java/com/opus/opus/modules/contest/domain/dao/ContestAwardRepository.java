@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ContestAwardRepository extends JpaRepository<ContestAward, Long> {
 
-    boolean existsByContestIdAndAwardName(Long contestId, String awardName);
+    boolean existsByContestIdAndAwardName(final Long contestId, final String awardName);
 
-    List<ContestAward> findByContestId(Long contestId);
+    List<ContestAward> findByContestId(final Long contestId);
 }

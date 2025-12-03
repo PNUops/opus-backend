@@ -32,8 +32,8 @@ public class ContestAwardController {
 
     @PostMapping
     public ResponseEntity<Void> createContestAward(
-            @Valid @RequestBody ContestAwardRequest request,
-            @PathVariable Long contestId) {
+            @Valid @RequestBody final ContestAwardRequest request,
+            @PathVariable final Long contestId) {
         contestAwardCommandService.createContestAward(contestId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -47,8 +47,8 @@ public class ContestAwardController {
 
     @PatchMapping("/{awardId}")
     public ResponseEntity<Void> updateContestAward(
-            @PathVariable Long contestId,
-            @PathVariable Long awardId,
+            @PathVariable final Long contestId,
+            @PathVariable final Long awardId,
             @Valid @RequestBody ContestAwardRequest request) {
         contestAwardCommandService.updateContestAward(contestId, awardId, request);
         return ResponseEntity.noContent().build();
@@ -56,8 +56,8 @@ public class ContestAwardController {
 
     @DeleteMapping("/{awardId}")
     public ResponseEntity<Void> deleteContestAward(
-            @PathVariable Long contestId,
-            @PathVariable Long awardId) {
+            @PathVariable final Long contestId,
+            @PathVariable final Long awardId) {
         contestAwardCommandService.deleteContestAward(contestId, awardId);
         return ResponseEntity.noContent().build();
     }
