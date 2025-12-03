@@ -34,14 +34,14 @@ public class ContestAward extends BaseEntity {
     private Boolean isDeleted;
 
     @Builder
-    private ContestAward(Contest contest, String awardName, String awardColor) {
+    private ContestAward(final Contest contest, final String awardName, final String awardColor) {
         this.contest = contest;
         this.awardName = awardName;
         this.awardColor = awardColor;
         this.isDeleted = false;
     }
 
-    public void update(String awardName, String awardColor) {
+    public void update(final String awardName, final String awardColor) {
         this.awardName = awardName;
         this.awardColor = awardColor;
     }

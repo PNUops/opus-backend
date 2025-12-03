@@ -31,7 +31,7 @@ public class TeamAward extends BaseEntity {
     private Boolean isDeleted;
 
     @Builder
-    private TeamAward(Team team, Long contestAwardId) {
+    private TeamAward(final Team team, final Long contestAwardId) {
         this.team = team;
         this.contestAwardId = contestAwardId;
         this.isDeleted = false;
