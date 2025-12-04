@@ -1,15 +1,7 @@
 package com.opus.opus.modules.team.domain;
 
-import static jakarta.persistence.FetchType.LAZY;
-
 import com.opus.opus.global.base.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,31 +13,27 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE team_award SET is_deleted = true where id = ?")
+@SQLDelete(sql = "UPDATE team_award SET is_deleted = true WHERE id = ?")
 public class TeamAward extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String awardName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
 
-    @Column(nullable = false)
-    private String awardColor;
+    @Column(name = "contest_award_id", nullable = false)
+    private Long contestAwardId;
 
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
-
     @Builder
-    private TeamAward(final String awardName, final String awardColor, final Team team) {
-        this.awardName = awardName;
-        this.awardColor = awardColor;
-        this.isDeleted = false;
+    private TeamAward(final Team team, final Long contestAwardId) {
         this.team = team;
+        this.contestAwardId = contestAwardId;
+        this.isDeleted = false;
     }
 }
