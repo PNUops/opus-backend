@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestAwardQueryService {
 
     private final ContestConvenience contestConvenience;
+
     private final ContestAwardRepository contestAwardRepository;
 
     public List<ContestAwardResponse> getContestAwards(final Long contestId) {

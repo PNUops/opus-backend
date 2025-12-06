@@ -1,0 +1,37 @@
+package com.opus.opus.modules.team.application;
+
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
+import com.opus.opus.modules.contest.domain.ContestAward;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.domain.TeamContestAward;
+import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class TeamContestAwardQueryService {
+
+    private final TeamConvenience teamConvenience;
+    private final ContestAwardConvenience contestAwardConvenience;
+    private final TeamContestAwardRepository teamContestAwardRepository;
+
+    public TeamContestAwardResponse getTeamAwards(final Long teamId) {
+        teamConvenience.getValidateExistTeam(teamId);
+
+        final List<TeamContestAward> teamAwards = teamContestAwardRepository.findByTeamId(teamId);
+        if (teamAwards.isEmpty()) {
+            return new TeamContestAwardResponse(List.of());
+        }
+
+        final List<Long> awardIds = teamAwards.stream()
+                .map(TeamContestAward::getContestAwardId)
+                .toList();
+        final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
+        return TeamContestAwardResponse.from(contestAwards);
+    }
+}

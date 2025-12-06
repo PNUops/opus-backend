@@ -2,8 +2,6 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.ContestCommandService;
-import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;

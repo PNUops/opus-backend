@@ -13,8 +13,8 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE team_award SET is_deleted = true WHERE id = ?")
-public class TeamAward extends BaseEntity {
+@SQLDelete(sql = "UPDATE team_contest_award SET is_deleted = true WHERE id = ?")
+public class TeamContestAward extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +31,7 @@ public class TeamAward extends BaseEntity {
     private Boolean isDeleted;
 
     @Builder
-    private TeamAward(final Team team, final Long contestAwardId) {
+    private TeamContestAward(final Team team, final Long contestAwardId) {
         this.team = team;
         this.contestAwardId = contestAwardId;
         this.isDeleted = false;
