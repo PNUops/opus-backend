@@ -15,11 +15,6 @@ public class ContestAwardConvenience {
 
     private final ContestAwardRepository contestAwardRepository;
 
-    public ContestAward getValidateContestAward(final Long awardId) {
-        return contestAwardRepository.findById(awardId)
-                .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
-    }
-
     public List<ContestAward> findAllById(final List<Long> awardIds) {
         final List<ContestAward> contestAwards = contestAwardRepository.findAllById(awardIds);
 

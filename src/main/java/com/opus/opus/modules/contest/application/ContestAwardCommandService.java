@@ -3,7 +3,6 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.DUPLICATE_CONTEST_AWARD_NAME;
 import static com.opus.opus.modules.contest.exception.ContestAwardExceptionType.NOT_FOUND_CONTEST_AWARD;
 
-import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
@@ -20,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestAwardCommandService {
 
     private final ContestConvenience contestConvenience;
-    private final ContestAwardConvenience contestAwardConvenience;
+
     private final ContestAwardRepository contestAwardRepository;
 
     public void createContestAward(final Long contestId, final ContestAwardRequest request) {
@@ -40,9 +39,10 @@ public class ContestAwardCommandService {
     public void updateContestAward(final Long contestId, final Long awardId, final ContestAwardRequest request) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final ContestAward contestAward = contestAwardConvenience.getValidateContestAward(awardId);
+        final ContestAward contestAward = contestAwardRepository
+                .findByIdAndContestId(awardId, contestId)
+                .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
 
-        validateContestAwardBelonging(contestAward, contestId);
         validateDuplicateAwardNameForUpdate(contestAward, contestId, request.awardName());
 
         contestAward.update(request.awardName(), request.awardColor());
@@ -51,9 +51,9 @@ public class ContestAwardCommandService {
     public void deleteContestAward(final Long contestId, final Long awardId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final ContestAward contestAward = contestAwardConvenience.getValidateContestAward(awardId);
-
-        validateContestAwardBelonging(contestAward, contestId);
+        final ContestAward contestAward = contestAwardRepository
+                .findByIdAndContestId(awardId, contestId)
+                .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
 
         contestAwardRepository.delete(contestAward);
     }
@@ -61,12 +61,6 @@ public class ContestAwardCommandService {
     private void validateDuplicateAwardName(final Long contestId, final String awardName) {
         if (contestAwardRepository.existsByContestIdAndAwardName(contestId, awardName)) {
             throw new ContestAwardException(DUPLICATE_CONTEST_AWARD_NAME);
-        }
-    }
-
-    private void validateContestAwardBelonging(final ContestAward contestAward, final Long contestId) {
-        if (!contestAward.getContest().getId().equals(contestId)) {
-            throw new ContestAwardException(NOT_FOUND_CONTEST_AWARD);
         }
     }
 
