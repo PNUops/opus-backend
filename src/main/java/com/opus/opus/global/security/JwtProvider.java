@@ -34,6 +34,9 @@ public class JwtProvider {
     @Value("${spring.jwt.secret}")
     private String secretKey;
 
+    @Value("${spring.jwt.expire-length}")
+    private long expireTimeMilliSecond;
+
     private Key key;
 
     private final MemberDetailsService memberDetailsService;
@@ -49,9 +52,11 @@ public class JwtProvider {
         claims.put(ROLES, roles);
         claims.put(NAME, name);
         final Date now = new Date();
+        final Date expiredDate = new Date(now.getTime() + expireTimeMilliSecond);
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
+                .setExpiration(expiredDate)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
