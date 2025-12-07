@@ -13,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -39,6 +38,9 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String password;
 
@@ -54,22 +56,14 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @OneToOne(mappedBy = "member", fetch = LAZY)
-    private MemberGeneralAccount generalAccount;
-
-    @OneToOne(mappedBy = "member", fetch = LAZY)
-    private MemberSocialAccount socialAccount;
-
     @Builder
-    private Member(final String name, final String password, final String studentId, final Set<MemberRoleType> roles,
-                   final MemberGeneralAccount generalAccount, final MemberSocialAccount socialAccount) {
+    private Member(final String name, final String email, final String password, final String studentId,
+                  final Set<MemberRoleType> roles) {
         this.name = name;
+        this.email = email;
         this.password = password;
         this.studentId = studentId;
         this.roles = roles;
         this.isDeleted = false;
-        this.generalAccount = generalAccount;
-        this.socialAccount = socialAccount;
     }
-
 }
