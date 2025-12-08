@@ -8,7 +8,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
