@@ -31,17 +31,6 @@ public class TeamConvenience {
         teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
     }
 
-    public void checkAllContestDelete(final Long contestId) {
-        if (teamRepository.existsByContestId(contestId)) {
-            throw new ContestException(CONTEST_HAS_TEAMS);
-        }
-    }
-
-    public List<Team> findAllByContestId(final Long contestId) {
-        return teamRepository.findAllByContestId(contestId);
-    }
-
-
     public void validateAllTeamsDeletedInContest(final Long contestId) {
         if (teamRepository.existsByContestId(contestId)) {
             throw new TeamException(CONTEST_HAS_TEAM);
