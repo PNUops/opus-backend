@@ -54,12 +54,6 @@ public class ContestCommandService {
         fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
     }
 
-    private void checkWebpConverted(File existingFile) {
-        if (!existingFile.getIsWebpConverted()) {
-            throw new FileException(NOT_WEBP_CONVERTED);
-        }
-    }
-
     public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
@@ -105,6 +99,12 @@ public class ContestCommandService {
         // 변경
         contest.updateIsCurrent(isCurrent);
         return ContestCurrentToggleResponse.of(contest.getId(), isCurrent);
+    }
+
+    private void checkWebpConverted(File existingFile) {
+        if (!existingFile.getIsWebpConverted()) {
+            throw new FileException(NOT_WEBP_CONVERTED);
+        }
     }
 
     private void validateSameCurrentRequest(final Boolean currentValue, final Boolean requestValue) {
