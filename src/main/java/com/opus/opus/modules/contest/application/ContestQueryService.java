@@ -38,7 +38,7 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
 
-    public ImageResponse findContestBanner(final Long contestId) {
+    public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final File findBanner = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_EXISTS_BANNER));

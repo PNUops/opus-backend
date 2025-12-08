@@ -37,8 +37,8 @@ public class ContestController {
     private final ContestQueryService contestQueryService;
 
     @GetMapping("/{contestId}/image/banner")
-    public ResponseEntity<Resource> findContestBanner(@PathVariable final Long contestId) {
-        final ImageResponse imageResponse = contestQueryService.findContestBanner(contestId);
+    public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
+        final ImageResponse imageResponse = contestQueryService.getContestBanner(contestId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())

@@ -8,7 +8,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -28,7 +27,7 @@ public class TeamQueryService {
     private final FileRepository fileRepository;
     private final FileStorageUtil fileStorageUtil;
 
-    public ImageResponse findPreviewImage(final Long teamId, final Long imageId) {
+    public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileRepository.findById(imageId).orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
         checkImageConverted(findFile);
@@ -36,7 +35,7 @@ public class TeamQueryService {
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
-    public ImageResponse findThumbnailImage(final Long teamId) {
+    public ImageResponse getThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .orElseThrow(() -> new FileException(NOT_EXISTS_THUMBNAIL));

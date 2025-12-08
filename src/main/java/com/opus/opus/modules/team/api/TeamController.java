@@ -32,8 +32,8 @@ public class TeamController {
     private final TeamCommandService teamCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
-    public ResponseEntity<Resource> findPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
-        final ImageResponse imageResponse = teamQueryService.findPreviewImage(teamId, imageId);
+    public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
+        final ImageResponse imageResponse = teamQueryService.getPreviewImage(teamId, imageId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
@@ -58,7 +58,7 @@ public class TeamController {
 
     @GetMapping("/{teamId}/image/thumbnail")
     public ResponseEntity<Resource> getThumbnailImage(@PathVariable final Long teamId) {
-        final ImageResponse imageResponse = teamQueryService.findThumbnailImage(teamId);
+        final ImageResponse imageResponse = teamQueryService.getThumbnailImage(teamId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
