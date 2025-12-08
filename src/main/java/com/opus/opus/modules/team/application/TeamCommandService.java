@@ -29,7 +29,7 @@ public class TeamCommandService {
     private final TeamConvenience teamConvenience;
 
 
-    public void savePreviewImages(Long teamId, List<MultipartFile> images) {
+    public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
         teamConvenience.validateExistTeam(teamId);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
@@ -37,7 +37,7 @@ public class TeamCommandService {
         }
     }
 
-    public void deletePreviewImages(Long teamId, List<Long> ids) {
+    public void deletePreviewImages(final Long teamId, final List<Long> ids) {
         teamConvenience.validateExistTeam(teamId);
         ids.forEach(fileId -> {
             fileRepository.findById(fileId).ifPresent(this::checkWebpConverted);
@@ -54,7 +54,7 @@ public class TeamCommandService {
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
     }
 
-    public void deleteThumbnailImage(Long teamId) {
+    public void deleteThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL).ifPresent(existingFile -> {
             checkWebpConverted(existingFile);
@@ -62,14 +62,14 @@ public class TeamCommandService {
         });
     }
 
-    private void checkPreviewLimit(Long teamId, List<MultipartFile> images) {
+    private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {
         long savedCount = fileRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
         }
     }
 
-    private void checkWebpConverted(File existingFile) {
+    private void checkWebpConverted(final File existingFile) {
         if (!existingFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }

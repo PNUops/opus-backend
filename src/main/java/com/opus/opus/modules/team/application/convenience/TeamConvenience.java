@@ -23,11 +23,11 @@ public class TeamConvenience {
     private final TeamRepository teamRepository;
 
 
-    public Team getValidateExistTeam(Long teamId) {
+    public Team getValidateExistTeam(final Long teamId) {
         return teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
     }
 
-    public void validateExistTeam(Long teamId) {
+    public void validateExistTeam(final Long teamId) {
         teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
     }
 

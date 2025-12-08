@@ -32,8 +32,8 @@ public class TeamController {
     private final TeamCommandService teamCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
-    public ResponseEntity<Resource> findPreviewImage(@PathVariable Long teamId, @PathVariable Long imageId) {
-        ImageResponse imageResponse = teamQueryService.findPreviewImage(teamId, imageId);
+    public ResponseEntity<Resource> findPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
+        final ImageResponse imageResponse = teamQueryService.findPreviewImage(teamId, imageId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
@@ -42,7 +42,7 @@ public class TeamController {
 
     @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
     @PostMapping("/{teamId}/image")
-    public ResponseEntity<Void> savePreviewImage(@PathVariable Long teamId,
+    public ResponseEntity<Void> savePreviewImage(@PathVariable final Long teamId,
                                                  @RequestPart("images") final List<MultipartFile> images) {
         teamCommandService.savePreviewImages(teamId, images);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -50,15 +50,15 @@ public class TeamController {
 
     @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
     @DeleteMapping("/{teamId}/image")
-    public ResponseEntity<Void> deletePreviewImage(@PathVariable Long teamId,
-                                                   @RequestBody @Valid PreviewDeleteRequest previewDeleteRequest) {
+    public ResponseEntity<Void> deletePreviewImage(@PathVariable final Long teamId,
+                                                   @RequestBody @Valid final PreviewDeleteRequest previewDeleteRequest) {
         teamCommandService.deletePreviewImages(teamId, previewDeleteRequest.imageIds());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{teamId}/image/thumbnail")
-    public ResponseEntity<Resource> getThumbnailImage(@PathVariable Long teamId) {
-        ImageResponse imageResponse = teamQueryService.findThumbnailImage(teamId);
+    public ResponseEntity<Resource> getThumbnailImage(@PathVariable final Long teamId) {
+        final ImageResponse imageResponse = teamQueryService.findThumbnailImage(teamId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
@@ -75,7 +75,7 @@ public class TeamController {
 
     @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
     @DeleteMapping("/{teamId}/image/thumbnail")
-    public ResponseEntity<Void> deleteThumbnailImage(@PathVariable Long teamId) {
+    public ResponseEntity<Void> deleteThumbnailImage(@PathVariable final Long teamId) {
         teamCommandService.deleteThumbnailImage(teamId);
         return ResponseEntity.noContent().build();
     }

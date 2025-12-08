@@ -32,37 +32,37 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @RequestMapping("/contests")
 public class ContestController {
-    
+
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
 
     @GetMapping("/{contestId}/image/banner")
-    public ResponseEntity<Resource> findContestBanner(@PathVariable Long contestId) {
-        ImageResponse imageResponse = contestQueryService.findContestBanner(contestId);
+    public ResponseEntity<Resource> findContestBanner(@PathVariable final Long contestId) {
+        final ImageResponse imageResponse = contestQueryService.findContestBanner(contestId);
 
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_관리자"})
+    @Secured("ROLE_관리자")
     @PostMapping("/{contestId}/image/banner")
-    public ResponseEntity<Void> saveContestBanner(@PathVariable Long contestId,
+    public ResponseEntity<Void> saveContestBanner(@PathVariable final Long contestId,
                                                   @RequestPart("image") final MultipartFile image) {
         contestCommandService.saveBannerImage(contestId, image);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_관리자"})
+    @Secured("ROLE_관리자")
     @DeleteMapping("/{contestId}/image/banner")
-    public ResponseEntity<Void> deleteContestBanner(@PathVariable Long contestId) {
+    public ResponseEntity<Void> deleteContestBanner(@PathVariable final Long contestId) {
         contestCommandService.deleteBannerImage(contestId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     public ResponseEntity<List<ContestResponse>> getAllContests() {
-        List<ContestResponse> responses = contestQueryService.getAllContests();
+        final List<ContestResponse> responses = contestQueryService.getAllContests();
         return ResponseEntity.ok(responses);
     }
 

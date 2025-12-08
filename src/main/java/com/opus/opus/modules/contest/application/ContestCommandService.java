@@ -44,7 +44,7 @@ public class ContestCommandService {
     private final FileStorageUtil fileStorageUtil;
 
 
-    public void saveBannerImage(Long contestId, MultipartFile image) {
+    public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file -> {
@@ -60,7 +60,7 @@ public class ContestCommandService {
         }
     }
 
-    public void deleteBannerImage(Long contestId) {
+    public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file ->

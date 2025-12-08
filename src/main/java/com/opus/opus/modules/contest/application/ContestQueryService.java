@@ -38,18 +38,18 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
 
-    public ImageResponse findContestBanner(Long contestId) {
+    public ImageResponse findContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        File findBanner = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
+        final File findBanner = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_EXISTS_BANNER));
 
         checkImageConverted(findBanner);
 
-        Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findBanner.getId());
+        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findBanner.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
-    private void checkImageConverted(File findFile) {
+    private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }

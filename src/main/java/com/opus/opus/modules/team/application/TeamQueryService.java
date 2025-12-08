@@ -28,11 +28,11 @@ public class TeamQueryService {
     private final FileRepository fileRepository;
     private final FileStorageUtil fileStorageUtil;
 
-    public ImageResponse findPreviewImage(Long teamId, Long imageId) {
+    public ImageResponse findPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileRepository.findById(imageId).orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
         checkImageConverted(findFile);
-        Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
+        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
@@ -41,11 +41,11 @@ public class TeamQueryService {
         final File findFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .orElseThrow(() -> new FileException(NOT_EXISTS_THUMBNAIL));
         checkImageConverted(findFile);
-        Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
+        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
-    private void checkImageConverted(File findFile) {
+    private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
