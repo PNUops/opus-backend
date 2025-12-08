@@ -49,13 +49,6 @@ public class ContestQueryService {
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
-    private void checkImageConverted(final File findFile) {
-        if (!findFile.getIsWebpConverted()) {
-            throw new FileException(NOT_WEBP_CONVERTED);
-        }
-    }
-
-
     public List<ContestCurrentResponse> getCurrentContests() {
         List<Contest> contests = contestConvenience.getCurrentContests();
 
@@ -79,5 +72,11 @@ public class ContestQueryService {
                 })
                 .toList();
 
+    }
+
+    private void checkImageConverted(final File findFile) {
+        if (!findFile.getIsWebpConverted()) {
+            throw new FileException(NOT_WEBP_CONVERTED);
+        }
     }
 }
