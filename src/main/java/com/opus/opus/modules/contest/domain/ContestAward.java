@@ -1,15 +1,7 @@
-package com.opus.opus.modules.team.domain;
-
-import static jakarta.persistence.FetchType.LAZY;
+package com.opus.opus.modules.contest.domain;
 
 import com.opus.opus.global.base.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,12 +13,16 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE team_award SET is_deleted = true where id = ?")
-public class TeamAward extends BaseEntity {
+@SQLDelete(sql = "UPDATE contest_award SET is_deleted = true WHERE id = ?")
+public class ContestAward extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contest_id", nullable = false)
+    private Contest contest;
 
     @Column(nullable = false)
     private String awardName;
@@ -37,15 +33,16 @@ public class TeamAward extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
-
     @Builder
-    private TeamAward(final String awardName, final String awardColor, final Team team) {
+    private ContestAward(final Contest contest, final String awardName, final String awardColor) {
+        this.contest = contest;
         this.awardName = awardName;
         this.awardColor = awardColor;
         this.isDeleted = false;
-        this.team = team;
+    }
+
+    public void update(final String awardName, final String awardColor) {
+        this.awardName = awardName;
+        this.awardColor = awardColor;
     }
 }

@@ -6,7 +6,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,6 +48,9 @@ public class Contest extends BaseEntity {
 
     @Column(nullable = false)
     private Integer maxVotesLimit;
+
+    @OneToMany(mappedBy = "contest")
+    private List<ContestAward> contestAwards = new ArrayList<>();
 
     @Builder
     private Contest(final String contestName, final Long categoryId) {
