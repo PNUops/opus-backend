@@ -13,10 +13,10 @@ import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,15 +33,15 @@ public class ContestQueryService {
     private final FileStorageUtil fileStorageUtil;
 
     private final ContestRepository contestRepository;
-    private final FileRepository fileRepository;
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
+    private final FileConvenience fileConvenience;
 
     public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final File findBanner = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
-                .orElseThrow(() -> new FileException(FileExceptionType.NOT_EXISTS_BANNER));
+        final File findBanner = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST,
+                BANNER);
 
         checkImageConverted(findBanner);
 

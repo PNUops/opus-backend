@@ -3,10 +3,10 @@ package com.opus.opus.modules.team.application;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_THUMBNAIL;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -25,6 +25,7 @@ public class TeamQueryService {
 
     private final TeamConvenience teamConvenience;
     private final FileRepository fileRepository;
+    private final FileConvenience fileConvenience;
     private final FileStorageUtil fileStorageUtil;
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
@@ -37,8 +38,7 @@ public class TeamQueryService {
 
     public ImageResponse getThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
-                .orElseThrow(() -> new FileException(NOT_EXISTS_THUMBNAIL));
+        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL);
         checkImageConverted(findFile);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
