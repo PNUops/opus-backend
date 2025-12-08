@@ -28,8 +28,10 @@ public class File extends BaseEntity {
     @Column(nullable = false) // todo: default 경로 고려 필요
     private String filePath;
 
+    @Column(nullable = false)
     private Long referenceId;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ReferenceDomainType referenceType;
 
