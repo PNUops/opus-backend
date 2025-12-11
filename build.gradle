@@ -47,7 +47,6 @@ dependencies {
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 }
 
-// ==== REST Docs 설정 ====
 ext {
 	set('snippetsDir', file("build/generated-snippets"))
 }
