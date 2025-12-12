@@ -1,15 +1,18 @@
 package com.opus.opus.global.util;
 
 import java.util.concurrent.TimeUnit;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class RedisUtil {
 
     private final RedisTemplate<String, String> redisTemplate;
+
+    public RedisUtil(@Qualifier("authRedisTemplate") final RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     public void set(final String key, final String value, final long timeout, final TimeUnit unit) {
         redisTemplate.opsForValue().set(key, value, timeout, unit);
