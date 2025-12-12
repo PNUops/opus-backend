@@ -4,6 +4,6 @@ public enum FileImageType {
 
     PREVIEW,
     THUMBNAIL,
-
+    BANNER,
 }
 

@@ -29,22 +29,32 @@ public class File extends BaseEntity {
     private String filePath;
 
     @Column(nullable = false)
-    private Long teamId;
+    private Long referenceId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private FileImageType type;
+    private ReferenceDomainType referenceType;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private FileImageType imageType;
 
     @Column(nullable = false)
     private Boolean isWebpConverted;
 
     @Builder
-    private File(final String name, final String filePath, final Long teamId, final FileImageType type) {
+    private File(final String name, final String filePath, final Long referenceId, final ReferenceDomainType referenceType,
+                 final FileImageType imageType) {
         this.name = name;
         this.filePath = filePath;
-        this.teamId = teamId;
-        this.type = type;
+        this.referenceId = referenceId;
+        this.referenceType = referenceType;
+        this.imageType = imageType;
         this.isWebpConverted = false;
+    }
+
+    public void updateIsWebpConverted(boolean isWebpConverted) {
+        this.isWebpConverted = isWebpConverted;
     }
 
 }

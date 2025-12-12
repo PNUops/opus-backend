@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.application.convenience;
 
+
 import static com.opus.opus.modules.team.exception.TeamExceptionType.CONTEST_HAS_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
@@ -15,11 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TeamConvenience {
+
     private final TeamRepository teamRepository;
 
-    public Team getValidateExistTeam(Long teamId) {
-        return teamRepository.findById(teamId)
-                .orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
+    public Team getValidateExistTeam(final Long teamId) {
+        return teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
+    }
+
+    public void validateExistTeam(final Long teamId) {
+        teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
     }
 
     public void validateAllTeamsDeletedInContest(final Long contestId) {
@@ -33,4 +38,5 @@ public class TeamConvenience {
             throw new TeamException(TRACK_HAS_TEAM);
         }
     }
+
 }
