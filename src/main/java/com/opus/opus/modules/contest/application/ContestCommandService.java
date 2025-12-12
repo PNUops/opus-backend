@@ -1,9 +1,14 @@
 package com.opus.opus.modules.contest.application;
 
+
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
@@ -13,10 +18,14 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -26,10 +35,32 @@ public class ContestCommandService {
     private static final int MAX_CURRENT_CONTEST_COUNT = 2;
 
     private final ContestRepository contestRepository;
+    private final FileRepository fileRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final TeamConvenience teamConvenience;
+
+    private final FileStorageUtil fileStorageUtil;
+
+
+    public void saveBannerImage(final Long contestId, final MultipartFile image) {
+        contestConvenience.getValidateExistContest(contestId);
+
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file -> {
+            checkWebpConverted(file);
+            fileStorageUtil.deleteFile(file.getId());
+        });
+        fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
+    }
+
+    public void deleteBannerImage(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file ->
+                fileStorageUtil.deleteFile(file.getId())
+        );
+    }
 
     public ContestResponse createContest(final ContestRequest request) {
         contestConvenience.validateDuplicateContestName(request.contestName());
@@ -70,6 +101,12 @@ public class ContestCommandService {
         return ContestCurrentToggleResponse.of(contest.getId(), isCurrent);
     }
 
+    private void checkWebpConverted(File existingFile) {
+        if (!existingFile.getIsWebpConverted()) {
+            throw new FileException(NOT_WEBP_CONVERTED);
+        }
+    }
+
     private void validateSameCurrentRequest(final Boolean currentValue, final Boolean requestValue) {
         if (currentValue == requestValue) {
             throw new ContestException(currentValue ? ALREADY_CURRENT_CONTEST : ALREADY_NOT_CURRENT_CONTEST);
@@ -80,5 +117,6 @@ public class ContestCommandService {
         if (currentCount >= MAX_CURRENT_CONTEST_COUNT) {
             throw new ContestException(CURRENT_CONTEST_LIMIT_EXCEEDED);
         }
+
     }
 }
