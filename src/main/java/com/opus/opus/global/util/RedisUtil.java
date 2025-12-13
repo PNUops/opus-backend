@@ -1,5 +1,6 @@
 package com.opus.opus.global.util;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,11 +24,11 @@ public class RedisUtil {
     }
 
     public boolean exists(final String key) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        return Objects.equals(Boolean.TRUE, redisTemplate.hasKey(key));
     }
 
     public boolean delete(final String key) {
-        return Boolean.TRUE.equals(redisTemplate.delete(key));
+        return Objects.equals(Boolean.TRUE, redisTemplate.delete(key));
     }
 
     public Long ttl(final String key, final TimeUnit unit) {
