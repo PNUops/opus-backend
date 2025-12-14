@@ -7,11 +7,16 @@ import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.RedisUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +36,12 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final RedisUtil redisUtil;
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int AUTH_CODE_LENGTH = 10;
+    private static final char[] AUTH_CODE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+
+    private static final long AUTH_CODE_TTL = 5L;
+    private static final long VERIFIED_TTL = 10L;
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
@@ -46,6 +57,16 @@ public class MemberCommandService {
                 );
 
         redisUtil.delete(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + request.email());
+    }
+
+    public void signUpEmailAuth(final EmailAuthRequest request) {
+        final String email = request.email();
+        memberConvenience.validatePusanDomain(email);
+
+        final String code = generateRandomAuthCode();
+
+        redisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, AUTH_CODE_TTL, TimeUnit.MINUTES);
+        sendAuthCodeMail(email, code);
     }
 
     private void verifyEmailVerified(final String email) {
@@ -66,4 +87,20 @@ public class MemberCommandService {
                 .roles(Set.of(ROLE_회원))
                 .build());
     }
+
+    private static String generateRandomAuthCode() {
+        char[] buf = new char[AUTH_CODE_LENGTH];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = AUTH_CODE_POOL[SECURE_RANDOM.nextInt(AUTH_CODE_POOL.length)];
+        }
+        return new String(buf);
+    }
+
+    private void sendAuthCodeMail(final String email, final String authCode) {
+        final List<String> userList = new ArrayList<>(List.of(email));
+        final String subject = "SW프로젝트관리시스템 인증코드 발송 메일입니다.";
+        final String text = "인증코드는 " + authCode + " 입니다.";
+        mailUtil.sendMail(userList, subject, text);
+    }
+
 }

@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
+import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,12 @@ public class MemberController {
     @PostMapping("/sign-up")
     public ResponseEntity<Void> signUp(@Valid @RequestBody final SignUpRequest signUpRequest) {
         memberCommandService.signUp(signUpRequest);
+        return ResponseEntity.status(CREATED).build();
+    }
+
+    @PostMapping("/sign-up/email-auth")
+    public ResponseEntity<Void> signUpEmailAuth(@Valid @RequestBody final EmailAuthRequest emailAuthRequest) {
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
         return ResponseEntity.status(CREATED).build();
     }
 }
