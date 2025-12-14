@@ -10,12 +10,15 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -70,5 +73,11 @@ public class MemberController {
     public ResponseEntity<Void> updatePassword(@Valid @RequestBody final PasswordUpdateRequest passwordUpdateRequest) {
         memberCommandService.updatePassword(passwordUpdateRequest);
         return ResponseEntity.status(NO_CONTENT).build();
+    }
+
+    @GetMapping("/sign-in/{studentId}/email-find")
+    public ResponseEntity<EmailFindResponse> getMyEmail(@PathVariable final String studentId) {
+        final EmailFindResponse response = memberQueryService.getMyEmail(studentId);
+        return ResponseEntity.ok(response);
     }
 }
