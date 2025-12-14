@@ -2,8 +2,8 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_EXPIRED;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_MISMATCH;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
 import com.opus.opus.global.security.JwtProvider;
@@ -150,11 +150,11 @@ public class MemberCommandService {
         Optional.ofNullable(redisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
-                        throw new MemberException(EMAIL_AUTH_CODE_MISMATCH);
+                        throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
                     }
                     return code;
                 })
-                .orElseThrow(() -> new MemberException(EMAIL_AUTH_CODE_EXPIRED));
+                .orElseThrow(() -> new MemberException(CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE));
     }
 
     private void checkCorrectPassword(final String savePassword, final String inputPassword) {

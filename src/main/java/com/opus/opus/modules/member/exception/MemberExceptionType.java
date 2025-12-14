@@ -13,8 +13,8 @@ public enum MemberExceptionType implements BaseExceptionType {
     CANNOT_MATCH_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 틀렸습니다."),
     NOT_ADMIN(HttpStatus.FORBIDDEN, "관리자 권한이 없습니다."),
     CANNOT_CHANGE_SAME_PASSWORD(HttpStatus.BAD_REQUEST, "동일한 비밀번호로 변경할 수 없습니다."),
-    EMAIL_AUTH_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "이메일 인증 코드가 일치하지 않습니다."),
-    EMAIL_AUTH_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "이메일 인증 코드 만료 시간이 초과되었습니다."),
+    CANNOT_MATCH_EMAIL_AUTH_CODE(HttpStatus.BAD_REQUEST, "이메일 인증 코드가 일치하지 않습니다."),
+    CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE(HttpStatus.BAD_REQUEST, "이메일 인증 코드 만료 시간이 초과되었습니다."),
     ;
 
     private final HttpStatus httpStatus;
