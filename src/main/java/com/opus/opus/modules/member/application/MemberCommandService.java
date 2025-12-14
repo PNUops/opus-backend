@@ -97,6 +97,11 @@ public class MemberCommandService {
         return SignInResponse.from(member, token);
     }
 
+    public void signInEmailAuth(final EmailAuthRequest request) {
+        memberConvenience.validateExistMemberByEmail(request.email());
+        signUpEmailAuth(request);
+    }
+
     private void verifyEmailVerified(final String email) {
         if (redisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
