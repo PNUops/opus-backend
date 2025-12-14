@@ -1,6 +1,7 @@
 package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_EXPIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_MISMATCH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
@@ -11,8 +12,11 @@ import com.opus.opus.global.util.RedisUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
@@ -81,6 +85,18 @@ public class MemberCommandService {
         redisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
+    public SignInResponse signIn(final SignInRequest request) {
+        final Member member = memberConvenience.getValidateExistMemberByEmail(request.email());
+        checkCorrectPassword(member.getPassword(), request.password());
+
+        final List<String> roles = member.getRoles().stream()
+                .map(MemberRoleType::toString)
+                .toList();
+        final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
+
+        return SignInResponse.from(member, token);
+    }
+
     private void verifyEmailVerified(final String email) {
         if (redisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
@@ -124,6 +140,12 @@ public class MemberCommandService {
                     return code;
                 })
                 .orElseThrow(() -> new MemberException(EMAIL_AUTH_CODE_EXPIRED));
+    }
+
+    private void checkCorrectPassword(final String savePassword, final String inputPassword) {
+        if (!passwordEncoder.matches(inputPassword, savePassword)) {
+            throw new MemberException(CANNOT_MATCH_PASSWORD);
+        }
     }
 
 }
