@@ -84,7 +84,7 @@ public class MemberCommandService {
 
     public void confirmSignUpEmailAuth(final EmailAuthConfirmRequest request) {
         final String email = request.email();
-        validateAuthCode(email, request.authCode());
+        validateSignUpAuthCode(email, request.authCode());
 
         redisUtil.delete(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email);
         redisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
@@ -110,6 +110,16 @@ public class MemberCommandService {
 
         redisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
+    }
+
+    public void confirmSignInEmailAuth(final EmailAuthConfirmRequest request) {
+        final String email = request.email();
+        memberConvenience.validateExistMemberByEmail(email);
+
+        validateSignInAuthCode(email, request.authCode());
+
+        redisUtil.delete(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email);
+        redisUtil.set(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email, "true", SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
     private void verifyEmailVerified(final String email) {
@@ -146,8 +156,19 @@ public class MemberCommandService {
         mailUtil.sendMail(userList, subject, text);
     }
 
-    private void validateAuthCode(final String email, final String inputCode) {
+    private void validateSignUpAuthCode(final String email, final String inputCode) {
         Optional.ofNullable(redisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
+                .map(code -> {
+                    if (!code.equals(inputCode)) {
+                        throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
+                    }
+                    return code;
+                })
+                .orElseThrow(() -> new MemberException(CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE));
+    }
+
+    private void validateSignInAuthCode(final String email, final String inputCode) {
+        Optional.ofNullable(redisUtil.get(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);

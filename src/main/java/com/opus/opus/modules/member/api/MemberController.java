@@ -57,4 +57,11 @@ public class MemberController {
         memberCommandService.signInEmailAuth(emailAuthRequest);
         return ResponseEntity.status(CREATED).build();
     }
+
+    @PatchMapping("/sign-in/password-reset/email-auth")
+    public ResponseEntity<Void> confirmSignInEmailAuth(
+            @Valid @RequestBody final EmailAuthConfirmRequest emailAuthConfirmRequest) {
+        memberCommandService.confirmSignInEmailAuth(emailAuthConfirmRequest);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
 }
