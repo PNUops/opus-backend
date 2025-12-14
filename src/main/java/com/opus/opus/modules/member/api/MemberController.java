@@ -7,6 +7,7 @@ import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -62,6 +63,12 @@ public class MemberController {
     public ResponseEntity<Void> confirmSignInEmailAuth(
             @Valid @RequestBody final EmailAuthConfirmRequest emailAuthConfirmRequest) {
         memberCommandService.confirmSignInEmailAuth(emailAuthConfirmRequest);
+        return ResponseEntity.status(NO_CONTENT).build();
+    }
+
+    @PatchMapping("/sign-in/password-reset")
+    public ResponseEntity<Void> updatePassword(@Valid @RequestBody final PasswordUpdateRequest passwordUpdateRequest) {
+        memberCommandService.updatePassword(passwordUpdateRequest);
         return ResponseEntity.status(NO_CONTENT).build();
     }
 }

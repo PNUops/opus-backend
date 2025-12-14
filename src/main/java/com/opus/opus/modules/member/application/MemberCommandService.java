@@ -1,8 +1,9 @@
 package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
@@ -12,6 +13,7 @@ import com.opus.opus.global.util.RedisUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -122,6 +124,18 @@ public class MemberCommandService {
         redisUtil.set(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email, "true", SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
+    public void updatePassword(final PasswordUpdateRequest request) {
+        final String email = request.email();
+        final Member member = memberConvenience.getValidateExistMemberByEmail(email);
+
+        verifyEmailVerified(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
+
+        checkEqualPassword(request.newPassword(), member);
+        member.updatePassword(passwordEncoder.encode(request.newPassword()));
+
+        redisUtil.delete(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
+    }
+
     private void verifyEmailVerified(final String email) {
         if (redisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
@@ -181,6 +195,12 @@ public class MemberCommandService {
     private void checkCorrectPassword(final String savePassword, final String inputPassword) {
         if (!passwordEncoder.matches(inputPassword, savePassword)) {
             throw new MemberException(CANNOT_MATCH_PASSWORD);
+        }
+    }
+
+    private void checkEqualPassword(final String newPassword, final Member member) {
+        if (member.isEqual(newPassword)) {
+            throw new MemberException(CANNOT_CHANGE_SAME_PASSWORD);
         }
     }
 
