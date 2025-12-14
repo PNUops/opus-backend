@@ -66,4 +66,9 @@ public class Member extends BaseEntity {
         this.roles = roles;
         this.isDeleted = false;
     }
+
+    public void updateTeamLeaderInfo(final String email, final String password) {
+        this.email = email;
+        this.password = password;
+    }
 }
