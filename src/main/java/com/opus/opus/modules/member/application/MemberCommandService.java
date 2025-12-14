@@ -55,7 +55,7 @@ public class MemberCommandService {
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
-    private static final long SIGNIN_AUTH_CODE_TTL = 5L;     // minutes
+    private static final long SIGNIN_AUTH_CODE_TTL = 5L;
     private static final long SIGNIN_VERIFIED_TTL = 10L;
     private static final String SIGNIN_EMAIL_AUTH_KEY_PREFIX = "signin:email:auth:";
     private static final String SIGNIN_EMAIL_VERIFIED_KEY_PREFIX = "signin:email:verified:";
