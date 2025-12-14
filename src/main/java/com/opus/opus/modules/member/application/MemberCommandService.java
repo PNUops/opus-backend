@@ -1,12 +1,15 @@
 package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_EXPIRED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_CODE_MISMATCH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.RedisUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.domain.Member;
@@ -15,6 +18,7 @@ import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +73,14 @@ public class MemberCommandService {
         sendAuthCodeMail(email, code);
     }
 
+    public void confirmSignUpEmailAuth(final EmailAuthConfirmRequest request) {
+        final String email = request.email();
+        validateAuthCode(email, request.authCode());
+
+        redisUtil.delete(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email);
+        redisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
+    }
+
     private void verifyEmailVerified(final String email) {
         if (redisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
@@ -101,6 +113,17 @@ public class MemberCommandService {
         final String subject = "SW프로젝트관리시스템 인증코드 발송 메일입니다.";
         final String text = "인증코드는 " + authCode + " 입니다.";
         mailUtil.sendMail(userList, subject, text);
+    }
+
+    private void validateAuthCode(final String email, final String inputCode) {
+        Optional.ofNullable(redisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
+                .map(code -> {
+                    if (!code.equals(inputCode)) {
+                        throw new MemberException(EMAIL_AUTH_CODE_MISMATCH);
+                    }
+                    return code;
+                })
+                .orElseThrow(() -> new MemberException(EMAIL_AUTH_CODE_EXPIRED));
     }
 
 }
