@@ -53,5 +53,4 @@ public class MemberConvenience {
             throw new MemberException(ALREADY_EXIST_STUDENT_ID);
         }
     }
-
 }
