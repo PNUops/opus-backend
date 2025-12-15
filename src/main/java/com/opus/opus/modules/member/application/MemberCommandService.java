@@ -203,5 +203,4 @@ public class MemberCommandService {
             throw new MemberException(CANNOT_CHANGE_SAME_PASSWORD);
         }
     }
-
 }
