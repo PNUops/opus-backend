@@ -2,6 +2,7 @@ package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -57,6 +58,24 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andDo(document("signup-auth",
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 부산대 도메인이 아닌 이메일로 인증 요청 시 400 에러를 반환한다.")
+    void 부산대_도메인이_아닌_이메일로_인증_요청_시_에러를_반환한다() throws Exception {
+        final EmailAuthRequest request = new EmailAuthRequest("test@gmail.com");
+
+        willThrow(new MemberException(NOT_PUSAN_UNIVERSITY_EMAIL)).given(memberCommandService).signUpEmailAuth(any());
+
+        mockMvc.perform(post("/sign-up/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("signup-auth-fail",
+                        requestFields(
+                                stringFieldWithPath("email", "잘못된 도메인의 이메일 (부산대 메일이 아님)")
                         )
                 ));
     }
