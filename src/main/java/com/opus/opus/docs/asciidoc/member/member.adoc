@@ -35,3 +35,14 @@ include::{snippets}/signup-auth-confirm/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/signup-auth-confirm/request-fields.adoc[]
+
+== `POST`: 회원가입
+
+.HTTP Request
+include::{snippets}/signup/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup/request-fields.adoc[]
