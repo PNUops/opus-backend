@@ -1,0 +1,27 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= MEMBER API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:../opus.html[API 목록으로 돌아가기]
+
+== `POST`: 회원가입 이메일 인증
+
+.HTTP Request
+include::{snippets}/signup-auth/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup-auth/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup-auth/request-fields.adoc[]
+
