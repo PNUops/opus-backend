@@ -57,8 +57,8 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 정상적으로 이메일 인증코드를 확인할 수 있다.")
-    void 정상적으로_이메일_인증코드를_확인할_수_있다() throws Exception {
+    @DisplayName("[성공] 정상적으로 회원가입 이메일 인증코드를 확인할 수 있다.")
+    void 정상적으로_회원가입_이메일_인증코드를_확인할_수_있다() throws Exception {
         final EmailAuthConfirmRequest request = new EmailAuthConfirmRequest(member.getEmail(), "exampleCode");
 
         doNothing().when(memberCommandService).confirmSignUpEmailAuth(any());
@@ -138,6 +138,25 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andDo(document("signin-auth",
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 정상적으로 비밀번호 변경 이메일 인증코드를 확인할 수 있다.")
+    void 정상적으로_비밀번호_변경_인증코드를_확인할_수_있다() throws Exception {
+        final EmailAuthConfirmRequest request = new EmailAuthConfirmRequest(member.getEmail(), "exampleCode");
+
+        doNothing().when(memberCommandService).confirmSignInEmailAuth(any());
+
+        mockMvc.perform(patch("/sign-in/password-reset/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("signin-auth-confirm",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일"),
+                                stringFieldWithPath("authCode", "인증 코드")
                         )
                 ));
     }
