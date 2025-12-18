@@ -1,6 +1,7 @@
 package com.opus.opus.restdocs;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
 import com.opus.opus.global.security.JwtProvider;
@@ -50,7 +51,11 @@ public abstract class RestDocsTest extends ApiTestHelper {
     @BeforeEach
     void setUp(final RestDocumentationContextProvider restDocumentation) {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(documentationConfiguration(restDocumentation))
+                .apply(documentationConfiguration(restDocumentation)
+                        .operationPreprocessors()
+                        .withRequestDefaults(prettyPrint())
+                        .withResponseDefaults(prettyPrint())
+                )
                 .addFilters(new CharacterEncodingFilter("UTF-8", true))
                 .build();
     }
