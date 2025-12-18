@@ -1,6 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -23,6 +26,7 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.restdocs.RestDocsTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -72,6 +76,46 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일"),
                                 stringFieldWithPath("authCode", "인증 코드")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 인증번호가 일치하지 않으면 400 에러를 반환한다.")
+    void 인증번호가_일치하지_않으면_에러를_반환한다() throws Exception {
+        final EmailAuthConfirmRequest request = new EmailAuthConfirmRequest(member.getEmail(), "wrong_code");
+
+        willThrow(new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE)).given(memberCommandService)
+                .confirmSignUpEmailAuth(any());
+
+        mockMvc.perform(patch("/sign-up/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("signup-auth-confirm-fail",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일"),
+                                stringFieldWithPath("authCode", "틀린 인증 코드")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 인증번호가 만료되면 400 에러를 반환한다.")
+    void 인증번호가_만료되면_않으면_에러를_반환한다() throws Exception {
+        final EmailAuthConfirmRequest request = new EmailAuthConfirmRequest(member.getEmail(), "expired_code");
+
+        willThrow(new MemberException(CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE)).given(memberCommandService)
+                .confirmSignUpEmailAuth(any());
+
+        mockMvc.perform(patch("/sign-up/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("signup-auth-confirm-fail2",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일"),
+                                stringFieldWithPath("authCode", "만료된 인증 코드")
                         )
                 ));
     }
