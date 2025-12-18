@@ -27,15 +27,11 @@ import com.opus.opus.restdocs.RestDocsTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 
 public class MemberApiDocsTest extends RestDocsTest {
 
     private Member member;
-    @Autowired
-    private RestDocumentationResultHandler restDocs;
 
     @BeforeEach
     void setUp() {
