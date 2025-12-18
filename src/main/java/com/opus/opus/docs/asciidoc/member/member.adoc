@@ -86,13 +86,13 @@ include::{snippets}/signin-auth-confirm/request-fields.adoc[]
 == `PATCH`: 비밀번호 변경
 
 .HTTP Request
-include::{snippets}/password-update/http-request.adoc[]
+include::{snippets}/update-password/http-request.adoc[]
 
 .HTTP Response
-include::{snippets}/password-update/http-response.adoc[]
+include::{snippets}/update-password/http-response.adoc[]
 
 .Request Fields
-include::{snippets}/password-update/request-fields.adoc[]
+include::{snippets}/update-password/request-fields.adoc[]
 
 == `GET` : 가입 이메일 찾기
 

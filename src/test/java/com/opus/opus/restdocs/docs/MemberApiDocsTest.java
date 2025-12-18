@@ -177,7 +177,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
-                .andDo(document("password-update",
+                .andDo(document("update-password",
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일"),
                                 stringFieldWithPath("newPassword", "새로운 비밀번호")
