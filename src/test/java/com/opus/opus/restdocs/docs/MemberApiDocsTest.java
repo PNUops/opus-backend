@@ -3,17 +3,19 @@ package com.opus.opus.restdocs.docs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.modules.member.application.MemberCommandService;
+import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.restdocs.RestDocsTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 
 public class MemberApiDocsTest extends RestDocsTest {
 
@@ -27,14 +29,32 @@ public class MemberApiDocsTest extends RestDocsTest {
 
         final EmailAuthRequest request = new EmailAuthRequest("example.pusan.ac.kr");
 
-        mockMvc.perform(RestDocumentationRequestBuilders.post("/sign-up/email-auth")
-                .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/sign-up/email-auth")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andDo(document("signup-auth",
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 정상적으로 이메일 인증코드를 확인할 수 있다.")
+    void 정상적으로_이메일_인증코드를_확인할_수_있다() throws Exception {
+        doNothing().when(memberCommandService).confirmSignUpEmailAuth(any());
+
+        final EmailAuthConfirmRequest request = new EmailAuthConfirmRequest("example.pusan.ac.kr", "exampleCode");
+
+        mockMvc.perform(patch("/sign-up/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("signup-auth-confirm",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일"),
+                                stringFieldWithPath("authCode", "인증 코드")
                         )
                 ));
     }

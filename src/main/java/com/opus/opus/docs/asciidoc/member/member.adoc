@@ -25,3 +25,13 @@ include::{snippets}/signup-auth/http-response.adoc[]
 .Request Fields
 include::{snippets}/signup-auth/request-fields.adoc[]
 
+== `PATCH`: 회원가입 이메일 인증코드 확인
+
+.HTTP Request
+include::{snippets}/signup-auth-confirm/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup-auth-confirm/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup-auth-confirm/request-fields.adoc[]
