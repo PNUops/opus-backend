@@ -123,4 +123,22 @@ public class MemberApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 비밀번호 변경 이메일 인증 코드는 발송된다.")
+    void 유효한_요청이면_비밀번호_변경_이메일_인증_코드는_발송된다() throws Exception {
+        final EmailAuthRequest request = new EmailAuthRequest(member.getEmail());
+
+        doNothing().when(memberCommandService).signInEmailAuth(any());
+
+        mockMvc.perform(post("/sign-in/password-reset/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("signin-auth",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일")
+                        )
+                ));
+    }
 }

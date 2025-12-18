@@ -60,3 +60,14 @@ include::{snippets}/signin/request-fields.adoc[]
 
 .Response Body's Fields
 include::{snippets}/signin/response-fields.adoc[]
+
+== `POST`: 비밀번호 변경 이메일 인증
+
+.HTTP Request
+include::{snippets}/signin-auth/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signin-auth/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signin-auth/request-fields.adoc[]
