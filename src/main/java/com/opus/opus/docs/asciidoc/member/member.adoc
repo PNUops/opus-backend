@@ -93,3 +93,17 @@ include::{snippets}/password-update/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/password-update/request-fields.adoc[]
+
+== `GET` : 가입 이메일 찾기
+
+.HTTP Request
+include::{snippets}/get-password/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-password/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-password/path-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-password/response-fields.adoc[]

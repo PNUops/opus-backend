@@ -4,10 +4,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +20,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -177,6 +181,25 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일"),
                                 stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원이라면 정상적으로 가입 이메일을 찾을 수 있다.")
+    void 회원이라면_정상적으로_가입_이메일을_찾을_수_있다() throws Exception {
+        final EmailFindResponse response = new EmailFindResponse(member.getEmail());
+
+        when(memberQueryService.getMyEmail(any())).thenReturn(response);
+
+        mockMvc.perform(get("/sign-in/{studentId}/email-find", 1))
+                .andExpect(status().isOk())
+                .andDo(document("get-password",
+                        pathParameters(
+                                parameterWithName("studentId").description("가입 학번")
+                        ),
+                        responseFields(
+                                stringFieldWithPath("email", "가입된 이메일")
                         )
                 ));
     }
