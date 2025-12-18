@@ -46,3 +46,17 @@ include::{snippets}/signup/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/signup/request-fields.adoc[]
+
+== `POST`: 로그인
+
+.HTTP Request
+include::{snippets}/signin/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signin/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signin/request-fields.adoc[]
+
+.Response Body's Fields
+include::{snippets}/signin/response-fields.adoc[]
