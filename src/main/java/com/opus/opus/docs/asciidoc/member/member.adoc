@@ -82,3 +82,14 @@ include::{snippets}/signin-auth-confirm/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/signin-auth-confirm/request-fields.adoc[]
+
+== `PATCH`: 비밀번호 변경
+
+.HTTP Request
+include::{snippets}/password-update/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/password-update/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/password-update/request-fields.adoc[]

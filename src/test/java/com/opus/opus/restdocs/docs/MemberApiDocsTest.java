@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -157,6 +158,25 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일"),
                                 stringFieldWithPath("authCode", "인증 코드")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 비밀번호는 변경된다.")
+    void 유효한_요청이면_정상적으로_비밀번호는_변경된다() throws Exception {
+        final PasswordUpdateRequest request = new PasswordUpdateRequest(member.getEmail(), "newPassword1!");
+
+        doNothing().when(memberCommandService).updatePassword(request);
+
+        mockMvc.perform(patch("/sign-in/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("password-update",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일"),
+                                stringFieldWithPath("newPassword", "새로운 비밀번호")
                         )
                 ));
     }
