@@ -53,19 +53,27 @@ include::{snippets}/signup-auth-confirm/request-fields.adoc[]
 === ⚠️ 실패 케이스
 
 .❌ Case 1: 인증번호 불일치
+
 [%collapsible]
+
 ====
+
 include::{snippets}/signup-auth-confirm-fail/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
+
 ====
 
 .❌ Case 2: 만료된 인증코드
+
 [%collapsible]
+
 ====
+
 include::{snippets}/signup-auth-confirm-fail2/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail2/http-response.adoc[]
+
 ====
 
 == `POST`: 회원가입
