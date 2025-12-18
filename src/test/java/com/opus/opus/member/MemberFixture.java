@@ -11,7 +11,7 @@ public class MemberFixture {
         return Member.builder()
                 .name("이옵스")
                 .email("example@pusan.ac.kr")
-                .password("123456789")
+                .password("{noop}123456789")
                 .studentId("202612345")
                 .roles(Set.of(ROLE_회원))
                 .build();

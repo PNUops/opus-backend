@@ -12,7 +12,9 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -172,5 +174,16 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.signUp(teamLeaderRequest);
 
         assertThat(redisUtil.get("signup:email:verified:" + emailAuthRequest.email())).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 가입된 회원은 로그인 할 수 있다.")
+    void 가입된_회원은_로그인_할_수_있다() {
+        final SignInRequest request = new SignInRequest(teamLeader.getEmail(), "123456789");
+
+        final SignInResponse response = memberCommandService.signIn(request);
+
+        assertThat(response.memberId()).isEqualTo(teamLeader.getId());
+        assertThat(response.token()).isNotEmpty();
     }
 }
