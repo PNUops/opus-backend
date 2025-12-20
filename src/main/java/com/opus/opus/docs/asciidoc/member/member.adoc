@@ -89,6 +89,8 @@ include::{snippets}/signup/request-fields.adoc[]
 
 == `POST`: 로그인
 
+NOTE: 로그인 시도는 5회만 가능합니다. 5회 이내로 로그인 못하면 비밀번호를 변경해야 합니다.
+
 .HTTP Request
 include::{snippets}/signin/http-request.adoc[]
 
