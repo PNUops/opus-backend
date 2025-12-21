@@ -9,7 +9,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VER
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.MailUtil;
-import com.opus.opus.global.util.RedisUtil;
+import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -44,7 +44,7 @@ public class MemberCommandService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final MailUtil mailUtil;
-    private final RedisUtil redisUtil;
+    private final AuthRedisUtil authRedisUtil;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
@@ -71,7 +71,7 @@ public class MemberCommandService {
                         () -> registerNewMember(request.name(), request.studentId(), request.email(), encodingPassword)
                 );
 
-        redisUtil.delete(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + request.email());
+        authRedisUtil.delete(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + request.email());
     }
 
     public void signUpEmailAuth(final EmailAuthRequest request) {
@@ -80,7 +80,7 @@ public class MemberCommandService {
 
         final String code = generateRandomAuthCode();
 
-        redisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, AUTH_CODE_TTL, TimeUnit.MINUTES);
+        authRedisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
     }
 
@@ -88,8 +88,8 @@ public class MemberCommandService {
         final String email = request.email();
         validateSignUpAuthCode(email, request.authCode());
 
-        redisUtil.delete(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email);
-        redisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
+        authRedisUtil.delete(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email);
+        authRedisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
     public SignInResponse signIn(final SignInRequest request) {
@@ -110,7 +110,7 @@ public class MemberCommandService {
 
         final String code = generateRandomAuthCode();
 
-        redisUtil.set(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
+        authRedisUtil.set(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
     }
 
@@ -120,8 +120,8 @@ public class MemberCommandService {
 
         validateSignInAuthCode(email, request.authCode());
 
-        redisUtil.delete(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email);
-        redisUtil.set(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email, "true", SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
+        authRedisUtil.delete(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email);
+        authRedisUtil.set(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email, "true", SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
     public void updatePassword(final PasswordUpdateRequest request) {
@@ -133,11 +133,11 @@ public class MemberCommandService {
         checkEqualPassword(request.newPassword(), member);
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
-        redisUtil.delete(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
+        authRedisUtil.delete(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
     }
 
     private void verifyEmailVerified(final String email) {
-        if (redisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
+        if (authRedisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
         }
     }
@@ -171,7 +171,7 @@ public class MemberCommandService {
     }
 
     private void validateSignUpAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(redisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
+        Optional.ofNullable(authRedisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
@@ -182,7 +182,7 @@ public class MemberCommandService {
     }
 
     private void validateSignInAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(redisUtil.get(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email))
+        Optional.ofNullable(authRedisUtil.get(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
