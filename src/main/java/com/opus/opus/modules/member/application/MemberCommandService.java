@@ -8,8 +8,8 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
 import com.opus.opus.global.security.JwtProvider;
-import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.AuthRedisUtil;
+import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -50,8 +50,8 @@ public class MemberCommandService {
     private static final int AUTH_CODE_LENGTH = 10;
     private static final char[] AUTH_CODE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
 
-    private static final long AUTH_CODE_TTL = 5L;
-    private static final long VERIFIED_TTL = 10L;
+    private static final long SIGNUP_AUTH_CODE_TTL = 5L;
+    private static final long SIGNUP_VERIFIED_TTL = 10L;
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
@@ -60,18 +60,22 @@ public class MemberCommandService {
     private static final String SIGNIN_EMAIL_AUTH_KEY_PREFIX = "signin:email:auth:";
     private static final String SIGNIN_EMAIL_VERIFIED_KEY_PREFIX = "signin:email:verified:";
 
+    private static final String VERIFIED_VALUE = "true";
+
     public void signUp(final SignUpRequest request) {
-        verifyEmailVerified(request.email());
+        final String email = request.email();
+        verifyVerifiedKey(signUpVerifiedKey(email));
+
         final String encodingPassword = passwordEncoder.encode(request.password());
-        memberConvenience.checkIsDuplicateEmail(request.email());
+        memberConvenience.checkIsDuplicateEmail(email);
 
         memberRepository.findByStudentIdAndName(request.studentId(), request.name())
                 .ifPresentOrElse(
-                        member -> member.updateTeamLeaderInfo(request.email(), encodingPassword),
-                        () -> registerNewMember(request.name(), request.studentId(), request.email(), encodingPassword)
+                        member -> member.updateTeamLeaderInfo(email, encodingPassword),
+                        () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
                 );
 
-        authRedisUtil.delete(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + request.email());
+        authRedisUtil.delete(signUpVerifiedKey(email));
     }
 
     public void signUpEmailAuth(final EmailAuthRequest request) {
@@ -80,7 +84,7 @@ public class MemberCommandService {
 
         final String code = generateRandomAuthCode();
 
-        authRedisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, AUTH_CODE_TTL, TimeUnit.MINUTES);
+        authRedisUtil.set(signUpAuthKey(email), code, SIGNUP_AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
     }
 
@@ -88,8 +92,8 @@ public class MemberCommandService {
         final String email = request.email();
         validateSignUpAuthCode(email, request.authCode());
 
-        authRedisUtil.delete(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email);
-        authRedisUtil.set(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email, "true", VERIFIED_TTL, TimeUnit.MINUTES);
+        authRedisUtil.delete(signUpAuthKey(email));
+        authRedisUtil.set(signUpVerifiedKey(email), VERIFIED_VALUE, SIGNUP_VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
     public SignInResponse signIn(final SignInRequest request) {
@@ -99,18 +103,18 @@ public class MemberCommandService {
         final List<String> roles = member.getRoles().stream()
                 .map(MemberRoleType::toString)
                 .toList();
-        final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
 
+        final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
         return SignInResponse.from(member, token);
     }
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
-        memberConvenience.validateExistMemberByEmail(request.email());
+        memberConvenience.validateExistMemberByEmail(email);
 
         final String code = generateRandomAuthCode();
 
-        authRedisUtil.set(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
+        authRedisUtil.set(signInAuthKey(email), code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
     }
 
@@ -120,24 +124,24 @@ public class MemberCommandService {
 
         validateSignInAuthCode(email, request.authCode());
 
-        authRedisUtil.delete(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email);
-        authRedisUtil.set(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email, "true", SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
+        authRedisUtil.delete(signInAuthKey(email));
+        authRedisUtil.set(signInVerifiedKey(email), VERIFIED_VALUE, SIGNIN_VERIFIED_TTL, TimeUnit.MINUTES);
     }
 
     public void updatePassword(final PasswordUpdateRequest request) {
         final String email = request.email();
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
 
-        verifyEmailVerified(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
+        verifyVerifiedKey(signInVerifiedKey(email));
 
         checkEqualPassword(request.newPassword(), member);
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
-        authRedisUtil.delete(SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email);
+        authRedisUtil.delete(signInVerifiedKey(email));
     }
 
-    private void verifyEmailVerified(final String email) {
-        if (authRedisUtil.get(SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email) == null) {
+    private void verifyVerifiedKey(final String verifiedKey) {
+        if (authRedisUtil.get(verifiedKey) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
         }
     }
@@ -156,7 +160,7 @@ public class MemberCommandService {
     }
 
     private static String generateRandomAuthCode() {
-        char[] buf = new char[AUTH_CODE_LENGTH];
+        final char[] buf = new char[AUTH_CODE_LENGTH];
         for (int i = 0; i < buf.length; i++) {
             buf[i] = AUTH_CODE_POOL[SECURE_RANDOM.nextInt(AUTH_CODE_POOL.length)];
         }
@@ -171,7 +175,7 @@ public class MemberCommandService {
     }
 
     private void validateSignUpAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(authRedisUtil.get(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email))
+        Optional.ofNullable(authRedisUtil.get(signUpAuthKey(email)))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
@@ -182,7 +186,7 @@ public class MemberCommandService {
     }
 
     private void validateSignInAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(authRedisUtil.get(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email))
+        Optional.ofNullable(authRedisUtil.get(signInAuthKey(email)))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
@@ -202,5 +206,21 @@ public class MemberCommandService {
         if (member.isEqual(newPassword)) {
             throw new MemberException(CANNOT_CHANGE_SAME_PASSWORD);
         }
+    }
+
+    private static String signUpAuthKey(final String email) {
+        return SIGNUP_EMAIL_AUTH_KEY_PREFIX + email;
+    }
+
+    private static String signUpVerifiedKey(final String email) {
+        return SIGNUP_EMAIL_VERIFIED_KEY_PREFIX + email;
+    }
+
+    private static String signInAuthKey(final String email) {
+        return SIGNIN_EMAIL_AUTH_KEY_PREFIX + email;
+    }
+
+    private static String signInVerifiedKey(final String email) {
+        return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
     }
 }
