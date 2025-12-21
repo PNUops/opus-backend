@@ -110,7 +110,7 @@ public class MemberCommandService {
 
         final String code = generateRandomAuthCode();
 
-        redisUtil.set(SIGNUP_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
+        redisUtil.set(SIGNIN_EMAIL_AUTH_KEY_PREFIX + email, code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
         sendAuthCodeMail(email, code);
     }
 
