@@ -41,3 +41,14 @@ include::{snippets}/update-notice/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/update-notice/request-fields.adoc[]
+
+== `DELETE`: 전체 공지사항 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-notice/http-response.adoc[]

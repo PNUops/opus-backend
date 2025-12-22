@@ -10,6 +10,7 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.requestHe
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,6 +87,21 @@ public class NoticeApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("title", "수정된 공지 제목"),
                                 stringFieldWithPath("description", "수정된 공지 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 삭제된다.")
+    void 유효한_요청이면_정상적으로_전체_공지사항이_삭제된다() throws Exception {
+        doNothing().when(noticeCommandService).deleteNotice(any());
+
+        mockMvc.perform(delete("/notices/{noticeId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-notice",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         )
                 ));
     }
