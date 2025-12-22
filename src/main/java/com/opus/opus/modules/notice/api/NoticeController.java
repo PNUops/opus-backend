@@ -3,6 +3,7 @@ package com.opus.opus.modules.notice.api;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
+import com.opus.opus.modules.notice.application.dto.response.NoticeDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,5 +46,10 @@ public class NoticeController {
     public ResponseEntity<Void> deleteNotice(@PathVariable final Long noticeId) {
         noticeCommandService.deleteNotice(noticeId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/notices/{noticeId}")
+    public ResponseEntity<NoticeDetailResponse> getNotice(@PathVariable final Long noticeId) {
+        return ResponseEntity.ok(noticeQueryService.getNotice(noticeId));
     }
 }
