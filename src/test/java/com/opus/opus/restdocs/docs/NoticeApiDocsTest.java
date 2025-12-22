@@ -119,8 +119,8 @@ public class NoticeApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 상세 목록을 조회할 수 있다.")
-    void 유효한_요청이면_정상적으로_전체_공지사항_상세_목록을_조회할_수_있다() throws Exception {
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 상세 조회를 할 수 있다.")
+    void 유효한_요청이면_정상적으로_전체_공지사항_상세_조회를_할_수_있다() throws Exception {
         final NoticeDetailResponse response = new NoticeDetailResponse("공지 제목", "공지 내용", now(), now());
 
         when(noticeQueryService.getNotice(any())).thenReturn(response);
