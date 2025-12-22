@@ -28,4 +28,8 @@ public class NoticeCommandService {
         final Notice notice = noticeConvenience.getValidateExistNotice(noticeId);
         notice.updateNotice(request.title(), request.description());
     }
+
+    public void deleteNotice(final Long noticeId) {
+        noticeRepository.delete(noticeConvenience.getValidateExistNotice(noticeId));
+    }
 }
