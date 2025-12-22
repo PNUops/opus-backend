@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -62,6 +63,29 @@ public class NoticeApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("title", "공지 제목"),
                                 stringFieldWithPath("description", "공지 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 수정된다.")
+    void 유효한_요청이면_정상적으로_전체_공지사항이_수정된다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("수정된 공지 제목", "수정된 공지 내용");
+
+        doNothing().when(noticeCommandService).updateNotice(any(), any());
+
+        mockMvc.perform(patch("/notices/{noticeId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-notice",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "수정된 공지 제목"),
+                                stringFieldWithPath("description", "수정된 공지 내용")
                         )
                 ));
     }

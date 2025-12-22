@@ -27,3 +27,17 @@ include::{snippets}/create-notice/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/create-notice/request-fields.adoc[]
+
+== `PATCH`: 전체 공지사항 수정
+
+.HTTP Request Headers
+include::{snippets}/update-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-notice/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-notice/request-fields.adoc[]
