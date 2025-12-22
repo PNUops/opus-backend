@@ -1,7 +1,5 @@
 package com.opus.opus.restdocs.docs;
 
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -44,12 +42,11 @@ public class NoticeApiDocsTest extends RestDocsTest {
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
-        adminToken = jwtProvider.createToken(String.valueOf(admin.getId()), List.of(ROLE_관리자.name()), admin.getName());
+        adminToken = "mock_admin_access_token";
 
         this.member = MemberFixture.createMember();
         setField(member, "id", 2L);
-        memberToken = jwtProvider.createToken(String.valueOf(member.getId()), List.of(ROLE_회원.name()),
-                member.getName());
+        memberToken = "mock_member_access_token";
     }
 
     @Test
