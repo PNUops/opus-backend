@@ -4,7 +4,9 @@ import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
 import com.opus.opus.modules.notice.application.dto.response.NoticeDetailResponse;
+import com.opus.opus.modules.notice.application.dto.response.NoticeSummaryResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,5 +53,10 @@ public class NoticeController {
     @GetMapping("/notices/{noticeId}")
     public ResponseEntity<NoticeDetailResponse> getNotice(@PathVariable final Long noticeId) {
         return ResponseEntity.ok(noticeQueryService.getNotice(noticeId));
+    }
+
+    @GetMapping("/notices")
+    public ResponseEntity<List<NoticeSummaryResponse>> getAllNotices() {
+        return ResponseEntity.ok(noticeQueryService.getAllNotices());
     }
 }
