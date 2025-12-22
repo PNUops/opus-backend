@@ -24,6 +24,7 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
 import com.opus.opus.modules.notice.application.dto.response.NoticeDetailResponse;
+import com.opus.opus.modules.notice.application.dto.response.NoticeSummaryResponse;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,21 +126,39 @@ public class NoticeApiDocsTest extends RestDocsTest {
 
         when(noticeQueryService.getNotice(any())).thenReturn(response);
 
-        mockMvc.perform(get("/notices/{noticeId}", 1L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+        mockMvc.perform(get("/notices/{noticeId}", 1L))
                 .andExpect(status().isOk())
                 .andDo(document("get-notice",
                         pathParameters(
                                 parameterWithName("noticeId").description("공지 ID")
-                        ),
-                        requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         responseFields(
                                 stringFieldWithPath("title", "공지 제목"),
                                 stringFieldWithPath("description", "공지 내용"),
                                 dateTimeFieldWithPath("createdAt", "공지 생성 시각"),
                                 dateTimeFieldWithPath("updatedAt", "공지 수정 시각")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 목록을 조회할 수 있다.")
+    void 유효한_요청이면_정상적으로_전체_공지사항_목록을_조회할_수_있다() throws Exception {
+        final List<NoticeSummaryResponse> responses = List.of(
+                new NoticeSummaryResponse(1L, "공지 제목 1", now()),
+                new NoticeSummaryResponse(2L, "공지 제목 2", now())
+        );
+
+        when(noticeQueryService.getAllNotices()).thenReturn(responses);
+
+        mockMvc.perform(get("/notices"))
+                .andExpect(status().isOk())
+                .andDo(document("get-all-notices",
+                        responseFields(
+                                arrayFieldWithPath("[]", "공지 목록"),
+                                numberFieldWithPath("[].noticeId", "공지 ID"),
+                                stringFieldWithPath("[].title", "공지 제목"),
+                                dateTimeFieldWithPath("[].createdAt", "공지 생성 시각")
                         )
                 ));
     }
