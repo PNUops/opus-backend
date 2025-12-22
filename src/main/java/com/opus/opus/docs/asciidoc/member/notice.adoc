@@ -42,6 +42,9 @@ include::{snippets}/update-notice/http-response.adoc[]
 .Request Fields
 include::{snippets}/update-notice/request-fields.adoc[]
 
+.Path Parameters
+include::{snippets}/update-notice/path-parameters.adoc[]
+
 == `DELETE`: 전체 공지사항 삭제
 
 .HTTP Request Headers
@@ -52,3 +55,20 @@ include::{snippets}/delete-notice/http-request.adoc[]
 
 .HTTP Response
 include::{snippets}/delete-notice/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-notice/path-parameters.adoc[]
+
+== `GET`: 전체 공지사항 상세 조회
+
+.HTTP Request Headers
+include::{snippets}/get-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-notice/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-notice/path-parameters.adoc[]

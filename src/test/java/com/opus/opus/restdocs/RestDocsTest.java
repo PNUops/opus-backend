@@ -85,4 +85,8 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected FieldDescriptor arrayFieldWithPath(final String path, final String description) {
         return fieldWithPath(path).type(JsonFieldType.ARRAY).description(description);
     }
+
+    protected FieldDescriptor dateTimeFieldWithPath(final String path, final String description) {
+        return fieldWithPath(path).type(JsonFieldType.STRING).description(description + " (ISO-8601)");
+    }
 }
