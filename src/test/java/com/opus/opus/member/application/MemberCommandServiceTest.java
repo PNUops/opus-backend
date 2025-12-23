@@ -47,7 +47,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 회원가입_시_이메일_인증_코드가_정상_발급된다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
 
-        assertTrue(redisUtil.exists("signup:email:auth:" + emailAuthRequest.email()));
+        assertTrue(authRedisUtil.exists("signup:email:auth:" + emailAuthRequest.email()));
     }
 
     @Test
@@ -65,11 +65,11 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 회원가입_이메일_인증이_완료되면_인증_코드는_삭제된다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
 
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
 
-        assertThat(redisUtil.get("signup:email:auth:" + emailAuthRequest.email())).isNull();
+        assertThat(authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email())).isNull();
     }
 
     @Test
@@ -77,11 +77,11 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 회원가입_이메일_인증이_완료되면_인증_완료_코드가_발급된다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
 
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
 
-        assertTrue(redisUtil.exists("signup:email:verified:" + emailAuthRequest.email()));
+        assertTrue(authRedisUtil.exists("signup:email:verified:" + emailAuthRequest.email()));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
 
         // 인증 시간은 테스트 시작부터 줄어들기 때문에(내림 처리됨) 4분으로 설정 (실제는 5분)
-        assertThat(redisUtil.ttl("signup:email:auth:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(4);
+        assertThat(authRedisUtil.ttl("signup:email:auth:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(4);
     }
 
     @Test
@@ -112,12 +112,12 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 인증_완료_코드_TTL은_10분이다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
 
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
 
         // 인증 시간은 테스트 시작부터 줄어들기 때문에(내림 처리됨) 9분으로 설정 (실제는 10분)
-        assertThat(redisUtil.ttl("signup:email:verified:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(9);
+        assertThat(authRedisUtil.ttl("signup:email:verified:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(9);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 인증_완료_코드가_있다면_회원가입은_정상적으로_이뤄진다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
         final SignUpRequest request = new SignUpRequest("이름", "202512345", "qwer1234@pusan.ac.kr", "qwer123!");
 
@@ -151,7 +151,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 관리자가_권한을_등록한_회원은_가입_시_이메일과_비밀번호가_업데이트_된다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
         final SignUpRequest teamLeaderRequest = new SignUpRequest(teamLeader.getName(), teamLeader.getStudentId(),
                 "qwer1234@pusan.ac.kr",
@@ -169,14 +169,14 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 회원가입이_완료되면_인증_완료_코드는_삭제된다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                redisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
         final SignUpRequest teamLeaderRequest = new SignUpRequest(teamLeader.getName(), teamLeader.getStudentId(),
                 "qwer1234@pusan.ac.kr", "changePassword");
 
         memberCommandService.signUp(teamLeaderRequest);
 
-        assertThat(redisUtil.get("signup:email:verified:" + emailAuthRequest.email())).isNull();
+        assertThat(authRedisUtil.get("signup:email:verified:" + emailAuthRequest.email())).isNull();
     }
 
     @Test

@@ -7,11 +7,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RedisUtil {
+public class AuthRedisUtil {
 
     private final RedisTemplate<String, String> redisTemplate;
 
-    public RedisUtil(@Qualifier("authRedisTemplate") final RedisTemplate<String, String> redisTemplate) {
+    public AuthRedisUtil(@Qualifier("authRedisTemplate") final RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

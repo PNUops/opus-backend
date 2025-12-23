@@ -2,7 +2,7 @@ package com.opus.opus.helper;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.MailUtil;
-import com.opus.opus.global.util.RedisUtil;
+import com.opus.opus.global.util.AuthRedisUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,7 +20,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 public abstract class IntegrationTest extends ApiTestHelper {
 
     @Autowired
-    protected RedisUtil redisUtil;
+    protected AuthRedisUtil authRedisUtil;
 
     @Autowired
     protected PasswordEncoder passwordEncoder;
