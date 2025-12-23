@@ -1,0 +1,154 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= MEMBER API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:../opus.html[API 목록으로 돌아가기]
+
+== `POST`: 회원가입 이메일 인증
+
+.HTTP Request
+include::{snippets}/signup-auth/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup-auth/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup-auth/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 인증 이메일이 부산대 이메일이 아님
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-auth-fail/http-request.adoc[]
+
+include::{snippets}/signup-auth-fail/http-response.adoc[]
+
+====
+
+== `PATCH`: 회원가입 이메일 인증코드 확인
+
+.HTTP Request
+include::{snippets}/signup-auth-confirm/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup-auth-confirm/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup-auth-confirm/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 인증번호 불일치
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-auth-confirm-fail/http-request.adoc[]
+
+include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
+
+====
+
+.❌ Case 2: 만료된 인증코드
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-auth-confirm-fail2/http-request.adoc[]
+
+include::{snippets}/signup-auth-confirm-fail2/http-response.adoc[]
+
+====
+
+== `POST`: 회원가입
+
+.HTTP Request
+include::{snippets}/signup/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup/request-fields.adoc[]
+
+== `POST`: 로그인
+
+NOTE: 로그인 시도는 5회만 가능합니다. 5회 이내로 로그인 못하면 비밀번호를 변경해야 합니다.
+
+.HTTP Request
+include::{snippets}/signin/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signin/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signin/request-fields.adoc[]
+
+.Response Body's Fields
+include::{snippets}/signin/response-fields.adoc[]
+
+== `POST`: 비밀번호 변경 이메일 인증
+
+.HTTP Request
+include::{snippets}/signin-auth/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signin-auth/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signin-auth/request-fields.adoc[]
+
+== `PATCH`: 비밀번호 변경 이메일 인증코드 확인
+
+.HTTP Request
+include::{snippets}/signin-auth-confirm/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signin-auth-confirm/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signin-auth-confirm/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+NOTE: 회원가입 이메일 인증 실패 케이스와 동일
+
+== `PATCH`: 비밀번호 변경
+
+.HTTP Request
+include::{snippets}/update-password/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-password/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-password/request-fields.adoc[]
+
+== `GET` : 가입 이메일 찾기
+
+.HTTP Request
+include::{snippets}/get-password/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-password/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-password/path-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-password/response-fields.adoc[]
