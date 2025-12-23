@@ -203,7 +203,7 @@ public class MemberCommandService {
     }
 
     private void checkEqualPassword(final String newPassword, final Member member) {
-        if (member.isEqual(newPassword)) {
+        if (passwordEncoder.matches(newPassword, member.getPassword())) {
             throw new MemberException(CANNOT_CHANGE_SAME_PASSWORD);
         }
     }
