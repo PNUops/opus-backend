@@ -34,19 +34,13 @@ import org.springframework.http.MediaType;
 public class NoticeApiDocsTest extends RestDocsTest {
 
     private Member admin;
-    private Member member;
     private String adminToken;
-    private String memberToken;
 
     @BeforeEach
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
         adminToken = "mock_admin_access_token";
-
-        this.member = MemberFixture.createMember();
-        setField(member, "id", 2L);
-        memberToken = "mock_member_access_token";
     }
 
     @Test
