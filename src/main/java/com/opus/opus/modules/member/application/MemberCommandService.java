@@ -174,8 +174,8 @@ public class MemberCommandService {
         mailUtil.sendMail(userList, subject, text);
     }
 
-    private void validateSignUpAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(authRedisUtil.get(signUpAuthKey(email)))
+    private void validateAuthCode(final String authKey, final String inputCode) {
+        Optional.ofNullable(authRedisUtil.get(authKey))
                 .map(code -> {
                     if (!code.equals(inputCode)) {
                         throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
@@ -185,15 +185,12 @@ public class MemberCommandService {
                 .orElseThrow(() -> new MemberException(CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE));
     }
 
+    private void validateSignUpAuthCode(final String email, final String inputCode) {
+        validateAuthCode(signUpAuthKey(email), inputCode);
+    }
+
     private void validateSignInAuthCode(final String email, final String inputCode) {
-        Optional.ofNullable(authRedisUtil.get(signInAuthKey(email)))
-                .map(code -> {
-                    if (!code.equals(inputCode)) {
-                        throw new MemberException(CANNOT_MATCH_EMAIL_AUTH_CODE);
-                    }
-                    return code;
-                })
-                .orElseThrow(() -> new MemberException(CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE));
+        validateAuthCode(signInAuthKey(email), inputCode);
     }
 
     private void checkCorrectPassword(final String savePassword, final String inputPassword) {
