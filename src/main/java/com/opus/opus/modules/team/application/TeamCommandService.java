@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.application;
 
+import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
@@ -46,19 +47,40 @@ public class TeamCommandService {
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL).ifPresent(existingFile -> {
-            checkWebpConverted(existingFile);
-            fileStorageUtil.deleteFile(existingFile.getId());
-        });
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+                .ifPresent(existingFile -> {
+                    checkWebpConverted(existingFile);
+                    fileStorageUtil.deleteFile(existingFile.getId());
+                });
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL).ifPresent(existingFile -> {
-            checkWebpConverted(existingFile);
-            fileStorageUtil.deleteFile(existingFile.getId());
-        });
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+                .ifPresent(existingFile -> {
+                    checkWebpConverted(existingFile);
+                    fileStorageUtil.deleteFile(existingFile.getId());
+                });
+    }
+
+    public void savePosterImage(final Long teamId, final MultipartFile image) {
+        teamConvenience.validateExistTeam(teamId);
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
+                .ifPresent(existingFile -> {
+                    checkWebpConverted(existingFile);
+                    fileStorageUtil.deleteFile(existingFile.getId());
+                });
+        fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
+    }
+
+    public void deletePosterImage(final Long teamId) {
+        teamConvenience.validateExistTeam(teamId);
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
+                .ifPresent(existingFile -> {
+                    checkWebpConverted(existingFile);
+                    fileStorageUtil.deleteFile(existingFile.getId());
+                });
     }
 
     private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {
