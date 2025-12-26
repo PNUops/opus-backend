@@ -7,7 +7,6 @@ public record ContestTrackResponse(
         Long trackId,
         String trackName,
         LocalDateTime updatedAt
-
 ) {
     public static ContestTrackResponse from(ContestTrack contestTrack) {
         return new ContestTrackResponse(

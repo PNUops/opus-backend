@@ -43,5 +43,4 @@ public class ContestConvenience {
     public List<Contest> getCurrentContests() {
         return contestRepository.findAllByIsCurrentTrue();
     }
-
 }
