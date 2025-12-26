@@ -1,7 +1,9 @@
 package com.opus.opus.modules.team.application.convenience;
 
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
+import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import lombok.RequiredArgsConstructor;
@@ -19,5 +21,10 @@ public class TeamMemberConvenience {
         if (teamMemberRepository.existsByTeamIdAndMemberId(teamId, memberId)) {
             throw new TeamMemberException(TEAM_MEMBER_ALREADY_EXISTS);
         }
+    }
+
+    public TeamMember getValidateExistTeamMember(final Long teamId, final Long memberId) {
+        return teamMemberRepository.findByTeamIdAndMemberId(teamId, memberId)
+                .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
     }
 }

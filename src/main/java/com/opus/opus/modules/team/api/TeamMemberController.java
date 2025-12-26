@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,5 +29,13 @@ public class TeamMemberController {
                                               @Valid @RequestBody final TeamMemberAddRequest request) {
         teamMemberCommandService.addTeamMember(teamId, request.teamMemberStudentId(), request.teamMemberName());
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/{memberId}")
+    public ResponseEntity<Void> removeTeamMember(@PathVariable final Long teamId,
+                                                 @PathVariable final Long memberId) {
+        teamMemberCommandService.removeTeamMember(teamId, memberId);
+        return ResponseEntity.noContent().build();
     }
 }
