@@ -1,14 +1,19 @@
 package com.opus.opus.modules.member.application.convenience;
 
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_EXIST_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_EXIST_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import java.security.SecureRandom;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MemberConvenience {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String PASSWORD_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+
     final private MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Member getValidateExistMember(final Long memberId) {
         return memberRepository.findById(memberId)
@@ -52,5 +61,47 @@ public class MemberConvenience {
         if (memberRepository.existsByStudentId(studentId)) {
             throw new MemberException(ALREADY_EXIST_STUDENT_ID);
         }
+    }
+
+    private void validateNameMatchesStudentId(final String studentId, final String name) {
+        memberRepository.findByStudentId(studentId)
+                .ifPresent(member -> {
+                    if (!member.getName().equals(name)) {
+                        throw new MemberException(MISMATCH_STUDENT_ID_AND_NAME);
+                    }
+                });
+    }
+
+    public Member getOrCreateFakeMember(final String studentId, final String name) {
+        validateNameMatchesStudentId(studentId, name);
+
+        return memberRepository.findByStudentId(studentId)
+                .orElseGet(() -> registerFakeMember(studentId, name));
+    }
+
+    private Member registerFakeMember(final String studentId, final String name) {
+        final String email = "fake_" + studentId + "@pusan.ac.kr";
+        final String randomPassword = generateRandomPassword();
+
+        return memberRepository.save(
+                Member.builder()
+                        .name(name)
+                        .studentId(studentId)
+                        .email(email)
+                        .password(randomPassword)
+                        .roles(Set.of(ROLE_회원))
+                        .build()
+        );
+    }
+
+    private String generateRandomPassword() {
+        final int passwordLength = 32;
+
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < passwordLength; i++) {
+            password.append(PASSWORD_POOL.charAt(SECURE_RANDOM.nextInt(PASSWORD_POOL.length())));
+        }
+
+        return passwordEncoder.encode(password.toString());
     }
 }

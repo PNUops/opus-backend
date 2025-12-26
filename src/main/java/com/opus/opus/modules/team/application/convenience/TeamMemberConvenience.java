@@ -1,0 +1,23 @@
+package com.opus.opus.modules.team.application.convenience;
+
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
+
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.exception.TeamMemberException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class TeamMemberConvenience {
+
+    private final TeamMemberRepository teamMemberRepository;
+
+    public void checkIsDuplicateTeamMember(final Long teamId, final Long memberId) {
+        if (teamMemberRepository.existsByTeamIdAndMemberId(teamId, memberId)) {
+            throw new TeamMemberException(TEAM_MEMBER_ALREADY_EXISTS);
+        }
+    }
+}
