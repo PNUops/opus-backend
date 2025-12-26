@@ -37,7 +37,7 @@ public class TeamMemberCommandService {
         );
     }
 
-    public void removeTeamMember(final Long teamId, final Long memberId) {
+    public void deleteTeamMember(final Long teamId, final Long memberId) {
         teamConvenience.getValidateExistTeam(teamId);
         memberConvenience.getValidateExistMember(memberId);
         final TeamMember teamMember = teamMemberConvenience.getValidateExistTeamMember(teamId, memberId);

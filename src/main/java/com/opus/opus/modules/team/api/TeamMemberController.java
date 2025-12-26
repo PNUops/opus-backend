@@ -27,15 +27,15 @@ public class TeamMemberController {
     @PostMapping
     public ResponseEntity<Void> addTeamMember(@PathVariable final Long teamId,
                                               @Valid @RequestBody final TeamMemberAddRequest request) {
-        teamMemberCommandService.addTeamMember(teamId, request.teamMemberStudentId(), request.teamMemberName());
+        teamMemberCommandService.addTeamMember(teamId, request.memberStudentId(), request.memberName());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Secured("ROLE_관리자")
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> removeTeamMember(@PathVariable final Long teamId,
+    public ResponseEntity<Void> deleteTeamMember(@PathVariable final Long teamId,
                                                  @PathVariable final Long memberId) {
-        teamMemberCommandService.removeTeamMember(teamId, memberId);
+        teamMemberCommandService.deleteTeamMember(teamId, memberId);
         return ResponseEntity.noContent().build();
     }
 }
