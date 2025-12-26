@@ -44,12 +44,15 @@ public class NoticeCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 전체 공지사항이 정상적으로 수정된다.")
     void 전체_공지사항이_정상적으로_수정된다() {
+        final String beforeTitle = notice.getTitle();
+        final String beforeDescription = notice.getDescription();
         final NoticeRequest request = new NoticeRequest("수정 공지 제목", "수정 공지 내용");
-        assertThat(notice.getTitle()).isEqualTo(notice.getTitle());
 
         noticeCommandService.updateNotice(request, notice.getId());
 
         final Notice updateNotice = noticeRepository.findAllByOrderByCreatedAtDesc().get(0);
+        assertThat(updateNotice.getTitle()).isNotEqualTo(beforeTitle);
+        assertThat(updateNotice.getDescription()).isNotEqualTo(beforeDescription);
         assertThat(updateNotice.getTitle()).isEqualTo(request.title());
         assertThat(updateNotice.getDescription()).isEqualTo(request.description());
     }
