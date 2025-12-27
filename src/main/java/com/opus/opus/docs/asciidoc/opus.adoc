@@ -1,0 +1,13 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+= 🚀 SW프로젝트관리시스템(OPUS) API
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== 멤버 관련 API
+link:./member.html[회원 API]

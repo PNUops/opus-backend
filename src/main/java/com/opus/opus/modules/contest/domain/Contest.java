@@ -6,7 +6,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,6 +32,9 @@ public class Contest extends BaseEntity {
     private String contestName;
 
     @Column(nullable = false)
+    private Long categoryId;
+
+    @Column(nullable = false)
     private Boolean isCurrent;
 
     @Column(nullable = false)
@@ -43,15 +49,27 @@ public class Contest extends BaseEntity {
     @Column(nullable = false)
     private Integer maxVotesLimit;
 
+    @OneToMany(mappedBy = "contest")
+    private List<ContestAward> contestAwards = new ArrayList<>();
+
     @Builder
-    private Contest(final String contestName, final Boolean isCurrent, final Integer maxVotesLimit) {
+    private Contest(final String contestName, final Long categoryId) {
         this.contestName = contestName;
-        this.isCurrent = isCurrent;
+        this.categoryId = categoryId;
+        this.isCurrent = false;
         this.isDeleted = false;
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
-        this.maxVotesLimit = maxVotesLimit;
+        this.maxVotesLimit = 0;
+        this.maxVotesLimit = 0;
     }
 
-}
+    public void updateIsCurrent(final Boolean isCurrent) {
+        this.isCurrent = isCurrent;
+    }
 
+    public void updateContest(final Long categoryId, final String contestName) {
+        this.categoryId = categoryId;
+        this.contestName = contestName;
+    }
+}

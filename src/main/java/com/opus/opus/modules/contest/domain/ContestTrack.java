@@ -1,4 +1,6 @@
-package com.opus.opus.modules.member.domain;
+package com.opus.opus.modules.contest.domain;
+
+import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.Column;
@@ -7,7 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,27 +21,31 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE social_account SET is_deleted = true where id = ?")
-public class MemberSocialAccount extends BaseEntity {
-
+@SQLDelete(sql = "UPDATE contest SET is_deleted = true where id = ?")
+public class ContestTrack extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String socialEmail;
+    @Column(nullable = false)
+    private String trackName;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "contest_id", nullable = false)
+    private Contest contest;
 
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @OneToOne
-    @JoinColumn(name = "member_id", nullable = false, unique = true)
-    private Member member;
-
     @Builder
-    private MemberSocialAccount(final String socialEmail, final Member member) {
-        this.socialEmail = socialEmail;
+    private ContestTrack(final String trackName, final Contest contest) {
+        this.trackName = trackName;
+        this.contest = contest;
         this.isDeleted = false;
-        this.member = member;
+    }
+
+    public void updateTrack(final Contest contest, final String trackName) {
+        this.contest = contest;
+        this.trackName = trackName;
     }
 }
