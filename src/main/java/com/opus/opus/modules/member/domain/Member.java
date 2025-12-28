@@ -1,5 +1,6 @@
 package com.opus.opus.modules.member.domain;
 
+import static jakarta.persistence.FetchType.EAGER;
 import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
@@ -47,7 +48,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String studentId;
 
-    @ElementCollection(fetch = LAZY)
+    @ElementCollection(fetch = EAGER)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = MAX_ROLE_NAME_LENGTH)
