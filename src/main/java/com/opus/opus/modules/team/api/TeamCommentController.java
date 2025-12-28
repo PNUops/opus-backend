@@ -1,6 +1,12 @@
 package com.opus.opus.modules.team.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.TeamCommentCommandService;
+import com.opus.opus.modules.team.application.TeamCommentQueryService;
+import com.opus.opus.modules.team.application.dto.request.TeamCommentCreateRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamCommentUpdateRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamCommentResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

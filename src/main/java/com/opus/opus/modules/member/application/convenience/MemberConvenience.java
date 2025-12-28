@@ -8,6 +8,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUS
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,5 +53,9 @@ public class MemberConvenience {
         if (memberRepository.existsByStudentId(studentId)) {
             throw new MemberException(ALREADY_EXIST_STUDENT_ID);
         }
+    }
+
+    public List<Member> findAllById(final List<Long> memberIds) {
+        return memberRepository.findAllById(memberIds);
     }
 }
