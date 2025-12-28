@@ -16,4 +16,14 @@ public class MemberFixture {
                 .roles(Set.of(ROLE_회원))
                 .build();
     }
+
+    public static Member createMember(int number) {
+        return Member.builder()
+                .name("김옵스")
+                .email("example" + number + "@pusan.ac.kr")
+                .password("{noop}123456789")
+                .studentId("20211234" + number)
+                .roles(Set.of(ROLE_회원))
+                .build();
+    }
 }
