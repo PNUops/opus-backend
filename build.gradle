@@ -50,6 +50,10 @@ dependencies {
 
 	//restdocs
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+
+    // Apache POI for Excel file handling
+    implementation 'org.apache.poi:poi:5.2.3'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
 }
 
 ext {
