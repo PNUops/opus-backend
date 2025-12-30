@@ -28,8 +28,7 @@ public class ContestCategory extends BaseEntity {
 
     @Column(nullable = false)
     private Boolean isDeleted;
-
-
+    
     @Builder
     private ContestCategory(final String categoryName) {
         this.categoryName = categoryName;

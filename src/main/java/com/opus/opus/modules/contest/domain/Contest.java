@@ -50,7 +50,7 @@ public class Contest extends BaseEntity {
     private Integer maxVotesLimit;
 
     @OneToMany(mappedBy = "contest")
-    private List<ContestAward> contestAwards = new ArrayList<>();
+    private final List<ContestAward> contestAwards = new ArrayList<>();
 
     @Builder
     private Contest(final String contestName, final Long categoryId) {
@@ -60,7 +60,6 @@ public class Contest extends BaseEntity {
         this.isDeleted = false;
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
-        this.maxVotesLimit = 0;
         this.maxVotesLimit = 0;
     }
 
