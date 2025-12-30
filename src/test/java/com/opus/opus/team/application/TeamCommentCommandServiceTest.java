@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -106,6 +107,20 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[실패] 다른 팀의 댓글은 수정할 수 없다.")
+    void 다른_팀의_댓글은_수정할_수_없다() {
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentDescription);
+        final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
+        final String newDescription = "수정된 댓글입니다.";
+
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.updateComment(otherTeam.getId(), comment.getId(), member.getId(), newDescription);
+        }).isInstanceOf(TeamCommentException.class)
+                .hasMessage(COMMENT_NOT_BELONG_TO_TEAM.errorMessage());
+    }
+
+    @Test
     @DisplayName("[성공] 댓글이 정상적으로 삭제된다.")
     void 댓글이_정상적으로_삭제된다() {
         teamCommentCommandService.createComment(team.getId(), member.getId(), commentDescription);
@@ -114,6 +129,20 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
         teamCommentCommandService.deleteComment(team.getId(), comment.getId(), member.getId());
 
         assertThat(teamCommentRepository.findById(comment.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 팀의 댓글은 삭제할 수 없다.")
+    void 다른_팀의_댓글은_삭제할_수_없다() {
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentDescription);
+        final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+
+        final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
+
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.deleteComment(otherTeam.getId(), comment.getId(), member.getId());
+        }).isInstanceOf(TeamCommentException.class)
+                .hasMessage(COMMENT_NOT_BELONG_TO_TEAM.errorMessage());
     }
 
     @Test

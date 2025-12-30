@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.application;
 
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 
@@ -32,8 +33,10 @@ public class TeamCommentCommandService {
     }
 
     public void updateComment(final Long teamId, final Long commentId, final Long memberId, final String newDescription) {
-        teamConvenience.getValidateExistTeam(teamId);
+        teamConvenience.validateExistTeam(teamId);
         final TeamComment comment = getValidateExistComment(commentId);
+
+        validateCommentBelongsToTeam(comment, teamId);
         isMine(comment, memberId);
 
         comment.updateDescription(newDescription);
@@ -42,6 +45,8 @@ public class TeamCommentCommandService {
     public void deleteComment(final Long teamId, final Long commentId, final Long memberId) {
         teamConvenience.validateExistTeam(teamId);
         final TeamComment comment = getValidateExistComment(commentId);
+
+        validateCommentBelongsToTeam(comment, teamId);
         isMine(comment, memberId);
 
         teamCommentRepository.delete(comment);
@@ -55,6 +60,12 @@ public class TeamCommentCommandService {
 
     private TeamComment getValidateExistComment(final Long commentId) {
         return teamCommentRepository.findById(commentId).orElseThrow(() -> new TeamCommentException(NOT_FOUND_COMMENT));
+    }
+
+    private void validateCommentBelongsToTeam(final TeamComment comment, final Long teamId) {
+        if (!comment.getTeam().getId().equals(teamId)) {
+            throw new TeamCommentException(COMMENT_NOT_BELONG_TO_TEAM);
+        }
     }
 }
 
