@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestTrackQueryService {
+
     private final ContestTrackRepository contestTrackRepository;
 
     public List<ContestTrackResponse> getAllContestTracks(final Long contestId) {

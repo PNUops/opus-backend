@@ -117,6 +117,5 @@ public class ContestCommandService {
         if (currentCount >= MAX_CURRENT_CONTEST_COUNT) {
             throw new ContestException(CURRENT_CONTEST_LIMIT_EXCEEDED);
         }
-
     }
 }
