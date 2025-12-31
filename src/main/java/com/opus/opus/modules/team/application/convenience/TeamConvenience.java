@@ -5,9 +5,13 @@ import static com.opus.opus.modules.team.exception.TeamExceptionType.CONTEST_HAS
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
 
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +40,19 @@ public class TeamConvenience {
     public void validateAllTeamsDeletedInTrack(final Long trackId) {
         if (teamRepository.existsByTrackId(trackId)) {
             throw new TeamException(TRACK_HAS_TEAM);
+        }
+    }
+
+    public List<Team> findAllByContestId(final Long contestId) {
+        return teamRepository.findByContestId(contestId);
+    }
+
+    public void shuffleTeams(final List<Team> teams, final Member member) {
+        if (member != null) {
+            Random seed = new Random(member.getId());
+            Collections.shuffle(teams, seed);
+        } else {
+            Collections.shuffle(teams);
         }
     }
 

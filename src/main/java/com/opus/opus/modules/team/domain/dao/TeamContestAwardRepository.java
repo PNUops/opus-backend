@@ -9,4 +9,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface TeamContestAwardRepository extends JpaRepository<TeamContestAward, Long> {
     List<TeamContestAward> findByTeamId(final Long teamId);
+
+    List<TeamContestAward> findByTeamIdIn(final List<Long> teamIds);
 }
