@@ -13,6 +13,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResp
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
@@ -25,7 +26,9 @@ import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -90,10 +93,35 @@ public class ContestQueryService {
 
         final boolean isVotingPeriod = checkVotingPeriod(contest);
 
+        final Pair<Map<Long, Boolean>, Map<Long, Boolean>> voteAndLikeMaps = getVoteAndLikeMaps(teams, member,
+                isVotingPeriod);
+        final Map<Long, Boolean> voteMap = voteAndLikeMaps.a;
+        final Map<Long, Boolean> likeMap = voteAndLikeMaps.b;
+
+        final List<ContestAward> teamAwards = contestAwardConvenience.getTeamAwards(teams);
+
+        teamConvenience.shuffleTeams(teams, member);
+
+        return teams.stream()
+                .map(team -> TeamSummaryResponse.of(team, teamAwards,
+                        likeMap.getOrDefault(team.getId(), false),
+                        voteMap.getOrDefault(team.getId(), false),
+                        isVotingPeriod)).toList();
+
+    }
+
+    private Pair<Map<Long, Boolean>, Map<Long, Boolean>> getVoteAndLikeMaps(
+            final List<Team> teams, final Member member, final boolean isVotingPeriod) {
         if (isVotingPeriod) {
-            return teamVoteConvenience.getAllTeamSummaries(teams, member);
+            return new Pair<>(
+                    teamVoteConvenience.getVoteMap(teams, member),
+                    Collections.emptyMap()
+            );
         } else {
-            return teamLikeConvenience.getAllTeamSummaries(teams, member);
+            return new Pair<>(
+                    Collections.emptyMap(),
+                    teamLikeConvenience.getLikeMap(teams, member)
+            );
         }
     }
 
