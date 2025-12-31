@@ -16,7 +16,7 @@ public class ContestTeamTemplateCommandService {
     private final ContestConvenience contestConvenience;
     private final ContestTeamTemplateConvenience contestTeamTemplateConvenience;
 
-    public void updateTemplate(final Long contestId, final TeamTemplateRequest request) {
+    public void updateTeamTemplate(final Long contestId, final TeamTemplateRequest request) {
 
         contestConvenience.getValidateExistContest(contestId);
         final ContestTeamTemplate template = contestTeamTemplateConvenience.getValidateExistTemplate(
