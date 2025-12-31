@@ -26,15 +26,15 @@ public class TeamCommentQueryService {
     private final TeamConvenience teamConvenience;
 
     public List<TeamCommentResponse> getComments(final Long teamId) {
-        Team team = teamConvenience.getValidateExistTeam(teamId);
-        List<TeamComment> comments = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId());
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        final List<TeamComment> comments = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId());
 
-        List<Long> memberIds = comments.stream()
+        final List<Long> memberIds = comments.stream()
                 .map(TeamComment::getMemberId)
                 .distinct()
                 .toList();
 
-        Map<Long, String> memberIdNameMap = memberConvenience.findAllById(memberIds)
+        final Map<Long, String> memberIdNameMap = memberConvenience.findAllById(memberIds)
                 .stream()
                 .collect(toMap(Member::getId, Member::getName));
 

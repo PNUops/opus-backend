@@ -31,16 +31,14 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private TeamRepository teamRepository;
-
     @Autowired
     private MemberRepository memberRepository;
-
     @Autowired
     private TeamCommentRepository teamCommentRepository;
 
     private Team team;
     private Member member;
-    final String commentDescription = "테스트용 댓글입니다.";
+    private final String commentDescription = "테스트용 댓글입니다.";
 
     @BeforeEach
     void setUp() {
