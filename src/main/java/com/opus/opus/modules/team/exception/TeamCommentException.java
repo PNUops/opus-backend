@@ -5,6 +5,7 @@ import com.opus.opus.global.base.BaseException;
 import com.opus.opus.global.base.BaseExceptionType;
 
 public class TeamCommentException extends BaseException {
+
 	private final TeamCommentExceptionType exceptionType;
 
 	public TeamCommentException(final TeamCommentExceptionType exceptionType) {

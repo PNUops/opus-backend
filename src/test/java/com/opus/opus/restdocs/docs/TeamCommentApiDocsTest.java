@@ -3,8 +3,6 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
@@ -34,12 +32,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.support.WebDataBinderFactory;
-import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.method.support.ModelAndViewContainer;
 
 public class TeamCommentApiDocsTest extends RestDocsTest {
 
@@ -50,15 +44,6 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     void setUp() {
         member = MemberFixture.createMember();
         setField(member, "id", 1L);
-
-        when(memberArgumentResolver.supportsParameter(any(MethodParameter.class)))
-                .thenReturn(true);
-        when(memberArgumentResolver.resolveArgument(
-                any(MethodParameter.class),
-                any(ModelAndViewContainer.class),
-                any(NativeWebRequest.class),
-                any(WebDataBinderFactory.class)
-        )).thenReturn(member);
     }
 
     @Test
