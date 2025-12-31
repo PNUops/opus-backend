@@ -24,7 +24,7 @@ public class Notice extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column
     private Long contestId;
 
     @Column(nullable = false)
@@ -42,5 +42,10 @@ public class Notice extends BaseEntity {
         this.title = title;
         this.description = description;
         this.isDeleted = false;
+    }
+
+    public void updateNotice(final String title, final String description) {
+        this.title = title;
+        this.description = description;
     }
 }

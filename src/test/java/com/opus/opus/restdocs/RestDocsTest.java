@@ -14,6 +14,9 @@ import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.api.TeamCommentController;
 import com.opus.opus.modules.team.application.TeamCommentCommandService;
 import com.opus.opus.modules.team.application.TeamCommentQueryService;
+import com.opus.opus.modules.notice.api.NoticeController;
+import com.opus.opus.modules.notice.application.NoticeCommandService;
+import com.opus.opus.modules.notice.application.NoticeQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +34,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @WebMvcTest({
         MemberController.class,
         TeamCommentController.class,
+        NoticeController.class
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -48,6 +52,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected TeamCommentQueryService teamCommentQueryService;
+
+    @MockitoBean
+    protected NoticeCommandService noticeCommandService;
+
+    @MockitoBean
+    protected NoticeQueryService noticeQueryService;
 
     // Setting
     @Autowired
@@ -88,5 +98,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     protected FieldDescriptor arrayFieldWithPath(final String path, final String description) {
         return fieldWithPath(path).type(JsonFieldType.ARRAY).description(description);
+    }
+
+    protected FieldDescriptor dateTimeFieldWithPath(final String path, final String description) {
+        return fieldWithPath(path).type(JsonFieldType.STRING).description(description + " (ISO-8601)");
     }
 }

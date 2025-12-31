@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestCategoryConvenience {
+
     private final ContestCategoryRepository contestCategoryRepository;
 
     public ContestCategory getValidateExistCategory(final Long categoryId) {

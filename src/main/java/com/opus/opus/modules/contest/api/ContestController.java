@@ -101,5 +101,4 @@ public class ContestController {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
     }
-
 }
