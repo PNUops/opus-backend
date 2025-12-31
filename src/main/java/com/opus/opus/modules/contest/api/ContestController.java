@@ -2,8 +2,10 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestTeamDetailTemplateCommandService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.TeamDetailTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -35,6 +38,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final ContestTeamDetailTemplateCommandService contestTeamDetailTemplateCommandService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -100,5 +104,13 @@ public class ContestController {
     public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
+    }
+
+    @PutMapping("/{contestId}/team-detail-template")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<Void> updateTeamDetailTemplate(@PathVariable final Long contestId,
+                                                         @Valid @RequestBody final TeamDetailTemplateRequest request) {
+        contestTeamDetailTemplateCommandService.updateTemplate(contestId, request);
+        return ResponseEntity.noContent().build();
     }
 }
