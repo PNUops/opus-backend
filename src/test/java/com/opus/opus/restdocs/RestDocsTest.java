@@ -4,21 +4,18 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
-import com.opus.opus.global.security.JwtAuthenticationFilter;
 import com.opus.opus.global.security.JwtProvider;
-import com.opus.opus.global.security.MemberDetailsService;
-import com.opus.opus.global.security.handler.CustomAccessDeniedHandler;
-import com.opus.opus.global.security.handler.CustomAuthenticationEntryPoint;
+import com.opus.opus.global.security.annotation.MemberArgumentResolver;
 import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
-import com.opus.opus.modules.team.api.TeamMemberController;
-import com.opus.opus.modules.team.application.TeamMemberCommandService;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
+import com.opus.opus.modules.team.api.TeamMemberController;
+import com.opus.opus.modules.team.application.TeamMemberCommandService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +32,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 @WebMvcTest({
         MemberController.class,
-        NoticeController.class
+        NoticeController.class,
         TeamMemberController.class,
 })
 @Import(RestDocsConfig.class)
@@ -69,16 +66,7 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected MemberRepository memberRepository;
 
     @MockitoBean
-    protected JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @MockitoBean
-    protected MemberDetailsService memberDetailsService;
-
-    @MockitoBean
-    protected CustomAccessDeniedHandler customAccessDeniedHandler;
-
-    @MockitoBean
-    protected CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    protected MemberArgumentResolver memberArgumentResolver;
 
     @BeforeEach
     void setUp(final RestDocumentationContextProvider restDocumentation) {
