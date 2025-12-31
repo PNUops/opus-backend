@@ -11,6 +11,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTeamTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -40,6 +41,7 @@ public class ContestCommandService {
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final TeamConvenience teamConvenience;
+    private final ContestTeamTemplateConvenience contestTeamTemplateConvenience;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -70,6 +72,9 @@ public class ContestCommandService {
                 .categoryId(request.categoryId())
                 .build();
         contestRepository.save(contest);
+
+        // 템플릿 자동 생성
+        contestTeamTemplateConvenience.createTemplate(contest, contestCategory.getCategoryName());
 
         return ContestResponse.from(contest, contestCategory.getCategoryName());
     }
