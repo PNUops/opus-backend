@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
@@ -7,6 +8,8 @@ import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -99,6 +102,15 @@ public class ContestController {
     @GetMapping("/current")
     public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{contestId}/teams")
+    public ResponseEntity<List<TeamSummaryResponse>> getAllContestTeamSummaries(
+            @PathVariable final Long contestId,
+            @LoginMember final Member member
+    ) {
+        final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contestId, member);
         return ResponseEntity.ok(responses);
     }
 }
