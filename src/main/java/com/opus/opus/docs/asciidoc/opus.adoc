@@ -11,3 +11,9 @@ endif::[]
 
 == 멤버 관련 API
 link:./member.html[회원 API]
+
+== 공지사항 관련 API
+link:./notice.html[공지사항 API]
+
+== 대회 관련 API
+link:./contest.html[대회 API]
