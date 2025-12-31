@@ -6,17 +6,25 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.domain.Team;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
@@ -35,7 +43,11 @@ public class ContestQueryService {
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
+    private final ContestAwardConvenience contestAwardConvenience;
     private final FileConvenience fileConvenience;
+    private final TeamConvenience teamConvenience;
+    private final TeamLikeConvenience teamLikeConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
 
     public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
@@ -70,6 +82,25 @@ public class ContestQueryService {
                     return ContestResponse.from(contest, category.getCategoryName());
                 })
                 .toList();
+    }
+
+    public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        final List<Team> teams = teamConvenience.findAllByContestId(contestId);
+
+        final boolean isVotingPeriod = checkVotingPeriod(contest);
+
+        if (isVotingPeriod) {
+            return teamVoteConvenience.getAllTeamSummaries(teams, member);
+        } else {
+            return teamLikeConvenience.getAllTeamSummaries(teams, member);
+        }
+    }
+
+    private boolean checkVotingPeriod(final Contest contest) {
+        final LocalDateTime now = LocalDateTime.now();
+        return !now.isBefore(contest.getVoteStartAt())
+                && !now.isAfter(contest.getVoteEndAt());
     }
 
     private void checkImageConverted(final File findFile) {
