@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS `team_comment`;
 DROP TABLE IF EXISTS `team_contest_award`;
 DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
+DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_sort`;
 
@@ -149,6 +150,16 @@ CREATE TABLE `team_like` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `is_liked` bit(1) NOT NULL,
+  `member_id` bigint NOT NULL,
+  `team_id` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `team_vote` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `is_voted` bit(1) NOT NULL,
   `member_id` bigint NOT NULL,
   `team_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
