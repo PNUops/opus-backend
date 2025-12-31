@@ -15,6 +15,7 @@ import com.opus.opus.modules.team.domain.TeamComment;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.team.TeamCommentFixture;
 import com.opus.opus.team.TeamFixture;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,7 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
 
     private Team team;
     private Member member;
-    final String commentDescription = "테스트용 댓글입니다.";
+    private final String commentDescription = "테스트용 댓글입니다.";
 
     @BeforeEach
     void setUp() {
@@ -49,15 +50,12 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 팀의 댓글 목록을 조회할 수 있다.")
     void 팀의_댓글_목록을_조회할_수_있다() {
-        teamCommentRepository.save(TeamComment.builder()
-                .description(commentDescription)
-                .memberId(member.getId())
-                .team(team)
-                .build());
+        teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
+        teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
 
         final List<TeamCommentResponse> commentResponseList = teamCommentQueryService.getComments(team.getId());
 
-        assertThat(commentResponseList).hasSize(1);
+        assertThat(commentResponseList).hasSize(2);
         assertThat(commentResponseList.get(0).description()).isEqualTo(commentDescription);
         assertThat(commentResponseList.get(0).memberId()).isEqualTo(member.getId());
         assertThat(commentResponseList.get(0).memberName()).isEqualTo(member.getName());
@@ -75,16 +73,8 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 댓글 목록은 최신순으로 정렬되어 조회된다.")
     void 댓글_목록은_최신순으로_정렬되어_조회된다() {
-        final TeamComment firstComment = teamCommentRepository.save(TeamComment.builder()
-                .description(commentDescription + " 1")
-                .memberId(member.getId())
-                .team(team)
-                .build());
-        final TeamComment secondComment = teamCommentRepository.save(TeamComment.builder()
-                .description(commentDescription + " 2")
-                .memberId(member.getId())
-                .team(team)
-                .build());
+        final TeamComment firstComment = teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
+        final TeamComment secondComment = teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
 
         final List<TeamCommentResponse> commentResponseList = teamCommentQueryService.getComments(team.getId());
 
@@ -97,16 +87,8 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 여러 회원이 작성한 댓글을 조회할 수 있다.")
     void 여러_회원이_작성한_댓글을_조회할_수_있다() {
         final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
-        teamCommentRepository.save(TeamComment.builder()
-                .description(commentDescription + " 1")
-                .memberId(member.getId())
-                .team(team)
-                .build());
-        teamCommentRepository.save(TeamComment.builder()
-                .description(commentDescription + " 2")
-                .memberId(otherMember.getId())
-                .team(team)
-                .build());
+        teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
+        teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, otherMember.getId()));
 
         final List<TeamCommentResponse> commentResponseList = teamCommentQueryService.getComments(team.getId());
 

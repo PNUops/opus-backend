@@ -66,7 +66,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     void 유효한_요청이면_팀_댓글이_정상적으로_등록된다() throws Exception {
         final TeamCommentCreateRequest request = new TeamCommentCreateRequest("정말 멋진 프로젝트네요!");
 
-        doNothing().when(teamCommentCommandService).createComment(anyLong(), anyLong(), anyString());
+        doNothing().when(teamCommentCommandService).createComment(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/comments", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -93,7 +93,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
 
         willThrow(new TeamException(NOT_FOUND_TEAM))
                 .given(teamCommentCommandService)
-                .createComment(anyLong(), anyLong(), anyString());
+                .createComment(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/comments", 999)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -121,7 +121,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                 new TeamCommentResponse(2L, "고생하셨습니다!", 2L, "김옵스", 1L)
         );
 
-        when(teamCommentQueryService.getComments(anyLong())).thenReturn(responses);
+        when(teamCommentQueryService.getComments(any())).thenReturn(responses);
 
         mockMvc.perform(get("/teams/{teamId}/comments", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -149,7 +149,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     void 유효한_요청이면_팀_댓글이_정상적으로_수정된다() throws Exception {
         final TeamCommentUpdateRequest request = new TeamCommentUpdateRequest("수정된 댓글 내용입니다.");
 
-        doNothing().when(teamCommentCommandService).updateComment(anyLong(), anyLong(), anyLong(), anyString());
+        doNothing().when(teamCommentCommandService).updateComment(any(), any(), any(), any());
 
         mockMvc.perform(patch("/teams/{teamId}/comments/{commentId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -177,7 +177,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
 
         willThrow(new TeamCommentException(NOT_OWNER_COMMENT))
                 .given(teamCommentCommandService)
-                .updateComment(anyLong(), anyLong(), anyLong(), anyString());
+                .updateComment(any(), any(), any(), any());
 
         mockMvc.perform(patch("/teams/{teamId}/comments/{commentId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -201,7 +201,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 팀 댓글이 정상적으로 삭제된다.")
     void 팀_댓글이_정상적으로_삭제된다() throws Exception {
-        doNothing().when(teamCommentCommandService).deleteComment(anyLong(), anyLong(), anyLong());
+        doNothing().when(teamCommentCommandService).deleteComment(any(), any(), any());
 
         mockMvc.perform(delete("/teams/{teamId}/comments/{commentId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -222,7 +222,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     void 본인이_작성하지_않은_댓글_삭제_시_에러를_반환한다() throws Exception {
         willThrow(new TeamCommentException(NOT_OWNER_COMMENT))
                 .given(teamCommentCommandService)
-                .deleteComment(anyLong(), anyLong(), anyLong());
+                .deleteComment(any(), any(), any());
 
         mockMvc.perform(delete("/teams/{teamId}/comments/{commentId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
