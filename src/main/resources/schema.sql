@@ -3,6 +3,7 @@ USE opus;
 DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
+DROP TABLE IF EXISTS `contest_team_template`;
 DROP TABLE IF EXISTS `contest_track`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `member`;
@@ -48,6 +49,28 @@ CREATE TABLE `contest_category` (
   `category_name` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_team_template` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `contest_id` bigint NOT NULL,
+  `division` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `project_name` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `team_name` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `leader` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `team_members` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `professor` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `github_path` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `youtube_path` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `production_path` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `overview` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `poster` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `images` enum('REQUIRED','OPTIONAL','HIDDEN') NOT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_team_template_contest_id` (`contest_id`)
 );
 
 CREATE TABLE `contest_track` (

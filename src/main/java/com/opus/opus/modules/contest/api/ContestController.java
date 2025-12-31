@@ -2,10 +2,10 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.ContestTeamDetailTemplateCommandService;
+import com.opus.opus.modules.contest.application.ContestTeamTemplateCommandService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
-import com.opus.opus.modules.contest.application.dto.request.TeamDetailTemplateRequest;
+import com.opus.opus.modules.contest.application.dto.request.TeamTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -38,7 +38,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
-    private final ContestTeamDetailTemplateCommandService contestTeamDetailTemplateCommandService;
+    private final ContestTeamTemplateCommandService contestTeamTemplateCommandService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -109,8 +109,8 @@ public class ContestController {
     @PutMapping("/{contestId}/team-detail-template")
     @Secured("ROLE_관리자")
     public ResponseEntity<Void> updateTeamDetailTemplate(@PathVariable final Long contestId,
-                                                         @Valid @RequestBody final TeamDetailTemplateRequest request) {
-        contestTeamDetailTemplateCommandService.updateTemplate(contestId, request);
+                                                         @Valid @RequestBody final TeamTemplateRequest request) {
+        contestTeamTemplateCommandService.updateTemplate(contestId, request);
         return ResponseEntity.noContent().build();
     }
 }
