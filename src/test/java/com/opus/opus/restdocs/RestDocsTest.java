@@ -6,6 +6,9 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.helper.ApiTestHelper;
+import com.opus.opus.modules.contest.api.ContestController;
+import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
@@ -29,7 +32,8 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 @WebMvcTest({
         MemberController.class,
-        NoticeController.class
+        NoticeController.class,
+        ContestController.class
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -47,6 +51,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected NoticeQueryService noticeQueryService;
+
+    @MockitoBean
+    protected ContestCommandService contestCommandService;
+
+    @MockitoBean
+    protected ContestQueryService contestQueryService;
 
     // Setting
     @Autowired
