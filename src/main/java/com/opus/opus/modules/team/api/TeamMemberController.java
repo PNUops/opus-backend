@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/teams/{teamId}/members")
+@Secured("ROLE_관리자")
 public class TeamMemberController {
 
     private final TeamMemberCommandService teamMemberCommandService;
 
-    @Secured("ROLE_관리자")
     @PostMapping
     public ResponseEntity<Void> addTeamMember(@PathVariable final Long teamId,
                                               @Valid @RequestBody final TeamMemberAddRequest request) {
@@ -31,7 +31,6 @@ public class TeamMemberController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured("ROLE_관리자")
     @DeleteMapping("/{memberId}")
     public ResponseEntity<Void> deleteTeamMember(@PathVariable final Long teamId,
                                                  @PathVariable final Long memberId) {
