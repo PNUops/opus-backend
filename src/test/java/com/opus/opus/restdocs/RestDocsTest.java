@@ -13,6 +13,9 @@ import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
+import com.opus.opus.modules.team.api.TeamController;
+import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,8 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 @WebMvcTest({
         MemberController.class,
-        NoticeController.class
+        NoticeController.class,
+        TeamController.class
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -47,6 +51,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected NoticeQueryService noticeQueryService;
+
+    @MockitoBean
+    protected TeamCommandService teamCommandService;
+
+    @MockitoBean
+    protected TeamQueryService teamQueryService;
 
     // Setting
     @Autowired
