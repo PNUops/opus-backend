@@ -93,7 +93,7 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
         final List<TeamCommentResponse> commentResponseList = teamCommentQueryService.getComments(team.getId());
 
         assertThat(commentResponseList).hasSize(2);
-        assertThat(commentResponseList).extracting("memberName")
+        assertThat(commentResponseList).extracting(TeamCommentResponse::memberName)
                 .containsExactly(otherMember.getName(), member.getName());
     }
 

@@ -42,22 +42,22 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     private Member member;
     private final String commentDescription = "테스트용 댓글입니다.";
     private final String updatedCommentDescription = "수정된 댓글입니다.";
+    private TeamCommentCreateRequest commentCreateRequest;
 
     @BeforeEach
     void setUp() {
         team = teamRepository.save(TeamFixture.createTeam());
         member = memberRepository.save(MemberFixture.createMember());
+        commentCreateRequest = new TeamCommentCreateRequest(commentDescription);
     }
 
     @Test
     @DisplayName("[성공] 팀 댓글이 정상적으로 등록된다.")
     void 팀_댓글이_정상적으로_등록된다() {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest(commentDescription);
-
-        teamCommentCommandService.createComment(team.getId(), member.getId(), request.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
 
         final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
-        assertThat(savedComment.getDescription()).isEqualTo(request.description());
+        assertThat(savedComment.getDescription()).isEqualTo(commentCreateRequest.description());
         assertThat(savedComment.getMemberId()).isEqualTo(member.getId());
         assertThat(savedComment.getTeam().getId()).isEqualTo(team.getId());
     }
@@ -66,18 +66,16 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @DisplayName("[실패] 존재하지 않는 팀에는 댓글 등록이 불가능하다.")
     void 존재하지_않는_팀에는_댓글_등록이_불가능하다() {
         final Long invalidTeamId = 999L;
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest(commentDescription);
 
         assertThatThrownBy(() -> {
-            teamCommentCommandService.createComment(invalidTeamId, member.getId(), request.description());
+            teamCommentCommandService.createComment(invalidTeamId, member.getId(), commentCreateRequest.description());
         }).isInstanceOf(TeamException.class).hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
 
     @Test
     @DisplayName("[성공] 댓글이 정상적으로 수정된다.")
     void 댓글이_정상적으로_수정된다() {
-        final TeamCommentCreateRequest createRequest = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), createRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final TeamCommentUpdateRequest updateRequest = new TeamCommentUpdateRequest(updatedCommentDescription);
 
@@ -85,7 +83,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
 
         final TeamComment updatedComment = teamCommentRepository.findById(comment.getId()).orElseThrow();
         assertThat(updatedComment.getDescription()).isEqualTo(updateRequest.description());
-        assertThat(updatedComment.getDescription()).isNotEqualTo(createRequest.description());
+        assertThat(updatedComment.getDescription()).isNotEqualTo(commentCreateRequest.description());
     }
 
     @Test
@@ -102,8 +100,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 본인이 작성하지 않은 댓글은 수정할 수 없다.")
     void 본인이_작성하지_않은_댓글은_수정할_수_없다() {
-        final TeamCommentCreateRequest createRequest = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), createRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
 
@@ -117,8 +114,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 다른 팀의 댓글은 수정할 수 없다.")
     void 다른_팀의_댓글은_수정할_수_없다() {
-        final TeamCommentCreateRequest createRequest = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), createRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
 
@@ -133,8 +129,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 댓글이 정상적으로 삭제된다.")
     void 댓글이_정상적으로_삭제된다() {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), request.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
 
         teamCommentCommandService.deleteComment(team.getId(), comment.getId(), member.getId());
@@ -145,8 +140,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 다른 팀의 댓글은 삭제할 수 없다.")
     void 다른_팀의_댓글은_삭제할_수_없다() {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), request.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
 
@@ -169,8 +163,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 본인이 작성하지 않은 댓글은 삭제할 수 없다.")
     void 본인이_작성하지_않은_댓글은_삭제할_수_없다() {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest(commentDescription);
-        teamCommentCommandService.createComment(team.getId(), member.getId(), request.description());
+        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
 
