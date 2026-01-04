@@ -32,4 +32,12 @@ public class NoticeCommandService {
     public void deleteNotice(final Long noticeId) {
         noticeRepository.delete(noticeConvenience.getValidateExistNotice(noticeId));
     }
+
+    public void createContestNotice(final Long contestId, final NoticeRequest request) {
+        noticeRepository.save(Notice.builder()
+                .contestId(contestId)
+                .title(request.title())
+                .description(request.description())
+                .build());
+    }
 }

@@ -59,4 +59,12 @@ public class NoticeController {
     public ResponseEntity<List<NoticeSummaryResponse>> getAllNotices() {
         return ResponseEntity.ok(noticeQueryService.getAllNotices());
     }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/contests/{contestId}/notices")
+    public ResponseEntity<Void> createContestNotice(@PathVariable final Long contestId,
+                                                    @Valid @RequestBody final NoticeRequest request) {
+        noticeCommandService.createContestNotice(contestId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }
