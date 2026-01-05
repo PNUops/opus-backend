@@ -1,5 +1,7 @@
 USE opus;
 
+SET FOREIGN_KEY_CHECKS = 0;
+
 DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
@@ -15,6 +17,8 @@ DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_sort`;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE `contest` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -65,7 +69,7 @@ CREATE TABLE `file` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_path` varchar(255) NOT NULL,
-  `image_type` enum('BANNER','PREVIEW','THUMBNAIL') NOT NULL,
+  `image_type` enum('BANNER','PREVIEW','THUMBNAIL','POSTER') NOT NULL,
   `is_webp_converted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
   `reference_id` bigint NOT NULL,
