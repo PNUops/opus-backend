@@ -71,7 +71,7 @@ public class TeamCommandService {
                     checkWebpConverted(existingFile);
                     fileStorageUtil.deleteFile(existingFile.getId());
                 });
-        fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
+        fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
     }
 
     public void deletePosterImage(final Long teamId) {
