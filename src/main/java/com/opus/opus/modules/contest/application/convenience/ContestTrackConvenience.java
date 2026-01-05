@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestTrackConvenience {
+
     private final ContestTrackRepository contestTrackRepository;
 
     public void validateDuplicateTrackName(final Long contestId, final String trackName) {

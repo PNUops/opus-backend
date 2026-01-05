@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestCategoryQueryService {
+
     private final ContestCategoryRepository contestCategoryRepository;
 
     public List<ContestCategoryResponse> getAllContestCategories() {

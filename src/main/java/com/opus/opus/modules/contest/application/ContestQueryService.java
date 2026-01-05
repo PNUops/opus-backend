@@ -15,7 +15,6 @@ import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import java.util.List;
@@ -71,7 +70,6 @@ public class ContestQueryService {
                     return ContestResponse.from(contest, category.getCategoryName());
                 })
                 .toList();
-
     }
 
     private void checkImageConverted(final File findFile) {

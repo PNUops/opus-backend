@@ -84,7 +84,9 @@ CREATE TABLE `member` (
   `name` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `student_id` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_email` (`email`),
+  UNIQUE KEY `uk_member_student_id` (`student_id`)
 );
 
 CREATE TABLE `member_roles` (
