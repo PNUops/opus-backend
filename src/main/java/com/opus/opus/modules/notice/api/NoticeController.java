@@ -67,4 +67,13 @@ public class NoticeController {
         noticeCommandService.createContestNotice(contestId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<Void> updateContestNotice(@Valid @RequestBody final NoticeRequest request,
+                                                    @PathVariable final Long contestId,
+                                                    @PathVariable final Long noticeId) {
+        noticeCommandService.updateContestNotice(request, contestId, noticeId);
+        return ResponseEntity.noContent().build();
+    }
 }
