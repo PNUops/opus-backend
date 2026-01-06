@@ -4,9 +4,11 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -100,5 +102,22 @@ public class ContestController {
     public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
+    }
+
+    @PatchMapping("/{contestId}/votes")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<Void> updateMaxVotesLimit(
+            @PathVariable final Long contestId,
+            @Valid @RequestBody final ContestVotesLimitRequest request) {
+        contestCommandService.updateMaxVotesLimit(contestId, request.maxVotesLimit());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{contestId}/votes")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(
+            @PathVariable final Long contestId) {
+        final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
+        return ResponseEntity.ok(response);
     }
 }

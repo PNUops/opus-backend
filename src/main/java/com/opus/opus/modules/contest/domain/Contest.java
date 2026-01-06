@@ -71,4 +71,13 @@ public class Contest extends BaseEntity {
         this.categoryId = categoryId;
         this.contestName = contestName;
     }
+
+    public void updateMaxVotesLimit(final Integer maxVotesLimit) {
+        this.maxVotesLimit = maxVotesLimit;
+    }
+
+    public boolean isVotingPeriod() {
+        LocalDateTime now = LocalDateTime.now();
+        return !now.isBefore(voteStartAt) && !now.isAfter(voteEndAt);
+    }
 }
