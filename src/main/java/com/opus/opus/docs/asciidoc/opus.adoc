@@ -13,4 +13,5 @@ endif::[]
 link:./member.html[회원 API]
 
 == 팀 관련 API
+link:./team-comment.html[팀 댓글 API]
 link:./team-member.html[팀원 API]

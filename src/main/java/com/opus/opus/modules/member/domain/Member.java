@@ -1,7 +1,7 @@
 package com.opus.opus.modules.member.domain;
 
 import static jakarta.persistence.FetchType.EAGER;
-
+import static jakarta.persistence.FetchType.LAZY;
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -58,7 +58,7 @@ public class Member extends BaseEntity {
 
     @Builder
     private Member(final String name, final String email, final String password, final String studentId,
-                   final Set<MemberRoleType> roles) {
+                  final Set<MemberRoleType> roles) {
         this.name = name;
         this.email = email;
         this.password = password;

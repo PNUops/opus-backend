@@ -10,6 +10,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUS
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import java.util.List;
 import java.security.SecureRandom;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,10 @@ public class MemberConvenience {
         if (memberRepository.existsByStudentId(studentId)) {
             throw new MemberException(ALREADY_EXIST_STUDENT_ID);
         }
+    }
+
+    public List<Member> findAllById(final List<Long> memberIds) {
+        return memberRepository.findAllById(memberIds);
     }
 
     private void validateNameMatchesStudentId(final String studentId, final String name) {

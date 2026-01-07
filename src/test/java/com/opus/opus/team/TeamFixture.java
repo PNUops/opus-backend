@@ -1,15 +1,23 @@
 package com.opus.opus.team;
 
 import com.opus.opus.modules.team.domain.Team;
+import java.util.ArrayList;
 
 public class TeamFixture {
 
     public static Team createTeam() {
         return Team.builder()
-                .teamName("테스트 팀")
-                .projectName("테스트 프로젝트")
+                .teamName("팀 옵스")
+                .projectName("옵스 프로젝트")
+                .professorName("김교수")
+                .overview("이 프로젝트는 옵스 프로젝트입니다.")
+                .githubPath("http://github.com/example")
+                .productionPath("http://production.example.com")
+                .youTubePath("http://youtube.com/example")
                 .contestId(1L)
+                .trackId(1L)
                 .itemOrder(1)
+                .teamMembers(new ArrayList<>())
                 .build();
     }
 }
