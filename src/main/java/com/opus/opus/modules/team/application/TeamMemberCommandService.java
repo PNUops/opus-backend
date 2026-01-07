@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamMemberCommandService {
 
     private final TeamMemberRepository teamMemberRepository;
+    
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final MemberConvenience memberConvenience;

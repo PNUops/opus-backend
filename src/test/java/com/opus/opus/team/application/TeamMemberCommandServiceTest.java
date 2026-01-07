@@ -29,10 +29,8 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private TeamRepository teamRepository;
-
     @Autowired
     private TeamMemberRepository teamMemberRepository;
-
     @Autowired
     private MemberRepository memberRepository;
 
@@ -48,13 +46,13 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 회원가입한 학번과 이름이 없으면 가짜 회원을 생성 후 팀원으로 추가한다.")
     void 회원가입한_학번과_이름이_없으면_가짜_회원을_생성_후_팀원으로_추가한다() {
-        final String studentId = "202654321";
-        final String name = "문스옵";
+        final String notExistStudentId = "202654321";
+        final String notExistStudentName = "문스옵";
 
-        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), notExistStudentId, notExistStudentName);
 
-        final Member fakeMember = memberRepository.findByStudentId(studentId).get();
-        assertThat(fakeMember.getStudentId()).isEqualTo(studentId);
+        final Member fakeMember = memberRepository.findByStudentId(notExistStudentId).get();
+        assertThat(fakeMember.getStudentId()).isEqualTo(notExistStudentId);
 
         final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), fakeMember.getId())
                 .get();
@@ -65,10 +63,10 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 이미 회원가입한 회원의 학번과 이름으로 팀원으로 추가될 때 기존 회원을 팀원으로 추가한다")
     void 이미_회원가입한_회원의_학번과_이름으로_팀원으로_추가될_때_기존_회원을_팀원으로_추가한다() {
-        final String studentId = member.getStudentId();
-        final String name = member.getName();
+        final String signedUpStudentId = member.getStudentId();
+        final String signedUpStudentName = member.getName();
 
-        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), signedUpStudentId, signedUpStudentName);
 
         final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), member.getId()).get();
         assertThat(teamMember.getMemberId()).isEqualTo(member.getId());
@@ -78,10 +76,10 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[실패] 이미 회원가입한 회원의 학번인데 저장된 이름과 같지 않으면 팀원으로 추가 불가하다.")
     void 이미_회원가입한_회원의_학번인데_저장된_이름과_같지_않으면_팀원으로_추가_불가하다() {
         final String studentId = member.getStudentId();
-        final String wrongName = "이옵스아님";
+        final String wrongStudentName = "이옵스아님";
 
         assertThatThrownBy(() -> {
-            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongName);
+            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongStudentName);
         }).isInstanceOf(MemberException.class).hasMessage(MISMATCH_STUDENT_ID_AND_NAME.errorMessage());
     }
 
