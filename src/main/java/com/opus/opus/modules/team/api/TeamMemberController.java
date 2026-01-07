@@ -1,7 +1,7 @@
 package com.opus.opus.modules.team.api;
 
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
-import com.opus.opus.modules.team.application.dto.request.TeamMemberAddRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamMemberCreateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,9 +25,9 @@ public class TeamMemberController {
     private final TeamMemberCommandService teamMemberCommandService;
 
     @PostMapping
-    public ResponseEntity<Void> addTeamMember(@PathVariable final Long teamId,
-                                              @Valid @RequestBody final TeamMemberAddRequest request) {
-        teamMemberCommandService.addTeamMember(teamId, request.memberStudentId(), request.memberName());
+    public ResponseEntity<Void> createTeamMember(@PathVariable final Long teamId,
+                                                 @Valid @RequestBody final TeamMemberCreateRequest request) {
+        teamMemberCommandService.createTeamMember(teamId, request.memberStudentId(), request.memberName());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

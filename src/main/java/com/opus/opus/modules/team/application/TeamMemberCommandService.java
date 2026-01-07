@@ -24,7 +24,7 @@ public class TeamMemberCommandService {
     private final TeamMemberConvenience teamMemberConvenience;
     private final MemberConvenience memberConvenience;
 
-    public void addTeamMember(final Long teamId, final String studentId, final String name) {
+    public void createTeamMember(final Long teamId, final String studentId, final String name) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         final Member member = memberConvenience.getOrCreateFakeMember(studentId, name);
         teamMemberConvenience.checkIsDuplicateTeamMember(teamId, member.getId());

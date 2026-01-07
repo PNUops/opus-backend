@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
-import com.opus.opus.modules.team.application.dto.request.TeamMemberAddRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamMemberCreateRequest;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -62,9 +62,9 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 팀원이 추가된다.")
     void 유효한_요청이면_정상적으로_팀원이_추가된다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
 
-        doNothing().when(teamMemberCommandService).addTeamMember(any(), any(), any());
+        doNothing().when(teamMemberCommandService).createTeamMember(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -88,7 +88,7 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원명이 비어있으면 400 에러를 반환한다.")
     void 팀원명이_비어있으면_에러를_반환한다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("", "202612345");
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -112,7 +112,7 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원학번이 비어있으면 400 에러를 반환한다.")
     void 팀원학번이_비어있으면_에러를_반환한다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("이옵스", "");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "");
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -136,10 +136,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 팀 ID인 경우 404 에러를 반환한다.")
     void 존재하지_않는_팀_ID인_경우_에러를_반환한다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
 
         willThrow(new TeamException(NOT_FOUND_TEAM)).given(teamMemberCommandService)
-                .addTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -163,10 +163,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원명과 팀원학번이 맞지 않으면 400 에러를 반환한다.")
     void 팀원명과_팀원학번이_맞지_않으면_에러를_반환한다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
 
         willThrow(new MemberException(MISMATCH_STUDENT_ID_AND_NAME)).given(teamMemberCommandService)
-                .addTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -190,10 +190,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 동일한 참가자명 + 학번이 해당 팀에 있는 경우 409 에러를 반환한다.")
     void 동일한_참가자명과_학번이_해당_팀에_있는_경우_에러를_반환한다() throws Exception {
-        final TeamMemberAddRequest request = new TeamMemberAddRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
 
         willThrow(new TeamMemberException(TEAM_MEMBER_ALREADY_EXISTS)).given(teamMemberCommandService)
-                .addTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)

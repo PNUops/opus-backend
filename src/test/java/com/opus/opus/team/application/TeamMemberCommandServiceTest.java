@@ -51,7 +51,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String studentId = "202654321";
         final String name = "문스옵";
 
-        teamMemberCommandService.addTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
 
         final Member fakeMember = memberRepository.findByStudentId(studentId).get();
         assertThat(fakeMember.getStudentId()).isEqualTo(studentId);
@@ -68,7 +68,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String studentId = member.getStudentId();
         final String name = member.getName();
 
-        teamMemberCommandService.addTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
 
         final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), member.getId()).get();
         assertThat(teamMember.getMemberId()).isEqualTo(member.getId());
@@ -81,7 +81,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String wrongName = "이옵스아님";
 
         assertThatThrownBy(() -> {
-            teamMemberCommandService.addTeamMember(team.getId(), studentId, wrongName);
+            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongName);
         }).isInstanceOf(MemberException.class).hasMessage(MISMATCH_STUDENT_ID_AND_NAME.errorMessage());
     }
 
@@ -91,7 +91,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String studentId = member.getStudentId();
         final String name = member.getName();
 
-        teamMemberCommandService.addTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
         final Member addedMember = memberRepository.findByStudentId(studentId).get();
 
         teamMemberCommandService.deleteTeamMember(team.getId(), addedMember.getId());
