@@ -1,4 +1,4 @@
-SET FOREIGN_KEY_CHECKS = 0;
+USE opus;
 
 DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
@@ -15,8 +15,6 @@ DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_sort`;
-
-SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE `contest` (
   `id` bigint NOT NULL AUTO_INCREMENT,
