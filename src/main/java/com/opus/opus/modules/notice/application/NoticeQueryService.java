@@ -1,6 +1,6 @@
 package com.opus.opus.modules.notice.application;
 
-import com.opus.opus.modules.notice.application.dto.NoticeConvenience;
+import com.opus.opus.modules.notice.application.convenience.NoticeConvenience;
 import com.opus.opus.modules.notice.application.dto.response.NoticeDetailResponse;
 import com.opus.opus.modules.notice.application.dto.response.NoticeSummaryResponse;
 import com.opus.opus.modules.notice.domain.Notice;

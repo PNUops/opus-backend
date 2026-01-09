@@ -1,4 +1,4 @@
-package com.opus.opus.modules.notice.application.dto;
+package com.opus.opus.modules.notice.application.convenience;
 
 import static com.opus.opus.modules.notice.exception.NoticeExceptionType.NOT_FOUND_NOTICE;
 

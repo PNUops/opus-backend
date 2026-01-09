@@ -2,7 +2,7 @@ package com.opus.opus.modules.notice.application;
 
 import static com.opus.opus.modules.notice.exception.NoticeExceptionType.NOT_FOUND_NOTICE;
 
-import com.opus.opus.modules.notice.application.dto.NoticeConvenience;
+import com.opus.opus.modules.notice.application.convenience.NoticeConvenience;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
 import com.opus.opus.modules.notice.domain.Notice;
 import com.opus.opus.modules.notice.domain.dao.NoticeRepository;
