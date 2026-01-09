@@ -19,5 +19,10 @@ public class NoticeConvenience {
     public Notice getValidateExistNotice(final Long noticeId) {
         return noticeRepository.findById(noticeId).orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
     }
+
+    public Notice getContestNotice(final Long contestId, final Long noticeId) {
+        return noticeRepository.findByContestIdAndId(contestId, noticeId)
+                .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
+    }
 }
 
