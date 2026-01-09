@@ -76,4 +76,12 @@ public class NoticeController {
         noticeCommandService.updateContestNotice(request, contestId, noticeId);
         return ResponseEntity.noContent().build();
     }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<Void> deleteContestNotice(@PathVariable final Long contestId,
+                                                    @PathVariable final Long noticeId) {
+        noticeCommandService.deleteContestNotice(contestId, noticeId);
+        return ResponseEntity.noContent().build();
+    }
 }

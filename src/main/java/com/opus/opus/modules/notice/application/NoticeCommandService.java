@@ -49,6 +49,10 @@ public class NoticeCommandService {
         notice.updateNotice(request.title(), request.description());
     }
 
+    public void deleteContestNotice(final Long contestId, final Long noticeId) {
+        noticeRepository.delete(getContestNotice(contestId, noticeId));
+    }
+
     private Notice getContestNotice(final Long contestId, final Long noticeId) {
         return noticeRepository.findByContestIdAndId(contestId, noticeId)
                 .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
