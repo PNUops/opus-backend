@@ -84,4 +84,11 @@ public class NoticeController {
         noticeCommandService.deleteContestNotice(contestId, noticeId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<NoticeDetailResponse> getContestNotice(@PathVariable final Long contestId,
+                                                                 @PathVariable final Long noticeId) {
+        return ResponseEntity.ok(noticeQueryService.getContestNotice(contestId, noticeId));
+    }
+
 }

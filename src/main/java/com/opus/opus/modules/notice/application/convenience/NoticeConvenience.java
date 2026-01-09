@@ -20,7 +20,7 @@ public class NoticeConvenience {
         return noticeRepository.findById(noticeId).orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
     }
 
-    public Notice getContestNotice(final Long contestId, final Long noticeId) {
+    public Notice getValidateContestNotice(final Long contestId, final Long noticeId) {
         return noticeRepository.findByContestIdAndId(contestId, noticeId)
                 .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
     }

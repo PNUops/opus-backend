@@ -42,11 +42,11 @@ public class NoticeCommandService {
     }
 
     public void updateContestNotice(final NoticeRequest request, final Long contestId, final Long noticeId) {
-        final Notice notice = noticeConvenience.getContestNotice(contestId, noticeId);
+        final Notice notice = noticeConvenience.getValidateContestNotice(contestId, noticeId);
         notice.updateNotice(request.title(), request.description());
     }
 
     public void deleteContestNotice(final Long contestId, final Long noticeId) {
-        noticeRepository.delete(noticeConvenience.getContestNotice(contestId, noticeId));
+        noticeRepository.delete(noticeConvenience.getValidateContestNotice(contestId, noticeId));
     }
 }

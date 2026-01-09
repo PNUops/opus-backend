@@ -30,4 +30,9 @@ public class NoticeQueryService {
                 .map(NoticeSummaryResponse::from)
                 .toList();
     }
+
+    public NoticeDetailResponse getContestNotice(final Long contestId, final Long noticeId) {
+        final Notice notice = noticeConvenience.getValidateContestNotice(contestId, noticeId);
+        return NoticeDetailResponse.from(notice);
+    }
 }
