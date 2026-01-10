@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -106,5 +108,13 @@ public class ContestController {
     @GetMapping("/{contestId}/vote")
     public ResponseEntity<VotePeriodResponse> getVotePeriod(@PathVariable final Long contestId) {
         return ResponseEntity.ok(contestQueryService.getVotePeriod(contestId));
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/vote")
+    public ResponseEntity<Void> updateVotePeriod(@PathVariable final Long contestId,
+                                                 @Valid @RequestBody final VoteUpdateRequest voteRequest) {
+        contestCommandService.updateVotePeriod(contestId, voteRequest);
+        return ResponseEntity.ok().build();
     }
 }

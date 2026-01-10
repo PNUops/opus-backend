@@ -71,4 +71,9 @@ public class Contest extends BaseEntity {
         this.categoryId = categoryId;
         this.contestName = contestName;
     }
+
+    public void updateVotePeriod(final LocalDateTime voteStartAt, final LocalDateTime voteEndAt) {
+        this.voteStartAt = voteStartAt;
+        this.voteEndAt = voteEndAt;
+    }
 }
