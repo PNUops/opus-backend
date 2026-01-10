@@ -7,6 +7,7 @@ import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -100,5 +101,10 @@ public class ContestController {
     public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{contestId}/vote")
+    public ResponseEntity<VotePeriodResponse> getVotePeriod(@PathVariable final Long contestId) {
+        return ResponseEntity.ok(contestQueryService.getVotePeriod(contestId));
     }
 }
