@@ -78,4 +78,17 @@ public class ContestCommandServiceTest extends IntegrationTest {
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
         assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(maxVotesLimit);
     }
+
+    @Test
+    @DisplayName("[성공] 투표 종료 후에는 최대 투표 개수를 변경할 수 있다.")
+    void 투표_종료_후에는_최대_투표_개수를_변경할_수_있다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contest.updateVotePeriod(now.minusDays(2), now.minusDays(1));
+        contestRepository.save(contest);
+
+        contestCommandService.updateMaxVotesLimit(contest.getId(), maxVotesLimit);
+
+        final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
+        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(maxVotesLimit);
+    }
 }
