@@ -112,4 +112,14 @@ public class NoticeCommandServiceTest extends IntegrationTest {
         assertThat(updateNotice.getTitle()).isEqualTo(request.title());
         assertThat(updateNotice.getDescription()).isEqualTo(request.description());
     }
+
+    @Test
+    @DisplayName("[성공] 대회별 공지사항이 정상적으로 삭제된다.")
+    void 대회별_공지사항이_정상적으로_삭제된다() {
+        assertThat(noticeRepository.count()).isEqualTo(2);
+
+        noticeCommandService.deleteContestNotice(contestNotice.getContestId(), contestNotice.getId());
+
+        assertThat(noticeRepository.count()).isEqualTo(1);
+    }
 }
