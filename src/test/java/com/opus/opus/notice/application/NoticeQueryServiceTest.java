@@ -77,4 +77,18 @@ public class NoticeQueryServiceTest extends IntegrationTest {
         assertThat(response.title()).isEqualTo(contestNotice.getTitle());
         assertThat(response.description()).isEqualTo(contestNotice.getDescription());
     }
+
+    @Test
+    @DisplayName("[성공] 대회별 공지사항 목록을 조회할 수 있다.")
+    void 대회별_공지사항_목록을_조회할_수_있다() {
+        final Notice anotherContestNotice = noticeRepository.save(NoticeFixture.createContestNotice(contest.getId()));
+
+        final List<NoticeSummaryResponse> responses = noticeQueryService.getAllContestNotices(
+                anotherContestNotice.getContestId());
+
+        assertThat(responses).hasSize(2);
+        assertThat(responses)
+                .extracting(NoticeSummaryResponse::noticeId)
+                .containsExactlyInAnyOrder(contestNotice.getId(), anotherContestNotice.getId());
+    }
 }
