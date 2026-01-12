@@ -80,3 +80,20 @@ include::{snippets}/get-all-notices/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-notices/response-fields.adoc[]
+
+== `POST`: 대회별 공지사항 생성
+
+.HTTP Request Headers
+include::{snippets}/create-contest-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/create-contest-notice/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/create-contest-notice/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/create-contest-notice/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/create-contest-notice/request-fields.adoc[]
