@@ -27,7 +27,7 @@ public class NoticeQueryServiceTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        notice = noticeRepository.save(NoticeFixture.createNotice());
+        notice = noticeRepository.save(NoticeFixture.createGlobalNotice());
     }
 
     @Test
@@ -42,7 +42,7 @@ public class NoticeQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 전체 공지사항 목록을 조회할 수 있다.")
     void 전체_공지사항_목록을_조회할_수_있다() {
-        final Notice anotherNotice = noticeRepository.save(NoticeFixture.createNotice());
+        final Notice anotherNotice = noticeRepository.save(NoticeFixture.createGlobalNotice());
 
         final List<NoticeSummaryResponse> responses = noticeQueryService.getAllNotices();
 

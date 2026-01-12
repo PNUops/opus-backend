@@ -25,7 +25,7 @@ public class NoticeCommandServiceTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        notice = noticeRepository.save(NoticeFixture.createNotice());
+        notice = noticeRepository.save(NoticeFixture.createGlobalNotice());
     }
 
     @Test
