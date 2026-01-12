@@ -205,4 +205,23 @@ public class NoticeApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 삭제된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_삭제된다() throws Exception {
+        doNothing().when(noticeCommandService).deleteContestNotice(any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/notices/{noticeId}", 1,1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
 }

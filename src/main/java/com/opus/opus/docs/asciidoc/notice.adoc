@@ -116,3 +116,17 @@ include::{snippets}/update-contest-notice/request-fields.adoc[]
 
 .Path Parameters
 include::{snippets}/update-contest-notice/path-parameters.adoc[]
+
+== `DELETE`: 대회별 공지사항 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-notice/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-notice/path-parameters.adoc[]
