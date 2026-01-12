@@ -130,3 +130,14 @@ include::{snippets}/delete-contest-notice/http-response.adoc[]
 
 .Path Parameters
 include::{snippets}/delete-contest-notice/path-parameters.adoc[]
+
+== `GET`: 대회별 공지사항 상세 조회
+
+.HTTP Request
+include::{snippets}/get-contest-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-notice/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-contest-notice/path-parameters.adoc[]
