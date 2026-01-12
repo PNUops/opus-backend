@@ -45,7 +45,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 생성된다.")
     void 유효한_요청이면_정상적으로_전체_공지사항이_생성된다() throws Exception {
-        final NoticeRequest request = new NoticeRequest("공지 제목", "공지 내용");
+        final NoticeRequest request = new NoticeRequest("전체 공지 제목", "전체 공지 내용");
 
         doNothing().when(noticeCommandService).createNotice(any());
 
@@ -68,7 +68,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 수정된다.")
     void 유효한_요청이면_정상적으로_전체_공지사항이_수정된다() throws Exception {
-        final NoticeRequest request = new NoticeRequest("수정된 공지 제목", "수정된 공지 내용");
+        final NoticeRequest request = new NoticeRequest("수정된 전체 공지 제목", "수정된 전체 공지 내용");
 
         doNothing().when(noticeCommandService).updateNotice(any(), any());
 
@@ -112,7 +112,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 상세 조회를 할 수 있다.")
     void 유효한_요청이면_정상적으로_전체_공지사항_상세_조회를_할_수_있다() throws Exception {
-        final NoticeDetailResponse response = new NoticeDetailResponse("공지 제목", "공지 내용", now(), now());
+        final NoticeDetailResponse response = new NoticeDetailResponse("공지 전체 제목", "공지 전체 내용", now(), now());
 
         when(noticeQueryService.getNotice(any())).thenReturn(response);
 
@@ -179,4 +179,30 @@ public class NoticeApiDocsTest extends RestDocsTest {
                 ));
     }
 
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 수정된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_수정된다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("수정된 대회별 공지 제목", "수정된 대회별 공지 내용");
+
+        doNothing().when(noticeCommandService).updateContestNotice(any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/notices/{noticeId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "수정된 대회별 공지 제목"),
+                                stringFieldWithPath("description", "수정된 대회별 공지 내용")
+                        )
+                ));
+    }
 }

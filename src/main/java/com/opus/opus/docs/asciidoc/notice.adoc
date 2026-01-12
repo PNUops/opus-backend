@@ -16,6 +16,8 @@ link:../opus.html[API 목록으로 돌아가기]
 
 == `POST`: 전체 공지사항 생성
 
+NOTE: 전체 공지사항의 contestId는 null 입니다.
+
 .HTTP Request Headers
 include::{snippets}/create-notice/request-headers.adoc[]
 
@@ -97,3 +99,20 @@ include::{snippets}/create-contest-notice/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/create-contest-notice/request-fields.adoc[]
+
+== `PATCH`: 대회별 공지사항 수정
+
+.HTTP Request Headers
+include::{snippets}/update-contest-notice/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-notice/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-notice/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-notice/request-fields.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest-notice/path-parameters.adoc[]
