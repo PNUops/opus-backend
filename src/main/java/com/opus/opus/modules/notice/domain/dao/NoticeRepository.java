@@ -9,5 +9,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
     List<Notice> findAllByOrderByCreatedAtDesc();
 
+    List<Notice> findAllByContestIdOrderByCreatedAtDesc(Long contestId);
+
     Optional<Notice> findByContestIdAndId(Long contestId, Long id);
 }

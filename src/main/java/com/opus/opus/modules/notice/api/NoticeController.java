@@ -91,4 +91,9 @@ public class NoticeController {
         return ResponseEntity.ok(noticeQueryService.getContestNotice(contestId, noticeId));
     }
 
+    @GetMapping("/contests/{contestId}/notices")
+    public ResponseEntity<List<NoticeSummaryResponse>> getAllContestNotices(@PathVariable final Long contestId) {
+        return ResponseEntity.ok(noticeQueryService.getAllContestNotices(contestId));
+    }
+
 }
