@@ -1,5 +1,6 @@
 package com.opus.opus.modules.notice.application;
 
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.notice.application.convenience.NoticeConvenience;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
 import com.opus.opus.modules.notice.domain.Notice;
@@ -16,6 +17,7 @@ public class NoticeCommandService {
     private final NoticeRepository noticeRepository;
 
     private final NoticeConvenience noticeConvenience;
+    private final ContestConvenience contestConvenience;
 
     public void createNotice(final NoticeRequest request) {
         noticeRepository.save(Notice.builder()
@@ -34,6 +36,8 @@ public class NoticeCommandService {
     }
 
     public void createContestNotice(final Long contestId, final NoticeRequest request) {
+        contestConvenience.validateExistContest(contestId);
+
         noticeRepository.save(Notice.builder()
                 .contestId(contestId)
                 .title(request.title())
