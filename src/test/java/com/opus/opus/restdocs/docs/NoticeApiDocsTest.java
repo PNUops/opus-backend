@@ -34,13 +34,12 @@ import org.springframework.http.MediaType;
 public class NoticeApiDocsTest extends RestDocsTest {
 
     private Member admin;
-    private String adminToken;
+    private static final String ADMIN_TOKEN = "Bearer admin.access.token";
 
     @BeforeEach
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
-        adminToken = "mock_admin_access_token";
     }
 
     @Test
@@ -51,7 +50,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
         doNothing().when(noticeCommandService).createNotice(any());
 
         mockMvc.perform(post("/notices")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -74,7 +73,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
         doNothing().when(noticeCommandService).updateNotice(any(), any());
 
         mockMvc.perform(patch("/notices/{noticeId}", 1)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
@@ -98,7 +97,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
         doNothing().when(noticeCommandService).deleteNotice(any());
 
         mockMvc.perform(delete("/notices/{noticeId}", 1)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNoContent())
                 .andDo(document("delete-notice",
                         pathParameters(
@@ -153,4 +152,31 @@ public class NoticeApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 생성된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_생성된다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("공지 제목", "공지 내용");
+
+        doNothing().when(noticeCommandService).createContestNotice(any(), any());
+
+        mockMvc.perform(post("/contests/{contestId}/notices", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("create-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "공지 제목"),
+                                stringFieldWithPath("description", "공지 내용")
+                        )
+                ));
+    }
+
 }

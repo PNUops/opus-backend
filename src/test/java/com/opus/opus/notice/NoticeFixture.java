@@ -12,10 +12,10 @@ public class NoticeFixture {
                 .build();
     }
 
-    public static Notice createContestNotice() {
+    public static Notice createContestNotice(final Long contestId) {
         return Notice.builder()
                 .title("대회 공지 제목입니다.")
-                .contestId(1L)
+                .contestId(contestId)
                 .description("대회 공지 내용입니다.")
                 .build();
     }
