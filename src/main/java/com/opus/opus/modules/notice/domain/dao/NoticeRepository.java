@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
-    List<Notice> findAllByOrderByCreatedAtDesc();
+    List<Notice> findAllByContestIdIsNullOrderByCreatedAtDesc();
 
-    List<Notice> findAllByContestIdOrderByCreatedAtDesc(Long contestId);
+    List<Notice> findAllByContestIdOrderByCreatedAtDesc(final Long contestId);
 
-    Optional<Notice> findByContestIdAndId(Long contestId, Long id);
+    Optional<Notice> findByContestIdAndId(final Long contestId, final Long id);
 }

@@ -35,7 +35,7 @@ public class NoticeCommandServiceTest extends IntegrationTest {
 
         noticeCommandService.createNotice(request);
 
-        final Notice notice = noticeRepository.findAllByOrderByCreatedAtDesc().get(0);
+        final Notice notice = noticeRepository.findAllByContestIdIsNullOrderByCreatedAtDesc().get(0);
         assertThat(notice.getTitle()).isEqualTo(request.title());
         assertThat(notice.getDescription()).isEqualTo(request.description());
         assertThat(notice.getContestId()).isNull();
@@ -50,7 +50,7 @@ public class NoticeCommandServiceTest extends IntegrationTest {
 
         noticeCommandService.updateNotice(request, notice.getId());
 
-        final Notice updateNotice = noticeRepository.findAllByOrderByCreatedAtDesc().get(0);
+        final Notice updateNotice = noticeRepository.findAllByContestIdIsNullOrderByCreatedAtDesc().get(0);
         assertThat(updateNotice.getTitle()).isNotEqualTo(beforeTitle);
         assertThat(updateNotice.getDescription()).isNotEqualTo(beforeDescription);
         assertThat(updateNotice.getTitle()).isEqualTo(request.title());

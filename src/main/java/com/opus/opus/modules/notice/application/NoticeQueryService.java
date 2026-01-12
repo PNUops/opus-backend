@@ -27,7 +27,7 @@ public class NoticeQueryService {
     }
 
     public List<NoticeSummaryResponse> getAllNotices() {
-        return noticeRepository.findAllByOrderByCreatedAtDesc()
+        return noticeRepository.findAllByContestIdIsNullOrderByCreatedAtDesc()
                 .stream()
                 .map(NoticeSummaryResponse::from)
                 .toList();
