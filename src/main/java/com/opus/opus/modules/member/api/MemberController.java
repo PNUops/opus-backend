@@ -1,8 +1,10 @@
 package com.opus.opus.modules.member.api;
 
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
+import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -94,8 +96,12 @@ public class MemberController {
     }
 
     @GetMapping("/oauth/google/callback")
-    public ResponseEntity<SignInResponse> googleOAuthCallback(final String code) {
-        final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code);
+    public ResponseEntity<SignInResponse> googleOAuthCallback(
+            final String code,
+            final String state,
+            final String error
+    ) {
+        final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code, state, error);
         return ResponseEntity.ok(response);
     }
 }

@@ -8,9 +8,12 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIA
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.oauth.dto.GoogleOAuthToken;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,15 +58,24 @@ public class GoogleOauth implements SocialOauth {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
+    private final AuthRedisUtil authRedisUtil;
+
     @Override
     public String getOauthRedirectURL() {
         String callbackUrl = determineCallbackUrl();
+
+        String state = UUID.randomUUID().toString();
+
+        // Redis에 state 저장 (5분 TTL)
+        String stateKey = "oauth:state:" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
 
         return UriComponentsBuilder.fromUriString(GOOGLE_SNS_URL)
                 .queryParam("scope", GOOGLE_DATA_ACCESS_SCOPE)
                 .queryParam("response_type", "code")
                 .queryParam("client_id", GOOGLE_SNS_CLIENT_ID)
                 .queryParam("redirect_uri", callbackUrl)
+                .queryParam("state", state)
                 .build()
                 .toUriString();
     }

@@ -1,6 +1,8 @@
 package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILED_TO_GET_SOCIAL_USER_INFO;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
@@ -157,8 +159,10 @@ public class MemberCommandService {
         }
     }
 
-    public SignInResponse getGoogleOAuthCallback(final String code) {
+    public SignInResponse getGoogleOAuthCallback(final String code, final String state, final String error) {
         try {
+            validateGoogleOAuthRequest(code, state, error);
+
             final GoogleUser googleUser = googleOauth.getUserInfoByCode(code, GoogleUser.class);
 
             return memberRepository.findByEmail(googleUser.email())
@@ -294,5 +298,32 @@ public class MemberCommandService {
 
     private static String signInVerifiedKey(final String email) {
         return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
+    }
+
+    private void validateGoogleOAuthRequest(final String code, final String state, final String error) {
+        validateState(state);
+
+        if (error != null) {
+            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+        }
+
+        if (code == null || code.isBlank()) {
+            throw new OAuthException(SOCIAL_LOGIN_FAILED_AUTH_CODE);
+        }
+    }
+
+    private void validateState(final String state) {
+        if (state == null || state.isBlank()) {
+            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+        }
+
+        String stateKey = "oauth:state:" + state;
+        String storedState = authRedisUtil.get(stateKey);
+
+        if (storedState == null) {
+            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+        }
+
+        authRedisUtil.delete(stateKey);
     }
 }
