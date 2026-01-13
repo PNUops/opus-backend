@@ -11,6 +11,7 @@ public enum OAuthExceptionType implements BaseExceptionType {
 	FAILED_TO_GET_SOCIAL_USER_INFO(HttpStatus.INTERNAL_SERVER_ERROR, "소셜 로그인 사용자 정보를 가져오는데 실패했습니다."),
 	INVALID_OAUTH_TOKEN_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 OAuth 토큰 타입입니다."),
 	OAUTH_AUTHORIZATION_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인 인증에 실패했습니다."),
+    USER_DENIED_AUTHORIZATION(HttpStatus.BAD_REQUEST, "사용자가 권한 요청을 거부했습니다."),
 	UNSUPPORTED_SOCIAL_LOGIN_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인 타입입니다."),
 	;
 

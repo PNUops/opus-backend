@@ -4,6 +4,7 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILE
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
@@ -304,7 +305,7 @@ public class MemberCommandService {
         validateState(state);
 
         if (error != null) {
-            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+            throw new OAuthException(USER_DENIED_AUTHORIZATION);
         }
 
         if (code == null || code.isBlank()) {
