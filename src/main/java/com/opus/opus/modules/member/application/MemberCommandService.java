@@ -1,5 +1,7 @@
 package com.opus.opus.modules.member.application;
 
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILED_TO_GET_SOCIAL_USER_INFO;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
@@ -7,9 +9,13 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.MailUtil;
+import com.opus.opus.global.util.oauth.component.GoogleOauth;
+import com.opus.opus.global.util.oauth.dto.GoogleUser;
+import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -26,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,10 +52,12 @@ public class MemberCommandService {
     private final JwtProvider jwtProvider;
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
+    private final GoogleOauth googleOauth;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
     private static final char[] AUTH_CODE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+    private static final String PASSWORD_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
 
     private static final long SIGNUP_AUTH_CODE_TTL = 5L;
     private static final long SIGNUP_VERIFIED_TTL = 10L;
@@ -138,6 +147,72 @@ public class MemberCommandService {
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
         authRedisUtil.delete(signInVerifiedKey(email));
+    }
+
+    public String getGoogleOAuthRedirectURL() {
+        try {
+            return googleOauth.getOauthRedirectURL();
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    public SignInResponse getGoogleOAuthCallback(final String code) {
+        try {
+            final GoogleUser googleUser = googleOauth.getUserInfoByCode(code, GoogleUser.class);
+
+            return memberRepository.findByEmail(googleUser.email())
+                    .map(this::processExistingMemberLogin) // 기존 회원 로그인 처리
+                    .orElseGet(() -> processNewMemberSignUp(googleUser)); // 새로운 회원 가입 처리
+
+        } catch (JsonProcessingException e) {
+            throw new OAuthException(FAILED_TO_GET_SOCIAL_USER_INFO);
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    private SignInResponse processExistingMemberLogin(final Member member) {
+        final List<String> roles = member.getRoles().stream()
+                .map(MemberRoleType::toString)
+                .toList();
+        final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
+
+        return SignInResponse.from(member, token);
+    }
+
+    private SignInResponse processNewMemberSignUp(final GoogleUser googleUser) {
+        try {
+            final Member newMember = getRegisterNewMember(googleUser.name(), googleUser.email());
+            return processExistingMemberLogin(newMember);
+
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    private Member getRegisterNewMember(final String name, final String email) {
+        final String randomPassword = generateRandomPassword();
+        final String uniqueStudentId = "fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+
+        return memberRepository.save(Member.builder()
+                .name(name)
+                .studentId(uniqueStudentId)
+                .email(email)
+                .password(randomPassword)
+                .roles(Set.of(ROLE_회원))
+                .build());
+    }
+
+    private String generateRandomPassword() {
+        final int passwordLength = 32;
+
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < passwordLength; i++) {
+            password.append(PASSWORD_POOL.charAt(SECURE_RANDOM.nextInt(PASSWORD_POOL.length())));
+        }
+
+        return passwordEncoder.encode(password.toString());
     }
 
     private void verifyVerifiedKey(final String verifiedKey) {
