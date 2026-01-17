@@ -30,6 +30,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 @Transactional
@@ -318,7 +321,11 @@ public class MemberCommandService {
             throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
         }
 
-        String stateKey = "oauth:state:" + state;
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        String sessionId = request.getSession().getId();
+        String stateKey = "oauth:state:" + sessionId + ":" + state;
         String storedState = authRedisUtil.get(stateKey);
 
         if (storedState == null) {

@@ -64,10 +64,12 @@ public class GoogleOauth implements SocialOauth {
     public String getOauthRedirectURL() {
         String callbackUrl = determineCallbackUrl();
 
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        String sessionId = request.getSession().getId();
         String state = UUID.randomUUID().toString();
-
-        // Redis에 state 저장 (5분 TTL)
-        String stateKey = "oauth:state:" + state;
+        String stateKey = "oauth:state:" + sessionId + ":" + state;
         authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
 
         return UriComponentsBuilder.fromUriString(GOOGLE_SNS_URL)
