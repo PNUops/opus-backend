@@ -77,7 +77,7 @@ public class Contest extends BaseEntity {
     }
 
     public boolean isVotingPeriod() {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
         return !now.isBefore(voteStartAt) && !now.isAfter(voteEndAt);
     }
 
