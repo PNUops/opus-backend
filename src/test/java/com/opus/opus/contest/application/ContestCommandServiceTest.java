@@ -27,7 +27,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
     private ContestRepository contestRepository;
 
     private Contest contest;
-    final Integer maxVotesLimit = 5;
+    private static final Integer maxVotesLimit = 5;
 
     @BeforeEach
     void setUp() {
