@@ -2,7 +2,7 @@ ifndef::snippets[]
 :snippets: ./build/generated-snippets
 endif::[]
 
-= CONTEST VOTES LIMIT API 문서
+= CONTEST API 문서
 :doctype: book
 :icons: font
 :source-highlighter: highlightjs
@@ -14,7 +14,9 @@ endif::[]
 
 link:../opus.html[API 목록으로 돌아가기]
 
-== `PATCH`: 최대 투표 개수 설정
+== 최대 투표 개수 관리
+
+=== `PATCH`: 최대 투표 개수 설정
 
 .Path Parameters
 include::{snippets}/update-max-votes-limit/path-parameters.adoc[]
@@ -31,7 +33,7 @@ include::{snippets}/update-max-votes-limit/http-response.adoc[]
 .Request Fields
 include::{snippets}/update-max-votes-limit/request-fields.adoc[]
 
-=== ⚠️ 실패 케이스
+==== ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 대회
 
@@ -57,7 +59,7 @@ include::{snippets}/update-max-votes-limit-fail-voting-period/http-response.adoc
 
 ====
 
-== `GET`: 최대 투표 개수 조회
+=== `GET`: 최대 투표 개수 조회
 
 .Path Parameters
 include::{snippets}/get-max-votes-limit/path-parameters.adoc[]
@@ -74,7 +76,7 @@ include::{snippets}/get-max-votes-limit/http-response.adoc[]
 .Response Body's Fields
 include::{snippets}/get-max-votes-limit/response-fields.adoc[]
 
-=== ⚠️ 실패 케이스
+==== ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 대회
 

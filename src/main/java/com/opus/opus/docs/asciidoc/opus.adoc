@@ -16,4 +16,4 @@ link:./member.html[회원 API]
 link:./team-comment.html[팀 댓글 API]
 
 == 대회 관련 API
-link:./contest-votes-limit.html[대회 투표 개수 API]
+link:./contest.html[대회 API]
