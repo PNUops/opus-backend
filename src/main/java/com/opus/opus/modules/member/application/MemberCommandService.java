@@ -325,6 +325,10 @@ public class MemberCommandService {
 
         ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+
         HttpServletRequest request = attributes.getRequest();
         String sessionId = request.getSession().getId();
         String stateKey = "oauth:state:" + sessionId + ":" + state;
