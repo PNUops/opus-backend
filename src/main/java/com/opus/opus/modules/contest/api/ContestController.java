@@ -106,17 +106,15 @@ public class ContestController {
 
     @PatchMapping("/{contestId}/votes")
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> updateMaxVotesLimit(
-            @PathVariable final Long contestId,
-            @Valid @RequestBody final ContestVotesLimitRequest request) {
+    public ResponseEntity<Void> updateMaxVotesLimit(@PathVariable final Long contestId,
+                                                    @Valid @RequestBody final ContestVotesLimitRequest request) {
         contestCommandService.updateMaxVotesLimit(contestId, request.maxVotesLimit());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{contestId}/votes")
     @Secured("ROLE_관리자")
-    public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(
-            @PathVariable final Long contestId) {
+    public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(@PathVariable final Long contestId) {
         final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
         return ResponseEntity.ok(response);
     }
