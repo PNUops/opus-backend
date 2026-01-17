@@ -36,7 +36,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 최대_투표_개수를_조회할_수_있다() {
         final Integer maxVotesLimit = 5;
         contest.updateMaxVotesLimit(maxVotesLimit);
-        contestRepository.save(contest);
 
         final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contest.getId());
 

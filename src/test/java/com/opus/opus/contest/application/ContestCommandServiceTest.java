@@ -27,7 +27,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
     private ContestRepository contestRepository;
 
     private Contest contest;
-    private static final Integer maxVotesLimit = 5;
+    private static final Integer MAX_VOTES_LIMIT = 5;
 
     @BeforeEach
     void setUp() {
@@ -37,10 +37,10 @@ public class ContestCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 최대 투표 개수가 정상적으로 설정된다.")
     void 최대_투표_개수가_정상적으로_설정된다() {
-        contestCommandService.updateMaxVotesLimit(contest.getId(), maxVotesLimit);
+        contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
 
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
-        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(maxVotesLimit);
+        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
     }
 
     @Test
@@ -49,7 +49,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         final Long invalidContestId = 999L;
 
         assertThatThrownBy(() -> {
-            contestCommandService.updateMaxVotesLimit(invalidContestId, maxVotesLimit);
+            contestCommandService.updateMaxVotesLimit(invalidContestId, MAX_VOTES_LIMIT);
         }).isInstanceOf(ContestException.class).hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
 
@@ -58,10 +58,9 @@ public class ContestCommandServiceTest extends IntegrationTest {
     void 투표_진행_중에는_최대_투표_개수를_변경할_수_없다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.minusDays(1), now.plusDays(1));
-        contestRepository.save(contest);
 
         assertThatThrownBy(() -> {
-            contestCommandService.updateMaxVotesLimit(contest.getId(), maxVotesLimit);
+            contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
         }).isInstanceOf(ContestException.class)
                 .hasMessage(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD.errorMessage());
     }
@@ -71,12 +70,11 @@ public class ContestCommandServiceTest extends IntegrationTest {
     void 투표_시작_전에는_최대_투표_개수를_변경할_수_있다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.plusDays(1), now.plusDays(2));
-        contestRepository.save(contest);
 
-        contestCommandService.updateMaxVotesLimit(contest.getId(), maxVotesLimit);
+        contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
 
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
-        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(maxVotesLimit);
+        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
     }
 
     @Test
@@ -84,11 +82,10 @@ public class ContestCommandServiceTest extends IntegrationTest {
     void 투표_종료_후에는_최대_투표_개수를_변경할_수_있다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.minusDays(2), now.minusDays(1));
-        contestRepository.save(contest);
 
-        contestCommandService.updateMaxVotesLimit(contest.getId(), maxVotesLimit);
+        contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
 
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
-        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(maxVotesLimit);
+        assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
     }
 }
