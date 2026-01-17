@@ -37,8 +37,8 @@ public class NoticeController {
 
     @Secured("ROLE_관리자")
     @PatchMapping("/notices/{noticeId}")
-    public ResponseEntity<Void> updateNotice(@Valid @RequestBody final NoticeRequest request,
-                                             @PathVariable final Long noticeId) {
+    public ResponseEntity<Void> updateNotice(@PathVariable final Long noticeId,
+                                             @Valid @RequestBody final NoticeRequest request) {
         noticeCommandService.updateNotice(request, noticeId);
         return ResponseEntity.noContent().build();
     }
@@ -70,9 +70,9 @@ public class NoticeController {
 
     @Secured("ROLE_관리자")
     @PatchMapping("/contests/{contestId}/notices/{noticeId}")
-    public ResponseEntity<Void> updateContestNotice(@Valid @RequestBody final NoticeRequest request,
-                                                    @PathVariable final Long contestId,
-                                                    @PathVariable final Long noticeId) {
+    public ResponseEntity<Void> updateContestNotice(@PathVariable final Long contestId,
+                                                    @PathVariable final Long noticeId,
+                                                    @Valid @RequestBody final NoticeRequest request) {
         noticeCommandService.updateContestNotice(request, contestId, noticeId);
         return ResponseEntity.noContent().build();
     }
