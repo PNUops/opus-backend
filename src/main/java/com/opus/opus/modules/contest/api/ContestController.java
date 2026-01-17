@@ -110,7 +110,7 @@ public class ContestController {
             @PathVariable final Long contestId,
             @Valid @RequestBody final ContestVotesLimitRequest request) {
         contestCommandService.updateMaxVotesLimit(contestId, request.maxVotesLimit());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{contestId}/votes")

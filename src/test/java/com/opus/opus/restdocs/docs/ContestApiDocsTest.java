@@ -41,7 +41,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andDo(document("update-max-votes-limit",
                         pathParameters(
                                 parameterWithName("contestId").description("대회의 고유 ID")
