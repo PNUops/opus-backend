@@ -12,4 +12,6 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Notice> findAllByContestIdOrderByCreatedAtDesc(final Long contestId);
 
     Optional<Notice> findByContestIdAndId(final Long contestId, final Long id);
+
+    Optional<Notice> findByIdAndContestIdIsNull(final Long id);
 }

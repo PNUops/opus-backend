@@ -27,12 +27,12 @@ public class NoticeCommandService {
     }
 
     public void updateNotice(final NoticeRequest request, final Long noticeId) {
-        final Notice notice = noticeConvenience.getValidateExistNotice(noticeId);
+        final Notice notice = noticeConvenience.getValidateGlobalNotice(noticeId);
         notice.updateNotice(request.title(), request.description());
     }
 
     public void deleteNotice(final Long noticeId) {
-        noticeRepository.delete(noticeConvenience.getValidateExistNotice(noticeId));
+        noticeRepository.delete(noticeConvenience.getValidateGlobalNotice(noticeId));
     }
 
     public void createContestNotice(final Long contestId, final NoticeRequest request) {

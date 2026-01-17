@@ -22,7 +22,7 @@ public class NoticeQueryService {
     private final ContestConvenience contestConvenience;
 
     public NoticeDetailResponse getNotice(final Long noticeId) {
-        final Notice notice = noticeConvenience.getValidateExistNotice(noticeId);
+        final Notice notice = noticeConvenience.getValidateGlobalNotice(noticeId);
         return NoticeDetailResponse.from(notice);
     }
 

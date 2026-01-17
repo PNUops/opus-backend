@@ -16,8 +16,9 @@ public class NoticeConvenience {
 
     private final NoticeRepository noticeRepository;
 
-    public Notice getValidateExistNotice(final Long noticeId) {
-        return noticeRepository.findById(noticeId).orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
+    public Notice getValidateGlobalNotice(final Long noticeId) {
+        return noticeRepository.findByIdAndContestIdIsNull(noticeId)
+                .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
     }
 
     public Notice getValidateContestNotice(final Long contestId, final Long noticeId) {
