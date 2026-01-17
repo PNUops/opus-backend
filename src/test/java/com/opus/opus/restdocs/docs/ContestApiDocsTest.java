@@ -47,7 +47,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 Bearer {accessToken}")
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -74,7 +74,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 Bearer {accessToken}")
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -101,7 +101,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 Bearer {accessToken}")
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -124,7 +124,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 Bearer {accessToken}")
                         ),
                         responseFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -147,7 +147,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 Bearer {accessToken}")
                         )
                 ));
     }

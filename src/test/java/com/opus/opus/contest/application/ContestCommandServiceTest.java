@@ -82,10 +82,11 @@ public class ContestCommandServiceTest extends IntegrationTest {
     void 투표_종료_후에는_최대_투표_개수를_변경할_수_있다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.minusDays(2), now.minusDays(1));
+        assertThat(contest.getMaxVotesLimit()).isEqualTo(0); // 변경 전 값 검증
 
         contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
 
-        final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
+        final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow(); // 변경 후 값 검증
         assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
     }
 }
