@@ -173,6 +173,8 @@ public class MemberCommandService {
                     .map(this::processExistingMemberLogin) // 기존 회원 로그인 처리
                     .orElseGet(() -> processNewMemberSignUp(googleUser)); // 새로운 회원 가입 처리
 
+        } catch (OAuthException e) {
+            throw e;
         } catch (JsonProcessingException e) {
             throw new OAuthException(FAILED_TO_GET_SOCIAL_USER_INFO);
         } catch (Exception e) {

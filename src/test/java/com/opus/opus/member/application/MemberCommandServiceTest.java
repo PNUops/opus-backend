@@ -1,12 +1,21 @@
 package com.opus.opus.member.application;
 
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
+import com.opus.opus.global.util.oauth.component.GoogleOauth;
+import com.opus.opus.global.util.oauth.dto.GoogleUser;
+import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
@@ -24,6 +33,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class MemberCommandServiceTest extends IntegrationTest {
 
@@ -33,13 +47,27 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @MockitoBean
+    private GoogleOauth googleOauth;
+
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
+    private MockHttpServletRequest mockRequest;
 
     @BeforeEach
     void setUp() {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
+    }
+
+    private void setUpMockRequest() {
+        mockRequest = new MockHttpServletRequest();
+        mockRequest.setSession(new MockHttpSession());
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(mockRequest));
+    }
+
+    private String getSessionId() {
+        return mockRequest.getSession().getId();
     }
 
     @Test
@@ -188,5 +216,152 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         assertThat(response.memberId()).isEqualTo(teamLeader.getId());
         assertThat(response.token()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] state가 null이면 인증 실패한다")
+    void state가_null이면_인증_실패한다() {
+        String code = "code";
+        String state = null;
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback(code, state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(OAUTH_AUTHORIZATION_FAILED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] state가 빈 문자열이면 인증 실패한다")
+    void state가_빈_문자열이면_인증_실패한다() {
+        String code = "code";
+        String state = "";
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback(code, state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(OAUTH_AUTHORIZATION_FAILED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] Redis에 저장되지 않은 state면 인증 실패한다")
+    void Redis에_저장되지_않은_state면_인증_실패한다() {
+        String code = "code";
+        String state = "invalidState";
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback(code, state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(OAUTH_AUTHORIZATION_FAILED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 세션의 state로는 인증 실패한다 (CSRF 방어)")
+    void 다른_세션의_state로는_인증_실패한다() {
+        setUpMockRequest();
+        String attackerSessionId = "attacker-session-id";
+        String state = "state";
+        String attackerStateKey = "oauth:state:" + attackerSessionId + ":" + state;
+        authRedisUtil.set(attackerStateKey, "valid", 5L, TimeUnit.MINUTES);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback("code", state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(OAUTH_AUTHORIZATION_FAILED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] error 파라미터가 있으면 사용자 권한 거부로 처리된다")
+    void error_파라미터가_있으면_사용자_권한_거부로_처리된다() {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback("code", state, "access_denied");
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(USER_DENIED_AUTHORIZATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] code가 null이면 인증 실패한다")
+    void code가_null이면_인증_실패한다() {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback(null, state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(SOCIAL_LOGIN_FAILED_AUTH_CODE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] code가 빈 문자열이면 인증 실패한다")
+    void code가_빈_문자열이면_인증_실패한다() {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.getGoogleOAuthCallback("", state, null);
+        }).isInstanceOf(OAuthException.class)
+                .hasMessage(SOCIAL_LOGIN_FAILED_AUTH_CODE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 회원은 OAuth 로그인 처리된다")
+    void 기존_회원은_OAuth_로그인_처리된다() throws Exception {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+        GoogleUser mockGoogleUser = new GoogleUser(teamLeader.getEmail(), teamLeader.getName());
+        when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
+                .thenReturn(mockGoogleUser);
+
+        SignInResponse response = memberCommandService.getGoogleOAuthCallback("code", state, null);
+
+        assertThat(response.memberId()).isEqualTo(teamLeader.getId());
+        assertThat(response.token()).isNotEmpty();
+        assertThat(memberRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 신규 회원은 자동 가입 후 OAuth 로그인 처리된다")
+    void 신규_회원은_자동_가입_후_OAuth_로그인_처리된다() throws Exception {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+        GoogleUser mockGoogleUser = new GoogleUser("kty@gmail.com", "김태윤");
+        when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
+                .thenReturn(mockGoogleUser);
+
+        SignInResponse response = memberCommandService.getGoogleOAuthCallback("code", state, null);
+
+        assertThat(response.name()).isEqualTo("김태윤");
+        assertThat(response.token()).isNotEmpty();
+        assertThat(memberRepository.count()).isEqualTo(2);
+        Member newMember = memberRepository.findByEmail("kty@gmail.com").orElseThrow();
+        assertThat(newMember.getStudentId()).startsWith("fake_");
+    }
+
+    @Test
+    @DisplayName("[성공] 검증 성공 시 state가 Redis에서 삭제된다")
+    void 검증_성공_시_state가_Redis에서_삭제된다() throws Exception {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+        GoogleUser mockGoogleUser = new GoogleUser(teamLeader.getEmail(), teamLeader.getName());
+        when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
+                .thenReturn(mockGoogleUser);
+
+        memberCommandService.getGoogleOAuthCallback("code", state, null);
+
+        assertThat(authRedisUtil.exists(stateKey)).isFalse();
     }
 }
