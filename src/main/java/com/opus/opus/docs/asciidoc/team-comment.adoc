@@ -12,7 +12,7 @@ endif::[]
 
 == API 목록
 
-link:../opus.html[API 목록으로 돌아가기]
+link:./opus.html[API 목록으로 돌아가기]
 
 == `POST`: 팀 댓글 등록
 
