@@ -39,17 +39,13 @@ public class TeamCommandService {
 
     public void deletePreviewImages(final Long teamId, final List<Long> ids) {
         teamConvenience.validateExistTeam(teamId);
-        ids.forEach(fileId -> {
-            fileRepository.findById(fileId).ifPresent(this::checkWebpConverted);
-            fileStorageUtil.deleteFile(fileId);
-        });
+        ids.forEach(fileStorageUtil::deleteFile);
     }
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .ifPresent(existingFile -> {
-                    checkWebpConverted(existingFile);
                     fileStorageUtil.deleteFile(existingFile.getId());
                 });
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
@@ -59,7 +55,6 @@ public class TeamCommandService {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .ifPresent(existingFile -> {
-                    checkWebpConverted(existingFile);
                     fileStorageUtil.deleteFile(existingFile.getId());
                 });
     }
@@ -68,7 +63,6 @@ public class TeamCommandService {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
                 .ifPresent(existingFile -> {
-                    checkWebpConverted(existingFile);
                     fileStorageUtil.deleteFile(existingFile.getId());
                 });
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
@@ -78,7 +72,6 @@ public class TeamCommandService {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
                 .ifPresent(existingFile -> {
-                    checkWebpConverted(existingFile);
                     fileStorageUtil.deleteFile(existingFile.getId());
                 });
     }
@@ -87,12 +80,6 @@ public class TeamCommandService {
         long savedCount = fileRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
-        }
-    }
-
-    private void checkWebpConverted(final File existingFile) {
-        if (!existingFile.getIsWebpConverted()) {
-            throw new FileException(NOT_WEBP_CONVERTED);
         }
     }
 }
