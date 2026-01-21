@@ -104,4 +104,23 @@ public class TeamCommandServiceTest extends IntegrationTest {
         // then
         verify(fileStorageUtil, never()).deleteFile(any());
     }
+
+    @Test
+    @DisplayName("[성공] 팀 포스터 이미지가 이미 존재하면 기존 이미지를 삭제하고 새로 저장한다.")
+    void 팀_포스터_이미지가_이미_존재하면_기존_이미지를_삭제하고_새로_저장한다() {
+        // given
+        final File existingFile = FileFixture.createTeamPosterFile();
+        setField(existingFile, "referenceId", team.getId());
+        final File savedFile = fileRepository.save(existingFile);
+
+        final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg",
+                "new_content".getBytes());
+
+        // when
+        teamCommandService.savePosterImage(team.getId(), newImage);
+
+        // then
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(team.getId()), eq(TEAM), eq(POSTER));
+    }
 }
