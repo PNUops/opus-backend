@@ -18,6 +18,7 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.team.TeamFixture;
 import java.util.ArrayList;
 import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,21 +40,14 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Autowired
     private FileRepository fileRepository;
 
-    @MockitoBean
+    @Autowired
     private FileStorageUtil fileStorageUtil;
 
     private Team team;
 
     @BeforeEach
     void setUp() {
-        team = teamRepository.save(Team.builder()
-                .teamName("팀 이름")
-                .projectName("프로젝트 이름")
-                .contestId(1L)
-                .trackId(1L)
-                .itemOrder(1)
-                .teamMembers(new ArrayList<>())
-                .build());
+        team = teamRepository.save(TeamFixture.createTeam());
     }
 
     @Test

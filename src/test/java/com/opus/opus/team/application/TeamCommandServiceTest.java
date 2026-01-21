@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
@@ -18,6 +19,8 @@ import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.team.FileFixture;
+import com.opus.opus.team.TeamFixture;
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,21 +40,14 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Autowired
     private FileRepository fileRepository;
 
-    @MockitoBean
+    @Autowired
     private FileStorageUtil fileStorageUtil;
 
     private Team team;
 
     @BeforeEach
     void setUp() {
-        team = teamRepository.save(Team.builder()
-                .teamName("팀 이름")
-                .projectName("프로젝트 이름")
-                .contestId(1L)
-                .trackId(1L)
-                .itemOrder(1)
-                .teamMembers(new ArrayList<>())
-                .build());
+        team = teamRepository.save(TeamFixture.createTeam());
     }
 
     @Test
@@ -86,13 +82,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지를 삭제한다.")
     void 팀_포스터_이미지를_삭제한다() {
         // given
-        final File file = File.builder()
-                .referenceId(team.getId())
-                .referenceType(TEAM)
-                .imageType(POSTER)
-                .filePath("path/to/poster.webp")
-                .name("poster.jpg")
-                .build();
+        final File file = FileFixture.createTeamPosterFile();
+        setField(file, "referenceId", team.getId());
         final File savedFile = fileRepository.save(file);
         savedFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(savedFile);
