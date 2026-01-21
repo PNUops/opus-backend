@@ -115,6 +115,6 @@ public class ContestController {
     public ResponseEntity<Void> updateVotePeriod(@PathVariable final Long contestId,
                                                  @Valid @RequestBody final VoteUpdateRequest voteRequest) {
         contestCommandService.updateVotePeriod(contestId, voteRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }
