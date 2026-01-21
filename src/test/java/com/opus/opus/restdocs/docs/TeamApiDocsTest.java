@@ -29,10 +29,12 @@ import org.springframework.mock.web.MockMultipartFile;
 public class TeamApiDocsTest extends RestDocsTest {
 
     private String accessToken;
+    private byte[] testImage;
 
     @BeforeEach
     void setUp() {
-        accessToken = "mock_access_token";
+        accessToken = "Bearer member.access.token";
+        testImage = "test-image-content".getBytes();
     }
 
     @Test
@@ -40,8 +42,7 @@ public class TeamApiDocsTest extends RestDocsTest {
     void 팀의_포스터_이미지를_조회한다() throws Exception {
         // Given
         final Long teamId = 1L;
-        final byte[] mockImageContent = "test-image-content".getBytes();
-        final ImageResponse response = new ImageResponse(new ByteArrayResource(mockImageContent), "image/png");
+        final ImageResponse response = new ImageResponse(new ByteArrayResource(testImage), "image/png");
 
         when(teamQueryService.getPosterImage(any())).thenReturn(response);
 
@@ -65,7 +66,7 @@ public class TeamApiDocsTest extends RestDocsTest {
                 "image",
                 "poster.png",
                 MediaType.IMAGE_PNG_VALUE,
-                "<<image-data>>".getBytes()
+                testImage
         );
 
         doNothing().when(teamCommandService).savePosterImage(any(), any());
@@ -73,7 +74,7 @@ public class TeamApiDocsTest extends RestDocsTest {
         // When & Then
         mockMvc.perform(multipart("/teams/{teamId}/image/posters", teamId)
                         .file(image)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(HttpHeaders.AUTHORIZATION, accessToken)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
                 .andDo(document("save-team-poster",
@@ -98,7 +99,7 @@ public class TeamApiDocsTest extends RestDocsTest {
 
         // When & Then
         mockMvc.perform(delete("/teams/{teamId}/image/posters", teamId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                        .header(HttpHeaders.AUTHORIZATION, accessToken))
                 .andExpect(status().isNoContent())
                 .andDo(document("delete-team-poster",
                         pathParameters(
