@@ -10,11 +10,4 @@ public class ContestFixture {
                 .categoryId(1L)
                 .build();
     }
-
-    public static Contest createContest(String contestName, Long categoryId) {
-        return Contest.builder()
-                .contestName(contestName)
-                .categoryId(categoryId)
-                .build();
-    }
 }
