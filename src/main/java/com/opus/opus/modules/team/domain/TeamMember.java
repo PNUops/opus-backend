@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.domain;
 
+import static jakarta.persistence.FetchType.EAGER;
 import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
@@ -43,7 +44,7 @@ public class TeamMember extends BaseEntity {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @ElementCollection(fetch = LAZY)
+    @ElementCollection(fetch = EAGER)
     @CollectionTable(name = "team_member_roles", joinColumns = @JoinColumn(name = "team_member_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = MAX_ROLE_NAME_LENGTH)

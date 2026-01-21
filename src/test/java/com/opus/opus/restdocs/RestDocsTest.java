@@ -5,11 +5,15 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.security.annotation.MemberArgumentResolver;
 import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.team.api.TeamCommentController;
+import com.opus.opus.modules.team.application.TeamCommentCommandService;
+import com.opus.opus.modules.team.application.TeamCommentQueryService;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
@@ -33,7 +37,9 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @WebMvcTest({
         MemberController.class,
         NoticeController.class,
-        TeamController.class
+        TeamController.class,
+        TeamCommentController.class,
+        NoticeController.class
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -45,6 +51,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected MemberQueryService memberQueryService;
+
+    @MockitoBean
+    protected TeamCommentCommandService teamCommentCommandService;
+
+    @MockitoBean
+    protected TeamCommentQueryService teamCommentQueryService;
 
     @MockitoBean
     protected NoticeCommandService noticeCommandService;
@@ -67,6 +79,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected MemberRepository memberRepository;
+
+    @MockitoBean
+    protected MemberArgumentResolver memberArgumentResolver;
 
     @BeforeEach
     void setUp(final RestDocumentationContextProvider restDocumentation) {
