@@ -35,15 +35,24 @@ public class ContestCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표 기간 수정 시 시작일과 종료일이 정상적으로 업데이트된다.")
     void 투표_기간_수정_시_시작일과_종료일이_정상적으로_업데이트된다() {
-        final LocalDateTime startAt = LocalDateTime.now().plusDays(1);
-        final LocalDateTime endAt = LocalDateTime.now().plusDays(5);
-        final VoteUpdateRequest request = new VoteUpdateRequest(startAt, endAt);
+        // given
+        final LocalDateTime originalStartAt = contest.getVoteStartAt();
+        final LocalDateTime originalEndAt = contest.getVoteEndAt();
 
+        final LocalDateTime newStartAt = LocalDateTime.now().plusDays(1);
+        final LocalDateTime newEndAt = LocalDateTime.now().plusDays(5);
+        final VoteUpdateRequest request = new VoteUpdateRequest(newStartAt, newEndAt);
+
+        // when
         contestCommandService.updateVotePeriod(contest.getId(), request);
 
+        // then
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
-        assertThat(updatedContest.getVoteStartAt()).isEqualTo(startAt);
-        assertThat(updatedContest.getVoteEndAt()).isEqualTo(endAt);
+        assertThat(updatedContest.getVoteStartAt()).isNotEqualTo(originalStartAt);
+        assertThat(updatedContest.getVoteEndAt()).isNotEqualTo(originalEndAt);
+
+        assertThat(updatedContest.getVoteStartAt()).isEqualTo(newStartAt);
+        assertThat(updatedContest.getVoteEndAt()).isEqualTo(newEndAt);
     }
 
     @Test
