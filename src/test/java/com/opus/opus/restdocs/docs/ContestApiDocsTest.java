@@ -3,6 +3,8 @@ package com.opus.opus.restdocs.docs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
@@ -23,7 +25,7 @@ import org.springframework.http.MediaType;
 
 public class ContestApiDocsTest extends RestDocsTest {
 
-    static final String ACCESS_TOKEN = "Bearer AccessToken";
+    private static final String ADMIN_TOKEN = "Bearer admin.access.token";
 
     @Test
     @DisplayName("[성공] 투표 기간을 조회하면 시작일과 종료일을 반환한다.")
@@ -59,13 +61,16 @@ public class ContestApiDocsTest extends RestDocsTest {
         doNothing().when(contestCommandService).updateVotePeriod(any(), any());
 
         mockMvc.perform(put("/contests/{contestId}/vote", 1L)
-                        .header(HttpHeaders.AUTHORIZATION, ACCESS_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(document("update-vote-period",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 액세스 토큰")
                         ),
                         requestFields(
                                 dateTimeFieldWithPath("voteStartAt", "투표 시작일"),
