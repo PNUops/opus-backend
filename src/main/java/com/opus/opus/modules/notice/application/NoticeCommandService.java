@@ -1,6 +1,7 @@
 package com.opus.opus.modules.notice.application;
 
-import com.opus.opus.modules.notice.application.dto.NoticeConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.notice.application.convenience.NoticeConvenience;
 import com.opus.opus.modules.notice.application.dto.request.NoticeRequest;
 import com.opus.opus.modules.notice.domain.Notice;
 import com.opus.opus.modules.notice.domain.dao.NoticeRepository;
@@ -16,6 +17,7 @@ public class NoticeCommandService {
     private final NoticeRepository noticeRepository;
 
     private final NoticeConvenience noticeConvenience;
+    private final ContestConvenience contestConvenience;
 
     public void createNotice(final NoticeRequest request) {
         noticeRepository.save(Notice.builder()
@@ -25,11 +27,30 @@ public class NoticeCommandService {
     }
 
     public void updateNotice(final NoticeRequest request, final Long noticeId) {
-        final Notice notice = noticeConvenience.getValidateExistNotice(noticeId);
+        final Notice notice = noticeConvenience.getValidateGlobalNotice(noticeId);
         notice.updateNotice(request.title(), request.description());
     }
 
     public void deleteNotice(final Long noticeId) {
-        noticeRepository.delete(noticeConvenience.getValidateExistNotice(noticeId));
+        noticeRepository.delete(noticeConvenience.getValidateGlobalNotice(noticeId));
+    }
+
+    public void createContestNotice(final Long contestId, final NoticeRequest request) {
+        contestConvenience.validateExistContest(contestId);
+
+        noticeRepository.save(Notice.builder()
+                .contestId(contestId)
+                .title(request.title())
+                .description(request.description())
+                .build());
+    }
+
+    public void updateContestNotice(final NoticeRequest request, final Long contestId, final Long noticeId) {
+        final Notice notice = noticeConvenience.getValidateContestNotice(contestId, noticeId);
+        notice.updateNotice(request.title(), request.description());
+    }
+
+    public void deleteContestNotice(final Long contestId, final Long noticeId) {
+        noticeRepository.delete(noticeConvenience.getValidateContestNotice(contestId, noticeId));
     }
 }
