@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
@@ -99,6 +100,20 @@ public class ContestCommandService {
         // 변경
         contest.updateIsCurrent(isCurrent);
         return ContestCurrentToggleResponse.of(contest.getId(), isCurrent);
+    }
+
+    public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+
+        validateNotInVotingPeriod(contest);
+
+        contest.updateMaxVotesLimit(maxVotesLimit);
+    }
+
+    private void validateNotInVotingPeriod(final Contest contest) {
+        if (contest.isVotingPeriod()) {
+            throw new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD);
+        }
     }
 
     private void checkWebpConverted(File existingFile) {
