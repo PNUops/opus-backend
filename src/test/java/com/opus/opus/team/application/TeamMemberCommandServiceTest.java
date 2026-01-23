@@ -2,6 +2,7 @@ package com.opus.opus.team.application;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,6 +13,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
+import com.opus.opus.modules.team.application.dto.request.TeamMemberCreateRequest;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
@@ -37,11 +39,13 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
 
     private Team team;
     private Member member;
+    private TeamMemberCreateRequest request;
 
     @BeforeEach
     void setUp() {
         team = teamRepository.save(TeamFixture.createTeam());
         member = memberRepository.save(MemberFixture.createMember());
+        request = new TeamMemberCreateRequest("이사람", "123456789", ROLE_팀원);
     }
 
     @Test
@@ -50,9 +54,10 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String notExistStudentId = "202654321";
         final String notExistStudentName = "문스옵";
 
-        teamMemberCommandService.createTeamMember(team.getId(), notExistStudentId, notExistStudentName, ROLE_팀원);
+        teamMemberCommandService.createTeamMember(team.getId(), notExistStudentId, notExistStudentName,
+                request.roleType());
 
-        final Member fakeMember = memberRepository.findByStudentId(notExistStudentId).get();
+        final Member fakeMember = memberRepository.findByStudentId(notExistStudentId).orElseThrow();
         assertThat(fakeMember.getStudentId()).isEqualTo(notExistStudentId);
 
         final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), fakeMember.getId())
@@ -67,9 +72,11 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String signedUpStudentId = member.getStudentId();
         final String signedUpStudentName = member.getName();
 
-        teamMemberCommandService.createTeamMember(team.getId(), signedUpStudentId, signedUpStudentName, ROLE_팀원);
+        teamMemberCommandService.createTeamMember(team.getId(), signedUpStudentId, signedUpStudentName,
+                request.roleType());
 
-        final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), member.getId()).get();
+        final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), member.getId())
+                .orElseThrow();
         assertThat(teamMember.getMemberId()).isEqualTo(member.getId());
     }
 
@@ -80,18 +87,31 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String wrongStudentName = "이옵스아님";
 
         assertThatThrownBy(() -> {
-            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongStudentName, ROLE_팀원);
+            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongStudentName, request.roleType());
         }).isInstanceOf(MemberException.class).hasMessage(MISMATCH_STUDENT_ID_AND_NAME.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] roleType이 팀장이라면 팀장으로 저장된다.")
+    void roleType이_팀장이라면_팀장으로_저장된다() {
+        final TeamMemberCreateRequest teamLeaderRequest = new TeamMemberCreateRequest("나팀장", "202798743", ROLE_팀장);
+
+        teamMemberCommandService.createTeamMember(team.getId(), teamLeaderRequest.memberStudentId(),
+                teamLeaderRequest.memberName(), teamLeaderRequest.roleType());
+
+        final Member addedMember = memberRepository.findByStudentId(teamLeaderRequest.memberStudentId())
+                .orElseThrow();
+        final TeamMember teamLeader = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), addedMember.getId())
+                .orElseThrow();
+        assertThat(teamLeader.getRoles()).containsExactly(teamLeaderRequest.roleType());
     }
 
     @Test
     @DisplayName("[성공] 팀원이 정상적으로 삭제된다.")
     void 팀원이_정상적으로_삭제된다() {
-        final String studentId = member.getStudentId();
-        final String name = member.getName();
-
-        teamMemberCommandService.createTeamMember(team.getId(), studentId, name, ROLE_팀원);
-        final Member addedMember = memberRepository.findByStudentId(studentId).get();
+        teamMemberCommandService.createTeamMember(team.getId(), request.memberStudentId(), request.memberName(),
+                request.roleType());
+        final Member addedMember = memberRepository.findByStudentId(request.memberStudentId()).get();
 
         teamMemberCommandService.deleteTeamMember(team.getId(), addedMember.getId());
 
@@ -99,8 +119,8 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 해당 팀의 팀원이 아니라면 팀원 삭제 불가하다.")
-    void 해당_팀의_팀원이_아니라면_팀원_삭제_불가하다() {
+    @DisplayName("[실패] 팀원 목록에 팀원 정보가 없다면 팀원 삭제 불가하다.")
+    void 팀원_목록에_팀원_정보가_없다면_팀원_삭제_불가하다() {
         final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
 
         assertThatThrownBy(() -> {
