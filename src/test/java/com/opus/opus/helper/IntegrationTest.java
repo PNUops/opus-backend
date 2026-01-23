@@ -33,7 +33,7 @@ public abstract class IntegrationTest extends ApiTestHelper {
     private MailUtil mailUtil;
 
     @MockitoBean
-    private FileStorageUtil fileStorageUtil;
+    protected FileStorageUtil fileStorageUtil;
 
     @BeforeEach
     void setUp(final WebApplicationContext context) {

@@ -40,9 +40,6 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Autowired
     private FileRepository fileRepository;
 
-    @Autowired
-    private FileStorageUtil fileStorageUtil;
-
     private Team team;
 
     @BeforeEach
