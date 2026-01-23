@@ -64,13 +64,13 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andDo(document("update-vote-period",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("관리자 액세스 토큰")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         requestFields(
                                 dateTimeFieldWithPath("voteStartAt", "투표 시작일"),

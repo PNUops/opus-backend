@@ -40,5 +40,8 @@ include::{snippets}/update-vote-period/http-response.adoc[]
 .Path Parameters
 include::{snippets}/update-vote-period/path-parameters.adoc[]
 
+.Request Headers
+include::{snippets}/update-vote-period/request-headers.adoc[]
+
 .Request Fields
 include::{snippets}/update-vote-period/request-fields.adoc[]
