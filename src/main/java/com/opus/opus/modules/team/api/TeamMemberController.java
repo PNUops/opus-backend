@@ -27,7 +27,8 @@ public class TeamMemberController {
     @PostMapping
     public ResponseEntity<Void> createTeamMember(@PathVariable final Long teamId,
                                                  @Valid @RequestBody final TeamMemberCreateRequest request) {
-        teamMemberCommandService.createTeamMember(teamId, request.memberStudentId(), request.memberName());
+        teamMemberCommandService.createTeamMember(teamId, request.memberStudentId(), request.memberName(),
+                request.roleType());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

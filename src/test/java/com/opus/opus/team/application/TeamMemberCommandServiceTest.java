@@ -1,6 +1,7 @@
 package com.opus.opus.team.application;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,7 +50,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String notExistStudentId = "202654321";
         final String notExistStudentName = "문스옵";
 
-        teamMemberCommandService.createTeamMember(team.getId(), notExistStudentId, notExistStudentName);
+        teamMemberCommandService.createTeamMember(team.getId(), notExistStudentId, notExistStudentName, ROLE_팀원);
 
         final Member fakeMember = memberRepository.findByStudentId(notExistStudentId).get();
         assertThat(fakeMember.getStudentId()).isEqualTo(notExistStudentId);
@@ -66,7 +67,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String signedUpStudentId = member.getStudentId();
         final String signedUpStudentName = member.getName();
 
-        teamMemberCommandService.createTeamMember(team.getId(), signedUpStudentId, signedUpStudentName);
+        teamMemberCommandService.createTeamMember(team.getId(), signedUpStudentId, signedUpStudentName, ROLE_팀원);
 
         final TeamMember teamMember = teamMemberRepository.findByTeamIdAndMemberId(team.getId(), member.getId()).get();
         assertThat(teamMember.getMemberId()).isEqualTo(member.getId());
@@ -79,7 +80,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String wrongStudentName = "이옵스아님";
 
         assertThatThrownBy(() -> {
-            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongStudentName);
+            teamMemberCommandService.createTeamMember(team.getId(), studentId, wrongStudentName, ROLE_팀원);
         }).isInstanceOf(MemberException.class).hasMessage(MISMATCH_STUDENT_ID_AND_NAME.errorMessage());
     }
 
@@ -89,7 +90,7 @@ public class TeamMemberCommandServiceTest extends IntegrationTest {
         final String studentId = member.getStudentId();
         final String name = member.getName();
 
-        teamMemberCommandService.createTeamMember(team.getId(), studentId, name);
+        teamMemberCommandService.createTeamMember(team.getId(), studentId, name, ROLE_팀원);
         final Member addedMember = memberRepository.findByStudentId(studentId).get();
 
         teamMemberCommandService.deleteTeamMember(team.getId(), addedMember.getId());

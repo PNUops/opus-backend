@@ -2,6 +2,7 @@ package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
@@ -62,9 +63,9 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 팀원이 추가된다.")
     void 유효한_요청이면_정상적으로_팀원이_추가된다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345", ROLE_팀원);
 
-        doNothing().when(teamMemberCommandService).createTeamMember(any(), any(), any());
+        doNothing().when(teamMemberCommandService).createTeamMember(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -80,7 +81,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "추가할 팀원 이름"),
-                                stringFieldWithPath("memberStudentId", "추가할 팀원 학번")
+                                stringFieldWithPath("memberStudentId", "추가할 팀원 학번"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
@@ -88,7 +90,7 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원명이 비어있으면 400 에러를 반환한다.")
     void 팀원명이_비어있으면_에러를_반환한다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("", "202612345", ROLE_팀원);
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -104,7 +106,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "비어있는 팀원명"),
-                                stringFieldWithPath("memberStudentId", "팀원 학번")
+                                stringFieldWithPath("memberStudentId", "팀원 학번"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
@@ -112,7 +115,7 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원학번이 비어있으면 400 에러를 반환한다.")
     void 팀원학번이_비어있으면_에러를_반환한다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "", ROLE_팀원);
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -128,7 +131,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "팀원명"),
-                                stringFieldWithPath("memberStudentId", "비어있는 팀원 학번")
+                                stringFieldWithPath("memberStudentId", "비어있는 팀원 학번"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
@@ -136,10 +140,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 팀 ID인 경우 404 에러를 반환한다.")
     void 존재하지_않는_팀_ID인_경우_에러를_반환한다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345", ROLE_팀원);
 
         willThrow(new TeamException(NOT_FOUND_TEAM)).given(teamMemberCommandService)
-                .createTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -155,7 +159,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "팀원명"),
-                                stringFieldWithPath("memberStudentId", "팀원 학번")
+                                stringFieldWithPath("memberStudentId", "팀원 학번"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
@@ -163,10 +168,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 팀원명과 팀원학번이 맞지 않으면 400 에러를 반환한다.")
     void 팀원명과_팀원학번이_맞지_않으면_에러를_반환한다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345", ROLE_팀원);
 
         willThrow(new MemberException(MISMATCH_STUDENT_ID_AND_NAME)).given(teamMemberCommandService)
-                .createTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -182,7 +187,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "팀원명 (학번과 일치하지 않음)"),
-                                stringFieldWithPath("memberStudentId", "팀원 학번 (이름과 일치하지 않음)")
+                                stringFieldWithPath("memberStudentId", "팀원 학번 (이름과 일치하지 않음)"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
@@ -190,10 +196,10 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 동일한 참가자명 + 학번이 해당 팀에 있는 경우 409 에러를 반환한다.")
     void 동일한_참가자명과_학번이_해당_팀에_있는_경우_에러를_반환한다() throws Exception {
-        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345");
+        final TeamMemberCreateRequest request = new TeamMemberCreateRequest("이옵스", "202612345", ROLE_팀원);
 
         willThrow(new TeamMemberException(TEAM_MEMBER_ALREADY_EXISTS)).given(teamMemberCommandService)
-                .createTeamMember(any(), any(), any());
+                .createTeamMember(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/members", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
@@ -209,7 +215,8 @@ public class TeamMemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("memberName", "이미 등록된 팀원명"),
-                                stringFieldWithPath("memberStudentId", "이미 등록된 팀원 학번")
+                                stringFieldWithPath("memberStudentId", "이미 등록된 팀원 학번"),
+                                stringFieldWithPath("roleType", "추가할 팀원의 역할(ROLE_팀장, ROLE_팀원)")
                         )
                 ));
     }
