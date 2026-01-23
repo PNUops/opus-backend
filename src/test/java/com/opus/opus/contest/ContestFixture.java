@@ -12,7 +12,7 @@ public class ContestFixture {
                 .build();
     }
 
-    public static Contest createContest(final Long categoryId) {
+    public static Contest createContestWithCategoryId(final Long categoryId) {
         return Contest.builder()
                 .contestName("테스트 대회")
                 .categoryId(categoryId)
