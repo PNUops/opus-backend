@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
-<<<<<<< HEAD
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,29 +14,11 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import java.time.LocalDateTime;
-=======
-import com.opus.opus.helper.IntegrationTest;
-import com.opus.opus.contest.ContestFixture;
-import com.opus.opus.modules.contest.application.ContestCommandService;
-import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.exception.ContestException;
->>>>>>> develop
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-<<<<<<< HEAD
-=======
-import java.time.LocalDateTime;
-
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
->>>>>>> develop
 public class ContestCommandServiceTest extends IntegrationTest {
 
     @Autowired
@@ -45,11 +28,11 @@ public class ContestCommandServiceTest extends IntegrationTest {
     private ContestRepository contestRepository;
 
     private Contest contest;
-<<<<<<< HEAD
+    private static final Integer MAX_VOTES_LIMIT = 5;
 
     @BeforeEach
     void setUp() {
-        contest = contestRepository.save(ContestFixture.createContest());
+        contest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
     }
 
     @Test
@@ -85,12 +68,6 @@ public class ContestCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {contestCommandService.updateVotePeriod(contest.getId(), request);})
                 .isInstanceOf(ContestException.class)
                 .hasMessage(VOTE_END_PRECEDE_VOTE_START.errorMessage());
-=======
-    private static final Integer MAX_VOTES_LIMIT = 5;
-
-    @BeforeEach
-    void setUp() {
-        contest = contestRepository.save(ContestFixture.createContest(1L));
     }
 
     @Test
@@ -113,8 +90,8 @@ public class ContestCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 투표 진행 중에는 최대 투표 개수를 변경할 수 없다.")
-    void 투표_진행_중에는_최대_투표_개수를_변경할_수_없다() {
+    @DisplayName("[실패] 투표 진행 중에는 최대 투표 개수를 변경할 수 있다.")
+    void 투표_진행_중에는_최대_투표_개수를_변경할_수_있다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.minusDays(1), now.plusDays(1));
 
@@ -147,6 +124,5 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow(); // 변경 후 값 검증
         assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
->>>>>>> develop
     }
 }

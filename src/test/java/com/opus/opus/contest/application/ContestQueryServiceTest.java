@@ -1,36 +1,23 @@
 package com.opus.opus.contest.application;
 
-<<<<<<< HEAD
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import java.time.LocalDateTime;
-=======
-import com.opus.opus.helper.IntegrationTest;
-import com.opus.opus.contest.ContestFixture;
-import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
-import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
->>>>>>> develop
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-<<<<<<< HEAD
-=======
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
->>>>>>> develop
 public class ContestQueryServiceTest extends IntegrationTest {
 
     @Autowired
@@ -43,8 +30,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-<<<<<<< HEAD
-        contest = contestRepository.save(ContestFixture.createContest());
+        contest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
     }
 
     @Test
@@ -58,8 +44,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
 
         assertThat(response.voteStartAt()).isEqualTo(startAt);
         assertThat(response.voteEndAt()).isEqualTo(endAt);
-=======
-        contest = contestRepository.save(ContestFixture.createContest(1L));
     }
 
     @Test
@@ -89,6 +73,5 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestQueryService.getMaxVotesLimit(invalidContestId);
         }).isInstanceOf(ContestException.class).hasMessage(NOT_FOUND_CONTEST.errorMessage());
->>>>>>> develop
     }
 }
