@@ -30,16 +30,16 @@ public class ContestTrackController {
     private final ContestTrackCommandService contestTrackCommandService;
     private final ContestTrackQueryService contestTrackQueryService;
 
-    @PostMapping
     @Secured("ROLE_관리자")
+    @PostMapping
     public ResponseEntity<Void> createContestTrack(@Valid @RequestBody final ContestTrackRequest request,
                                                    @PathVariable final Long contestId) {
         contestTrackCommandService.createTrack(contestId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/{trackId}")
     @Secured("ROLE_관리자")
+    @PatchMapping("/{trackId}")
     public ResponseEntity<Void> updateContestTrack(@Valid @RequestBody final ContestTrackRequest request,
                                                    @PathVariable final Long contestId,
                                                    @PathVariable final Long trackId) {
@@ -47,8 +47,8 @@ public class ContestTrackController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{trackId}")
     @Secured("ROLE_관리자")
+    @DeleteMapping("/{trackId}")
     public ResponseEntity<Void> deleteContestTrack(@PathVariable final Long contestId,
                                                    @PathVariable final Long trackId) {
         contestTrackCommandService.deleteTrack(contestId, trackId);

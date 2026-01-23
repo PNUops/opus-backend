@@ -4,10 +4,12 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
@@ -69,30 +71,30 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @PostMapping
     @Secured("ROLE_관리자")
+    @PostMapping
     public ResponseEntity<ContestResponse> createContest(@Valid @RequestBody final ContestRequest request) {
         ContestResponse response = contestCommandService.createContest(request);
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{contestId}")
     @Secured("ROLE_관리자")
+    @PatchMapping("/{contestId}")
     public ResponseEntity<Void> updateContest(@PathVariable final Long contestId,
                                               @Valid @RequestBody final ContestRequest request) {
         contestCommandService.updateContest(contestId, request);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{contestId}")
     @Secured("ROLE_관리자")
+    @DeleteMapping("/{contestId}")
     public ResponseEntity<Void> deleteContest(@PathVariable final Long contestId) {
         contestCommandService.deleteContest(contestId);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{contestId}/current")
     @Secured("ROLE_관리자")
+    @PatchMapping("/{contestId}/current")
     public ResponseEntity<ContestCurrentToggleResponse> toggleCurrent(@PathVariable final Long contestId,
                                                                       @Valid @RequestBody final ContestCurrentToggleRequest request) {
         ContestCurrentToggleResponse response = contestCommandService.toggleCurrent(contestId, request.isCurrent());
@@ -116,5 +118,20 @@ public class ContestController {
                                                  @Valid @RequestBody final VoteUpdateRequest voteRequest) {
         contestCommandService.updateVotePeriod(contestId, voteRequest);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/{contestId}/votes")
+    public ResponseEntity<Void> updateMaxVotesLimit(@PathVariable final Long contestId,
+                                                    @Valid @RequestBody final ContestVotesLimitRequest request) {
+        contestCommandService.updateMaxVotesLimit(contestId, request.maxVotesLimit());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/votes")
+    public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(@PathVariable final Long contestId) {
+        final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
+        return ResponseEntity.ok(response);
     }
 }

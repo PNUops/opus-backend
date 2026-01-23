@@ -21,3 +21,6 @@ link:./contest.html[대회 API]
 == 공지 관련 API
 link:./notice.html[공지 API]
 
+== 대회 관련 API
+link:./contest.html[대회 API]
+

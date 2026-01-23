@@ -11,6 +11,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
@@ -76,6 +77,11 @@ public class ContestQueryService {
     public VotePeriodResponse getVotePeriod(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         return new VotePeriodResponse(contest.getVoteStartAt(), contest.getVoteEndAt());
+    }
+
+    public ContestVotesLimitResponse getMaxVotesLimit(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return ContestVotesLimitResponse.from(contest.getMaxVotesLimit());
     }
 
     private void checkImageConverted(final File findFile) {

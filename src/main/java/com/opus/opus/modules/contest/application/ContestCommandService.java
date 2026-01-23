@@ -4,6 +4,7 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.*;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
@@ -115,6 +116,20 @@ public class ContestCommandService {
         final int compare = voteRequest.voteStartAt().compareTo(voteRequest.voteEndAt());
         if (compare > 0) {
             throw new ContestException(VOTE_END_PRECEDE_VOTE_START);
+        }
+    }
+
+    public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+
+        validateNotInVotingPeriod(contest);
+
+        contest.updateMaxVotesLimit(maxVotesLimit);
+    }
+
+    private void validateNotInVotingPeriod(final Contest contest) {
+        if (contest.isVotingPeriod()) {
+            throw new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD);
         }
     }
 
