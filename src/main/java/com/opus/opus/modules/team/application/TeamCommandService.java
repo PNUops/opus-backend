@@ -45,35 +45,31 @@ public class TeamCommandService {
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
-                .ifPresent(existingFile -> {
-                    fileStorageUtil.deleteFile(existingFile.getId());
-                });
+                .ifPresent(this::deleteFileById);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
-                .ifPresent(existingFile -> {
-                    fileStorageUtil.deleteFile(existingFile.getId());
-                });
+                .ifPresent(this::deleteFileById);
     }
 
     public void savePosterImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
-                .ifPresent(existingFile -> {
-                    fileStorageUtil.deleteFile(existingFile.getId());
-                });
+                .ifPresent(this::deleteFileById);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
     }
 
     public void deletePosterImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
-                .ifPresent(existingFile -> {
-                    fileStorageUtil.deleteFile(existingFile.getId());
-                });
+                .ifPresent(this::deleteFileById);
+    }
+
+    private void deleteFileById(final File existingFile) {
+        fileStorageUtil.deleteFile(existingFile.getId());
     }
 
     private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {
