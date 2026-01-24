@@ -21,7 +21,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("is_deleted = false")
-@SQLDelete(sql = "UPDATE contest SET is_deleted = true where id = ?")
+@SQLDelete(sql = "UPDATE contest_track SET is_deleted = true WHERE id = ?")
 public class ContestTrack extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
