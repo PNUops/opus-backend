@@ -4,7 +4,15 @@ import com.opus.opus.modules.contest.domain.Contest;
 
 public class ContestFixture {
 
-    public static Contest createContest(final Long categoryId) {
+
+    public static Contest createContest() {
+        return Contest.builder()
+                .contestName("제 1회 테스트 대회")
+                .categoryId(1L)
+                .build();
+    }
+
+    public static Contest createContestWithCategoryId(final Long categoryId) {
         return Contest.builder()
                 .contestName("테스트 대회")
                 .categoryId(categoryId)

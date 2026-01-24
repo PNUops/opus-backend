@@ -36,6 +36,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 @WebMvcTest({
         MemberController.class,
+        ContestController.class,
         TeamCommentController.class,
         NoticeController.class,
         ContestController.class,

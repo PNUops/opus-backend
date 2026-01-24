@@ -1,6 +1,7 @@
 package com.opus.opus.modules.contest.application;
 
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.*;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
@@ -13,12 +14,15 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -100,6 +104,19 @@ public class ContestCommandService {
         // 변경
         contest.updateIsCurrent(isCurrent);
         return ContestCurrentToggleResponse.of(contest.getId(), isCurrent);
+    }
+
+    public void updateVotePeriod(final Long contestId, final VoteUpdateRequest voteRequest) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        checkVoteRange(voteRequest);
+        contest.updateVotePeriod(voteRequest.voteStartAt(), voteRequest.voteEndAt());
+    }
+
+    private void checkVoteRange(final VoteUpdateRequest voteRequest) {
+        final int compare = voteRequest.voteStartAt().compareTo(voteRequest.voteEndAt());
+        if (compare > 0) {
+            throw new ContestException(VOTE_END_PRECEDE_VOTE_START);
+        }
     }
 
     public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {

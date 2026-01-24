@@ -39,7 +39,7 @@ public class NoticeCommandServiceTest extends IntegrationTest {
     @BeforeEach
     void setUp() {
         contestCategory = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
-        contest = contestRepository.save(ContestFixture.createContest(contestCategory.getId()));
+        contest = contestRepository.save(ContestFixture.createContestWithCategoryId(contestCategory.getId()));
         globalNotice = noticeRepository.save(NoticeFixture.createGlobalNotice());
         contestNotice = noticeRepository.save(NoticeFixture.createContestNotice(contest.getId()));
     }
