@@ -14,6 +14,40 @@ endif::[]
 
 link:../opus.html[API 목록으로 돌아가기]
 
+== 투표 기간 관련
+=== `GET`: 투표 기간 조회
+
+.HTTP Request
+include::{snippets}/get-vote-period/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-vote-period/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-vote-period/path-parameters.adoc[]
+
+.Response Fields
+include::{snippets}/get-vote-period/response-fields.adoc[]
+
+
+=== `PUT`: 투표 기간 수정
+
+.HTTP Request
+include::{snippets}/update-vote-period/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-vote-period/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/update-vote-period/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/update-vote-period/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/update-vote-period/request-fields.adoc[]
+
+
 == 최대 투표 개수 관리
 
 === `PATCH`: 최대 투표 개수 설정
@@ -89,3 +123,4 @@ include::{snippets}/get-max-votes-limit-fail-not-found/http-request.adoc[]
 include::{snippets}/get-max-votes-limit-fail-not-found/http-response.adoc[]
 
 ====
+

@@ -5,10 +5,12 @@ import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -102,6 +105,19 @@ public class ContestController {
     public ResponseEntity<List<ContestCurrentResponse>> getCurrentContests() {
         List<ContestCurrentResponse> responses = contestQueryService.getCurrentContests();
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{contestId}/vote")
+    public ResponseEntity<VotePeriodResponse> getVotePeriod(@PathVariable final Long contestId) {
+        return ResponseEntity.ok(contestQueryService.getVotePeriod(contestId));
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/vote")
+    public ResponseEntity<Void> updateVotePeriod(@PathVariable final Long contestId,
+                                                 @Valid @RequestBody final VoteUpdateRequest voteRequest) {
+        contestCommandService.updateVotePeriod(contestId, voteRequest);
+        return ResponseEntity.noContent().build();
     }
 
     @Secured("ROLE_관리자")

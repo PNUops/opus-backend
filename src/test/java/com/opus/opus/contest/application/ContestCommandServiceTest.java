@@ -1,22 +1,23 @@
 package com.opus.opus.contest.application;
 
-import com.opus.opus.helper.IntegrationTest;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.time.LocalDateTime;
-
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ContestCommandServiceTest extends IntegrationTest {
 
@@ -31,7 +32,42 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        contest = contestRepository.save(ContestFixture.createContest(1L));
+        contest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 기간 수정 시 시작일과 종료일이 정상적으로 업데이트된다.")
+    void 투표_기간_수정_시_시작일과_종료일이_정상적으로_업데이트된다() {
+        // given
+        final LocalDateTime originalStartAt = contest.getVoteStartAt();
+        final LocalDateTime originalEndAt = contest.getVoteEndAt();
+
+        final LocalDateTime newStartAt = LocalDateTime.now().plusDays(1);
+        final LocalDateTime newEndAt = LocalDateTime.now().plusDays(5);
+        final VoteUpdateRequest request = new VoteUpdateRequest(newStartAt, newEndAt);
+
+        // when
+        contestCommandService.updateVotePeriod(contest.getId(), request);
+
+        // then
+        final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow();
+        assertThat(updatedContest.getVoteStartAt()).isNotEqualTo(originalStartAt);
+        assertThat(updatedContest.getVoteEndAt()).isNotEqualTo(originalEndAt);
+
+        assertThat(updatedContest.getVoteStartAt()).isEqualTo(newStartAt);
+        assertThat(updatedContest.getVoteEndAt()).isEqualTo(newEndAt);
+    }
+
+    @Test
+    @DisplayName("[실패] 투표 종료일이 시작일보다 앞서면 예외가 발생한다.")
+    void 투표_종료일이_시작일보다_앞서면_예외가_발생한다() {
+        final LocalDateTime startAt = LocalDateTime.now().plusDays(5);
+        final LocalDateTime endAt = LocalDateTime.now().plusDays(1);
+        final VoteUpdateRequest request = new VoteUpdateRequest(startAt, endAt);
+
+        assertThatThrownBy(() -> {contestCommandService.updateVotePeriod(contest.getId(), request);})
+                .isInstanceOf(ContestException.class)
+                .hasMessage(VOTE_END_PRECEDE_VOTE_START.errorMessage());
     }
 
     @Test
@@ -54,8 +90,8 @@ public class ContestCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 투표 진행 중에는 최대 투표 개수를 변경할 수 없다.")
-    void 투표_진행_중에는_최대_투표_개수를_변경할_수_없다() {
+    @DisplayName("[실패] 투표 진행 중에는 최대 투표 개수를 변경할 수 있다.")
+    void 투표_진행_중에는_최대_투표_개수를_변경할_수_있다() {
         final LocalDateTime now = LocalDateTime.now();
         contest.updateVotePeriod(now.minusDays(1), now.plusDays(1));
 
