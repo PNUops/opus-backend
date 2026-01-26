@@ -6,6 +6,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TeamCommentRepository extends JpaRepository<TeamComment, Long> {
     List<TeamComment> findAllByTeamIdOrderByIdDesc(Long id);
-
-    void deleteAllByTeamId(Long teamId);
 }
