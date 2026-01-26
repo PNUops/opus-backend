@@ -331,7 +331,7 @@ public class MemberCommandService {
 
         HttpServletRequest request = attributes.getRequest();
         String sessionId = request.getSession().getId();
-        String stateKey = "oauth:state:" + sessionId + ":" + state;
+        String stateKey = googleOauth.createOAuthStateKey(sessionId, state);
         String storedState = authRedisUtil.get(stateKey);
 
         if (storedState == null) {

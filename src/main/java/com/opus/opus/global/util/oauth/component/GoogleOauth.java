@@ -5,6 +5,7 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILE
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILED_TO_GET_SOCIAL_USER_INFO;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
+import static org.hibernate.internal.util.JdbcExceptionHelper.extractErrorCode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,6 +56,8 @@ public class GoogleOauth implements SocialOauth {
     @Value("${spring.oauth2.google.scope}")
     private String GOOGLE_DATA_ACCESS_SCOPE;
 
+    private static final long OAUTH_STATE_TTL = 5L;
+
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
@@ -64,13 +67,11 @@ public class GoogleOauth implements SocialOauth {
     public String getOauthRedirectURL() {
         String callbackUrl = determineCallbackUrl();
 
-        ServletRequestAttributes attributes =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        HttpServletRequest request = attributes.getRequest();
+        HttpServletRequest request = getCurrentHttpRequest();
         String sessionId = request.getSession().getId();
         String state = UUID.randomUUID().toString();
-        String stateKey = "oauth:state:" + sessionId + ":" + state;
-        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+        String stateKey = createOAuthStateKey(sessionId, state);
+        authRedisUtil.set(stateKey, "valid", OAUTH_STATE_TTL, TimeUnit.MINUTES);
 
         return UriComponentsBuilder.fromUriString(GOOGLE_SNS_URL)
                 .queryParam("scope", GOOGLE_DATA_ACCESS_SCOPE)
@@ -90,19 +91,15 @@ public class GoogleOauth implements SocialOauth {
         return getUserInfo(userInfo, userType);
     }
 
+    public String createOAuthStateKey(String sessionId, String state) {
+        return "oauth:state:" + sessionId + ":" + state;
+    }
+
     private String determineCallbackUrl() {
         try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-            if (attributes == null) {
-                log.error("OAuth 인증 요청이 HTTP 요청 컨텍스트 외부에서 호출됨");
-                throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
-            }
-
-            HttpServletRequest request = attributes.getRequest();
+            HttpServletRequest request = getCurrentHttpRequest();
             String origin = request.getHeader("Origin");
-            log.info("감지된 Origin 헤더: {}", origin);
+            log.debug("감지된 Origin 헤더: {}", origin);
 
             if (origin != null && origin.contains("localhost:5173")) {
                 return GOOGLE_SNS_FRONTEND_LOCAL_CALLBACK_LOGIN_URL;
@@ -114,6 +111,16 @@ public class GoogleOauth implements SocialOauth {
             log.error("콜백 URL 결정 중 오류 발생", e);
             return GOOGLE_SNS_CALLBACK_LOGIN_URL;
         }
+    }
+
+    private HttpServletRequest getCurrentHttpRequest() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            log.error("OAuth 인증 요청이 HTTP 요청 컨텍스트 외부에서 호출됨");
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+        return attributes.getRequest();
     }
 
     private ResponseEntity<String> requestAccessToken(String code) {
@@ -141,7 +148,7 @@ public class GoogleOauth implements SocialOauth {
             if (responseEntity.getStatusCode() == HttpStatus.OK) {
                 return responseEntity;
             } else {
-                log.error("Google Access Token Request Failed: {}", responseEntity.getBody());
+                log.error("Google Access Token Request Failed with status: {}", responseEntity.getStatusCode());
                 throw new OAuthException(SOCIAL_LOGIN_FAILED_AUTH_CODE);
             }
         } catch (RestClientException e) {
