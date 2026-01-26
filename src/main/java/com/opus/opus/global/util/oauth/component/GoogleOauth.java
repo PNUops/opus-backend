@@ -5,12 +5,12 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILE
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILED_TO_GET_SOCIAL_USER_INFO;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
-import static org.hibernate.internal.util.JdbcExceptionHelper.extractErrorCode;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.oauth.dto.GoogleOAuthToken;
+import com.opus.opus.global.util.oauth.dto.OAuthResult;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
@@ -84,15 +84,65 @@ public class GoogleOauth implements SocialOauth {
     }
 
     @Override
-    public <T> T getUserInfoByCode(String code, Class<T> userType) throws JsonProcessingException {
-        ResponseEntity<String> requestAccessToken = requestAccessToken(code);
-        GoogleOAuthToken oAuthToken = getAccessToken(requestAccessToken);
-        ResponseEntity<String> userInfo = requestUserInfo(oAuthToken);
-        return getUserInfo(userInfo, userType);
+    public <T> OAuthResult<T> getUserInfoByCode(String code, Class<T> userType) throws JsonProcessingException {
+        ResponseEntity<String> accessTokenResponse = requestAccessToken(code);
+        GoogleOAuthToken oAuthToken = getAccessToken(accessTokenResponse);
+        ResponseEntity<String> userInfoResponse = requestUserInfo(oAuthToken);
+        T userInfo = getUserInfo(userInfoResponse, userType);
+
+        return new OAuthResult<>(userInfo, oAuthToken.accessToken(), oAuthToken.refreshToken());
     }
 
     public String createOAuthStateKey(String sessionId, String state) {
         return "oauth:state:" + sessionId + ":" + state;
+    }
+
+    public boolean revokeToken(final String token) {
+        final String GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("token", token);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(GOOGLE_REVOKE_URL, requestEntity, String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                log.debug("Google 토큰 연동 해제 성공");
+                return true;
+            }
+            return false;
+        } catch (RestClientException e) {
+            log.error("Google 토큰 연동 해제 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public String refreshAccessToken(final String refreshToken) {
+        final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("client_id", GOOGLE_SNS_CLIENT_ID);
+        params.add("client_secret", GOOGLE_SNS_CLIENT_SECRET);
+        params.add("refresh_token", refreshToken);
+        params.add("grant_type", "refresh_token");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(GOOGLE_TOKEN_URL, requestEntity, String.class);
+            GoogleOAuthToken newToken = objectMapper.readValue(response.getBody(), GoogleOAuthToken.class);
+            return newToken.accessToken();
+        } catch (Exception e) {
+            log.error("Google Access Token 갱신 실패: {}", e.getMessage());
+            return null;
+        }
     }
 
     private String determineCallbackUrl() {

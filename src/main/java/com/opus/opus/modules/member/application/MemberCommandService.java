@@ -18,6 +18,7 @@ import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.oauth.component.GoogleOauth;
 import com.opus.opus.global.util.oauth.dto.GoogleUser;
+import com.opus.opus.global.util.oauth.dto.OAuthResult;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -67,6 +68,8 @@ public class MemberCommandService {
 
     private static final long SIGNUP_AUTH_CODE_TTL = 5L;
     private static final long SIGNUP_VERIFIED_TTL = 10L;
+    private static final long GOOGLE_TOKEN_TTL = 3L; // 3시간
+    private static final String GOOGLE_TOKEN_KEY_PREFIX = "oauth:google:token:";
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
@@ -167,11 +170,12 @@ public class MemberCommandService {
         try {
             validateGoogleOAuthRequest(code, state, error);
 
-            final GoogleUser googleUser = googleOauth.getUserInfoByCode(code, GoogleUser.class);
+            final OAuthResult<GoogleUser> result = googleOauth.getUserInfoByCode(code, GoogleUser.class);
+            final GoogleUser googleUser = result.userInfo();
 
             return memberRepository.findByEmail(googleUser.email())
-                    .map(this::processExistingMemberLogin) // 기존 회원 로그인 처리
-                    .orElseGet(() -> processNewMemberSignUp(googleUser)); // 새로운 회원 가입 처리
+                    .map(member -> processExistingMemberLogin(member, result))
+                    .orElseGet(() -> processNewMemberSignUp(googleUser, result));
 
         } catch (OAuthException e) {
             throw e;
@@ -182,7 +186,32 @@ public class MemberCommandService {
         }
     }
 
-    private SignInResponse processExistingMemberLogin(final Member member) {
+    public void unlinkGoogleAccount(final Long memberId) {
+        final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
+        final String storedValue = authRedisUtil.get(key);
+
+        if (storedValue == null) { // 구글 로그인하지 않은 회원인 경우
+            return;
+        }
+
+        String[] tokens = storedValue.split(":");
+        final String accessToken = tokens[0];
+        final String refreshToken = tokens[1];
+        boolean success = googleOauth.revokeToken(accessToken);
+
+        if (!success && refreshToken != null) {
+            String newAccessToken = googleOauth.refreshAccessToken(refreshToken);
+            if (newAccessToken != null) {
+                googleOauth.revokeToken(newAccessToken);
+            }
+        }
+
+        authRedisUtil.delete(key);
+    }
+
+    private SignInResponse processExistingMemberLogin(final Member member, final OAuthResult<?> oAuthResult) {
+        saveGoogleToken(member.getId(), oAuthResult);
+
         final List<String> roles = member.getRoles().stream()
                 .map(MemberRoleType::toString)
                 .toList();
@@ -191,10 +220,10 @@ public class MemberCommandService {
         return SignInResponse.from(member, token);
     }
 
-    private SignInResponse processNewMemberSignUp(final GoogleUser googleUser) {
+    private SignInResponse processNewMemberSignUp(final GoogleUser googleUser, final OAuthResult<?> oAuthResult) {
         try {
             final Member newMember = getRegisterNewMember(googleUser.name(), googleUser.email());
-            return processExistingMemberLogin(newMember);
+            return processExistingMemberLogin(newMember, oAuthResult);
 
         } catch (Exception e) {
             throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
@@ -339,5 +368,11 @@ public class MemberCommandService {
         }
 
         authRedisUtil.delete(stateKey);
+    }
+
+    private void saveGoogleToken(final Long memberId, final OAuthResult<?> oAuthResult) {
+        final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
+        final String value = oAuthResult.accessToken() + ":" + oAuthResult.refreshToken();
+        authRedisUtil.set(key, value, GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
     }
 }

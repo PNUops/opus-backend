@@ -11,10 +11,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.opus.opus.global.util.oauth.component.GoogleOauth;
 import com.opus.opus.global.util.oauth.dto.GoogleUser;
+import com.opus.opus.global.util.oauth.dto.OAuthResult;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -58,6 +60,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void setUp() {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
+
+        when(googleOauth.createOAuthStateKey(anyString(), anyString())).thenCallRealMethod(); // state key값이 null이 되는 문제 방지하기 위해 실제 메서드 호출
     }
 
     private void setUpMockRequest() {
@@ -319,8 +323,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
         String stateKey = "oauth:state:" + getSessionId() + ":" + state;
         authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
         GoogleUser mockGoogleUser = new GoogleUser(teamLeader.getEmail(), teamLeader.getName());
+        OAuthResult<GoogleUser> mockResult = new OAuthResult<>(mockGoogleUser, "accessToken", "refreshToken");
         when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
-                .thenReturn(mockGoogleUser);
+                .thenReturn(mockResult);
 
         SignInResponse response = memberCommandService.getGoogleOAuthCallback("code", state, null);
 
@@ -337,8 +342,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
         String stateKey = "oauth:state:" + getSessionId() + ":" + state;
         authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
         GoogleUser mockGoogleUser = new GoogleUser("kty@gmail.com", "김태윤");
+        OAuthResult<GoogleUser> mockResult = new OAuthResult<>(mockGoogleUser, "accessToken", "refreshToken");
         when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
-                .thenReturn(mockGoogleUser);
+                .thenReturn(mockResult);
 
         SignInResponse response = memberCommandService.getGoogleOAuthCallback("code", state, null);
 
@@ -357,11 +363,53 @@ public class MemberCommandServiceTest extends IntegrationTest {
         String stateKey = "oauth:state:" + getSessionId() + ":" + state;
         authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
         GoogleUser mockGoogleUser = new GoogleUser(teamLeader.getEmail(), teamLeader.getName());
+        OAuthResult<GoogleUser> mockResult = new OAuthResult<>(mockGoogleUser, "accessToken", "refreshToken");
         when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
-                .thenReturn(mockGoogleUser);
+                .thenReturn(mockResult);
 
         memberCommandService.getGoogleOAuthCallback("code", state, null);
 
         assertThat(authRedisUtil.exists(stateKey)).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] OAuth 로그인 시 토큰이 Redis에 저장된다")
+    void OAuth_로그인_시_토큰이_Redis에_저장된다() throws Exception {
+        setUpMockRequest();
+        String state = "state";
+        String stateKey = "oauth:state:" + getSessionId() + ":" + state;
+        authRedisUtil.set(stateKey, "valid", 5L, TimeUnit.MINUTES);
+        GoogleUser mockGoogleUser = new GoogleUser(teamLeader.getEmail(), teamLeader.getName());
+        OAuthResult<GoogleUser> mockResult = new OAuthResult<>(mockGoogleUser, "testAccessToken", "testRefreshToken");
+        when(googleOauth.getUserInfoByCode(anyString(), eq(GoogleUser.class)))
+                .thenReturn(mockResult);
+
+        memberCommandService.getGoogleOAuthCallback("code", state, null);
+
+        String tokenKey = "oauth:google:token:" + teamLeader.getId();
+        assertThat(authRedisUtil.exists(tokenKey)).isTrue();
+        assertThat(authRedisUtil.get(tokenKey)).isEqualTo("testAccessToken:testRefreshToken");
+    }
+
+    @Test
+    @DisplayName("[성공] 구글 연동 해제 시 Redis 토큰이 삭제된다")
+    void 구글_연동_해제_시_Redis_토큰이_삭제된다() {
+        String tokenKey = "oauth:google:token:" + teamLeader.getId();
+        authRedisUtil.set(tokenKey, "accessToken:refreshToken", 3L, TimeUnit.HOURS);
+
+        memberCommandService.unlinkGoogleAccount(teamLeader.getId());
+
+        assertThat(authRedisUtil.exists(tokenKey)).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 구글 연동 해제 시 revokeToken이 호출된다")
+    void 구글_연동_해제_시_revokeToken이_호출된다() {
+        String tokenKey = "oauth:google:token:" + teamLeader.getId();
+        authRedisUtil.set(tokenKey, "testAccessToken:testRefreshToken", 3L, TimeUnit.HOURS);
+
+        memberCommandService.unlinkGoogleAccount(teamLeader.getId());
+
+        verify(googleOauth).revokeToken("testAccessToken");
     }
 }
