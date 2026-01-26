@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/contest/{contestId}/tracks")
+@RequestMapping("/contests/{contestId}/tracks")
 public class ContestTrackController {
 
     private final ContestTrackCommandService contestTrackCommandService;
