@@ -65,12 +65,12 @@ public class GoogleOauth implements SocialOauth {
 
     @Override
     public String getOauthRedirectURL() {
-        String callbackUrl = determineCallbackUrl();
+        final String callbackUrl = determineCallbackUrl();
 
-        HttpServletRequest request = getCurrentHttpRequest();
-        String sessionId = request.getSession().getId();
-        String state = UUID.randomUUID().toString();
-        String stateKey = createOAuthStateKey(sessionId, state);
+        final HttpServletRequest request = getCurrentHttpRequest();
+        final String sessionId = request.getSession().getId();
+        final String state = UUID.randomUUID().toString();
+        final String stateKey = createOAuthStateKey(sessionId, state);
         authRedisUtil.set(stateKey, "valid", OAUTH_STATE_TTL, TimeUnit.MINUTES);
 
         return UriComponentsBuilder.fromUriString(GOOGLE_SNS_URL)
@@ -93,20 +93,20 @@ public class GoogleOauth implements SocialOauth {
         return new OAuthResult<>(userInfo, oAuthToken.accessToken(), oAuthToken.refreshToken());
     }
 
-    public String createOAuthStateKey(String sessionId, String state) {
+    public String createOAuthStateKey(final String sessionId, final String state) {
         return "oauth:state:" + sessionId + ":" + state;
     }
 
     public boolean revokeToken(final String token) {
         final String GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("token", token);
 
-        HttpHeaders headers = new HttpHeaders();
+        final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+        final HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
 
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(GOOGLE_REVOKE_URL, requestEntity, String.class);
@@ -124,16 +124,16 @@ public class GoogleOauth implements SocialOauth {
     public String refreshAccessToken(final String refreshToken) {
         final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("client_id", GOOGLE_SNS_CLIENT_ID);
         params.add("client_secret", GOOGLE_SNS_CLIENT_SECRET);
         params.add("refresh_token", refreshToken);
         params.add("grant_type", "refresh_token");
 
-        HttpHeaders headers = new HttpHeaders();
+        final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+        final HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
 
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(GOOGLE_TOKEN_URL, requestEntity, String.class);
@@ -147,8 +147,8 @@ public class GoogleOauth implements SocialOauth {
 
     private String determineCallbackUrl() {
         try {
-            HttpServletRequest request = getCurrentHttpRequest();
-            String origin = request.getHeader("Origin");
+            final HttpServletRequest request = getCurrentHttpRequest();
+            final String origin = request.getHeader("Origin");
             log.debug("감지된 Origin 헤더: {}", origin);
 
             if (origin != null && origin.contains("localhost:5173")) {
@@ -174,21 +174,21 @@ public class GoogleOauth implements SocialOauth {
     }
 
     private ResponseEntity<String> requestAccessToken(String code) {
-        String GOOGLE_TOKEN_REQUEST_URL = "https://oauth2.googleapis.com/token";
+        final String GOOGLE_TOKEN_REQUEST_URL = "https://oauth2.googleapis.com/token";
 
-        String callbackUrl = determineCallbackUrl();
+        final String callbackUrl = determineCallbackUrl();
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("code", code);
         params.add("client_id", GOOGLE_SNS_CLIENT_ID);
         params.add("client_secret", GOOGLE_SNS_CLIENT_SECRET);
         params.add("redirect_uri", callbackUrl);
         params.add("grant_type", "authorization_code");
 
-        HttpHeaders headers = new HttpHeaders();
+        final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+        final HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
 
         try {
             ResponseEntity<String> responseEntity =
@@ -222,13 +222,13 @@ public class GoogleOauth implements SocialOauth {
     }
 
     private ResponseEntity<String> requestUserInfo(GoogleOAuthToken oAuthToken) {
-        String GOOGLE_USERINFO_REQUEST_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
+        final String GOOGLE_USERINFO_REQUEST_URL = "https://www.googleapis.com/oauth2/v1/userinfo";
 
-        HttpHeaders headers = new HttpHeaders();
+        final HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + oAuthToken.accessToken());
         headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
+        final HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
         try {
             return restTemplate.exchange(
                     GOOGLE_USERINFO_REQUEST_URL, HttpMethod.GET, request, String.class);
@@ -240,7 +240,7 @@ public class GoogleOauth implements SocialOauth {
 
     private <T> T getUserInfo(ResponseEntity<String> userInfoRes, Class<T> userType) {
         try {
-            T googleUser = objectMapper.readValue(userInfoRes.getBody(), userType);
+            final T googleUser = objectMapper.readValue(userInfoRes.getBody(), userType);
             if (googleUser == null) {
                 throw new OAuthException(FAILED_TO_GET_SOCIAL_USER_INFO);
             }
