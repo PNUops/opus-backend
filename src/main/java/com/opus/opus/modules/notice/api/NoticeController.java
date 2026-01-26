@@ -37,8 +37,8 @@ public class NoticeController {
 
     @Secured("ROLE_관리자")
     @PatchMapping("/notices/{noticeId}")
-    public ResponseEntity<Void> updateNotice(@Valid @RequestBody final NoticeRequest request,
-                                             @PathVariable final Long noticeId) {
+    public ResponseEntity<Void> updateNotice(@PathVariable final Long noticeId,
+                                             @Valid @RequestBody final NoticeRequest request) {
         noticeCommandService.updateNotice(request, noticeId);
         return ResponseEntity.noContent().build();
     }
@@ -59,4 +59,41 @@ public class NoticeController {
     public ResponseEntity<List<NoticeSummaryResponse>> getAllNotices() {
         return ResponseEntity.ok(noticeQueryService.getAllNotices());
     }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/contests/{contestId}/notices")
+    public ResponseEntity<Void> createContestNotice(@PathVariable final Long contestId,
+                                                    @Valid @RequestBody final NoticeRequest request) {
+        noticeCommandService.createContestNotice(contestId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<Void> updateContestNotice(@PathVariable final Long contestId,
+                                                    @PathVariable final Long noticeId,
+                                                    @Valid @RequestBody final NoticeRequest request) {
+        noticeCommandService.updateContestNotice(request, contestId, noticeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<Void> deleteContestNotice(@PathVariable final Long contestId,
+                                                    @PathVariable final Long noticeId) {
+        noticeCommandService.deleteContestNotice(contestId, noticeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/contests/{contestId}/notices/{noticeId}")
+    public ResponseEntity<NoticeDetailResponse> getContestNotice(@PathVariable final Long contestId,
+                                                                 @PathVariable final Long noticeId) {
+        return ResponseEntity.ok(noticeQueryService.getContestNotice(contestId, noticeId));
+    }
+
+    @GetMapping("/contests/{contestId}/notices")
+    public ResponseEntity<List<NoticeSummaryResponse>> getAllContestNotices(@PathVariable final Long contestId) {
+        return ResponseEntity.ok(noticeQueryService.getAllContestNotices(contestId));
+    }
+
 }
