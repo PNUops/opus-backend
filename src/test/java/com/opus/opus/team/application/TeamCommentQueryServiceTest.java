@@ -86,7 +86,7 @@ public class TeamCommentQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 여러 회원이 작성한 댓글을 조회할 수 있다.")
     void 여러_회원이_작성한_댓글을_조회할_수_있다() {
-        final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
+        final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
         teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, member.getId()));
         teamCommentRepository.save(TeamCommentFixture.createTeamComment(team, otherMember.getId()));
 
