@@ -9,6 +9,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -44,32 +45,29 @@ public class TeamCommandService {
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
-                .ifPresent(this::deleteFileById);
+        deleteIfExists(teamId, THUMBNAIL);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
-                .ifPresent(this::deleteFileById);
+        deleteIfExists(teamId, THUMBNAIL);
     }
 
     public void savePosterImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
-                .ifPresent(this::deleteFileById);
+        deleteIfExists(teamId, POSTER);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
     }
 
     public void deletePosterImage(final Long teamId) {
         teamConvenience.validateExistTeam(teamId);
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER)
-                .ifPresent(this::deleteFileById);
+        deleteIfExists(teamId, POSTER);
     }
 
-    private void deleteFileById(final File existingFile) {
-        fileStorageUtil.deleteFile(existingFile.getId());
+    private void deleteIfExists(final Long teamId, final FileImageType imageType) {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, imageType)
+                .ifPresent(existingFile -> fileStorageUtil.deleteFile(existingFile.getId()));
     }
 
     private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {
