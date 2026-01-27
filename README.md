@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="temp" alt="OPUS Service Overview(추가 예정)" width="900">
+  <img width="700" height="432" alt="Image" src="https://github.com/user-attachments/assets/3c21ae9b-834b-41b0-b103-29e5e7f81754" />
 </p>
 
 <h1 align="center">🎓 OPUS (SW프로젝트관리시스템)</h1>
@@ -13,7 +13,8 @@
 <p align="center">
   <a href="https://opus.pusan.ac.kr/">🌐 운영 서비스 이동</a> | 
   <a href="https://github.com/PNUops/opus-backend">🧩 Production Repo 이동</a> | 
-  <a href="#">📄 Spring Rest Docs(예정)</a> | 
+  <a href="https://opus.pnu.app/api/docs/">📄 Spring Rest Docs </a> | 
+  <a href="https://opus.pnu.app">🔨 개발 서버 </a> | 
   <a href="https://github.com/PNUops/ops-mvp-back">📦 MVP Backend</a>
 </p>
 

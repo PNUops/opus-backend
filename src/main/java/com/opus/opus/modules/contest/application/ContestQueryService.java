@@ -10,12 +10,13 @@ import com.opus.opus.modules.contest.application.convenience.ContestCategoryConv
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import java.util.List;
@@ -71,7 +72,16 @@ public class ContestQueryService {
                     return ContestResponse.from(contest, category.getCategoryName());
                 })
                 .toList();
+    }
 
+    public VotePeriodResponse getVotePeriod(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return new VotePeriodResponse(contest.getVoteStartAt(), contest.getVoteEndAt());
+    }
+
+    public ContestVotesLimitResponse getMaxVotesLimit(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return ContestVotesLimitResponse.from(contest.getMaxVotesLimit());
     }
 
     private void checkImageConverted(final File findFile) {

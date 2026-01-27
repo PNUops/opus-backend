@@ -1,4 +1,4 @@
-package com.opus.opus.modules.notice.application.dto;
+package com.opus.opus.modules.notice.application.convenience;
 
 import static com.opus.opus.modules.notice.exception.NoticeExceptionType.NOT_FOUND_NOTICE;
 
@@ -16,8 +16,14 @@ public class NoticeConvenience {
 
     private final NoticeRepository noticeRepository;
 
-    public Notice getValidateExistNotice(final Long noticeId) {
-        return noticeRepository.findById(noticeId).orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
+    public Notice getValidateGlobalNotice(final Long noticeId) {
+        return noticeRepository.findByIdAndContestIdIsNull(noticeId)
+                .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
+    }
+
+    public Notice getValidateContestNotice(final Long contestId, final Long noticeId) {
+        return noticeRepository.findByContestIdAndId(contestId, noticeId)
+                .orElseThrow(() -> new NoticeException(NOT_FOUND_NOTICE));
     }
 }
 

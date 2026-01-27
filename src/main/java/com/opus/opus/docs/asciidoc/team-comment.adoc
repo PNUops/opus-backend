@@ -1,0 +1,122 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= TEAM COMMENT API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 팀 댓글 등록
+
+.Path Parameters
+include::{snippets}/create-team-comment/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/create-team-comment/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/create-team-comment/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-team-comment/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/create-team-comment/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 팀
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-team-comment-fail-not-found/http-request.adoc[]
+
+include::{snippets}/create-team-comment-fail-not-found/http-response.adoc[]
+
+====
+
+== `GET`: 팀 댓글 목록 조회
+
+.Path Parameters
+include::{snippets}/get-team-comments/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/get-team-comments/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-team-comments/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-comments/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-team-comments/response-fields.adoc[]
+
+== `PATCH`: 팀 댓글 수정
+
+.Path Parameters
+include::{snippets}/update-team-comment/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/update-team-comment/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-team-comment/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-team-comment/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-team-comment/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 본인이 작성하지 않은 댓글
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-team-comment-fail-not-owner/http-request.adoc[]
+
+include::{snippets}/update-team-comment-fail-not-owner/http-response.adoc[]
+
+====
+
+== `DELETE`: 팀 댓글 삭제
+
+.Path Parameters
+include::{snippets}/delete-team-comment/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/delete-team-comment/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-team-comment/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team-comment/http-response.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 본인이 작성하지 않은 댓글
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-team-comment-fail-not-owner/http-request.adoc[]
+
+include::{snippets}/delete-team-comment-fail-not-owner/http-response.adoc[]
+
+====

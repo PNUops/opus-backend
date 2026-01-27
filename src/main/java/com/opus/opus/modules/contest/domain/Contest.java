@@ -50,7 +50,7 @@ public class Contest extends BaseEntity {
     private Integer maxVotesLimit;
 
     @OneToMany(mappedBy = "contest")
-    private List<ContestAward> contestAwards = new ArrayList<>();
+    private final List<ContestAward> contestAwards = new ArrayList<>();
 
     @Builder
     private Contest(final String contestName, final Long categoryId) {
@@ -61,7 +61,6 @@ public class Contest extends BaseEntity {
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
         this.maxVotesLimit = 0;
-        this.maxVotesLimit = 0;
     }
 
     public void updateIsCurrent(final Boolean isCurrent) {
@@ -71,5 +70,19 @@ public class Contest extends BaseEntity {
     public void updateContest(final Long categoryId, final String contestName) {
         this.categoryId = categoryId;
         this.contestName = contestName;
+    }
+
+    public void updateMaxVotesLimit(final Integer maxVotesLimit) {
+        this.maxVotesLimit = maxVotesLimit;
+    }
+
+    public boolean isVotingPeriod() {
+        final LocalDateTime now = LocalDateTime.now();
+        return !now.isBefore(voteStartAt) && !now.isAfter(voteEndAt);
+    }
+
+    public void updateVotePeriod(final LocalDateTime voteStartAt, final LocalDateTime voteEndAt) {
+        this.voteStartAt = voteStartAt;
+        this.voteEndAt = voteEndAt;
     }
 }

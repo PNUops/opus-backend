@@ -92,4 +92,28 @@ public class TeamController {
         TeamBulkCreateResponse response = teamCommandService.createTeamsFromExcel(contestId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @GetMapping("/{teamId}/image/posters")
+    public ResponseEntity<Resource> getPosterImage(@PathVariable final Long teamId) {
+        final ImageResponse imageResponse = teamQueryService.getPosterImage(teamId);
+
+        return ResponseEntity.ok()
+                .contentType(imageResponse.getMediaType())
+                .body(imageResponse.resource());
+    }
+
+    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @PostMapping("/{teamId}/image/posters")
+    public ResponseEntity<Void> savePosterImage(@PathVariable final Long teamId,
+                                                @RequestPart("image") final MultipartFile image) {
+        teamCommandService.savePosterImage(teamId, image);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @DeleteMapping("/{teamId}/image/posters")
+    public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId) {
+        teamCommandService.deletePosterImage(teamId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -24,6 +24,10 @@ public class ContestConvenience {
         return contestRepository.findById(contestId).orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
     }
 
+    public void validateExistContest(final Long contestId) {
+        contestRepository.findById(contestId).orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
+    }
+
     public void validateAllContestsDeletedInCategory(final Long categoryId) {
         if (contestRepository.existsByCategoryId(categoryId)) {
             throw new ContestException(CATEGORY_HAS_CONTEST);
@@ -43,5 +47,4 @@ public class ContestConvenience {
     public List<Contest> getCurrentContests() {
         return contestRepository.findAllByIsCurrentTrue();
     }
-
 }

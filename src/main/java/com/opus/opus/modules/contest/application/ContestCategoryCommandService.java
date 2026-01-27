@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestCategoryCommandService {
 
     private final ContestCategoryRepository contestCategoryRepository;
-    private final ContestCategoryConvenience contestCategoryConvenience;
 
+    private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
 
     public void createCategory(final ContestCategoryRequest request) {

@@ -49,4 +49,11 @@ public class TeamComment extends BaseEntity {
         this.isDeleted = false;
     }
 
+    public void updateDescription(final String newDescription) {
+        this.description = newDescription;
+    }
+
+    public boolean isMine(Long memberId) {
+        return this.memberId.equals(memberId);
+    }
 }

@@ -1,5 +1,10 @@
 package com.opus.opus.modules.member.application;
 
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.FAILED_TO_GET_SOCIAL_USER_INFO;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
+import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
@@ -7,9 +12,14 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.MailUtil;
+import com.opus.opus.global.util.oauth.component.GoogleOauth;
+import com.opus.opus.global.util.oauth.dto.GoogleUser;
+import com.opus.opus.global.util.oauth.dto.OAuthResult;
+import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -21,16 +31,20 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 @Transactional
@@ -45,13 +59,17 @@ public class MemberCommandService {
     private final JwtProvider jwtProvider;
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
+    private final GoogleOauth googleOauth;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
     private static final char[] AUTH_CODE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+    private static final String PASSWORD_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
 
     private static final long SIGNUP_AUTH_CODE_TTL = 5L;
     private static final long SIGNUP_VERIFIED_TTL = 10L;
+    private static final long GOOGLE_TOKEN_TTL = 3L; // 3시간
+    private static final String GOOGLE_TOKEN_KEY_PREFIX = "oauth:google:token:";
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
@@ -140,6 +158,102 @@ public class MemberCommandService {
         authRedisUtil.delete(signInVerifiedKey(email));
     }
 
+    public String getGoogleOAuthRedirectURL() {
+        try {
+            return googleOauth.getOauthRedirectURL();
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    public SignInResponse getGoogleOAuthCallback(final String code, final String state, final String error) {
+        try {
+            validateGoogleOAuthRequest(code, state, error);
+
+            final OAuthResult<GoogleUser> result = googleOauth.getUserInfoByCode(code, GoogleUser.class);
+            final GoogleUser googleUser = result.userInfo();
+
+            return memberRepository.findByEmail(googleUser.email())
+                    .map(member -> processExistingMemberLogin(member, result))
+                    .orElseGet(() -> processNewMemberSignUp(googleUser, result));
+
+        } catch (OAuthException e) {
+            throw e;
+        } catch (JsonProcessingException e) {
+            throw new OAuthException(FAILED_TO_GET_SOCIAL_USER_INFO);
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    public void unlinkGoogleAccount(final Long memberId) {
+        final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
+        final String storedValue = authRedisUtil.get(key);
+
+        if (storedValue == null) { // 구글 로그인하지 않은 회원인 경우
+            return;
+        }
+
+        String[] tokens = storedValue.split(":");
+        final String accessToken = tokens[0];
+        final String refreshToken = tokens[1];
+        boolean success = googleOauth.revokeToken(accessToken);
+
+        if (!success && refreshToken != null) {
+            String newAccessToken = googleOauth.refreshAccessToken(refreshToken);
+            if (newAccessToken != null) {
+                googleOauth.revokeToken(newAccessToken);
+            }
+        }
+
+        authRedisUtil.delete(key);
+    }
+
+    private SignInResponse processExistingMemberLogin(final Member member, final OAuthResult<?> oAuthResult) {
+        saveGoogleToken(member.getId(), oAuthResult);
+
+        final List<String> roles = member.getRoles().stream()
+                .map(MemberRoleType::toString)
+                .toList();
+        final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
+
+        return SignInResponse.from(member, token);
+    }
+
+    private SignInResponse processNewMemberSignUp(final GoogleUser googleUser, final OAuthResult<?> oAuthResult) {
+        try {
+            final Member newMember = getRegisterNewMember(googleUser.name(), googleUser.email());
+            return processExistingMemberLogin(newMember, oAuthResult);
+
+        } catch (Exception e) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    private Member getRegisterNewMember(final String name, final String email) {
+        final String randomPassword = generateRandomPassword();
+        final String uniqueStudentId = "fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+
+        return memberRepository.save(Member.builder()
+                .name(name)
+                .studentId(uniqueStudentId)
+                .email(email)
+                .password(randomPassword)
+                .roles(Set.of(ROLE_회원))
+                .build());
+    }
+
+    private String generateRandomPassword() {
+        final int passwordLength = 32;
+
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < passwordLength; i++) {
+            password.append(PASSWORD_POOL.charAt(SECURE_RANDOM.nextInt(PASSWORD_POOL.length())));
+        }
+
+        return passwordEncoder.encode(password.toString());
+    }
+
     private void verifyVerifiedKey(final String verifiedKey) {
         if (authRedisUtil.get(verifiedKey) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
@@ -219,5 +333,46 @@ public class MemberCommandService {
 
     private static String signInVerifiedKey(final String email) {
         return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
+    }
+
+    private void validateGoogleOAuthRequest(final String code, final String state, final String error) {
+        validateState(state);
+
+        if (error != null) {
+            throw new OAuthException(USER_DENIED_AUTHORIZATION);
+        }
+
+        if (code == null || code.isBlank()) {
+            throw new OAuthException(SOCIAL_LOGIN_FAILED_AUTH_CODE);
+        }
+    }
+
+    private void validateState(final String state) {
+        if (state == null || state.isBlank()) {
+            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+        }
+
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+
+        HttpServletRequest request = attributes.getRequest();
+        String sessionId = request.getSession().getId();
+        String stateKey = googleOauth.createOAuthStateKey(sessionId, state);
+        String storedState = authRedisUtil.get(stateKey);
+
+        if (storedState == null) {
+            throw new OAuthException(OAUTH_AUTHORIZATION_FAILED);
+        }
+
+        authRedisUtil.delete(stateKey);
+    }
+
+    private void saveGoogleToken(final Long memberId, final OAuthResult<?> oAuthResult) {
+        final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
+        final String value = oAuthResult.accessToken() + ":" + oAuthResult.refreshToken();
+        authRedisUtil.set(key, value, GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
     }
 }
