@@ -1,6 +1,7 @@
 package com.opus.opus.helper;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.AuthRedisUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     private MailUtil mailUtil;
+
+    @MockitoBean
+    protected FileStorageUtil fileStorageUtil;
 
     @BeforeEach
     void setUp(final WebApplicationContext context) {
