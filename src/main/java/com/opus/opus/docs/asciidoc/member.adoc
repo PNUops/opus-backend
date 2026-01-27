@@ -37,6 +37,8 @@ include::{snippets}/signup-auth-fail/http-request.adoc[]
 
 include::{snippets}/signup-auth-fail/http-response.adoc[]
 
+include::{snippets}/signup-auth-fail/request-fields.adoc[]
+
 ====
 
 == `PATCH`: 회원가입 이메일 인증코드 확인
@@ -62,6 +64,8 @@ include::{snippets}/signup-auth-confirm-fail/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
 
+include::{snippets}/signup-auth-confirm-fail/request-fields.adoc[]
+
 ====
 
 .❌ Case 2: 만료된 인증코드
@@ -73,6 +77,8 @@ include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
 include::{snippets}/signup-auth-confirm-fail2/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail2/http-response.adoc[]
+
+include::{snippets}/signup-auth-confirm-fail2/request-fields.adoc[]
 
 ====
 

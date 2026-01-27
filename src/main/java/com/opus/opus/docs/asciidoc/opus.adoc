@@ -18,12 +18,10 @@ link:./team.html[팀 API]
 
 link:./team-comment.html[팀 댓글 API]
 
-== 대회 관련 API
-link:./contest.html[대회 API]
+link:./team-member.html[팀원 API]
 
 == 공지 관련 API
 link:./notice.html[공지 API]
 
 == 대회 관련 API
 link:./contest.html[대회 API]
-

@@ -1,0 +1,162 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= TEAM MEMBER API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 팀원 추가
+
+.Path Parameters
+include::{snippets}/add-team-member/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/add-team-member/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/add-team-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/add-team-member/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/add-team-member/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 팀원명이 비어있음
+
+[%collapsible]
+
+====
+
+include::{snippets}/add-team-member-fail-empty-name/http-request.adoc[]
+
+include::{snippets}/add-team-member-fail-empty-name/http-response.adoc[]
+
+include::{snippets}/add-team-member-fail-empty-name/request-fields.adoc[]
+
+====
+
+.❌ Case 2: 팀원학번이 비어있음
+
+[%collapsible]
+
+====
+
+include::{snippets}/add-team-member-fail-empty-student-id/http-request.adoc[]
+
+include::{snippets}/add-team-member-fail-empty-student-id/http-response.adoc[]
+
+include::{snippets}/add-team-member-fail-empty-student-id/request-fields.adoc[]
+
+====
+
+.❌ Case 3: 존재하지 않는 팀 ID
+
+[%collapsible]
+
+====
+
+include::{snippets}/add-team-member-fail-team-not-found/http-request.adoc[]
+
+include::{snippets}/add-team-member-fail-team-not-found/http-response.adoc[]
+
+include::{snippets}/add-team-member-fail-team-not-found/request-fields.adoc[]
+
+====
+
+.❌ Case 4: 팀원명과 팀원학번이 맞지 않음
+
+[%collapsible]
+
+====
+
+include::{snippets}/add-team-member-fail-mismatch/http-request.adoc[]
+
+include::{snippets}/add-team-member-fail-mismatch/http-response.adoc[]
+
+include::{snippets}/add-team-member-fail-mismatch/request-fields.adoc[]
+
+====
+
+.❌ Case 5: 동일한 참가자명 + 학번이 해당 팀에 이미 존재
+
+[%collapsible]
+
+====
+
+include::{snippets}/add-team-member-fail-already-exists/http-request.adoc[]
+
+include::{snippets}/add-team-member-fail-already-exists/http-response.adoc[]
+
+include::{snippets}/add-team-member-fail-already-exists/request-fields.adoc[]
+
+====
+
+== `DELETE`: 팀원 삭제
+
+.Path Parameters
+include::{snippets}/delete-team-member/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/delete-team-member/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-team-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team-member/http-response.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 팀 ID
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-team-member-fail-team-not-found/http-request.adoc[]
+
+include::{snippets}/delete-team-member-fail-team-not-found/http-response.adoc[]
+
+include::{snippets}/delete-team-member-fail-team-not-found/path-parameters.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 멤버 ID
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-team-member-fail-member-not-found/http-request.adoc[]
+
+include::{snippets}/delete-team-member-fail-member-not-found/http-response.adoc[]
+
+include::{snippets}/delete-team-member-fail-member-not-found/path-parameters.adoc[]
+
+====
+
+.❌ Case 3: 삭제 대상 팀원이 해당 팀에 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-team-member-fail-not-in-team/http-request.adoc[]
+
+include::{snippets}/delete-team-member-fail-not-in-team/http-response.adoc[]
+
+include::{snippets}/delete-team-member-fail-not-in-team/path-parameters.adoc[]
+
+====
