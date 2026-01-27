@@ -159,7 +159,7 @@ include::{snippets}/toggle-team-vote-fail-not-vote-period/http-response.adoc[]
 
 == `GET`: 사용자 투표 개수 조회
 
-현재 사용자가 특정 대회에서 투표한 팀의 개수를 조회합니다.
+현재 사용자가 특정 대회에서 남은 투표 가능 횟수와 최대 투표 허용 개수를 조회합니다.
 
 .Query Parameters
 include::{snippets}/get-member-vote-count/query-parameters.adoc[]

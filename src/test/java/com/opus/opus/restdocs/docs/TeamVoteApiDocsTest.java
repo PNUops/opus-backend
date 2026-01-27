@@ -41,20 +41,6 @@ import org.springframework.http.MediaType;
 public class TeamVoteApiDocsTest extends RestDocsTest {
 
     private static final String MEMBER_TOKEN = "Bearer member.access.token";
-    private static final String TOGGLE_VOTE_DESCRIPTION = """
-            해당 팀에 대해 투표 상태를 토글합니다.
-            
-            * isVoted: true → 투표 등록
-            * isVoted: false → 투표 취소
-            
-            NOTE: 대회 기간 중에는 투표만 보이고, 대회 기간이 아니라면 좋아요가 보입니다.
-            
-            NOTE: 해당 대회의 최대 투표 개수 이상으로 투표를 등록할 수 없습니다.
-            """;
-
-    private static final String GET_VOTE_COUNT_DESCRIPTION = """
-            현재 사용자가 특정 대회에서 투표한 팀의 개수를 조회합니다.
-            """;
 
     private Member member;
 
