@@ -122,15 +122,9 @@ public class ContestCommandService {
     public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
-        validateNotInVotingPeriod(contest);
+        contestConvenience.validateNotInVotingPeriod(contest);
 
         contest.updateMaxVotesLimit(maxVotesLimit);
-    }
-
-    private void validateNotInVotingPeriod(final Contest contest) {
-        if (contest.isVotingPeriod()) {
-            throw new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD);
-        }
     }
 
     private void checkWebpConverted(File existingFile) {

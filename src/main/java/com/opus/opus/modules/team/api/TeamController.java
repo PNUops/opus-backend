@@ -1,9 +1,14 @@
 package com.opus.opus.modules.team.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamLikeCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamLikeToggleRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +19,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +36,7 @@ public class TeamController {
 
     private final TeamQueryService teamQueryService;
     private final TeamCommandService teamCommandService;
+    private final TeamLikeCommandService teamLikeCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
@@ -102,5 +109,14 @@ public class TeamController {
     public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId) {
         teamCommandService.deletePosterImage(teamId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @PatchMapping("/{teamId}/likes")
+    public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable Long teamId,
+                                                             @RequestBody @Valid TeamLikeToggleRequest request,
+                                                             @LoginMember Member member) {
+        TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), teamId, request.isLiked());
+        return ResponseEntity.ok(response);
     }
 }

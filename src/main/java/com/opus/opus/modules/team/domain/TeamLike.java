@@ -41,4 +41,7 @@ public class TeamLike extends BaseEntity {
         this.isLiked = isLiked;
     }
 
+    public void updateIsLiked(final Boolean isLiked) {
+        this.isLiked = isLiked;
+    }
 }
