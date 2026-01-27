@@ -1,0 +1,57 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= TEAM API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:../opus.html[API 목록으로 돌아가기]
+
+== `GET`: 팀 포스터 이미지 조회
+
+.HTTP Request
+include::{snippets}/get-team-poster/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-poster/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-poster/path-parameters.adoc[]
+
+== `POST`: 팀 포스터 이미지 등록
+
+.HTTP Request
+include::{snippets}/save-team-poster/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/save-team-poster/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/save-team-poster/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/save-team-poster/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/save-team-poster/request-parts.adoc[]
+
+== `DELETE`: 팀 포스터 이미지 삭제
+
+.HTTP Request
+include::{snippets}/delete-team-poster/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team-poster/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-team-poster/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-team-poster/request-headers.adoc[]

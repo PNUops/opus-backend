@@ -17,7 +17,7 @@ public class MemberFixture {
                 .build();
     }
 
-    public static Member createMember(int number) {
+    public static Member createMemberWithUniqueNum(int number) {
         return Member.builder()
                 .name("테스트회원" + number)
                 .email("example" + number + "@pusan.ac.kr")

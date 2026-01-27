@@ -1,6 +1,7 @@
 package com.opus.opus.helper;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.oauth.component.GoogleOauth;
@@ -34,6 +35,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     protected GoogleOauth googleOauth;
+
+    @MockitoBean
+    protected FileStorageUtil fileStorageUtil;
 
     @BeforeEach
     void setUp(final WebApplicationContext context) {

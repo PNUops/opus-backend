@@ -2,7 +2,6 @@ package com.opus.opus.modules.member.domain;
 
 import static jakarta.persistence.FetchType.EAGER;
 import static jakarta.persistence.FetchType.LAZY;
-
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

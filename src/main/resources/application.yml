@@ -24,4 +24,3 @@ cors:
   allow:
     origins: https://test.url
     methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
-
