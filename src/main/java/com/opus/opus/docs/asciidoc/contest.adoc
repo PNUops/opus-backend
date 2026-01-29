@@ -124,3 +124,46 @@ include::{snippets}/get-max-votes-limit-fail-not-found/http-response.adoc[]
 
 ====
 
+== 대회 배너 이미지 관리
+
+=== `GET`: 대회 배너 이미지 조회
+
+.Path Parameters
+include::{snippets}/get-contest-banner/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-banner/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-banner/http-response.adoc[]
+
+=== `POST`: 대회 배너 이미지 등록
+
+.Path Parameters
+include::{snippets}/save-contest-banner/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/save-contest-banner/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/save-contest-banner/request-parts.adoc[]
+
+.HTTP Request
+include::{snippets}/save-contest-banner/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/save-contest-banner/http-response.adoc[]
+
+=== `DELETE`: 대회 배너 이미지 삭제
+
+.Path Parameters
+include::{snippets}/delete-contest-banner/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-contest-banner/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-banner/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-banner/http-response.adoc[]
