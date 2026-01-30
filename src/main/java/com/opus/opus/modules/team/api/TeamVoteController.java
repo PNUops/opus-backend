@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,19 +26,17 @@ public class TeamVoteController {
 
     private final TeamVoteCommandService teamVoteCommandService;
 
-    @PatchMapping("/{teamId}/votes")
-    public ResponseEntity<TeamVoteToggleResponse> toggleVote(
-            @PathVariable Long teamId,
-            @RequestBody @Valid TeamVoteToggleRequest request,
-            @LoginMember Member member) {
+    @PutMapping("/{teamId}/votes")
+    public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
+                                                             @RequestBody @Valid TeamVoteToggleRequest request,
+                                                             @LoginMember Member member) {
         TeamVoteToggleResponse response = teamVoteCommandService.toggleVote(member.getId(), teamId, request.isVoted());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/votes")
-    public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(
-            @RequestParam Long contestId,
-            @LoginMember Member member) {
+    public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@RequestParam Long contestId,
+                                                                      @LoginMember Member member) {
         MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
     }

@@ -2,6 +2,8 @@ package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -13,10 +15,10 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamVoteException;
-import com.opus.opus.modules.team.exception.TeamVoteExceptionType;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +36,7 @@ public class TeamVoteCommandService {
         Team team = teamConvenience.getValidateExistTeam(teamId);
         Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
 
-        contestConvenience.validateVotingPeriod(team.getContestId());
+        contestConvenience.validateVotingPeriod(contest);
 
         Optional<TeamVote> teamVoteOptional = teamVoteRepository.findByMemberIdAndTeam(memberId, team);
 
@@ -43,40 +45,35 @@ public class TeamVoteCommandService {
     }
 
     private TeamVoteToggleResponse handleFirstTimeVote(Long memberId, Team team, Boolean isVoted, Contest contest) {
+        if (!isVoted) {
+            throw new TeamVoteException(NOT_VOTED_YET);
+        }
+
         long currentVoteCount = countCurrentMemberVotes(memberId, team.getContestId());
         int maxVotesLimit = contest.getMaxVotesLimit();
 
-        if (isVoted) {
-            validateVoteLimit(currentVoteCount, maxVotesLimit);
-            currentVoteCount++;
-        }
+        validateVoteLimit(currentVoteCount, maxVotesLimit);
+        saveTeamVote(memberId, team, true);
 
-        saveTeamVote(memberId, team, isVoted);
-
-        String message = isVoted ? "투표가 처음 등록되었습니다." : "투표가 비활성화된 상태로 초기화되었습니다.";
-        return TeamVoteToggleResponse.of(team.getId(), isVoted, message, currentVoteCount, maxVotesLimit);
+        return TeamVoteToggleResponse.of(team.getId(), true, "투표가 등록되었습니다.", currentVoteCount + 1, maxVotesLimit);
     }
 
-    private TeamVoteToggleResponse handleExistingVote(TeamVote teamVote, Boolean isVoted, Long memberId, Contest contest) {
+    private TeamVoteToggleResponse handleExistingVote(final TeamVote teamVote, final Boolean isVoted, final Long memberId, final Contest contest) {
         if (Objects.equals(teamVote.getIsVoted(), isVoted)) {
-            TeamVoteExceptionType exceptionType = isVoted ? ALREADY_VOTED : ALREADY_UNVOTED;
-            throw new TeamVoteException(exceptionType);
+            throw new TeamVoteException(isVoted ? ALREADY_VOTED : ALREADY_UNVOTED);
         }
 
-        long currentVoteCount = countCurrentMemberVotes(memberId, contest.getId());
-        int maxVotesLimit = contest.getMaxVotesLimit();
+        final long currentVoteCount = countCurrentMemberVotes(memberId, contest.getId());
+        final int maxVotesLimit = contest.getMaxVotesLimit();
 
         if (isVoted) {
             validateVoteLimit(currentVoteCount, maxVotesLimit);
-            currentVoteCount++;
-        } else {
-            currentVoteCount--;
         }
 
+        final long updatedVoteCount = currentVoteCount + (isVoted ? 1 : -1);
         teamVote.updateIsVoted(isVoted);
 
-        String message = isVoted ? "투표가 등록되었습니다." : "투표가 취소되었습니다.";
-        return TeamVoteToggleResponse.of(teamVote.getTeam().getId(), isVoted, message, currentVoteCount, maxVotesLimit);
+        return TeamVoteToggleResponse.of(teamVote.getTeam().getId(), isVoted, isVoted ? "투표가 등록되었습니다." : "투표가 취소되었습니다.", updatedVoteCount, maxVotesLimit);
     }
 
     private long countCurrentMemberVotes(Long memberId, Long contestId) {
@@ -91,11 +88,16 @@ public class TeamVoteCommandService {
     }
 
     private void saveTeamVote(Long memberId, Team team, Boolean isVoted) {
-        teamVoteRepository.save(TeamVote.builder()
-                .memberId(memberId)
-                .team(team)
-                .isVoted(isVoted)
-                .build());
+        try {
+            teamVoteRepository.save(TeamVote.builder()
+                    .memberId(memberId)
+                    .team(team)
+                    .isVoted(isVoted)
+                    .build());
+            teamVoteRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new TeamVoteException(DUPLICATE_VOTE_REQUEST);
+        }
     }
 
     @Transactional(readOnly = true)

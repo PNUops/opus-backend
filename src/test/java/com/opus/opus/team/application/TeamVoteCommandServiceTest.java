@@ -57,7 +57,7 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
         newContest.updateMaxVotesLimit(2); // 최대 투표 수를 기본적으로 2로 설정
         contest = contestRepository.save(newContest);
 
-        team = teamRepository.save(TeamFixture.createTeam(contest.getId()));
+        team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         member = memberRepository.save(MemberFixture.createMember());
     }
 
@@ -150,7 +150,7 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
         notVotingContest.updateMaxVotesLimit(2);
         notVotingContest = contestRepository.save(notVotingContest);
 
-        Team notVotingTeam = teamRepository.save(TeamFixture.createTeam(notVotingContest.getId()));
+        Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
 
         assertThatThrownBy(() -> teamVoteCommandService.toggleVote(member.getId(), notVotingTeam.getId(), true))
                 .isInstanceOf(ContestException.class)
@@ -160,8 +160,8 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 최대 투표 수를 초과하면 예외가 발생한다.")
     void 최대_투표_수를_초과하면_예외가_발생한다() {
-        Team secondTeam = teamRepository.save(TeamFixture.createTeam(contest.getId()));
-        Team thirdTeam = teamRepository.save(TeamFixture.createTeam(contest.getId()));
+        Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        Team thirdTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
 
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), true));
@@ -195,7 +195,7 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 취소한 투표는 카운트에서 제외된다.")
     void 취소한_투표는_카운트에서_제외된다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        Team secondTeam = teamRepository.save(TeamFixture.createTeam(contest.getId()));
+        Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), false));
 
         MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contest.getId());

@@ -8,10 +8,10 @@ public class TeamFixture {
     private static final Long DEFAULT_CONTEST_ID = 1L;
 
     public static Team createTeam() {
-        return createTeam(DEFAULT_CONTEST_ID);
+        return createTeamWithContestId(DEFAULT_CONTEST_ID);
     }
 
-    public static Team createTeam(final Long contestId) {
+    public static Team createTeamWithContestId(final Long contestId) {
         return Team.builder()
                 .teamName("팀 옵스")
                 .projectName("옵스 프로젝트")

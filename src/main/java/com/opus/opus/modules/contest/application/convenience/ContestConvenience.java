@@ -49,8 +49,7 @@ public class ContestConvenience {
         return contestRepository.findAllByIsCurrentTrue();
     }
 
-    public void validateVotingPeriod(final Long contestId) {
-        Contest contest = getValidateExistContest(contestId);
+    public void validateVotingPeriod(final Contest contest) {
         if (!contest.isVotingPeriod()) {
             throw new ContestException(NOT_VOTE_PERIOD_NOW);
         }
