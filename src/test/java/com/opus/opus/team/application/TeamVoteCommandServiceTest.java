@@ -4,6 +4,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_V
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -68,22 +69,12 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
 
         assertThat(response.teamId()).isEqualTo(team.getId());
         assertThat(response.isVoted()).isTrue();
-        assertThat(response.message()).isEqualTo("투표가 처음 등록되었습니다.");
+        assertThat(response.message()).isEqualTo("투표가 등록되었습니다.");
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
 
         TeamVote savedVote = teamVoteRepository.findByMemberIdAndTeam(member.getId(), team).orElseThrow();
         assertThat(savedVote.getIsVoted()).isTrue();
-    }
-
-    @Test
-    @DisplayName("[성공] 처음 요청이 isVoted=false이면 비활성화 상태로 초기화된다.(다만, 일반적으로는 사용하지 않는 플로우임)")
-    void 처음_요청이_isVoted_false이면_비활성화_상태로_초기화된다() {
-        TeamVoteToggleResponse response = teamVoteCommandService.toggleVote(member.getId(), team.getId(), false);
-
-        assertThat(response.isVoted()).isFalse();
-        assertThat(response.message()).isEqualTo("투표가 비활성화된 상태로 초기화되었습니다.");
-        assertThat(response.remainingVotesCount()).isEqualTo(2L);
     }
 
     @Test
@@ -110,6 +101,14 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
         assertThat(response.isVoted()).isTrue();
         assertThat(response.message()).isEqualTo("투표가 등록되었습니다.");
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("[실패] 투표한 적 없는 팀에 취소 요청하면 예외가 발생한다.")
+    void 투표한_적_없는_팀에_취소_요청하면_예외가_발생한다() {
+        assertThatThrownBy(() -> teamVoteCommandService.toggleVote(member.getId(), team.getId(), false))
+                .isInstanceOf(TeamVoteException.class)
+                .hasMessage(NOT_VOTED_YET.errorMessage());
     }
 
     @Test

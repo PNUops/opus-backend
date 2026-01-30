@@ -5,6 +5,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_V
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -13,13 +14,12 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -54,11 +54,11 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 팀에 투표를 등록한다.")
     void 팀에_투표를_등록한다() throws Exception {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
-        final TeamVoteToggleResponse response = new TeamVoteToggleResponse(1L, true, "투표가 처음 등록되었습니다.", 1L, 2L);
+        final TeamVoteToggleResponse response = new TeamVoteToggleResponse(1L, true, "투표가 등록되었습니다.", 1L, 2L);
 
         given(teamVoteCommandService.toggleVote(any(), any(), any())).willReturn(response);
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 1)
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -91,7 +91,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
 
         given(teamVoteCommandService.toggleVote(any(), any(), any())).willReturn(response);
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 1)
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -125,7 +125,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamVoteCommandService)
                 .toggleVote(any(), any(), any());
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 999)
+        mockMvc.perform(put("/teams/{teamId}/votes", 999)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -152,7 +152,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamVoteCommandService)
                 .toggleVote(any(), any(), any());
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 1)
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -179,7 +179,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamVoteCommandService)
                 .toggleVote(any(), any(), any());
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 1)
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -187,6 +187,33 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .andDo(document("toggle-team-vote-fail-already-unvoted",
                         pathParameters(
                                 parameterWithName("teamId").description("이미 투표 취소한 팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                booleanFieldWithPath("isVoted", "투표 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 투표한 적 없는 팀에 취소 요청 시 400 에러를 반환한다.")
+    void 투표한_적_없는_팀에_취소_요청_시_에러를_반환한다() throws Exception {
+        final TeamVoteToggleRequest request = new TeamVoteToggleRequest(false);
+
+        willThrow(new TeamVoteException(NOT_VOTED_YET))
+                .given(teamVoteCommandService)
+                .toggleVote(any(), any(), any());
+
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("toggle-team-vote-fail-not-voted-yet",
+                        pathParameters(
+                                parameterWithName("teamId").description("투표한 적 없는 팀 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
@@ -206,7 +233,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamVoteCommandService)
                 .toggleVote(any(), any(), any());
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 3)
+        mockMvc.perform(put("/teams/{teamId}/votes", 3)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -233,7 +260,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamVoteCommandService)
                 .toggleVote(any(), any(), any());
 
-        mockMvc.perform(patch("/teams/{teamId}/votes", 1)
+        mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

@@ -14,7 +14,7 @@ endif::[]
 
 link:./opus.html[API 목록으로 돌아가기]
 
-== `PATCH`: 팀 투표 토글
+== `PUT`: 팀 투표 토글
 
 해당 팀에 대해 투표 상태를 토글합니다.
 
@@ -46,12 +46,12 @@ include::{snippets}/toggle-team-vote/response-fields.adoc[]
 |Request isVoted |응답 메시지 |HTTP 상태 코드
 
 |true
-|투표가 처음 등록되었습니다.
+|투표가 등록되었습니다.
 |200 OK
 
 |false
-|투표가 비활성화된 상태로 초기화되었습니다.
-|200 OK
+|아직 투표하지 않은 팀입니다.
+|400 Bad Request
 |===
 
 isVoted: true → 투표 등록
@@ -133,7 +133,19 @@ include::{snippets}/toggle-team-vote-fail-already-unvoted/http-response.adoc[]
 
 ====
 
-.❌ Case 4: 최대 투표 수 초과
+.❌ Case 4: 투표한 적 없는 팀에 취소 요청
+
+[%collapsible]
+
+====
+
+include::{snippets}/toggle-team-vote-fail-not-voted-yet/http-request.adoc[]
+
+include::{snippets}/toggle-team-vote-fail-not-voted-yet/http-response.adoc[]
+
+====
+
+.❌ Case 5: 최대 투표 수 초과
 
 [%collapsible]
 
@@ -145,7 +157,7 @@ include::{snippets}/toggle-team-vote-fail-limit-exceeded/http-response.adoc[]
 
 ====
 
-.❌ Case 5: 투표 기간이 아님
+.❌ Case 6: 투표 기간이 아님
 
 [%collapsible]
 
