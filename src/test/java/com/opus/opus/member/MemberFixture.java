@@ -9,10 +9,20 @@ public class MemberFixture {
 
     public static Member createMember() {
         return Member.builder()
-                .name("이옵스")
+                .name("테스트회원")
                 .email("example@pusan.ac.kr")
                 .password("{noop}123456789")
                 .studentId("202612345")
+                .roles(Set.of(ROLE_회원))
+                .build();
+    }
+
+    public static Member createMemberWithUniqueNum(int number) {
+        return Member.builder()
+                .name("테스트회원" + number)
+                .email("example" + number + "@pusan.ac.kr")
+                .password("{noop}123456789")
+                .studentId("20211234" + number)
                 .roles(Set.of(ROLE_회원))
                 .build();
     }
