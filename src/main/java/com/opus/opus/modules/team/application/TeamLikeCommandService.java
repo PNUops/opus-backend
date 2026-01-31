@@ -27,6 +27,7 @@ public class TeamLikeCommandService {
 
     private final TeamConvenience teamConvenience;
     private final ContestConvenience contestConvenience;
+
     private final TeamLikeRepository teamLikeRepository;
 
     public TeamLikeToggleResponse toggleLike(Long memberId, Long teamId, Boolean isLiked) {
