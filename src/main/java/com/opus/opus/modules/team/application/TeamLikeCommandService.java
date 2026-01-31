@@ -2,6 +2,8 @@ package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.DUPLICATE_LIKE_REQUEST;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
@@ -11,10 +13,10 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.exception.TeamLikeException;
-import com.opus.opus.modules.team.exception.TeamLikeExceptionType;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,29 +42,34 @@ public class TeamLikeCommandService {
     }
 
     private TeamLikeToggleResponse handleFirstTimeLike(Long memberId, Team team, Boolean isLiked) {
-        saveTeamLike(memberId, team, isLiked);
+        if (!isLiked) {
+            throw new TeamLikeException(NOT_LIKED_YET);
+        }
 
-        String message = isLiked ? "좋아요가 처음 등록되었습니다." : "좋아요가 비활성화된 상태로 초기화되었습니다.";
-        return TeamLikeToggleResponse.of(team.getId(), isLiked, message);
+        saveTeamLike(memberId, team, true);
+        return TeamLikeToggleResponse.of(team.getId(), true, "좋아요가 등록되었습니다.");
     }
 
-    private TeamLikeToggleResponse handleExistingLike(TeamLike teamLike, Boolean isLiked) {
+    private TeamLikeToggleResponse handleExistingLike(final TeamLike teamLike, final Boolean isLiked) {
         if (Objects.equals(teamLike.getIsLiked(), isLiked)) {
-            TeamLikeExceptionType exceptionType = isLiked ? ALREADY_LIKED : ALREADY_UNLIKED;
-            throw new TeamLikeException(exceptionType);
+            throw new TeamLikeException(isLiked ? ALREADY_LIKED : ALREADY_UNLIKED);
         }
 
         teamLike.updateIsLiked(isLiked);
 
-        String message = isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.";
-        return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, message);
+        return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
     }
 
     private void saveTeamLike(Long memberId, Team team, Boolean isLiked) {
-        teamLikeRepository.save(TeamLike.builder()
-                .memberId(memberId)
-                .team(team)
-                .isLiked(isLiked)
-                .build());
+        try {
+            teamLikeRepository.save(TeamLike.builder()
+                    .memberId(memberId)
+                    .team(team)
+                    .isLiked(isLiked)
+                    .build());
+            teamLikeRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new TeamLikeException(DUPLICATE_LIKE_REQUEST);
+        }
     }
 }
