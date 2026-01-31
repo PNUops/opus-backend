@@ -22,6 +22,7 @@ import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
 import com.opus.opus.modules.team.api.TeamController;
 import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamLikeCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.api.TeamMemberController;
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
@@ -84,6 +85,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestQueryService contestQueryService;
+
+    @MockitoBean
+    protected TeamLikeCommandService teamLikeCommandService;
 
     // Setting
     @Autowired
