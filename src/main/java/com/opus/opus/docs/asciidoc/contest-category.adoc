@@ -43,3 +43,22 @@ include::{snippets}/create-contest-category-fail/http-response.adoc[]
 include::{snippets}/create-contest-category-fail/request-fields.adoc[]
 
 ====
+
+== `PATCH`: 대회 카테고리 수정
+
+NOTE: 대회 카테고리 생성과 동일하게 이미 저장되어 있는 카테고리 이름은 저장 불가
+
+.HTTP Request Headers
+include::{snippets}/update-contest-category/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-category/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-category/request-fields.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest-category/path-parameters.adoc[]

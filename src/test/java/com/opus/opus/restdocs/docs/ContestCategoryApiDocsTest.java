@@ -7,8 +7,11 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,17 +31,19 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
     private Member admin;
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
 
+    private ContestCategoryRequest request;
+
     @BeforeEach
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
+
+        request = new ContestCategoryRequest("캡스톤");
     }
 
     @Test
     @DisplayName("[성공] 유효한 요청이면 대회 카테고리 생성은 성공한다.")
     void 유효한_요청이면_대회_카테고리_생성은_성공한다() throws Exception {
-        final ContestCategoryRequest request = new ContestCategoryRequest("캡스톤");
-
         doNothing().when(contestCategoryCommandService).createCategory(any());
 
         mockMvc.perform(post("/categories")
@@ -59,8 +64,6 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 이미 카테고리 이름이 존재한다면 에러를 반환한다.")
     void 이미_카테코리_이름이_존재한다면_에러를_반환한다() throws Exception {
-        final ContestCategoryRequest request = new ContestCategoryRequest("해커톤");
-
         willThrow(new ContestCategoryException(CATEGORY_NAME_ALREADY_EXIST)).given(contestCategoryCommandService)
                 .createCategory(any());
 
@@ -78,7 +81,24 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 대회 카테고리 수정은 성공한다.")
     void 유효한_요청이면_대회_카테고리_수정은_성공한다() throws Exception {
+        doNothing().when(contestCategoryCommandService).updateCategory(any(), any());
 
+        mockMvc.perform(patch("/categories/{categoryId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-category",
+                        pathParameters(
+                                parameterWithName("categoryId").description("카테고리 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("categoryName", "카테고리 이름")
+                        )
+                ));
     }
 
     @Test
