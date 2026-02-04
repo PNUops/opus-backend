@@ -16,7 +16,7 @@ public class ContestTrackQueryService {
     private final ContestTrackRepository contestTrackRepository;
 
     public List<ContestTrackResponse> getAllContestTracks(final Long contestId) {
-        List<ContestTrack> contestTracks = contestTrackRepository.findAllByContestId(contestId);
+        final List<ContestTrack> contestTracks = contestTrackRepository.findAllByContestId(contestId);
         return contestTracks.stream()
                 .map(ContestTrackResponse::from)
                 .toList();
