@@ -29,6 +29,8 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
@@ -50,6 +52,66 @@ public class ContestApiDocsTest extends RestDocsTest {
     void setUp() {
         authorizationHeaderDescription = "Bearer %s.access.token";
         testImage = "test-image-content".getBytes();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_대회없음() throws Exception {
+        // Given
+        final Long contestId = 999L;
+
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-banner-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 등록되지 않은 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_이미지없음() throws Exception {
+        // Given
+        final Long contestId = 1L;
+
+        willThrow(new FileException(FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-banner-fail-image-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 변환 중인 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_변환중() throws Exception {
+        // Given
+        final Long contestId = 1L;
+
+        willThrow(new FileException(FileExceptionType.NOT_WEBP_CONVERTED))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isAccepted())
+                .andDo(document("get-contest-banner-fail-converting",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        )
+                ));
     }
 
     @Test
