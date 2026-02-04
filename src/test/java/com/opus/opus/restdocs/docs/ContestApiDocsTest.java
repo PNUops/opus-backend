@@ -39,6 +39,7 @@ import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -400,7 +401,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         responseFields(
                                 numberFieldWithPath("contestId", "대회 ID"),
                                 stringFieldWithPath("contestName", "대회 이름"),
-                                numberFieldWithPath("categoryId","카테고리 ID"),
+                                numberFieldWithPath("categoryId", "카테고리 ID"),
                                 stringFieldWithPath("categoryName", "카테고리 이름"),
                                 booleanFieldWithPath("isCurrent", "현재 진행 대회 여부"),
                                 dateTimeFieldWithPath("updatedAt", "수정 일시")
@@ -467,6 +468,31 @@ public class ContestApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 전체 조회는 성공한다.")
+    void 유효한_요청이면_대회_전체_조회는_성공한다() throws Exception {
+        final List<ContestResponse> responses = List.of(
+                new ContestResponse(1L, "제6회 해커톤", 1L, "해커톤", true, now()),
+                new ContestResponse(2L, "CSE 캡스톤", 2L, "캡스톤", false, now())
+        );
+
+        when(contestQueryService.getAllContests()).thenReturn(responses);
+
+        mockMvc.perform(get("/contests"))
+                .andExpect(status().isOk())
+                .andDo(document("get-all-contest",
+                        responseFields(
+                                arrayFieldWithPath("[]", "대회 목록"),
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회 이름"),
+                                numberFieldWithPath("[].categoryId", "카테고리 ID"),
+                                stringFieldWithPath("[].categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("[].isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
     }
