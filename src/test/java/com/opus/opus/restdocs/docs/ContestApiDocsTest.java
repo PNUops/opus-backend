@@ -452,4 +452,22 @@ public class ContestApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 삭제는 성공한다.")
+    void 유효한_요청이면_대회_삭제는_성공한다() throws Exception {
+        doNothing().when(contestCommandService).deleteContest(any());
+
+        mockMvc.perform(delete("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
 }
