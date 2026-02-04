@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
@@ -104,7 +105,19 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 대회 카테고리 삭제는 성공한다.")
     void 유효한_요청이면_대회_카테고리_삭제는_성공한다() throws Exception {
+        doNothing().when(contestCategoryCommandService).deleteCategory(any());
 
+        mockMvc.perform(delete("/categories/{categoryId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-category",
+                        pathParameters(
+                                parameterWithName("categoryId").description("카테고리 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
     }
 
     @Test

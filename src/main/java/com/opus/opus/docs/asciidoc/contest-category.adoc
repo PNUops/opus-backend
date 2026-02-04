@@ -62,3 +62,17 @@ include::{snippets}/update-contest-category/request-fields.adoc[]
 
 .Path Parameters
 include::{snippets}/update-contest-category/path-parameters.adoc[]
+
+== `DELETE`: 대회 카테고리 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-category/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-category/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-category/path-parameters.adoc[]
