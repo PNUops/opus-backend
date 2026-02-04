@@ -1,0 +1,95 @@
+package com.opus.opus.restdocs.docs;
+
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.CATEGORY_NAME_ALREADY_EXIST;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.doNothing;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.contest.application.dto.request.ContestCategoryRequest;
+import com.opus.opus.modules.contest.exception.ContestCategoryException;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.restdocs.RestDocsTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+public class ContestCategoryApiDocsTest extends RestDocsTest {
+
+    private Member admin;
+    private static final String ADMIN_TOKEN = "Bearer admin.access.token";
+
+    @BeforeEach
+    void setUp() {
+        this.admin = MemberFixture.createMember();
+        setField(admin, "id", 1L);
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 카테고리 생성은 성공한다.")
+    void 유효한_요청이면_대회_카테고리_생성은_성공한다() throws Exception {
+        final ContestCategoryRequest request = new ContestCategoryRequest("캡스톤");
+
+        doNothing().when(contestCategoryCommandService).createCategory(any());
+
+        mockMvc.perform(post("/categories")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("create-contest-category",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("categoryName", "카테고리 이름")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 카테고리 이름이 존재한다면 에러를 반환한다.")
+    void 이미_카테코리_이름이_존재한다면_에러를_반환한다() throws Exception {
+        final ContestCategoryRequest request = new ContestCategoryRequest("해커톤");
+
+        willThrow(new ContestCategoryException(CATEGORY_NAME_ALREADY_EXIST)).given(contestCategoryCommandService)
+                .createCategory(any());
+
+        mockMvc.perform(post("/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("create-contest-category-fail",
+                        requestFields(
+                                stringFieldWithPath("categoryName", "이미 존재하는 카테고리 이름")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 카테고리 수정은 성공한다.")
+    void 유효한_요청이면_대회_카테고리_수정은_성공한다() throws Exception {
+
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 카테고리 삭제는 성공한다.")
+    void 유효한_요청이면_대회_카테고리_삭제는_성공한다() throws Exception {
+
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 카테고리 전체 조회는 성공한다.")
+    void 유효한_요청이면_대회_카테고리_전체_조회는_성공한다() throws Exception {
+
+    }
+}

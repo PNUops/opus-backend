@@ -1,0 +1,45 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST CATEGORY API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 대회 카테고리 생성
+
+.HTTP Request Headers
+include::{snippets}/create-contest-category/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/create-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-contest-category/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/create-contest-category/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 동일한 카테고리 이름 존재
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-contest-category-fail/http-request.adoc[]
+
+include::{snippets}/create-contest-category-fail/http-response.adoc[]
+
+include::{snippets}/create-contest-category-fail/request-fields.adoc[]
+
+====

@@ -31,8 +31,7 @@ public class ContestCategoryController {
 
     @Secured("ROLE_관리자")
     @PostMapping
-    public ResponseEntity<Void> createContestCategory(
-            @Valid @RequestBody final ContestCategoryRequest request) {
+    public ResponseEntity<Void> createContestCategory(@Valid @RequestBody final ContestCategoryRequest request) {
         contestCategoryCommandService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
