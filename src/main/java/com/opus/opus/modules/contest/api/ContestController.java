@@ -71,8 +71,8 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @Secured("ROLE_관리자")
     @PostMapping
+    @Secured("ROLE_관리자")
     public ResponseEntity<ContestResponse> createContest(@Valid @RequestBody final ContestRequest request) {
         ContestResponse response = contestCommandService.createContest(request);
         return ResponseEntity.ok(response);

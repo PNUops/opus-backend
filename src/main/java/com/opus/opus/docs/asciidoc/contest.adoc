@@ -223,3 +223,22 @@ include::{snippets}/create-contest-fail/http-response.adoc[]
 include::{snippets}/create-contest-fail/request-fields.adoc[]
 
 ====
+
+== `PATCH`: 대회 수정
+
+NOTE: 대회 생성과 동일하게 이미 저장되어 있는 대회 이름은 저장 불가
+
+.HTTP Request Headers
+include::{snippets}/update-contest/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest/request-fields.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest/path-parameters.adoc[]

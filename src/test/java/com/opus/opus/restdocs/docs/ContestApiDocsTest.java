@@ -426,4 +426,30 @@ public class ContestApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 수정은 성공한다.")
+    void 유효한_요청이면_대회_수정은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        doNothing().when(contestCommandService).updateContest(any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        )
+                ));
+    }
 }
