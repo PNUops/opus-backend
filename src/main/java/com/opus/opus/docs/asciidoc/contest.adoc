@@ -193,3 +193,33 @@ include::{snippets}/delete-contest-banner/http-request.adoc[]
 
 .HTTP Response
 include::{snippets}/delete-contest-banner/http-response.adoc[]
+
+== `POST`: 대회 생성
+
+.HTTP Request Headers
+include::{snippets}/create-contest/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/create-contest/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-contest/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/create-contest/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 동일한 카테고리 이름 존재
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-contest-fail/http-request.adoc[]
+
+include::{snippets}/create-contest-fail/http-response.adoc[]
+
+include::{snippets}/create-contest-fail/request-fields.adoc[]
+
+====

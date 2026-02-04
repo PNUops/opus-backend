@@ -1,7 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -14,6 +16,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -24,8 +27,10 @@ import static org.springframework.restdocs.request.RequestDocumentation.requestP
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -154,7 +159,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -182,7 +188,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 dateTimeFieldWithPath("voteStartAt", "투표 시작일"),
@@ -210,7 +217,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -237,7 +245,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -260,7 +269,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -283,7 +293,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }
@@ -333,7 +344,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestParts(
                                 partWithName("image").description("등록할 배너 이미지 (모든 이미지 형식 지원)")
@@ -357,7 +369,60 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 생성은 성공한다.")
+    void 유효한_요청이면_대회_카테고리_생성은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+        final ContestResponse response = new ContestResponse(1L, request.contestName(), request.categoryId(), "해커톤",
+                true, now());
+
+        when(contestCommandService.createContest(any())).thenReturn(response);
+
+        mockMvc.perform(post("/contests")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(document("create-contest",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("contestId", "대회 ID"),
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId","카테고리 ID"),
+                                stringFieldWithPath("categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 대회 이름이 존재한다면 에러를 반환한다.")
+    void 이미_대회_이름이_존재한다면_에러를_반환한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        willThrow(new ContestException(CONTEST_NAME_ALREADY_EXIST)).given(contestCommandService).createContest(any());
+
+        mockMvc.perform(post("/contests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("create-contest-fail",
+                        requestFields(
+                                stringFieldWithPath("contestName", "이미 존재하는 대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
                         )
                 ));
     }

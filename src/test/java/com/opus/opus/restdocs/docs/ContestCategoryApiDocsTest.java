@@ -143,7 +143,7 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
                                 arrayFieldWithPath("[]", "대회 카테고리 목록"),
                                 numberFieldWithPath("[].categoryId", "카테고리 ID"),
                                 stringFieldWithPath("[].categoryName", "카테고리 이름"),
-                                dateTimeFieldWithPath("[].updatedAt", "카테고리 업데이트 발생 시각")
+                                dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
     }

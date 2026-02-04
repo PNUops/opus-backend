@@ -6,11 +6,8 @@ import java.time.LocalDateTime;
 public record ContestCategoryResponse(
 
         Long categoryId,
-
         String categoryName,
-
         LocalDateTime updatedAt
-
 ) {
     public static ContestCategoryResponse from(ContestCategory contestCategory) {
         return new ContestCategoryResponse(
