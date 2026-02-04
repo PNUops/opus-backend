@@ -12,7 +12,7 @@ endif::[]
 
 == API 목록
 
-link:../opus.html[API 목록으로 돌아가기]
+link:./opus.html[API 목록으로 돌아가기]
 
 == 투표 기간 관련
 === `GET`: 투표 기간 조회
@@ -136,6 +136,32 @@ include::{snippets}/get-contest-banner/http-request.adoc[]
 
 .HTTP Response
 include::{snippets}/get-contest-banner/http-response.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+====
+include::{snippets}/get-contest-banner-fail-contest-not-found/http-request.adoc[]
+include::{snippets}/get-contest-banner-fail-contest-not-found/http-response.adoc[]
+====
+
+.❌ Case 2: 등록되지 않은 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-contest-banner-fail-image-not-found/http-request.adoc[]
+include::{snippets}/get-contest-banner-fail-image-not-found/http-response.adoc[]
+====
+
+.❌ Case 3: 변환 중인 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-contest-banner-fail-converting/http-request.adoc[]
+include::{snippets}/get-contest-banner-fail-converting/http-response.adoc[]
+====
 
 === `POST`: 대회 배너 이미지 등록
 
