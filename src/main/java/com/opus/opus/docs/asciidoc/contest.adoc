@@ -246,3 +246,47 @@ include::{snippets}/update-contest-sort-custom/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/update-contest-sort-custom/request-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: CUSTOM 모드가 아님
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-mode/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-mode/http-response.adoc[]
+====
+
+.❌ Case 2: request에 중복된 teamId 존재
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/http-response.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/request-fields.adoc[]
+====
+
+.❌ Case 3: request에 중복된 itemOrder 존재
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/http-response.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/request-fields.adoc[]
+====
+
+.❌ Case 4: 요청 팀 개수와 저장된 팀 개수 다름
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-different-size/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-different-size/http-response.adoc[]
+====
+
+.❌ Case 5: itemOrder가 팀 개수를 넘어감
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-response.adoc[]
+====
