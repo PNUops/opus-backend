@@ -12,7 +12,8 @@ public enum ContestExceptionType implements BaseExceptionType {
     CATEGORY_HAS_CONTEST(HttpStatus.CONFLICT, "해당 카테고리에 속한 대회가 존재합니다."),
     CONTEST_NAME_ALREADY_EXIST(HttpStatus.CONFLICT, "동일한 대회명이 있습니다."),
     VOTE_END_PRECEDE_VOTE_START(HttpStatus.BAD_REQUEST, "투표 종료가 투표 시작보다 빠를 수 없습니다."),
-    CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD(HttpStatus.BAD_REQUEST, "투표 진행중에는 최대 투표 개수를 변경할 수 없습니다.")
+    CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD(HttpStatus.BAD_REQUEST, "투표 진행중에는 최대 투표 개수를 변경할 수 없습니다."),
+    NOT_FOUND_CONTEST_SORT(HttpStatus.NOT_FOUND, "존재하는 팀 정렬이 없습니다"),
     ;
 
     private final HttpStatus httpStatus;

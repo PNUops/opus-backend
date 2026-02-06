@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
@@ -133,5 +134,13 @@ public class ContestController {
     public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(@PathVariable final Long contestId) {
         final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/sort")
+    public ResponseEntity<Void> updateContestSort(@PathVariable final Long contestId,
+                                               @RequestBody @Valid final ContestSortRequest request) {
+        contestCommandService.updateContestSort(contestId, request);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,11 +1,11 @@
 package com.opus.opus.modules.contest.application;
 
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.*;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
@@ -13,16 +13,17 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -44,6 +45,7 @@ public class ContestCommandService {
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
+    private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
 
     private final FileStorageUtil fileStorageUtil;
@@ -125,6 +127,13 @@ public class ContestCommandService {
         validateNotInVotingPeriod(contest);
 
         contest.updateMaxVotesLimit(maxVotesLimit);
+    }
+
+    public void updateContestSort(final Long contestId, final ContestSortRequest request) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+
+        contestSort.updateMode(request.mode());
     }
 
     private void validateNotInVotingPeriod(final Contest contest) {
