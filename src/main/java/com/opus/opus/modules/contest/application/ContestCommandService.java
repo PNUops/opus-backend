@@ -33,6 +33,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
@@ -55,6 +56,7 @@ public class ContestCommandService {
     private static final int MAX_CURRENT_CONTEST_COUNT = 2;
 
     private final ContestRepository contestRepository;
+    private final ContestSortRepository contestSortRepository;
     private final FileRepository fileRepository;
 
     private final ContestConvenience contestConvenience;
@@ -91,6 +93,10 @@ public class ContestCommandService {
                 .categoryId(request.categoryId())
                 .build();
         contestRepository.save(contest);
+
+        contestSortRepository.save(ContestSort.builder()
+                .contest(contest)
+                .build());
 
         return ContestResponse.from(contest, contestCategory.getCategoryName());
     }
@@ -155,13 +161,12 @@ public class ContestCommandService {
         final Contest contest = contestConvenience.getValidateExistContestForUpdate(contestId);
         final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contest.getId());
         checkCustomSort(contestSort);
-
         validateDuplicateTeamIds(requests);
-        validateDuplicateItemOrders(requests);
 
         final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
         validateRequestSizeMatchesTeams(requests, teams);
         validateItemOrderRange(requests, teams.size());
+        validateDuplicateItemOrders(requests);
 
         applyCustomSortToTeams(requests, teams);
     }

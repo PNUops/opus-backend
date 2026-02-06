@@ -1,7 +1,5 @@
 package com.opus.opus.modules.contest.domain;
 
-import static jakarta.persistence.FetchType.LAZY;
-
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,9 +52,6 @@ public class Contest extends BaseEntity {
     @OneToMany(mappedBy = "contest")
     private final List<ContestAward> contestAwards = new ArrayList<>();
 
-    @OneToOne(mappedBy = "contest", fetch = LAZY)
-    private ContestSort contestSort;
-
     @Builder
     private Contest(final String contestName, final Long categoryId) {
         this.contestName = contestName;
@@ -67,7 +61,6 @@ public class Contest extends BaseEntity {
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
         this.maxVotesLimit = 0;
-        this.contestSort = ContestSort.builder().contest(this).build();
     }
 
     public void updateIsCurrent(final Boolean isCurrent) {

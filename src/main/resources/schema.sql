@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest_track`;
+DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `member_roles`;
@@ -14,7 +15,6 @@ DROP TABLE IF EXISTS `team_contest_award`;
 DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
-DROP TABLE IF EXISTS `team_sort`;
 
 CREATE TABLE `contest` (
   `id` bigint NOT NULL AUTO_INCREMENT,

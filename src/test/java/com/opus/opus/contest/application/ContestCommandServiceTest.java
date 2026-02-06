@@ -1,19 +1,36 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.contest.ContestFixture.createContest;
+import static com.opus.opus.contest.ContestSortFixture.createContestSort;
+import static com.opus.opus.modules.contest.domain.SortType.ASC;
+import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_ITEM_ORDER;
+import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,13 +43,18 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private ContestRepository contestRepository;
+    @Autowired
+    private ContestSortRepository contestSortRepository;
+    @Autowired
+    private TeamRepository teamRepository;
 
     private Contest contest;
     private static final Integer MAX_VOTES_LIMIT = 5;
 
     @BeforeEach
     void setUp() {
-        contest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
+        contest = contestRepository.save(createContest());
+        contestSortRepository.save(createContestSort(contest));
     }
 
     @Test
@@ -65,7 +87,9 @@ public class ContestCommandServiceTest extends IntegrationTest {
         final LocalDateTime endAt = LocalDateTime.now().plusDays(1);
         final VoteUpdateRequest request = new VoteUpdateRequest(startAt, endAt);
 
-        assertThatThrownBy(() -> {contestCommandService.updateVotePeriod(contest.getId(), request);})
+        assertThatThrownBy(() -> {
+            contestCommandService.updateVotePeriod(contest.getId(), request);
+        })
                 .isInstanceOf(ContestException.class)
                 .hasMessage(VOTE_END_PRECEDE_VOTE_START.errorMessage());
     }
@@ -124,5 +148,103 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
         final Contest updatedContest = contestRepository.findById(contest.getId()).orElseThrow(); // 변경 후 값 검증
         assertThat(updatedContest.getMaxVotesLimit()).isEqualTo(MAX_VOTES_LIMIT);
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 정렬 설정 변경을 하면 설정이 변경된다.")
+    void 대회_정렬_설정_변경을_하면_설정이_변경된다() {
+        final ContestSort beforeContestSort = contestSortRepository.findByContestId(contest.getId()).orElseThrow();
+        final ContestSortRequest request = new ContestSortRequest(ASC);
+
+        contestCommandService.updateContestSort(contest.getId(), request);
+
+        final ContestSort afterContestSort = contestSortRepository.findByContestId(contest.getId()).orElseThrow();
+        assertThat(afterContestSort.getMode()).isEqualTo(ASC);
+        assertThat(afterContestSort.getMode()).isNotEqualTo(beforeContestSort);
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 수동 정렬을 하면 정렬 순서가 바뀐다.")
+    void 팀_수동_정렬을_하면_정렬_순서가_바뀐다() {
+        contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 2),
+                new ContestSortCustomRequest(teamTwo.getId(), 1));
+
+        contestCommandService.updateContestSortCustom(contest.getId(), requests);
+
+        assertThat(teamOne.getItemOrder()).isEqualTo(2);
+        assertThat(teamTwo.getItemOrder()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[실패] CUSTOM모드가 아니라면 수동 정렬은 실패한다.")
+    void CUSTOM모드가_아니라면_수동_정렬은_실패한다() {
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 2),
+                new ContestSortCustomRequest(teamTwo.getId(), 1));
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestSortCustom(contest.getId(), requests);
+        }).isInstanceOf(ContestException.class).hasMessage(ONLY_CUSTOM_MODE_CAN_CHANGE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 중복 teamId가 있다면 수동 정렬은 실패한다.")
+    void 중복_teamId가_있다면_수동_정렬은_실패한다() {
+        contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 2),
+                new ContestSortCustomRequest(teamOne.getId(), 1));
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestSortCustom(contest.getId(), requests);
+        }).isInstanceOf(ContestException.class).hasMessage(DUPLICATE_TEAM_ID_IN_SORT_REQUEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 중복 itemOrder가 있다면 수동 정렬은 실패한다.")
+    void 중복_itemOrder가_있다면_수동_정렬은_실패한다() {
+        contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 1),
+                new ContestSortCustomRequest(teamTwo.getId(), 1));
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestSortCustom(contest.getId(), requests);
+        }).isInstanceOf(ContestException.class).hasMessage(DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 요청받은 list size가 팀 개수와 다르면 수동 정렬은 실패한다.")
+    void 요청받은_list_size가_팀_개수와_다르면_수동_정렬은_실패한다() {
+        contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
+        teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(),3));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 2),
+                new ContestSortCustomRequest(teamTwo.getId(), 1));
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestSortCustom(contest.getId(), requests);
+        }).isInstanceOf(ContestException.class).hasMessage(INVALID_CONTEST_SORT_CUSTOM_REQUEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 요청받은 itemOrder가 팀 개수를 넘어가면 수동 정렬은 실패한다.")
+    void 요청받은_itemOrder가_팀_개수를_넘어가면_수동_정렬은_실패한다() {
+        final int invalidItemOrder = 99;
+        contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
+        final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
+        final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 1),
+                new ContestSortCustomRequest(teamTwo.getId(), invalidItemOrder));
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestSortCustom(contest.getId(), requests);
+        }).isInstanceOf(TeamException.class).hasMessage(INVALID_ITEM_ORDER.errorMessage());
     }
 }
