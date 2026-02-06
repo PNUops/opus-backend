@@ -96,4 +96,7 @@ public class Team extends BaseEntity {
         this.teamMembers = teamMembers;
     }
 
+    public void updateItemOrder(final Integer newOrder) {
+        this.itemOrder = newOrder;
+    }
 }
