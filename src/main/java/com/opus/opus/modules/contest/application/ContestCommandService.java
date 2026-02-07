@@ -184,7 +184,7 @@ public class ContestCommandService {
     }
 
     private void validateSameCurrentRequest(final Boolean currentValue, final Boolean requestValue) {
-        if (currentValue == requestValue) {
+        if (currentValue.equals(requestValue)) {
             throw new ContestException(currentValue ? ALREADY_CURRENT_CONTEST : ALREADY_NOT_CURRENT_CONTEST);
         }
     }
