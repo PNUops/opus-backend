@@ -1,5 +1,12 @@
 package com.opus.opus.team.application;
 
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.domain.Member;
@@ -18,13 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
-import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
-import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TeamCommentCommandServiceTest extends IntegrationTest {
 
@@ -102,7 +102,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     void 본인이_작성하지_않은_댓글은_수정할_수_없다() {
         teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
-        final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
+        final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
         final TeamCommentUpdateRequest updateRequest = new TeamCommentUpdateRequest(updatedCommentDescription);
 
@@ -165,7 +165,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     void 본인이_작성하지_않은_댓글은_삭제할_수_없다() {
         teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
-        final Member otherMember = memberRepository.save(MemberFixture.createMember(1));
+        final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
         assertThatThrownBy(() -> {
             teamCommentCommandService.deleteComment(team.getId(), comment.getId(), otherMember.getId());

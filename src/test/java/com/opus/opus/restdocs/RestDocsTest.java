@@ -22,6 +22,11 @@ import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
 import com.opus.opus.modules.team.application.TeamVoteCommandService;
+import com.opus.opus.modules.team.api.TeamController;
+import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamQueryService;
+import com.opus.opus.modules.team.api.TeamMemberController;
+import com.opus.opus.modules.team.application.TeamMemberCommandService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +43,9 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 @WebMvcTest({
         MemberController.class,
+        NoticeController.class,
+        TeamController.class,
+        TeamMemberController.class,
         ContestController.class,
         TeamCommentController.class,
         TeamVoteController.class,
@@ -65,10 +73,19 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected TeamVoteCommandService teamVoteCommandService;
 
     @MockitoBean
+    protected TeamMemberCommandService teamMemberCommandService;
+
+    @MockitoBean
     protected NoticeCommandService noticeCommandService;
 
     @MockitoBean
     protected NoticeQueryService noticeQueryService;
+
+    @MockitoBean
+    protected TeamCommandService teamCommandService;
+
+    @MockitoBean
+    protected TeamQueryService teamQueryService;
 
     @MockitoBean
     protected ContestCommandService contestCommandService;

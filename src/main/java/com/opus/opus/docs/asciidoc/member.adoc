@@ -37,6 +37,8 @@ include::{snippets}/signup-auth-fail/http-request.adoc[]
 
 include::{snippets}/signup-auth-fail/http-response.adoc[]
 
+include::{snippets}/signup-auth-fail/request-fields.adoc[]
+
 ====
 
 == `PATCH`: 회원가입 이메일 인증코드 확인
@@ -62,6 +64,8 @@ include::{snippets}/signup-auth-confirm-fail/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
 
+include::{snippets}/signup-auth-confirm-fail/request-fields.adoc[]
+
 ====
 
 .❌ Case 2: 만료된 인증코드
@@ -73,6 +77,8 @@ include::{snippets}/signup-auth-confirm-fail/http-response.adoc[]
 include::{snippets}/signup-auth-confirm-fail2/http-request.adoc[]
 
 include::{snippets}/signup-auth-confirm-fail2/http-response.adoc[]
+
+include::{snippets}/signup-auth-confirm-fail2/request-fields.adoc[]
 
 ====
 
@@ -152,3 +158,55 @@ include::{snippets}/get-password/path-parameters.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-password/response-fields.adoc[]
+
+== `GET`: Google OAuth 로그인 리다이렉트
+
+NOTE: 사용자를 Google OAuth 인증 페이지로 리다이렉트합니다. CSRF 공격 방지를 위한 `state` 파라미터가 세션 ID와 함께 Redis에 저장됩니다. (TTL: 5분)
+
+.HTTP Request
+include::{snippets}/oauth-google-redirect/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/oauth-google-redirect/http-response.adoc[]
+
+== `GET`: Google OAuth 콜백
+
+NOTE: Google OAuth 인증 완료 후 호출되는 콜백 엔드포인트입니다. 기존 회원이면 로그인 처리, 신규 회원이면 자동 가입 후 JWT 토큰을 발급합니다.
+
+.HTTP Request
+include::{snippets}/oauth-google-callback/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/oauth-google-callback/http-response.adoc[]
+
+.Query Parameters
+include::{snippets}/oauth-google-callback/query-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/oauth-google-callback/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: state 누락/불일치/만료
+
+[%collapsible]
+
+====
+
+include::{snippets}/oauth-google-callback-fail-state/http-request.adoc[]
+
+include::{snippets}/oauth-google-callback-fail-state/http-response.adoc[]
+
+====
+
+.❌ Case 2: 사용자 권한 거부
+
+[%collapsible]
+
+====
+
+include::{snippets}/oauth-google-callback-fail-denied/http-request.adoc[]
+
+include::{snippets}/oauth-google-callback-fail-denied/http-response.adoc[]
+
+====
