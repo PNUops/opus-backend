@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
@@ -11,7 +12,10 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentTogg
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.TeamVoteCommandService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final TeamVoteCommandService teamVoteCommandService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -132,6 +137,14 @@ public class ContestController {
     @GetMapping("/{contestId}/votes")
     public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(@PathVariable final Long contestId) {
         final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @GetMapping("/{contestId}/votes/me")
+    public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@PathVariable Long contestId,
+                                                                      @LoginMember Member member) {
+        MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
     }
 }

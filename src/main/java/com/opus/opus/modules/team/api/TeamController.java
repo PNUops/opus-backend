@@ -1,9 +1,14 @@
 package com.opus.opus.modules.team.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
+import com.opus.opus.modules.team.application.TeamVoteCommandService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -30,6 +36,7 @@ public class TeamController {
 
     private final TeamQueryService teamQueryService;
     private final TeamCommandService teamCommandService;
+    private final TeamVoteCommandService teamVoteCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
@@ -78,5 +85,14 @@ public class TeamController {
     public ResponseEntity<Void> deleteThumbnailImage(@PathVariable final Long teamId) {
         teamCommandService.deleteThumbnailImage(teamId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @PutMapping("/{teamId}/votes")
+    public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
+                                                             @RequestBody @Valid TeamVoteToggleRequest request,
+                                                             @LoginMember Member member) {
+        TeamVoteToggleResponse response = teamVoteCommandService.toggleVote(member.getId(), teamId, request.isVoted());
+        return ResponseEntity.ok(response);
     }
 }
