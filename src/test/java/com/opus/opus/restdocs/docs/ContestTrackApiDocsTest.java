@@ -1,6 +1,6 @@
 package com.opus.opus.restdocs.docs;
 
-import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.CATEGORY_NAME_ALREADY_EXIST;
+import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.TRACKNAME_DUPLICATED;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
@@ -10,9 +10,9 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestTrackRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestTrackResponse;
-import com.opus.opus.modules.contest.exception.ContestCategoryException;
+import com.opus.opus.modules.contest.exception.ContestTrackException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.util.List;
@@ -74,7 +74,7 @@ public class ContestTrackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 이미 분과 이름이 존재한다면 에러를 반환한다.")
     void 이미_분과_이름이_존재한다면_에러를_반환한다() throws Exception {
-        willThrow(new ContestCategoryException(CATEGORY_NAME_ALREADY_EXIST)).given(contestTrackCommandService)
+        willThrow(new ContestTrackException(TRACKNAME_DUPLICATED)).given(contestTrackCommandService)
                 .createTrack(any(), any());
 
         mockMvc.perform(post("/contests/{contestId}/tracks", 1)
