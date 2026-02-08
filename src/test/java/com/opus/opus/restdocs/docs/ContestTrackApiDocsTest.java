@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
-public class ContestTrackApiDocs extends RestDocsTest {
+public class ContestTrackApiDocsTest extends RestDocsTest {
 
     private Member admin;
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
