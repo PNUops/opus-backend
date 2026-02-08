@@ -70,7 +70,7 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
 
     @Test
     @DisplayName("[실패] 이미 카테고리 이름이 존재한다면 에러를 반환한다.")
-    void 이미_카테코리_이름이_존재한다면_에러를_반환한다() throws Exception {
+    void 이미_카테고리_이름이_존재한다면_에러를_반환한다() throws Exception {
         willThrow(new ContestCategoryException(CATEGORY_NAME_ALREADY_EXIST)).given(contestCategoryCommandService)
                 .createCategory(any());
 

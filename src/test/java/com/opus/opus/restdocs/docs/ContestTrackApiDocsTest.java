@@ -110,7 +110,7 @@ public class ContestTrackApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         requestFields(
-                                stringFieldWithPath("trackName", "카테고리 이름")
+                                stringFieldWithPath("trackName", "분과 이름")
                         )
                 ));
     }
@@ -135,8 +135,8 @@ public class ContestTrackApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 유효한 요청이면 대회 카테고리 전체 조회는 성공한다.")
-    void 유효한_요청이면_대회_카테고리_전체_조회는_성공한다() throws Exception {
+    @DisplayName("[성공] 유효한 요청이면 대회 분과 전체 조회는 성공한다.")
+    void 유효한_요청이면_대회_분과_전체_조회는_성공한다() throws Exception {
         final List<ContestTrackResponse> responses = List.of(
                 new ContestTrackResponse(1L, "창업", now()),
                 new ContestTrackResponse(2L, "융합", now())

@@ -212,7 +212,7 @@ include::{snippets}/create-contest/request-fields.adoc[]
 
 ==== ⚠️ 실패 케이스
 
-.❌ Case 1: 동일한 카테고리 이름 존재
+.❌ Case 1: 동일한 대회명 존재
 
 [%collapsible]
 

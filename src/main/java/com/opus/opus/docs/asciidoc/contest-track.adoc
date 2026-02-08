@@ -49,7 +49,7 @@ include::{snippets}/create-contest-track-fail/request-fields.adoc[]
 
 == `PATCH`: 대회 분과 수정
 
-NOTE: 대회 분과 생성과 동일하게 이미 저장되어 있는 카테고리 이름은 저장 불가
+NOTE: 대회 분과 생성과 동일하게 이미 저장되어 있는 분과 이름은 저장 불가
 
 .HTTP Request Headers
 include::{snippets}/update-contest-track/request-headers.adoc[]
