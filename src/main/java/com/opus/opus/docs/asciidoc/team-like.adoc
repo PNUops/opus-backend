@@ -21,7 +21,6 @@ link:./opus.html[API 목록으로 돌아가기]
 * `isLiked: true` → 좋아요 등록
 * `isLiked: false` → 좋아요 취소
 
-
 NOTE: 좋아요를 통해 팀을 찜할 수 있습니다.
 
 NOTE: 투표 기간에는 투표만 가능하고, 투표 기간이 아닐 때만 좋아요가 가능합니다.
@@ -32,13 +31,21 @@ include::{snippets}/toggle-team-like/path-parameters.adoc[]
 .HTTP Request Headers
 include::{snippets}/toggle-team-like/request-headers.adoc[]
 
+.HTTP Request
+include::{snippets}/toggle-team-like/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/toggle-team-like/http-response.adoc[]
+
 .Request Fields
 include::{snippets}/toggle-team-like/request-fields.adoc[]
 
 .Response Fields
 include::{snippets}/toggle-team-like/response-fields.adoc[]
 
-=== 시나리오 1: TeamLike 데이터가 없는 경우
+=== 시나리오별 응답
+
+==== 시나리오 1: TeamLike 데이터가 없는 경우
 
 특정 멤버가 특정 팀에 대해 좋아요 API를 처음 호출하면, TeamLike 테이블에 데이터가 새로 생성됩니다.
 
@@ -55,13 +62,7 @@ include::{snippets}/toggle-team-like/response-fields.adoc[]
 |400 Bad Request
 |===
 
-isLiked: true → 좋아요 등록
-
-include::{snippets}/toggle-team-like/http-request.adoc[]
-
-include::{snippets}/toggle-team-like/http-response.adoc[]
-
-=== 시나리오 2: TeamLike 데이터가 있는 경우
+==== 시나리오 2: TeamLike 데이터가 있는 경우
 
 이미 해당 팀에 대한 좋아요 기록이 있는 경우, 상태에 따라 토글됩니다.
 
@@ -90,70 +91,50 @@ include::{snippets}/toggle-team-like/http-response.adoc[]
 |400 Bad Request
 |===
 
-좋아요 취소 (isLiked: true → false)
-
-include::{snippets}/cancel-team-like/http-request.adoc[]
-
-include::{snippets}/cancel-team-like/http-response.adoc[]
 
 === ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 팀
 
 [%collapsible]
-
 ====
-
 include::{snippets}/toggle-team-like-fail-not-found/http-request.adoc[]
 
 include::{snippets}/toggle-team-like-fail-not-found/http-response.adoc[]
-
 ====
 
 .❌ Case 2: 이미 좋아요한 팀
 
 [%collapsible]
-
 ====
-
 include::{snippets}/toggle-team-like-fail-already-liked/http-request.adoc[]
 
 include::{snippets}/toggle-team-like-fail-already-liked/http-response.adoc[]
-
 ====
 
 .❌ Case 3: 이미 좋아요 취소한 팀
 
 [%collapsible]
-
 ====
-
 include::{snippets}/toggle-team-like-fail-already-unliked/http-request.adoc[]
 
 include::{snippets}/toggle-team-like-fail-already-unliked/http-response.adoc[]
-
 ====
 
 .❌ Case 4: 좋아요한 적 없는 팀에 취소 요청
 
 [%collapsible]
-
 ====
-
 include::{snippets}/toggle-team-like-fail-not-liked-yet/http-request.adoc[]
 
 include::{snippets}/toggle-team-like-fail-not-liked-yet/http-response.adoc[]
-
 ====
 
 .❌ Case 5: 투표 기간 중 좋아요 요청
 
 [%collapsible]
-
 ====
-
 include::{snippets}/toggle-team-like-fail-voting-period/http-request.adoc[]
 
 include::{snippets}/toggle-team-like-fail-voting-period/http-response.adoc[]
-
 ====
