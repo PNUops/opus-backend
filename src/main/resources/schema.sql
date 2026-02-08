@@ -151,7 +151,8 @@ CREATE TABLE `team_like` (
   `is_liked` bit(1) NOT NULL,
   `member_id` bigint NOT NULL,
   `team_id` bigint NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_team_like_member_team` (`member_id`, `team_id`)
 );
 
 CREATE TABLE `team_member` (
