@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import java.time.LocalDateTime;
 
 public record ContestResponse(
+
         Long contestId,
         String contestName,
         Long categoryId,

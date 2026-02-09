@@ -7,9 +7,15 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.security.annotation.MemberArgumentResolver;
 import com.opus.opus.helper.ApiTestHelper;
+import com.opus.opus.modules.contest.api.ContestCategoryController;
 import com.opus.opus.modules.contest.api.ContestController;
+import com.opus.opus.modules.contest.api.ContestTrackController;
+import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
+import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestTrackCommandService;
+import com.opus.opus.modules.contest.application.ContestTrackQueryService;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
@@ -46,6 +52,8 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         TeamMemberController.class,
         ContestController.class,
         TeamCommentController.class,
+        ContestCategoryController.class,
+        ContestTrackController.class,
         NoticeController.class,
         ContestController.class,
 })
@@ -86,6 +94,18 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestQueryService contestQueryService;
+
+    @MockitoBean
+    protected ContestCategoryCommandService contestCategoryCommandService;
+
+    @MockitoBean
+    protected ContestCategoryQueryService contestCategoryQueryService;
+
+    @MockitoBean
+    protected ContestTrackCommandService contestTrackCommandService;
+
+    @MockitoBean
+    protected ContestTrackQueryService contestTrackQueryService;
 
     // Setting
     @Autowired
