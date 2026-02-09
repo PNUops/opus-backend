@@ -56,7 +56,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
         final TeamVoteToggleResponse response = new TeamVoteToggleResponse(1L, true, "투표가 등록되었습니다.", 1L, 2L);
 
-        given(teamVoteCommandService.toggleVote(any(), any(), any())).willReturn(response);
+        given(teamCommandService.toggleVote(any(), any(), any())).willReturn(response);
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -89,7 +89,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(false);
         final TeamVoteToggleResponse response = new TeamVoteToggleResponse(1L, false, "투표가 취소되었습니다.", 2L, 2L);
 
-        given(teamVoteCommandService.toggleVote(any(), any(), any())).willReturn(response);
+        given(teamCommandService.toggleVote(any(), any(), any())).willReturn(response);
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -122,7 +122,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
 
         willThrow(new TeamException(NOT_FOUND_TEAM))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 999)
@@ -149,7 +149,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
 
         willThrow(new TeamVoteException(ALREADY_VOTED))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
@@ -176,7 +176,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(false);
 
         willThrow(new TeamVoteException(ALREADY_UNVOTED))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
@@ -203,7 +203,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(false);
 
         willThrow(new TeamVoteException(NOT_VOTED_YET))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
@@ -230,7 +230,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
 
         willThrow(new TeamVoteException(VOTE_LIMIT_EXCEEDED, "대회당 최대 2개 팀만 투표할 수 있습니다."))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 3)
@@ -257,7 +257,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
         final TeamVoteToggleRequest request = new TeamVoteToggleRequest(true);
 
         willThrow(new ContestException(NOT_VOTE_PERIOD_NOW))
-                .given(teamVoteCommandService)
+                .given(teamCommandService)
                 .toggleVote(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
@@ -283,7 +283,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 사용자의_투표_개수를_조회한다() throws Exception {
         final MemberVoteCountResponse response = new MemberVoteCountResponse(1L, 2L);
 
-        given(teamVoteQueryService.getMemberVoteCount(any(), any())).willReturn(response);
+        given(teamQueryService.getMemberVoteCount(any(), any())).willReturn(response);
 
         mockMvc.perform(get("/teams/votes")
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -307,7 +307,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회 ID로 투표 개수 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회_ID로_투표_개수_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamVoteQueryService)
+                .given(teamQueryService)
                 .getMemberVoteCount(any(), any());
 
         mockMvc.perform(get("/teams/votes")

@@ -4,7 +4,6 @@ import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
-import com.opus.opus.modules.team.application.TeamVoteCommandService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
@@ -36,7 +35,6 @@ public class TeamController {
 
     private final TeamQueryService teamQueryService;
     private final TeamCommandService teamCommandService;
-    private final TeamVoteCommandService teamVoteCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
@@ -92,7 +90,7 @@ public class TeamController {
     public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
                                                              @RequestBody @Valid TeamVoteToggleRequest request,
                                                              @LoginMember Member member) {
-        TeamVoteToggleResponse response = teamVoteCommandService.toggleVote(member.getId(), teamId, request.isVoted());
+        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), teamId, request.isVoted());
         return ResponseEntity.ok(response);
     }
 

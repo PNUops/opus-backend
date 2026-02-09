@@ -20,13 +20,11 @@ import com.opus.opus.modules.team.application.TeamCommentQueryService;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
-import com.opus.opus.modules.team.application.TeamVoteCommandService;
 import com.opus.opus.modules.team.api.TeamController;
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.api.TeamMemberController;
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
-import com.opus.opus.modules.team.application.TeamVoteQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,9 +67,6 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected TeamCommentQueryService teamCommentQueryService;
 
     @MockitoBean
-    protected TeamVoteCommandService teamVoteCommandService;
-
-    @MockitoBean
     protected TeamMemberCommandService teamMemberCommandService;
 
     @MockitoBean
@@ -91,9 +86,6 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestQueryService contestQueryService;
-
-    @MockitoBean
-    protected TeamVoteQueryService teamVoteQueryService;
 
     // Setting
     @Autowired
