@@ -1,7 +1,10 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -10,30 +13,113 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.file.exception.FileExceptionType;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 
 public class ContestApiDocsTest extends RestDocsTest {
 
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
+    private String authorizationHeaderDescription;
+    private byte[] testImage;
+
+    @BeforeEach
+    void setUp() {
+        authorizationHeaderDescription = "Bearer %s.access.token";
+        testImage = "test-image-content".getBytes();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_대회없음() throws Exception {
+        // Given
+        final Long contestId = 999L;
+
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-banner-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 등록되지 않은 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_이미지없음() throws Exception {
+        // Given
+        final Long contestId = 1L;
+
+        willThrow(new FileException(FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-banner-fail-image-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 변환 중인 대회의 배너 이미지를 조회하면 실패한다.")
+    void 대회의_배너_이미지_조회_실패_변환중() throws Exception {
+        // Given
+        final Long contestId = 1L;
+
+        willThrow(new FileException(FileExceptionType.NOT_WEBP_CONVERTED))
+                .given(contestQueryService)
+                .getContestBanner(any());
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isAccepted())
+                .andDo(document("get-contest-banner-fail-converting",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        )
+                ));
+    }
 
     @Test
     @DisplayName("[성공] 투표 기간을 조회하면 시작일과 종료일을 반환한다.")
@@ -75,7 +161,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -103,7 +190,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 dateTimeFieldWithPath("voteStartAt", "투표 시작일"),
@@ -131,7 +219,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -158,7 +247,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -181,7 +271,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -204,7 +295,205 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 배너 이미지를 조회한다.")
+    void 대회의_배너_이미지를_조회한다() throws Exception {
+        // Given
+        final Long contestId = 1L;
+        final ImageResponse response = new ImageResponse(new ByteArrayResource(testImage), "image/png");
+
+        when(contestQueryService.getContestBanner(any())).thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(get("/contests/{contestId}/image/banner", contestId))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG))
+                .andDo(document("get-contest-banner",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 배너 이미지를 등록한다.")
+    void 대회의_배너_이미지를_등록한다() throws Exception {
+        // Given
+        final Long contestId = 1L;
+        final MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "banner.png",
+                MediaType.IMAGE_PNG_VALUE,
+                testImage
+        );
+
+        doNothing().when(contestCommandService).saveBannerImage(any(), any());
+
+        // When & Then
+        mockMvc.perform(multipart("/contests/{contestId}/image/banner", contestId)
+                        .file(image)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andDo(document("save-contest-banner",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        requestParts(
+                                partWithName("image").description("등록할 배너 이미지 (모든 이미지 형식 지원)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 배너 이미지를 삭제한다.")
+    void 대회의_배너_이미지를_삭제한다() throws Exception {
+        // Given
+        final Long contestId = 1L;
+        doNothing().when(contestCommandService).deleteBannerImage(any());
+
+        // When & Then
+        mockMvc.perform(delete("/contests/{contestId}/image/banner", contestId)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-banner",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 생성은 성공한다.")
+    void 유효한_요청이면_대회_카테고리_생성은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+        final ContestResponse response = new ContestResponse(1L, request.contestName(), request.categoryId(), "해커톤",
+                true, now());
+
+        when(contestCommandService.createContest(any())).thenReturn(response);
+
+        mockMvc.perform(post("/contests")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(document("create-contest",
+                        requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("contestId", "대회 ID"),
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID"),
+                                stringFieldWithPath("categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 대회 이름이 존재한다면 에러를 반환한다.")
+    void 이미_대회_이름이_존재한다면_에러를_반환한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        willThrow(new ContestException(CONTEST_NAME_ALREADY_EXIST)).given(contestCommandService).createContest(any());
+
+        mockMvc.perform(post("/contests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("create-contest-fail",
+                        requestFields(
+                                stringFieldWithPath("contestName", "이미 존재하는 대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 수정은 성공한다.")
+    void 유효한_요청이면_대회_수정은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        doNothing().when(contestCommandService).updateContest(any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 삭제는 성공한다.")
+    void 유효한_요청이면_대회_삭제는_성공한다() throws Exception {
+        doNothing().when(contestCommandService).deleteContest(any());
+
+        mockMvc.perform(delete("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 전체 조회는 성공한다.")
+    void 유효한_요청이면_대회_전체_조회는_성공한다() throws Exception {
+        final List<ContestResponse> responses = List.of(
+                new ContestResponse(1L, "제6회 해커톤", 1L, "해커톤", true, now()),
+                new ContestResponse(2L, "CSE 캡스톤", 2L, "캡스톤", false, now())
+        );
+
+        when(contestQueryService.getAllContests()).thenReturn(responses);
+
+        mockMvc.perform(get("/contests"))
+                .andExpect(status().isOk())
+                .andDo(document("get-all-contest",
+                        responseFields(
+                                arrayFieldWithPath("[]", "대회 목록"),
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회 이름"),
+                                numberFieldWithPath("[].categoryId", "카테고리 ID"),
+                                stringFieldWithPath("[].categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("[].isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
     }
