@@ -51,7 +51,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(true);
         final TeamLikeToggleResponse response = new TeamLikeToggleResponse(1L, true, "좋아요가 등록되었습니다.");
 
-        given(teamLikeCommandService.toggleLike(any(), any(), any())).willReturn(response);
+        given(teamCommandService.toggleLike(any(), any(), any())).willReturn(response);
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -82,7 +82,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(false);
         final TeamLikeToggleResponse response = new TeamLikeToggleResponse(1L, false, "좋아요가 취소되었습니다.");
 
-        given(teamLikeCommandService.toggleLike(any(), any(), any())).willReturn(response);
+        given(teamCommandService.toggleLike(any(), any(), any())).willReturn(response);
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -113,7 +113,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(true);
 
         willThrow(new TeamException(NOT_FOUND_TEAM))
-                .given(teamLikeCommandService)
+                .given(teamCommandService)
                 .toggleLike(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 999)
@@ -140,7 +140,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(true);
 
         willThrow(new TeamLikeException(ALREADY_LIKED))
-                .given(teamLikeCommandService)
+                .given(teamCommandService)
                 .toggleLike(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
@@ -167,7 +167,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(false);
 
         willThrow(new TeamLikeException(ALREADY_UNLIKED))
-                .given(teamLikeCommandService)
+                .given(teamCommandService)
                 .toggleLike(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
@@ -194,7 +194,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(false);
 
         willThrow(new TeamLikeException(NOT_LIKED_YET))
-                .given(teamLikeCommandService)
+                .given(teamCommandService)
                 .toggleLike(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
@@ -221,7 +221,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
         final TeamLikeToggleRequest request = new TeamLikeToggleRequest(true);
 
         willThrow(new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD))
-                .given(teamLikeCommandService)
+                .given(teamCommandService)
                 .toggleLike(any(), any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)

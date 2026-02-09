@@ -3,7 +3,6 @@ package com.opus.opus.modules.team.api;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
-import com.opus.opus.modules.team.application.TeamLikeCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
@@ -36,7 +35,6 @@ public class TeamController {
 
     private final TeamQueryService teamQueryService;
     private final TeamCommandService teamCommandService;
-    private final TeamLikeCommandService teamLikeCommandService;
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
@@ -116,7 +114,7 @@ public class TeamController {
     public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable final Long teamId,
                                                              @RequestBody @Valid final TeamLikeToggleRequest request,
                                                              @LoginMember final Member member) {
-        final TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), teamId, request.isLiked());
+        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), teamId, request.isLiked());
         return ResponseEntity.ok(response);
     }
 }
