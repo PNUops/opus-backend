@@ -17,7 +17,6 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.TeamVoteCommandService;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
@@ -55,7 +54,7 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
     void setUp() {
         Contest newContest = ContestFixture.createContest();
         newContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
-        newContest.updateMaxVotesLimit(2); // 최대 투표 수를 기본적으로 2로 설정
+        newContest.updateMaxVotesLimit(2);
         contest = contestRepository.save(newContest);
 
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
@@ -81,14 +80,12 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 기존 투표를 취소할 수 있다.")
     void 기존_투표를_취소할_수_있다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        MemberVoteCountResponse beforeResponse = teamVoteCommandService.getMemberVoteCount(member.getId(), contest.getId());
-        assertThat(beforeResponse.remainingVotesCount()).isEqualTo(1L);
 
-        TeamVoteToggleResponse afterResponse = teamVoteCommandService.toggleVote(member.getId(), team.getId(), false);
+        TeamVoteToggleResponse response = teamVoteCommandService.toggleVote(member.getId(), team.getId(), false);
 
-        assertThat(afterResponse.isVoted()).isFalse();
-        assertThat(afterResponse.message()).isEqualTo("투표가 취소되었습니다.");
-        assertThat(afterResponse.remainingVotesCount()).isEqualTo(2L);
+        assertThat(response.isVoted()).isFalse();
+        assertThat(response.message()).isEqualTo("투표가 취소되었습니다.");
+        assertThat(response.remainingVotesCount()).isEqualTo(2L);
     }
 
     @Test
@@ -168,37 +165,5 @@ public class TeamVoteCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> teamVoteCommandService.toggleVote(member.getId(), thirdTeam.getId(), true))
                 .isInstanceOf(TeamVoteException.class)
                 .hasMessageContaining("최대 2개 팀만 투표할 수 있습니다.");
-    }
-
-    @Test
-    @DisplayName("[성공] 사용자의 남은 투표 개수를 조회할 수 있다.")
-    void 사용자의_남은_투표_개수를_조회할_수_있다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-
-        MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contest.getId());
-
-        assertThat(response.remainingVotesCount()).isEqualTo(1L);
-        assertThat(response.maxVotesLimit()).isEqualTo(2L);
-    }
-
-    @Test
-    @DisplayName("[성공] 투표하지 않은 사용자는 최대 투표 수만큼 남은 투표 개수가 있다.")
-    void 투표하지_않은_사용자는_최대_투표_수만큼_남은_투표_개수가_있다() {
-        MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contest.getId());
-
-        assertThat(response.remainingVotesCount()).isEqualTo(2L);
-        assertThat(response.maxVotesLimit()).isEqualTo(2L);
-    }
-
-    @Test
-    @DisplayName("[성공] 취소한 투표는 카운트에서 제외된다.")
-    void 취소한_투표는_카운트에서_제외된다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), false));
-
-        MemberVoteCountResponse response = teamVoteCommandService.getMemberVoteCount(member.getId(), contest.getId());
-
-        assertThat(response.remainingVotesCount()).isEqualTo(1L);
     }
 }

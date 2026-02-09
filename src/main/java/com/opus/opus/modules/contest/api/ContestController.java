@@ -13,7 +13,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.team.application.TeamVoteCommandService;
+import com.opus.opus.modules.team.application.TeamVoteQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import jakarta.validation.Valid;
@@ -44,7 +44,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
-    private final TeamVoteCommandService teamVoteCommandService;
+    private final TeamVoteQueryService teamVoteCommandService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {

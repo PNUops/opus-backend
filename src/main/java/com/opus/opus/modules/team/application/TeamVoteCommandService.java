@@ -9,7 +9,6 @@ import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LI
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
@@ -98,13 +97,5 @@ public class TeamVoteCommandService {
         } catch (DataIntegrityViolationException e) {
             throw new TeamVoteException(DUPLICATE_VOTE_REQUEST);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
-        Contest contest = contestConvenience.getValidateExistContest(contestId);
-        long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
-        long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
-        return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
     }
 }
