@@ -52,7 +52,7 @@ public class TeamLikeCommandServiceTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        Contest newContest = ContestFixture.createContest();
+        final Contest newContest = ContestFixture.createContest();
         newContest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
         contest = contestRepository.save(newContest);
 
@@ -63,13 +63,13 @@ public class TeamLikeCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 처음 좋아요하면 TeamLike가 생성되고 좋아요가 등록된다.")
     void 처음_좋아요하면_TeamLike가_생성되고_좋아요가_등록된다() {
-        TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), true);
+        final TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), true);
 
         assertThat(response.teamId()).isEqualTo(team.getId());
         assertThat(response.isLiked()).isTrue();
         assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");
 
-        TeamLike savedLike = teamLikeRepository.findByMemberIdAndTeam(member.getId(), team).orElseThrow();
+        final TeamLike savedLike = teamLikeRepository.findByMemberIdAndTeam(member.getId(), team).orElseThrow();
         assertThat(savedLike.getIsLiked()).isTrue();
     }
 
@@ -78,7 +78,7 @@ public class TeamLikeCommandServiceTest extends IntegrationTest {
     void 기존_좋아요를_취소할_수_있다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
 
-        TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), false);
+        final TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), false);
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.message()).isEqualTo("좋아요가 취소되었습니다.");
@@ -89,7 +89,7 @@ public class TeamLikeCommandServiceTest extends IntegrationTest {
     void 취소한_좋아요를_다시_등록할_수_있다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), false));
 
-        TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), true);
+        final TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), team.getId(), true);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");
@@ -136,11 +136,11 @@ public class TeamLikeCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 투표 기간에는 좋아요할 수 없다.")
     void 투표_기간에는_좋아요할_수_없다() {
-        Contest votingContest = ContestFixture.createContest();
+        final Contest votingContest = ContestFixture.createContest();
         votingContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
-        votingContest = contestRepository.save(votingContest);
+        final Contest savedVotingContest = contestRepository.save(votingContest);
 
-        Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId()));
+        final Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(savedVotingContest.getId()));
 
         assertThatThrownBy(() -> teamLikeCommandService.toggleLike(member.getId(), votingTeam.getId(), true))
                 .isInstanceOf(ContestException.class)

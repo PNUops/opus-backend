@@ -113,10 +113,10 @@ public class TeamController {
 
     @Secured({"ROLE_회원", "ROLE_관리자"})
     @PutMapping("/{teamId}/likes")
-    public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable Long teamId,
-                                                             @RequestBody @Valid TeamLikeToggleRequest request,
-                                                             @LoginMember Member member) {
-        TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), teamId, request.isLiked());
+    public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable final Long teamId,
+                                                             @RequestBody @Valid final TeamLikeToggleRequest request,
+                                                             @LoginMember final Member member) {
+        final TeamLikeToggleResponse response = teamLikeCommandService.toggleLike(member.getId(), teamId, request.isLiked());
         return ResponseEntity.ok(response);
     }
 }

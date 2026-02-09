@@ -30,19 +30,19 @@ public class TeamLikeCommandService {
 
     private final TeamLikeRepository teamLikeRepository;
 
-    public TeamLikeToggleResponse toggleLike(Long memberId, Long teamId, Boolean isLiked) {
-        Team team = teamConvenience.getValidateExistTeam(teamId);
-        Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
+    public TeamLikeToggleResponse toggleLike(final Long memberId, final Long teamId, final Boolean isLiked) {
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
 
         contestConvenience.validateNotInVotingPeriod(contest);
 
-        Optional<TeamLike> teamLikeOptional = teamLikeRepository.findByMemberIdAndTeam(memberId, team);
+        final Optional<TeamLike> teamLikeOptional = teamLikeRepository.findByMemberIdAndTeam(memberId, team);
         return teamLikeOptional
                 .map(teamLike -> handleExistingLike(teamLike, isLiked))
                 .orElseGet(() -> handleFirstTimeLike(memberId, team, isLiked));
     }
 
-    private TeamLikeToggleResponse handleFirstTimeLike(Long memberId, Team team, Boolean isLiked) {
+    private TeamLikeToggleResponse handleFirstTimeLike(final Long memberId, final Team team, final Boolean isLiked) {
         if (!isLiked) {
             throw new TeamLikeException(NOT_LIKED_YET);
         }
@@ -61,7 +61,7 @@ public class TeamLikeCommandService {
         return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
     }
 
-    private void saveTeamLike(Long memberId, Team team) {
+    private void saveTeamLike(final Long memberId, final Team team) {
         teamLikeRepository.save(TeamLike.builder()
                 .memberId(memberId)
                 .team(team)
