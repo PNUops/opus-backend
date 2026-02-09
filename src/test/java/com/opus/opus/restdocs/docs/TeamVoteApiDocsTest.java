@@ -19,7 +19,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -285,12 +284,11 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
 
         given(teamQueryService.getMemberVoteCount(any(), any())).willReturn(response);
 
-        mockMvc.perform(get("/teams/votes")
-                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
-                        .param("contestId", "1"))
+        mockMvc.perform(get("/contests/{contestId}/votes/me", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-member-vote-count",
-                        queryParameters(
+                        pathParameters(
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
@@ -310,12 +308,11 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .given(teamQueryService)
                 .getMemberVoteCount(any(), any());
 
-        mockMvc.perform(get("/teams/votes")
-                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
-                        .param("contestId", "999"))
+        mockMvc.perform(get("/contests/{contestId}/votes/me", 999)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-member-vote-count-fail-not-found",
-                        queryParameters(
+                        pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(

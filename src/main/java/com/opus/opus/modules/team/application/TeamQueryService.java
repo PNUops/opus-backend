@@ -30,14 +30,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TeamQueryService {
 
-    private final FileStorageUtil fileStorageUtil;
-
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
     private final ContestConvenience contestConvenience;
 
     private final FileRepository fileRepository;
     private final TeamVoteRepository teamVoteRepository;
+
+    private final FileStorageUtil fileStorageUtil;
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
