@@ -47,7 +47,7 @@ public class TeamLikeCommandService {
             throw new TeamLikeException(NOT_LIKED_YET);
         }
 
-        saveTeamLike(memberId, team, true);
+        saveTeamLike(memberId, team);
         return TeamLikeToggleResponse.of(team.getId(), true, "좋아요가 등록되었습니다.");
     }
 
@@ -61,16 +61,11 @@ public class TeamLikeCommandService {
         return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
     }
 
-    private void saveTeamLike(Long memberId, Team team, Boolean isLiked) {
-        try {
-            teamLikeRepository.save(TeamLike.builder()
-                    .memberId(memberId)
-                    .team(team)
-                    .isLiked(isLiked)
-                    .build());
-            teamLikeRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            throw new TeamLikeException(DUPLICATE_LIKE_REQUEST);
-        }
+    private void saveTeamLike(Long memberId, Team team) {
+        teamLikeRepository.save(TeamLike.builder()
+                .memberId(memberId)
+                .team(team)
+                .isLiked(true)
+                .build());
     }
 }
