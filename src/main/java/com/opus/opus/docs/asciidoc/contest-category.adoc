@@ -1,0 +1,89 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST CATEGORY API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 대회 카테고리 생성
+
+.HTTP Request Headers
+include::{snippets}/create-contest-category/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/create-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-contest-category/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/create-contest-category/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 동일한 카테고리 이름 존재
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-contest-category-fail/http-request.adoc[]
+
+include::{snippets}/create-contest-category-fail/http-response.adoc[]
+
+include::{snippets}/create-contest-category-fail/request-fields.adoc[]
+
+====
+
+== `PATCH`: 대회 카테고리 수정
+
+NOTE: 대회 카테고리 생성과 동일하게 이미 저장되어 있는 카테고리 이름은 저장 불가
+
+.HTTP Request Headers
+include::{snippets}/update-contest-category/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest-category/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-category/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-category/request-fields.adoc[]
+
+== `DELETE`: 대회 카테고리 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-category/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-category/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-category/http-response.adoc[]
+
+== `GET`: 대회 카테고리 목록 조회
+
+.HTTP Request
+include::{snippets}/get-all-contest-category/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-all-contest-category/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-all-contest-category/response-fields.adoc[]
