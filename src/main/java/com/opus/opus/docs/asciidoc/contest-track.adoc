@@ -54,6 +54,9 @@ NOTE: 대회 분과 생성과 동일하게 이미 저장되어 있는 분과 이
 .HTTP Request Headers
 include::{snippets}/update-contest-track/request-headers.adoc[]
 
+.Path Parameters
+include::{snippets}/update-contest-track/path-parameters.adoc[]
+
 .HTTP Request
 include::{snippets}/update-contest-track/http-request.adoc[]
 
@@ -63,22 +66,19 @@ include::{snippets}/update-contest-track/http-response.adoc[]
 .Request Fields
 include::{snippets}/update-contest-track/request-fields.adoc[]
 
-.Path Parameters
-include::{snippets}/update-contest-track/path-parameters.adoc[]
-
 == `DELETE`: 대회 분과 삭제
 
 .HTTP Request Headers
 include::{snippets}/delete-contest-track/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-track/path-parameters.adoc[]
 
 .HTTP Request
 include::{snippets}/delete-contest-track/http-request.adoc[]
 
 .HTTP Response
 include::{snippets}/delete-contest-track/http-response.adoc[]
-
-.Path Parameters
-include::{snippets}/delete-contest-track/path-parameters.adoc[]
 
 == `GET`: 대회 분과 목록 조회
 

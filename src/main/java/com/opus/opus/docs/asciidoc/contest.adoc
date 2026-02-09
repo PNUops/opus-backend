@@ -233,6 +233,9 @@ NOTE: 대회 생성과 동일하게 이미 저장되어 있는 대회 이름은 
 .HTTP Request Headers
 include::{snippets}/update-contest/request-headers.adoc[]
 
+.Path Parameters
+include::{snippets}/update-contest/path-parameters.adoc[]
+
 .HTTP Request
 include::{snippets}/update-contest/http-request.adoc[]
 
@@ -242,22 +245,19 @@ include::{snippets}/update-contest/http-response.adoc[]
 .Request Fields
 include::{snippets}/update-contest/request-fields.adoc[]
 
-.Path Parameters
-include::{snippets}/update-contest/path-parameters.adoc[]
-
 === `DELETE`: 대회 삭제
 
 .HTTP Request Headers
 include::{snippets}/delete-contest/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest/path-parameters.adoc[]
 
 .HTTP Request
 include::{snippets}/delete-contest/http-request.adoc[]
 
 .HTTP Response
 include::{snippets}/delete-contest/http-response.adoc[]
-
-.Path Parameters
-include::{snippets}/delete-contest/path-parameters.adoc[]
 
 === `GET`: 대회 목록 조회
 
