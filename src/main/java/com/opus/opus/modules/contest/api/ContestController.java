@@ -10,13 +10,14 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamRankingResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -151,8 +152,15 @@ public class ContestController {
 
     @Secured("ROLE_관리자")
     @GetMapping("/{contestId}/ranking")
-    public ResponseEntity<List<TeamRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
-        List<TeamRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
+    public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
+        List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
         return ResponseEntity.ok(responses);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/votes/statistics")
+    public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
+        ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contestId);
+        return ResponseEntity.ok(response);
     }
 }
