@@ -1,7 +1,6 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
@@ -10,6 +9,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -18,7 +18,10 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamRankingResponse;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -36,6 +39,7 @@ public class TeamQueryService {
 
     private final FileRepository fileRepository;
     private final TeamVoteRepository teamVoteRepository;
+    private final ContestTrackRepository contestTrackRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -61,6 +65,24 @@ public class TeamQueryService {
         final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
         final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
         return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
+    }
+
+    public List<TeamRankingResponse> getTeamRanking(Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+
+        List<TeamRankingResponse> votesPerTeam = teamVoteRepository.countVotesPerTeamByContest(contestId);
+        List<TeamRankingResponse> responseList = new ArrayList<>();
+        int curRank = 0;     // 현재 순위
+        long prevCount = -1; // 이전 팀 투표 수
+        for (TeamRankingResponse result : votesPerTeam) {
+            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
+            if (prevCount != result.voteCount()) curRank++;
+            prevCount = result.voteCount();
+
+            responseList.add(new TeamRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
     }
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {

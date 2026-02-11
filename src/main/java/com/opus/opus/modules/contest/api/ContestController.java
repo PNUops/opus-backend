@@ -16,6 +16,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamRankingResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -146,5 +147,12 @@ public class ContestController {
                                                                       @LoginMember Member member) {
         MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/ranking")
+    public ResponseEntity<List<TeamRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
+        List<TeamRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
+        return ResponseEntity.ok(responses);
     }
 }
