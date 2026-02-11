@@ -61,6 +61,11 @@ public class ContestTrackCommandService {
         fileStorageUtil.storeFile(image, trackId, TRACK, THUMBNAIL);
     }
 
+    public void deleteContestTrackDefaultThumbnail(final Long contestId, final Long trackId) {
+        contestTrackConvenience.getValidateExistTrack(contestId, trackId);
+        deleteIfExists(trackId, THUMBNAIL);
+    }
+
     private void deleteIfExists(final Long trackId, final FileImageType imageType) {
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, imageType)
                 .ifPresent(existingFile -> fileStorageUtil.deleteFile(existingFile.getId()));

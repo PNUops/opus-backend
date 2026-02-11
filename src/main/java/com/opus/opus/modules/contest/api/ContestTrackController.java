@@ -71,4 +71,12 @@ public class ContestTrackController {
         contestTrackCommandService.saveContestTrackDefaultThumbnail(contestId, trackId, image);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/{trackId}/thumbnail")
+    public ResponseEntity<Void> deleteContestTrackDefaultThumbnail(@PathVariable final Long contestId,
+                                                                   @PathVariable final Long trackId) {
+        contestTrackCommandService.deleteContestTrackDefaultThumbnail(contestId, trackId);
+        return ResponseEntity.noContent().build();
+    }
 }
