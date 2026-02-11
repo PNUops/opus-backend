@@ -5,7 +5,6 @@ import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
@@ -18,7 +17,6 @@ import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LI
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -29,7 +27,6 @@ import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
-import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamVoteException;
@@ -54,7 +51,6 @@ public class TeamCommandService {
     private final ContestConvenience contestConvenience;
 
     private final TeamVoteRepository teamVoteRepository;
-    private final ContestConvenience contestConvenience;
 
     private final TeamLikeRepository teamLikeRepository;
 
@@ -106,6 +102,19 @@ public class TeamCommandService {
                 .orElseGet(() -> handleFirstTimeLike(memberId, team, isLiked));
     }
 
+    public TeamVoteToggleResponse toggleVote(Long memberId, Long teamId, Boolean isVoted) {
+        Team team = teamConvenience.getValidateExistTeam(teamId);
+        Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
+
+        contestConvenience.validateVotingPeriod(contest);
+
+        Optional<TeamVote> teamVoteOptional = teamVoteRepository.findByMemberIdAndTeam(memberId, team);
+
+        return teamVoteOptional.map(teamVote -> handleExistingVote(teamVote, isVoted, memberId, contest))
+                .orElseGet(() -> handleFirstTimeVote(memberId, team, isVoted, contest));
+    }
+
+
     private TeamLikeToggleResponse handleFirstTimeLike(final Long memberId, final Team team, final Boolean isLiked) {
         if (!isLiked) {
             throw new TeamLikeException(NOT_LIKED_YET);
@@ -131,18 +140,6 @@ public class TeamCommandService {
                 .team(team)
                 .isLiked(true)
                 .build());
-    }
-
-    public TeamVoteToggleResponse toggleVote(Long memberId, Long teamId, Boolean isVoted) {
-        Team team = teamConvenience.getValidateExistTeam(teamId);
-        Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
-
-        contestConvenience.validateVotingPeriod(contest);
-
-        Optional<TeamVote> teamVoteOptional = teamVoteRepository.findByMemberIdAndTeam(memberId, team);
-
-        return teamVoteOptional.map(teamVote -> handleExistingVote(teamVote, isVoted, memberId, contest))
-                .orElseGet(() -> handleFirstTimeVote(memberId, team, isVoted, contest));
     }
 
     private TeamVoteToggleResponse handleFirstTimeVote(Long memberId, Team team, Boolean isVoted, Contest contest) {

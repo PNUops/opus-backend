@@ -87,15 +87,6 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
-    @PutMapping("/{teamId}/votes")
-    public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
-                                                             @RequestBody @Valid TeamVoteToggleRequest request,
-                                                             @LoginMember Member member) {
-        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), teamId, request.isVoted());
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/{teamId}/image/posters")
     public ResponseEntity<Resource> getPosterImage(@PathVariable final Long teamId) {
         final ImageResponse imageResponse = teamQueryService.getPosterImage(teamId);
@@ -118,6 +109,15 @@ public class TeamController {
     public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId) {
         teamCommandService.deletePosterImage(teamId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @PutMapping("/{teamId}/votes")
+    public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
+                                                             @RequestBody @Valid TeamVoteToggleRequest request,
+                                                             @LoginMember Member member) {
+        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), teamId, request.isVoted());
+        return ResponseEntity.ok(response);
     }
 
     @Secured({"ROLE_회원", "ROLE_관리자"})
