@@ -89,13 +89,13 @@ public class TeamQueryService {
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        long totalVotes = teamVoteRepository.countTotalVotesByContest(contestId); // 총 투표 수
-        long totalVoters = teamVoteRepository.countTotalVotersByContest(contestId); // 총 투표자 수
-        double average = totalVoters > 0
-                ? Math.round((double) totalVotes / totalVoters * 10) / 10.0
+        long totalVotesCount = teamVoteRepository.countTotalVotesByContest(contestId);
+        long totalVotersCount = teamVoteRepository.countTotalVotersByContest(contestId);
+        double average = totalVotersCount > 0
+                ? Math.round((double) totalVotesCount / totalVotersCount * 10) / 10.0
                 : 0.0;
 
-        return new ContestVoteStatisticsResponse(totalVotes, totalVoters, average);
+        return new ContestVoteStatisticsResponse(totalVotesCount, totalVotersCount, average);
     }
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
