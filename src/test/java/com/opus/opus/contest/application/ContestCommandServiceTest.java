@@ -1,6 +1,6 @@
 package com.opus.opus.contest.application;
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,7 +98,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
         }).isInstanceOf(ContestException.class)
-                .hasMessage(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD.errorMessage());
+                .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
     }
 
     @Test

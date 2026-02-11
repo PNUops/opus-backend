@@ -1,6 +1,6 @@
 package com.opus.opus.restdocs.docs;
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static java.time.LocalDateTime.now;
@@ -232,7 +232,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 투표_진행_중_최대_투표_개수_변경_시_에러를_반환한다() throws Exception {
         final ContestVotesLimitRequest request = new ContestVotesLimitRequest(2);
 
-        willThrow(new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD))
+        willThrow(new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD))
                 .given(contestCommandService)
                 .updateMaxVotesLimit(any(), any());
 

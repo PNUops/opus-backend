@@ -5,7 +5,9 @@ import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
@@ -15,13 +17,16 @@ import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LI
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamLike;
+import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
+import com.opus.opus.modules.team.exception.TeamLikeException;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamVoteException;
@@ -46,6 +51,8 @@ public class TeamCommandService {
     private final ContestConvenience contestConvenience;
 
     private final TeamVoteRepository teamVoteRepository;
+
+    private final TeamLikeRepository teamLikeRepository;
 
 
     public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
@@ -83,6 +90,18 @@ public class TeamCommandService {
         deleteIfExists(teamId, POSTER);
     }
 
+    public TeamLikeToggleResponse toggleLike(final Long memberId, final Long teamId, final Boolean isLiked) {
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
+
+        contestConvenience.validateNotInVotingPeriod(contest);
+
+        final Optional<TeamLike> teamLikeOptional = teamLikeRepository.findByMemberIdAndTeam(memberId, team);
+        return teamLikeOptional
+                .map(teamLike -> handleExistingLike(teamLike, isLiked))
+                .orElseGet(() -> handleFirstTimeLike(memberId, team, isLiked));
+    }
+
     public TeamVoteToggleResponse toggleVote(Long memberId, Long teamId, Boolean isVoted) {
         Team team = teamConvenience.getValidateExistTeam(teamId);
         Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
@@ -93,6 +112,34 @@ public class TeamCommandService {
 
         return teamVoteOptional.map(teamVote -> handleExistingVote(teamVote, isVoted, memberId, contest))
                 .orElseGet(() -> handleFirstTimeVote(memberId, team, isVoted, contest));
+    }
+
+
+    private TeamLikeToggleResponse handleFirstTimeLike(final Long memberId, final Team team, final Boolean isLiked) {
+        if (!isLiked) {
+            throw new TeamLikeException(NOT_LIKED_YET);
+        }
+
+        saveTeamLike(memberId, team);
+        return TeamLikeToggleResponse.of(team.getId(), true, "좋아요가 등록되었습니다.");
+    }
+
+    private TeamLikeToggleResponse handleExistingLike(final TeamLike teamLike, final Boolean isLiked) {
+        if (Objects.equals(teamLike.getIsLiked(), isLiked)) {
+            throw new TeamLikeException(isLiked ? ALREADY_LIKED : ALREADY_UNLIKED);
+        }
+
+        teamLike.updateIsLiked(isLiked);
+
+        return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
+    }
+
+    private void saveTeamLike(final Long memberId, final Team team) {
+        teamLikeRepository.save(TeamLike.builder()
+                .memberId(memberId)
+                .team(team)
+                .isLiked(true)
+                .build());
     }
 
     private TeamVoteToggleResponse handleFirstTimeVote(Long memberId, Team team, Boolean isVoted, Contest contest) {
