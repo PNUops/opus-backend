@@ -75,10 +75,14 @@ public class TeamCommandServiceTest extends IntegrationTest {
     private Contest votingContest;
     private Team notVotingTeam;
     private Team votingTeam;
+    private Team generalTeam;
     private Member member;
 
     @BeforeEach
     void setUp() {
+        generalTeam = teamRepository.save(TeamFixture.createTeam());
+        member = memberRepository.save(MemberFixture.createMember());
+
         final Contest newNotVotingContest = ContestFixture.createContest();
         newNotVotingContest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
         notVotingContest = contestRepository.save(newNotVotingContest); // 투표 기간이 지난 대회 생성
@@ -89,30 +93,26 @@ public class TeamCommandServiceTest extends IntegrationTest {
         newVotingContest.updateMaxVotesLimit(2);
         votingContest = contestRepository.save(newVotingContest); // 투표 가능한 대회 생성
         votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId())); // 투표 가능한 팀 생성
-
-        member = memberRepository.save(MemberFixture.createMember());
     }
 
     @Test
     @DisplayName("[성공] 팀 포스터 이미지를 저장한다.")
     void 팀_포스터_이미지를_저장한다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg",
-                "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg", "content".getBytes());
 
         // when
-        teamCommandService.savePosterImage(notVotingTeam.getId(), image);
+        teamCommandService.savePosterImage(generalTeam.getId(), image);
 
         // then
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(notVotingTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
     @DisplayName("[실패] 팀이 존재하지 않으면 포스터 이미지를 저장할 수 없다.")
     void 팀이_존재하지_않으면_포스터_이미지를_저장할_수_없다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg",
-                "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg", "content".getBytes());
         final long notExistTeamId = 999L;
 
         // when & then
@@ -126,13 +126,13 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 팀_포스터_이미지를_삭제한다() {
         // given
         final File file = FileFixture.createTeamPosterFile();
-        setField(file, "referenceId", notVotingTeam.getId());
+        setField(file, "referenceId", generalTeam.getId());
         final File savedFile = fileRepository.save(file);
         savedFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(savedFile);
 
         // when
-        teamCommandService.deletePosterImage(notVotingTeam.getId());
+        teamCommandService.deletePosterImage(generalTeam.getId());
 
         // then
         verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
@@ -142,7 +142,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지가 없어도 삭제 요청 시 예외가 발생하지 않는다.")
     void 팀_포스터_이미지가_없어도_삭제_요청_시_예외가_발생하지_않는다() {
         // when
-        teamCommandService.deletePosterImage(notVotingTeam.getId());
+        teamCommandService.deletePosterImage(generalTeam.getId());
 
         // then
         verify(fileStorageUtil, never()).deleteFile(any());
@@ -153,18 +153,17 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 팀_포스터_이미지가_이미_존재하면_기존_이미지를_삭제하고_새로_저장한다() {
         // given
         final File existingFile = FileFixture.createTeamPosterFile();
-        setField(existingFile, "referenceId", notVotingTeam.getId());
+        setField(existingFile, "referenceId", generalTeam.getId());
         final File savedFile = fileRepository.save(existingFile);
 
-        final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg",
-                "new_content".getBytes());
+        final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg", "new_content".getBytes());
 
         // when
-        teamCommandService.savePosterImage(notVotingTeam.getId(), newImage);
+        teamCommandService.savePosterImage(generalTeam.getId(), newImage);
 
         // then
         verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(notVotingTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
