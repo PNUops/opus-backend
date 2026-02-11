@@ -16,6 +16,7 @@ link:./member.html[회원 API]
 link:./team.html[팀 API]
 
 link:./team-comment.html[팀 댓글 API]
+link:./team-vote.html[팀 투표 API]
 
 link:./team-member.html[팀원 API]
 

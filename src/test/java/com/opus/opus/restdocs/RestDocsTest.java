@@ -54,6 +54,8 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         TeamCommentController.class,
         ContestCategoryController.class,
         ContestTrackController.class,
+        NoticeController.class,
+        ContestController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
