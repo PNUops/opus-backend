@@ -159,16 +159,13 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] Dense Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
     void dense_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
-        // 1등 팀 (투표 2개)
         Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true)); // 1등 팀 (투표 2개)
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L, true));
-        // 공동 2등 팀 A (투표 1개)
         Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true));
-        // 공동 2등 팀 B (투표 1개)
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // 공동 2등 팀 A (투표 1개)
         Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // 공동 2등 팀 B (투표 1개)
 
         List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
 
@@ -184,21 +181,18 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 대회의 투표 집계를 조회할 수 있다.")
     void 대회의_투표_집계를_조회할_수_있다() {
-        // 사용자 A가 2표 행사 (팀1, 팀2)
         Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true)); // 사용자 A가 2표 행사 (팀1, 팀2)
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true));
-        // 사용자 B가 1표 행사 (팀1)
         Long anotherMemberId = 999L;
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, anotherMemberId, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, anotherMemberId, true)); // 사용자 B가 1표 행사 (팀1)
 
         ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
 
-        // 총 투표 수: 3, 총 투표자 수: 2, 평균: 3 / 2 = 1.5
-        assertThat(response.totalVotes()).isEqualTo(3L);
-        assertThat(response.totalVoters()).isEqualTo(2L);
-        assertThat(response.averageVotesPerVoter()).isEqualTo(1.5);
+        assertThat(response.totalVotes()).isEqualTo(3L); // 총 투표 수 (3표)
+        assertThat(response.totalVoters()).isEqualTo(2L); // 총 투표자 수 (2명)
+        assertThat(response.averageVotesPerVoter()).isEqualTo(1.5); // 1인당 평균 투표 수 (3표 / 2명 = 1.5표)
     }
 
     @Test
