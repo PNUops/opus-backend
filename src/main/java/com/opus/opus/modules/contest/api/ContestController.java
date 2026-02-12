@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
@@ -14,7 +15,10 @@ import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +47,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final TeamQueryService teamQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -74,8 +79,8 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @Secured("ROLE_관리자")
     @PostMapping
+    @Secured("ROLE_관리자")
     public ResponseEntity<ContestResponse> createContest(@Valid @RequestBody final ContestRequest request) {
         ContestResponse response = contestCommandService.createContest(request);
         return ResponseEntity.ok(response);
@@ -158,5 +163,13 @@ public class ContestController {
                                                         @RequestBody final List<@Valid ContestSortCustomRequest> requests) {
         contestCommandService.updateContestSortCustom(contestId, requests);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @GetMapping("/{contestId}/votes/me")
+    public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@PathVariable Long contestId,
+                                                                      @LoginMember Member member) {
+        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
+        return ResponseEntity.ok(response);
     }
 }

@@ -144,7 +144,7 @@ public class ContestCommandService {
     public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
-        validateNotInVotingPeriod(contest);
+        contestConvenience.validateNotInVotingPeriod(contest);
 
         contest.updateMaxVotesLimit(maxVotesLimit);
     }

@@ -4,10 +4,10 @@ import static com.opus.opus.contest.ContestFixture.createContest;
 import static com.opus.opus.contest.ContestSortFixture.createContestSort;
 import static com.opus.opus.modules.contest.domain.SortType.ASC;
 import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
@@ -122,7 +122,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestCommandService.updateMaxVotesLimit(contest.getId(), MAX_VOTES_LIMIT);
         }).isInstanceOf(ContestException.class)
-                .hasMessage(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD.errorMessage());
+                .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
     }
 
     @Test

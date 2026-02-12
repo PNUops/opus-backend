@@ -1,13 +1,15 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.domain.SortType.ASC;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_ITEM_ORDER;
+import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -20,6 +22,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.put;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -30,10 +33,12 @@ import static org.springframework.restdocs.request.RequestDocumentation.requestP
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
@@ -237,7 +242,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 투표_진행_중_최대_투표_개수_변경_시_에러를_반환한다() throws Exception {
         final ContestVotesLimitRequest request = new ContestVotesLimitRequest(2);
 
-        willThrow(new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD))
+        willThrow(new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD))
                 .given(contestCommandService)
                 .updateMaxVotesLimit(any(), any());
 
@@ -377,6 +382,127 @@ public class ContestApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 생성은 성공한다.")
+    void 유효한_요청이면_대회_카테고리_생성은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+        final ContestResponse response = new ContestResponse(1L, request.contestName(), request.categoryId(), "해커톤",
+                true, now());
+
+        when(contestCommandService.createContest(any())).thenReturn(response);
+
+        mockMvc.perform(post("/contests")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(document("create-contest",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("contestId", "대회 ID"),
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID"),
+                                stringFieldWithPath("categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 대회 이름이 존재한다면 에러를 반환한다.")
+    void 이미_대회_이름이_존재한다면_에러를_반환한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        willThrow(new ContestException(CONTEST_NAME_ALREADY_EXIST)).given(contestCommandService).createContest(any());
+
+        mockMvc.perform(post("/contests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("create-contest-fail",
+                        requestFields(
+                                stringFieldWithPath("contestName", "이미 존재하는 대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 수정은 성공한다.")
+    void 유효한_요청이면_대회_수정은_성공한다() throws Exception {
+        final ContestRequest request = new ContestRequest("제6회 해커톤", 1L);
+
+        doNothing().when(contestCommandService).updateContest(any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                numberFieldWithPath("categoryId", "카테고리 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 삭제는 성공한다.")
+    void 유효한_요청이면_대회_삭제는_성공한다() throws Exception {
+        doNothing().when(contestCommandService).deleteContest(any());
+
+        mockMvc.perform(delete("/contests/{contestId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 전체 조회는 성공한다.")
+    void 유효한_요청이면_대회_전체_조회는_성공한다() throws Exception {
+        final List<ContestResponse> responses = List.of(
+                new ContestResponse(1L, "제6회 해커톤", 1L, "해커톤", true, now()),
+                new ContestResponse(2L, "CSE 캡스톤", 2L, "캡스톤", false, now())
+        );
+
+        when(contestQueryService.getAllContests()).thenReturn(responses);
+
+        mockMvc.perform(get("/contests"))
+                .andExpect(status().isOk())
+                .andDo(document("get-all-contest",
+                        responseFields(
+                                arrayFieldWithPath("[]", "대회 목록"),
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회 이름"),
+                                numberFieldWithPath("[].categoryId", "카테고리 ID"),
+                                stringFieldWithPath("[].categoryName", "카테고리 이름"),
+                                booleanFieldWithPath("[].isCurrent", "현재 진행 대회 여부"),
+                                dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
     }

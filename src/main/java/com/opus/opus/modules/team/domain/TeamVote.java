@@ -21,9 +21,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_team_like_member_team", columnNames = {"member_id", "team_id"})
+        @UniqueConstraint(name = "uk_team_vote_member_team", columnNames = {"member_id", "team_id"})
 })
-public class TeamLike extends BaseEntity {
+public class TeamVote extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,16 +37,16 @@ public class TeamLike extends BaseEntity {
     private Team team;
 
     @Column(nullable = false)
-    private Boolean isLiked;
+    private Boolean isVoted;
 
     @Builder
-    public TeamLike(final Long memberId, final Team team, final Boolean isLiked) {
+    private TeamVote(final Long memberId, final Team team, final Boolean isVoted) {
         this.memberId = memberId;
         this.team = team;
-        this.isLiked = isLiked;
+        this.isVoted = isVoted;
     }
 
-    public void updateIsLiked(final Boolean isLiked) {
-        this.isLiked = isLiked;
+    public void updateIsVoted(final Boolean isVoted) {
+        this.isVoted = isVoted;
     }
 }
