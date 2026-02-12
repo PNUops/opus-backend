@@ -40,7 +40,7 @@ public class TeamConvenience {
         }
     }
 
-    public List<Team> getTeamsOfContest(final Long contestId){
+    public List<Team> getTeamsOfContest(final Long contestId) {
         return teamRepository.findAllByContestId(contestId);
     }
 }

@@ -585,13 +585,17 @@ public class ContestApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] CUSTOM모드가 아니라면 수동 정렬 저장은 실패한다.")
     void CUSTOM모드가_아니라면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
         willThrow(new ContestException(ONLY_CUSTOM_MODE_CAN_CHANGE)).given(contestCommandService)
                 .updateContestSortCustom(any(), any());
 
         mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isForbidden())
                 .andDo(document("update-contest-sort-custom-fail-mode"));
     }
 
@@ -644,12 +648,16 @@ public class ContestApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 요청 팀 개수와 저장된 팀 개수가 다르면 수동 정렬 저장은 실패한다.")
     void 요청_팀_개수와_저장된_팀_개수가_다르면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
         willThrow(new ContestException(INVALID_CONTEST_SORT_CUSTOM_REQUEST)).given(contestCommandService)
                 .updateContestSortCustom(any(), any());
 
         mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
                 .andExpect(status().isBadRequest())
                 .andDo(document("update-contest-sort-custom-fail-different-size"));
     }
@@ -657,12 +665,16 @@ public class ContestApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 저장된 팀 개수보다 itemOrder가 크면 수동 정렬 저장은 실패한다.")
     void 저장된_팀_개수보다_itemOrder가_크면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
         willThrow(new TeamException(INVALID_ITEM_ORDER)).given(contestCommandService)
                 .updateContestSortCustom(any(), any());
 
         mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
                 .andExpect(status().isBadRequest())
                 .andDo(document("update-contest-sort-custom-fail-over-itemOrder"));
     }

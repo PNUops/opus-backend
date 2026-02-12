@@ -160,7 +160,7 @@ public class ContestController {
     @Secured("ROLE_관리자")
     @PutMapping("/{contestId}/sort/custom")
     public ResponseEntity<Void> updateContestSortCustom(@PathVariable final Long contestId,
-                                                        @RequestBody final List<@Valid ContestSortCustomRequest> requests) {
+                                                        @Valid @RequestBody final List<ContestSortCustomRequest> requests) {
         contestCommandService.updateContestSortCustom(contestId, requests);
         return ResponseEntity.noContent().build();
     }

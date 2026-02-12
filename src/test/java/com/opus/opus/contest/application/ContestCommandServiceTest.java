@@ -153,14 +153,12 @@ public class ContestCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 대회 정렬 설정 변경을 하면 설정이 변경된다.")
     void 대회_정렬_설정_변경을_하면_설정이_변경된다() {
-        final ContestSort beforeContestSort = contestSortRepository.findByContestId(contest.getId()).orElseThrow();
         final ContestSortRequest request = new ContestSortRequest(ASC);
 
         contestCommandService.updateContestSort(contest.getId(), request);
 
-        final ContestSort afterContestSort = contestSortRepository.findByContestId(contest.getId()).orElseThrow();
-        assertThat(afterContestSort.getMode()).isEqualTo(ASC);
-        assertThat(afterContestSort.getMode()).isNotEqualTo(beforeContestSort);
+        final ContestSort changedContestSort = contestSortRepository.findByContestId(contest.getId()).orElseThrow();
+        assertThat(changedContestSort.getMode()).isEqualTo(ASC);
     }
 
     @Test
