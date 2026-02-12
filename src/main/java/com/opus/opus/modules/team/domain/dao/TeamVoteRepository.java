@@ -1,11 +1,7 @@
 package com.opus.opus.modules.team.domain.dao;
 
-import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
-import io.lettuce.core.dynamic.annotation.Param;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
