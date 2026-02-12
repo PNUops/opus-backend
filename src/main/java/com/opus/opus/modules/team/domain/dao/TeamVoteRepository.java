@@ -19,14 +19,14 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     long countMemberVotesInContest(Long memberId, Long contestId);
 
     @Query("SELECT new com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse(" +
-            "team.id, team.teamName, team.projectName, track.trackName, COUNT(vote)) " +
-            "FROM TeamVote vote " +
-            "JOIN vote.team team " +
+            "team.id, team.teamName, team.projectName, track.trackName, COUNT(vote.id)) " +
+            "FROM Team team " +
+            "LEFT JOIN TeamVote vote ON vote.team = team AND vote.isVoted = true " +
             "LEFT JOIN ContestTrack track ON team.trackId = track.id " +
-            "WHERE team.contestId = :contestId AND vote.isVoted = true " +
+            "WHERE team.contestId = :contestId " +
             "GROUP BY team.id, team.teamName, team.projectName, track.trackName " +
-            "ORDER BY COUNT(vote) DESC")
-    List<ContestRankingResponse> countVotesPerTeamByContest(Long contestId);
+            "ORDER BY COUNT(vote.id) DESC")
+    List<ContestRankingResponse> countVotesPerTeamByContest(Long contestId); // 특정 대회에 속한 모든 팀을, 투표 수 기준 내림차순으로 조회 (투표 수 0인 팀도 포함)
 
     @Query("SELECT COUNT(vote) " +
             "FROM TeamVote vote " +

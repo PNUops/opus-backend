@@ -70,20 +70,8 @@ public class TeamQueryService {
 
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-
         List<ContestRankingResponse> votesPerTeam = teamVoteRepository.countVotesPerTeamByContest(contestId);
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (ContestRankingResponse result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) curRank++;
-            prevCount = result.voteCount();
-
-            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
+        return applyDenseRanking(votesPerTeam);
     }
 
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
@@ -110,5 +98,20 @@ public class TeamQueryService {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
+    }
+
+    private List<ContestRankingResponse> applyDenseRanking(List<ContestRankingResponse> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+        int curRank = 0;     // 현재 순위
+        long prevCount = -1; // 이전 팀 투표 수
+        for (ContestRankingResponse result : votesPerTeam) {
+            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
+            if (prevCount != result.voteCount()) curRank++;
+            prevCount = result.voteCount();
+
+            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
     }
 }
