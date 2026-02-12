@@ -69,7 +69,7 @@ CREATE TABLE `file` (
   `is_webp_converted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
   `reference_id` bigint NOT NULL,
-  `reference_type` enum('CONTEST','TEAM') NOT NULL,
+  `reference_type` enum('CONTEST','TEAM','TRACK') NOT NULL,
   PRIMARY KEY (`id`)
 );
 
