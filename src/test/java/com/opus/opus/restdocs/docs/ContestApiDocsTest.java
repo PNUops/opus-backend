@@ -30,7 +30,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -493,6 +495,109 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].categoryName", "카테고리 이름"),
                                 booleanFieldWithPath("[].isCurrent", "현재 진행 대회 여부"),
                                 dateTimeFieldWithPath("[].updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 투표 랭킹을 조회할 수 있다.")
+    void 대회의_투표_랭킹을_조회할_수_있다() throws Exception {
+        final List<ContestRankingResponse> responses = List.of(
+                new ContestRankingResponse(1, 10L, "팀 A", "AI 번역기", "AI 트랙", 150L),
+                new ContestRankingResponse(2, 11L, "팀 B", "헬스 분석기", "헬스케어 트랙", 120L),
+                new ContestRankingResponse(2, 12L, "팀 C", "노인 케어봇", "AI 트랙", 120L),
+                new ContestRankingResponse(3, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)
+        );
+
+        when(teamQueryService.getTeamRanking(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/ranking", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-ranking",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀 랭킹 목록"),
+                                numberFieldWithPath("[].rank", "투표 기준 순위 (Dense Ranking)"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙/분과명"),
+                                numberFieldWithPath("[].voteCount", "투표 수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 투표 랭킹 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_투표_랭킹_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(teamQueryService)
+                .getTeamRanking(any());
+
+        mockMvc.perform(get("/contests/{contestId}/ranking", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-ranking-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 투표 집계를 조회할 수 있다.")
+    void 대회의_투표_집계를_조회할_수_있다() throws Exception {
+        final ContestVoteStatisticsResponse response = new ContestVoteStatisticsResponse(366L, 249L, 1.5);
+
+        when(teamQueryService.getVoteStatistics(any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/votes/statistics", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-vote-statistics",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("totalVotes", "총 투표 수"),
+                                numberFieldWithPath("totalVoters", "투표한 사람 수"),
+                                numberFieldWithPath("averageVotesPerVoter", "1인당 평균 투표 수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 투표 집계 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_투표_집계_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(teamQueryService)
+                .getVoteStatistics(any());
+
+        mockMvc.perform(get("/contests/{contestId}/votes/statistics", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-vote-statistics-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }

@@ -208,8 +208,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 투표가 없는 경우 통계 수치는 0으로 반환된다.")
-    void 투표가_없는_경우_통계는_0이다() {
+    @DisplayName("[성공] 투표가 없는 경우 집계 수치는 0으로 반환된다.")
+    void 투표가_없는_경우_집계는_0이다() {
         ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(0L);
