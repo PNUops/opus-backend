@@ -160,22 +160,34 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] Dense Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
     void dense_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
         Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true)); // 1등 팀 (투표 2개)
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L, true));
         Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // 공동 2등 팀 A (투표 1개)
         Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // 공동 2등 팀 B (투표 1개)
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L, true)); // team1: 2표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // team2: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // team3: 1표
 
         List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
 
-        assertThat(responses).hasSize(3);
+        assertThat(responses).hasSize(4); // team1, team2, team3, setUp에서 만든 team
         assertThat(responses.get(0).rank()).isEqualTo(1);
         assertThat(responses.get(0).voteCount()).isEqualTo(2);
         assertThat(responses.get(1).rank()).isEqualTo(2);
         assertThat(responses.get(1).voteCount()).isEqualTo(1);
         assertThat(responses.get(2).rank()).isEqualTo(2);
         assertThat(responses.get(2).voteCount()).isEqualTo(1);
+        assertThat(responses.get(3).rank()).isEqualTo(3);
+        assertThat(responses.get(3).voteCount()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("[성공] 투표가 없는 팀도 랭킹에 포함된다.")
+    void 투표가_없는_팀도_랭킹에_포함된다() {
+        List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).rank()).isEqualTo(1);
+        assertThat(responses.get(0).voteCount()).isEqualTo(0);
     }
 
     @Test
@@ -183,16 +195,16 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 대회의_투표_집계를_조회할_수_있다() {
         Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true)); // 사용자 A가 2표 행사 (팀1, 팀2)
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true));
-        Long anotherMemberId = 999L;
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, anotherMemberId, true)); // 사용자 B가 1표 행사 (팀1)
+
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true)); // team1: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true)); // team2: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 999L, true)); // team1: 1표
 
         ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
 
-        assertThat(response.totalVotes()).isEqualTo(3L); // 총 투표 수 (3표)
-        assertThat(response.totalVoters()).isEqualTo(2L); // 총 투표자 수 (2명)
-        assertThat(response.averageVotesPerVoter()).isEqualTo(1.5); // 1인당 평균 투표 수 (3표 / 2명 = 1.5표)
+        assertThat(response.totalVotes()).isEqualTo(3L);
+        assertThat(response.totalVoters()).isEqualTo(2L);
+        assertThat(response.averageVotesPerVoter()).isEqualTo(1.5);
     }
 
     @Test
