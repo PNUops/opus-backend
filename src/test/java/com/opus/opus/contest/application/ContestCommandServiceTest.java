@@ -7,11 +7,11 @@ import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,7 +28,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.exception.TeamException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,6 +242,6 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
         assertThatThrownBy(() -> {
             contestCommandService.updateContestSortCustom(contest.getId(), requests);
-        }).isInstanceOf(TeamException.class).hasMessage(INVALID_ITEM_ORDER.errorMessage());
+        }).isInstanceOf(ContestException.class).hasMessage(INVALID_ITEM_ORDER.errorMessage());
     }
 }

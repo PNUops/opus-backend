@@ -9,13 +9,13 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRE
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_EXIST_TEAM_IN_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_ITEM_ORDER;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -40,7 +40,6 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.exception.TeamException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -199,7 +198,7 @@ public class ContestCommandService {
         for (ContestSortCustomRequest r : requests) {
             final int order = r.itemOrder();
             if (order < 1 || order > teamCount) {
-                throw new TeamException(INVALID_ITEM_ORDER);
+                throw new ContestException(INVALID_ITEM_ORDER);
             }
         }
     }

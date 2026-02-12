@@ -5,10 +5,10 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTE
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_ITEM_ORDER;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -46,7 +46,6 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -668,7 +667,7 @@ public class ContestApiDocsTest extends RestDocsTest {
         final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
                 new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
 
-        willThrow(new TeamException(INVALID_ITEM_ORDER)).given(contestCommandService)
+        willThrow(new ContestException(INVALID_ITEM_ORDER)).given(contestCommandService)
                 .updateContestSortCustom(any(), any());
 
         mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
