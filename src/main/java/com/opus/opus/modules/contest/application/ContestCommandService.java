@@ -4,7 +4,6 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.*;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
@@ -17,12 +16,10 @@ import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -122,15 +119,9 @@ public class ContestCommandService {
     public void updateMaxVotesLimit(final Long contestId, final Integer maxVotesLimit) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
-        validateNotInVotingPeriod(contest);
+        contestConvenience.validateNotInVotingPeriod(contest);
 
         contest.updateMaxVotesLimit(maxVotesLimit);
-    }
-
-    private void validateNotInVotingPeriod(final Contest contest) {
-        if (contest.isVotingPeriod()) {
-            throw new ContestException(CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD);
-        }
     }
 
     private void checkWebpConverted(File existingFile) {

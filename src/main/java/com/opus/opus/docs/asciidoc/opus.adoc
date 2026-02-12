@@ -13,12 +13,14 @@ endif::[]
 link:./member.html[회원 API]
 
 == 팀 관련 API
-
 link:./team.html[팀 API]
 
 link:./team-comment.html[팀 댓글 API]
+link:./team-vote.html[팀 투표 API]
 
 link:./team-member.html[팀원 API]
+
+link:./team-like.html[팀 좋아요 API]
 
 == 공지 관련 API
 link:./notice.html[공지 API]

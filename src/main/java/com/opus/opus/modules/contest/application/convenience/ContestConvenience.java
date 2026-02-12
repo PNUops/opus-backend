@@ -1,9 +1,11 @@
 package com.opus.opus.modules.contest.application.convenience;
 
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CATEGORY_HAS_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_VOTE_PERIOD_NOW;
 
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
@@ -46,5 +48,17 @@ public class ContestConvenience {
 
     public List<Contest> getCurrentContests() {
         return contestRepository.findAllByIsCurrentTrue();
+    }
+
+    public void validateNotInVotingPeriod(final Contest contest) {
+        if (contest.isVotingPeriod()) {
+            throw new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD);
+        }
+    }
+
+    public void validateVotingPeriod(final Contest contest) {
+        if (!contest.isVotingPeriod()) {
+            throw new ContestException(NOT_VOTE_PERIOD_NOW);
+        }
     }
 }
