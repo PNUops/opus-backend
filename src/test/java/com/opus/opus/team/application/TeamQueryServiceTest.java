@@ -66,10 +66,6 @@ public class TeamQueryServiceTest extends IntegrationTest {
     private ContestRepository contestRepository;
     @Autowired
     private FileRepository fileRepository;
-
-    @Autowired
-    private ContestRepository contestRepository;
-
     @Autowired
     private ContestTrackRepository contestTrackRepository;
 
