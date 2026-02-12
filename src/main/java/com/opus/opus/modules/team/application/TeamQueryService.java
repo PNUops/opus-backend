@@ -10,7 +10,6 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -20,6 +19,7 @@ import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class TeamQueryService {
 
     private final FileRepository fileRepository;
     private final TeamVoteRepository teamVoteRepository;
-    private final ContestTrackRepository contestTrackRepository;
+    private final TeamRepository teamRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -70,7 +70,7 @@ public class TeamQueryService {
 
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        List<ContestRankingResponse> votesPerTeam = teamVoteRepository.countVotesPerTeamByContest(contestId);
+        List<ContestRankingResponse> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
         return applyDenseRanking(votesPerTeam);
     }
 
