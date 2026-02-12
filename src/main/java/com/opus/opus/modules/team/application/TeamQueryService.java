@@ -70,16 +70,16 @@ public class TeamQueryService {
 
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        List<ContestRankingResponse> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
+        final List<ContestRankingResponse> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
         return applyDenseRanking(votesPerTeam);
     }
 
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        long totalVotesCount = teamVoteRepository.countTotalVotesByContest(contestId);
-        long totalVotersCount = teamVoteRepository.countTotalVotersByContest(contestId);
-        double average = totalVotersCount > 0
+        final long totalVotesCount = teamVoteRepository.countTotalVotesByContest(contestId);
+        final long totalVotersCount = teamVoteRepository.countTotalVotersByContest(contestId);
+        final double average = totalVotersCount > 0
                 ? Math.round((double) totalVotesCount / totalVotersCount * 10) / 10.0
                 : 0.0;
 

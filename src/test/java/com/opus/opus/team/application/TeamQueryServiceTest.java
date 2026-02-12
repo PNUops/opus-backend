@@ -157,15 +157,15 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] Dense Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
     void dense_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
-        Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L, true)); // team1: 2표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // team2: 1표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // team3: 1표
 
-        List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
 
         assertThat(responses).hasSize(4); // team1, team2, team3, setUp에서 만든 team
         assertThat(responses.get(0).rank()).isEqualTo(1);
@@ -181,7 +181,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표가 없는 팀도 랭킹에 포함된다.")
     void 투표가_없는_팀도_랭킹에_포함된다() {
-        List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).rank()).isEqualTo(1);
@@ -191,14 +191,14 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 대회의 투표 집계를 조회할 수 있다.")
     void 대회의_투표_집계를_조회할_수_있다() {
-        Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
 
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true)); // team1: 1표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true)); // team2: 1표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 999L, true)); // team1: 1표
 
-        ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
+        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(3L);
         assertThat(response.totalVoters()).isEqualTo(2L);
@@ -208,7 +208,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표가 없는 경우 집계 수치는 0으로 반환된다.")
     void 투표가_없는_경우_집계는_0이다() {
-        ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
+        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(0L);
         assertThat(response.totalVoters()).isEqualTo(0L);

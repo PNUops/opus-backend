@@ -146,21 +146,21 @@ public class ContestController {
     @GetMapping("/{contestId}/votes/me")
     public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@PathVariable Long contestId,
                                                                       @LoginMember Member member) {
-        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
+        final MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/{contestId}/ranking")
     public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
-        List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
+        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
         return ResponseEntity.ok(responses);
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/{contestId}/votes/statistics")
     public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
-        ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contestId);
+        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contestId);
         return ResponseEntity.ok(response);
     }
 }
