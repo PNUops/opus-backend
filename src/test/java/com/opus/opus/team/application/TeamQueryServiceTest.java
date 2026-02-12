@@ -8,6 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
+import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestTrackFixture;
+import com.opus.opus.team.FileFixture;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.file.domain.File;
@@ -29,6 +32,16 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
+import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestTrack;
+import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
+import com.opus.opus.contest.ContestFixture;
+
+import org.springframework.test.util.ReflectionTestUtils;
+
 public class TeamQueryServiceTest extends IntegrationTest {
 
     @Autowired
@@ -39,6 +52,12 @@ public class TeamQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private FileRepository fileRepository;
+
+    @Autowired
+    private ContestRepository contestRepository;
+
+    @Autowired
+    private ContestTrackRepository contestTrackRepository;
 
     @Autowired
     private FileStorageUtil fileStorageUtil;
@@ -54,13 +73,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지를 조회한다.")
     void 팀_포스터_이미지를_조회한다() {
         // given
-        final File file = File.builder()
-                .referenceId(team.getId())
-                .referenceType(TEAM)
-                .imageType(POSTER)
-                .filePath("path/to/poster.webp")
-                .name("poster.jpg")
-                .build();
+        final File file = FileFixture.createTeamPosterFile();
+        ReflectionTestUtils.setField(file, "referenceId", team.getId());
         final File savedFile = fileRepository.save(file);
         savedFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(savedFile);
@@ -96,5 +110,64 @@ public class TeamQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> teamQueryService.getPosterImage(team.getId()))
                 .isInstanceOf(FileException.class)
                 .hasMessage(NOT_EXISTS_MATCHING_IMAGE_ID.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 썸네일 이미지가 있으면 팀 썸네일을 반환한다.")
+    void 팀_썸네일_조회_성공() {
+        // given
+        final File teamFile = fileRepository.save(FileFixture.createTeamThumbnailFile(team.getId()));
+        teamFile.updateIsWebpConverted(true);
+        fileRepository.saveAndFlush(teamFile);
+
+        given(fileStorageUtil.findFileAndType(teamFile.getId()))
+                .willReturn(new Pair<>(new ByteArrayResource("team".getBytes()), "image/webp"));
+
+        // when
+        ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(new String(((ByteArrayResource) response.resource()).getByteArray())).isEqualTo("team");
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 썸네일이 없고 분과 썸네일이 있으면 분과 썸네일을 반환한다.")
+    void 분과_썸네일_조회_성공() {
+        // given
+        Contest contest = contestRepository.save(ContestFixture.createContest());
+        ContestTrack track = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
+        
+        ReflectionTestUtils.setField(team, "trackId", track.getId());
+        teamRepository.saveAndFlush(team);
+
+        final File trackFile = fileRepository.save(FileFixture.createTrackThumbnailFile(track.getId()));
+        trackFile.updateIsWebpConverted(true);
+        fileRepository.saveAndFlush(trackFile);
+
+        given(fileStorageUtil.findFileAndType(trackFile.getId()))
+                .willReturn(new Pair<>(new ByteArrayResource("track".getBytes()), "image/webp"));
+
+        // when
+        ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(new String(((ByteArrayResource) response.resource()).getByteArray())).isEqualTo("track");
+    }
+
+    @Test
+    @DisplayName("[성공] 팀/분과 썸네일이 모두 없으면 시스템 기본 썸네일을 반환한다.")
+    void 시스템_기본_썸네일_조회_성공() {
+        // given
+        given(fileStorageUtil.findDefaultThumbnail())
+                .willReturn(new Pair<>(new ByteArrayResource("default".getBytes()), "image/jpeg"));
+
+        // when
+        ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(new String(((ByteArrayResource) response.resource()).getByteArray())).isEqualTo("default");
     }
 }
