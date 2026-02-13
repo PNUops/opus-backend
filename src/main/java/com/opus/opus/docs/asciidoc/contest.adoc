@@ -194,7 +194,6 @@ include::{snippets}/delete-contest-banner/http-request.adoc[]
 .HTTP Response
 include::{snippets}/delete-contest-banner/http-response.adoc[]
 
-<<<<<<< HEAD
 == 정렬 관리
 
 === `PUT`: 대회 정렬 설정 변경
@@ -291,7 +290,7 @@ include::{snippets}/update-contest-sort-custom-fail-different-size/http-response
 include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-request.adoc[]
 include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-response.adoc[]
 ====
-=======
+
 == 대회 관리
 
 === `POST`: 대회 생성
@@ -367,4 +366,3 @@ include::{snippets}/get-all-contest/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-contest/response-fields.adoc[]
->>>>>>> develop
