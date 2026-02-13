@@ -1,8 +1,14 @@
 package com.opus.opus.restdocs.docs;
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.domain.SortType.ASC;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -28,9 +34,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -495,5 +504,177 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 정렬 설정 변경은 성공한다.")
+    void 유효한_요청이면_대회의_정렬_설정_변경은_성공한다() throws Exception {
+        final ContestSortRequest request = new ContestSortRequest(ASC);
+
+        doNothing().when(contestCommandService).updateContestSort(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-sort",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("mode", "수정할 대회 정렬 모드")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 정렬 설정 조회는 성공한다.")
+    void 유효한_요청이면_대회의_정렬_설정_조회는_성공한다() throws Exception {
+        final ContestSortResponse response = new ContestSortResponse(ASC);
+        when(contestQueryService.getContestSort(any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/sort", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-sort",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        responseFields(
+                                stringFieldWithPath("currentMode", "현재 적용되어 있는 모드 정보")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 대회 수동 정렬 설정 순서 저장은 성공한다.")
+    void 유효한_요청이면_대회_수동_정렬_순서_저장은_성공한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
+        doNothing().when(contestCommandService).updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-sort-custom",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                arrayFieldWithPath("[]", "정렬 순서를 담은 팀 배열(모든 팀 다 보내주세요)"),
+                                numberFieldWithPath("[].teamId", "정렬 순서를 변경할 팀 ID"),
+                                numberFieldWithPath("[].itemOrder", "팀의 정렬 순서 (1부터 팀 개수까지)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] CUSTOM모드가 아니라면 수동 정렬 저장은 실패한다.")
+    void CUSTOM모드가_아니라면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
+        willThrow(new ContestException(ONLY_CUSTOM_MODE_CAN_CHANGE)).given(contestCommandService)
+                .updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isForbidden())
+                .andDo(document("update-contest-sort-custom-fail-mode"));
+    }
+
+    @Test
+    @DisplayName("[실패] request에 중복 teamId가 있으면 수동 정렬 저장은 실패한다.")
+    void request에_중복_teamId가_있으면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(1L, 2));
+
+        willThrow(new ContestException(DUPLICATE_TEAM_ID_IN_SORT_REQUEST)).given(contestCommandService)
+                .updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-contest-sort-custom-fail-duplicate-teamId",
+                        requestFields(
+                                arrayFieldWithPath("[]", "정렬 순서를 담은 팀 배열"),
+                                numberFieldWithPath("[].teamId", "팀 ID(중복 존재)"),
+                                numberFieldWithPath("[].itemOrder", "팀의 정렬 순서")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] request에 중복 itemOrder가 있으면 수동 정렬 저장은 실패한다.")
+    void request에_중복_itemOrder가_있으면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 1));
+
+        willThrow(new ContestException(DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST)).given(contestCommandService)
+                .updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-contest-sort-custom-fail-duplicate-itemOrder",
+                        requestFields(
+                                arrayFieldWithPath("[]", "정렬 순서를 담은 팀 배열"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                numberFieldWithPath("[].itemOrder", "팀의 정렬 순서(중복 존재)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 요청 팀 개수와 저장된 팀 개수가 다르면 수동 정렬 저장은 실패한다.")
+    void 요청_팀_개수와_저장된_팀_개수가_다르면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
+        willThrow(new ContestException(INVALID_CONTEST_SORT_CUSTOM_REQUEST)).given(contestCommandService)
+                .updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-contest-sort-custom-fail-different-size"));
+    }
+
+    @Test
+    @DisplayName("[실패] 저장된 팀 개수보다 itemOrder가 크면 수동 정렬 저장은 실패한다.")
+    void 저장된_팀_개수보다_itemOrder가_크면_수동_정렬_저장은_실패한다() throws Exception {
+        final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(1L, 1),
+                new ContestSortCustomRequest(2L, 3), new ContestSortCustomRequest(3L, 2));
+
+        willThrow(new ContestException(INVALID_ITEM_ORDER)).given(contestCommandService)
+                .updateContestSortCustom(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/sort/custom", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-contest-sort-custom-fail-over-itemOrder"));
     }
 }
