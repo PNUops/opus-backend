@@ -8,6 +8,7 @@ import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_T
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,4 +40,7 @@ public class TeamConvenience {
         }
     }
 
+    public List<Team> getTeamsOfContest(final Long contestId) {
+        return teamRepository.findAllByContestId(contestId);
+    }
 }

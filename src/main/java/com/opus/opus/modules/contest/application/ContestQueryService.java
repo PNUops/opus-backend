@@ -8,12 +8,15 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
@@ -37,6 +40,7 @@ public class ContestQueryService {
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
+    private final ContestSortConvenience contestSortConvenience;
     private final FileConvenience fileConvenience;
 
     public ImageResponse getContestBanner(final Long contestId) {
@@ -82,6 +86,13 @@ public class ContestQueryService {
     public ContestVotesLimitResponse getMaxVotesLimit(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         return ContestVotesLimitResponse.from(contest.getMaxVotesLimit());
+    }
+
+    public ContestSortResponse getContestSort(final Long contestId) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+
+        return new ContestSortResponse(contestSort.getMode());
     }
 
     private void checkImageConverted(final File findFile) {

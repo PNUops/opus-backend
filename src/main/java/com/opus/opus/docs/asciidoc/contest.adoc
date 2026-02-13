@@ -194,6 +194,103 @@ include::{snippets}/delete-contest-banner/http-request.adoc[]
 .HTTP Response
 include::{snippets}/delete-contest-banner/http-response.adoc[]
 
+== 정렬 관리
+
+=== `PUT`: 대회 정렬 설정 변경
+
+.Path Parameters
+include::{snippets}/update-contest-sort/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/update-contest-sort/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-sort/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-sort/request-fields.adoc[]
+
+=== `GET`: 대회 정렬 방식 조회
+
+.Path Parameters
+include::{snippets}/get-contest-sort/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/get-contest-sort/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-sort/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-contest-sort/response-fields.adoc[]
+
+=== `PUT`: 대회 수동 정렬 순서 저장
+
+.Path Parameters
+include::{snippets}/update-contest-sort-custom/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/update-contest-sort-custom/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-sort-custom/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-sort-custom/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-sort-custom/request-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: CUSTOM 모드가 아님
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-mode/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-mode/http-response.adoc[]
+====
+
+.❌ Case 2: request에 중복된 teamId 존재
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/http-response.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-teamId/request-fields.adoc[]
+====
+
+.❌ Case 3: request에 중복된 itemOrder 존재
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/http-response.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-duplicate-itemOrder/request-fields.adoc[]
+====
+
+.❌ Case 4: 요청 팀 개수와 저장된 팀 개수 다름
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-different-size/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-different-size/http-response.adoc[]
+====
+
+.❌ Case 5: itemOrder가 팀 개수를 넘어감
+
+[%collapsible]
+====
+include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-request.adoc[]
+include::{snippets}/update-contest-sort-custom-fail-over-itemOrder/http-response.adoc[]
+====
+
 == 대회 관리
 
 === `POST`: 대회 생성

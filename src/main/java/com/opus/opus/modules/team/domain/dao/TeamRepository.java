@@ -9,10 +9,12 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
-    boolean existsByContestId(Long contestId);
+
+    boolean existsByContestId(final Long contestId);
 
     boolean existsByTrackId(final Long trackId);
 
+    List<Team> findAllByContestId(final Long contestId);
     @Query("SELECT new com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse(" +
             "team.id, team.teamName, team.projectName, track.trackName, COUNT(vote.id)) " +
             "FROM Team team " +
