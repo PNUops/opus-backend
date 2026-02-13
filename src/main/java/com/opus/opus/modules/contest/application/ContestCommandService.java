@@ -161,11 +161,11 @@ public class ContestCommandService {
         final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contest.getId());
         checkCustomSort(contestSort);
         validateDuplicateTeamIds(requests);
+        validateDuplicateItemOrders(requests);
 
         final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
         validateRequestSizeMatchesTeams(requests, teams);
         validateItemOrderRange(requests, teams.size());
-        validateDuplicateItemOrders(requests);
 
         applyCustomSortToTeams(requests, teams);
     }
