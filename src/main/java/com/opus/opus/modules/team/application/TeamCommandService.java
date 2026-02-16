@@ -17,6 +17,7 @@ import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LI
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -70,8 +71,9 @@ public class TeamCommandService {
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        deleteIfExists(teamId, THUMBNAIL);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
     public void deleteThumbnailImage(final Long teamId) {
@@ -81,8 +83,9 @@ public class TeamCommandService {
 
     public void savePosterImage(final Long teamId, final MultipartFile image) {
         teamConvenience.validateExistTeam(teamId);
-        deleteIfExists(teamId, POSTER);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
     public void deletePosterImage(final Long teamId) {

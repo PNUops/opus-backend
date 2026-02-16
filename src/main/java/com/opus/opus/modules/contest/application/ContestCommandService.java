@@ -24,6 +24,7 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,11 +50,12 @@ public class ContestCommandService {
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file -> {
-            checkWebpConverted(file);
-            fileStorageUtil.deleteFile(file.getId());
-        });
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER);
+        existingFile.ifPresent(this::checkWebpConverted);
+
         fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
+
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
     public void deleteBannerImage(final Long contestId) {
