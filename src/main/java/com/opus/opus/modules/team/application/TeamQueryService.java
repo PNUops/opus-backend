@@ -52,21 +52,25 @@ public class TeamQueryService {
     public ImageResponse getThumbnailImage(final Long teamId) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
 
-        // 1. 팀 썸네일 조회
-        Optional<File> teamThumbnail = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL);
-        if (teamThumbnail.isPresent()) {
-            return getImageResponse(teamThumbnail.get());
-        }
+        return getTeamThumbnail(teamId)
+                .or(() -> getTrackThumbnail(team.getTrackId()))
+                .orElseGet(this::getDefaultThumbnailResponse);
+    }
 
-        // 2. 분과(Track) 기본 썸네일 조회
-        if (team.getTrackId() != null) {
-            Optional<File> trackThumbnail = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(team.getTrackId(), TRACK, THUMBNAIL);
-            if (trackThumbnail.isPresent()) {
-                return getImageResponse(trackThumbnail.get());
-            }
-        }
+    private Optional<ImageResponse> getTeamThumbnail(final Long teamId) {
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
 
-        // 3. 기본 이미지 반환
+    private Optional<ImageResponse> getTrackThumbnail(final Long trackId) {
+        if (trackId == null) {
+            return Optional.empty();
+        }
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
+
+    private ImageResponse getDefaultThumbnailResponse() {
         final Pair<Resource, String> defaultResult = fileStorageUtil.findDefaultThumbnail();
         return new ImageResponse(defaultResult.a, defaultResult.b);
     }
