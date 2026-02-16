@@ -1,7 +1,5 @@
 package com.opus.opus.team.application;
 
-import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,12 +8,13 @@ import static org.mockito.BDDMockito.given;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
-import com.opus.opus.team.FileFixture;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -28,10 +27,10 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.team.FileFixture;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,16 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
-import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
-import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestTrack;
-import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.contest.ContestFixture;
-
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class TeamQueryServiceTest extends IntegrationTest {
