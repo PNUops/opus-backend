@@ -33,10 +33,8 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private ContestTrackRepository contestTrackRepository;
-
     @Autowired
     private ContestRepository contestRepository;
-
     @Autowired
     private FileRepository fileRepository;
 
