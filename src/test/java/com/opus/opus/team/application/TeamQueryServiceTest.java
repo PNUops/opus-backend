@@ -214,4 +214,26 @@ public class TeamQueryServiceTest extends IntegrationTest {
         assertThat(response.totalVoters()).isEqualTo(0L);
         assertThat(response.averageVotesPerVoter()).isEqualTo(0.0);
     }
+
+    @Test
+    @DisplayName("[성공] 투표 수가 같은 팀은 팀 ID 오름차순으로 정렬된다.")
+    void 투표_수가_같은_팀은_팀_ID_오름차순으로_정렬된다() {
+        final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true)); // team1: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 102L, true)); // team2: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 103L, true)); // team3: 1표
+
+        // 투표 수가 모두 1표로 동일 → team ID 오름차순 정렬 확인
+        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        List<ContestRankingResponse> sameVoteResponses = responses.stream()
+                .filter(r -> r.voteCount() == 1L)
+                .toList();
+
+        for (int i = 0; i < sameVoteResponses.size() - 1; i++) {
+            assertThat(sameVoteResponses.get(i).teamId())
+                    .isLessThan(sameVoteResponses.get(i + 1).teamId());
+        }
+    }
 }
