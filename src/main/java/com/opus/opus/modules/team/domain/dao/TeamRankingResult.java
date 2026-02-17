@@ -1,7 +1,6 @@
-package com.opus.opus.modules.contest.application.dto.response;
+package com.opus.opus.modules.team.domain.dao;
 
-public record ContestRankingResponse(
-        Integer rank,
+public record TeamRankingResult(
         Long teamId,
         String teamName,
         String projectName,

@@ -19,6 +19,7 @@ import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
+import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class TeamQueryService {
 
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final List<ContestRankingResponse> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
+        final List<TeamRankingResult> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
         return applyDenseRanking(votesPerTeam);
     }
 
@@ -100,11 +101,11 @@ public class TeamQueryService {
         }
     }
 
-    private List<ContestRankingResponse> applyDenseRanking(List<ContestRankingResponse> votesPerTeam) {
+    private List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
         int curRank = 0;     // 현재 순위
         long prevCount = -1; // 이전 팀 투표 수
-        for (ContestRankingResponse result : votesPerTeam) {
+        for (TeamRankingResult result : votesPerTeam) {
             // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
             if (prevCount != result.voteCount()) curRank++;
             prevCount = result.voteCount();
