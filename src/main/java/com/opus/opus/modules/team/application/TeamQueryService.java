@@ -67,7 +67,7 @@ public class TeamQueryService {
         return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
     }
 
-    public List<ContestSubmissionResponse> getTeamSubmissions(Long contestId) {
+    public List<ContestSubmissionResponse> getTeamSubmissions(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final List<TeamSubmissionResult> results = teamRepository.findTeamSubmissionsByContestId(contestId);
         return results.stream()

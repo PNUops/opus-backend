@@ -48,7 +48,7 @@ public class TeamFixture {
                 .contestId(contestId)
                 .teamName("제출완료팀")
                 .projectName("제출완료 프로젝트")
-                .itemOrder(0)
+                .itemOrder(1)
                 .build();
         team.submit();
         return team;

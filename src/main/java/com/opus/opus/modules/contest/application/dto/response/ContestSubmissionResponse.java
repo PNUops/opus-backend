@@ -7,7 +7,7 @@ public record ContestSubmissionResponse(
         String teamName,
         String projectName,
         String trackName,
-        Boolean isSubmitted
+        boolean isSubmitted
 ) {
     public static ContestSubmissionResponse from(TeamSubmissionResult result) {
         return new ContestSubmissionResponse(
