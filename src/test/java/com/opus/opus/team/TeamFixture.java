@@ -46,8 +46,9 @@ public class TeamFixture {
     public static Team createSubmittedTeamWithContestId(final Long contestId) {
         Team team = Team.builder()
                 .contestId(contestId)
-                .teamName("제출완료된 팀")
-                .projectName("제출완료된 프로젝트")
+                .teamName("제출완료팀")
+                .projectName("제출완료 프로젝트")
+                .itemOrder(0)
                 .build();
         team.submit();
         return team;

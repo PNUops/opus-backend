@@ -67,17 +67,11 @@ public class TeamQueryService {
         return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
     }
 
-    public List<ContestSubmissionResponse> getTeamSubmissions(final Long contestId) {
+    public List<ContestSubmissionResponse> getTeamSubmissions(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final List<TeamSubmissionResult> submissionResults = teamRepository.findTeamSubmissionsByContestId(contestId);
-        return submissionResults.stream()
-                .map(submission -> new ContestSubmissionResponse(
-                        submission.teamId(),
-                        submission.teamName(),
-                        submission.projectName(),
-                        submission.trackName(),
-                        submission.isSubmitted()
-                ))
+        final List<TeamSubmissionResult> results = teamRepository.findTeamSubmissionsByContestId(contestId);
+        return results.stream()
+                .map(ContestSubmissionResponse::from)
                 .toList();
     }
 
