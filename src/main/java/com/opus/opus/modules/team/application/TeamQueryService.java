@@ -101,7 +101,7 @@ public class TeamQueryService {
         }
     }
 
-    private List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
+    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
         int curRank = 0;     // 현재 순위
         long prevCount = -1; // 이전 팀 투표 수
