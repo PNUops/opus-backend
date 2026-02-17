@@ -14,15 +14,10 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             "WHERE tv.memberId = :memberId AND tv.isVoted = true AND t.contestId = :contestId")
     long countMemberVotesInContest(Long memberId, Long contestId);
 
-    @Query("SELECT COUNT(vote) " +
+    @Query("SELECT new com.opus.opus.modules.team.domain.dao.VoteStatisticsResult(" +
+            "COUNT(vote), COUNT(DISTINCT vote.memberId)) " +
             "FROM TeamVote vote " +
             "JOIN vote.team team " +
             "WHERE team.contestId = :contestId AND vote.isVoted = true")
-    long countTotalVotesByContest(Long contestId);
-
-    @Query("SELECT COUNT(DISTINCT vote.memberId) " +
-            "FROM TeamVote vote " +
-            "JOIN vote.team team " +
-            "WHERE team.contestId = :contestId AND vote.isVoted = true")
-    long countTotalVotersByContest(Long contestId);
+    VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
 }

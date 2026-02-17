@@ -22,6 +22,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestRankingResp
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -78,13 +79,12 @@ public class TeamQueryService {
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final long totalVotesCount = teamVoteRepository.countTotalVotesByContest(contestId);
-        final long totalVotersCount = teamVoteRepository.countTotalVotersByContest(contestId);
-        final double average = totalVotersCount > 0
-                ? Math.round((double) totalVotesCount / totalVotersCount * 10) / 10.0
+        final VoteStatisticsResult result = teamVoteRepository.countVoteStatisticsByContest(contestId);
+        final double average = result.totalVoters() > 0
+                ? Math.round((double) result.totalVotes() / result.totalVoters() * 10) / 10.0
                 : 0.0;
 
-        return new ContestVoteStatisticsResponse(totalVotesCount, totalVotersCount, average);
+        return new ContestVoteStatisticsResponse(result.totalVotes(), result.totalVoters(), average);
     }
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
