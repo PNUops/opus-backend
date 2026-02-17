@@ -394,6 +394,8 @@ include::{snippets}/get-team-ranking/response-fields.adoc[]
 
 ====
 
+include::{snippets}/get-team-ranking-fail-not-found/path-parameters.adoc[]
+
 include::{snippets}/get-team-ranking-fail-not-found/http-request.adoc[]
 
 include::{snippets}/get-team-ranking-fail-not-found/http-response.adoc[]
@@ -426,6 +428,8 @@ include::{snippets}/get-vote-statistics/response-fields.adoc[]
 [%collapsible]
 
 ====
+
+include::{snippets}/get-vote-statistics-fail-not-found/path-parameters.adoc[]
 
 include::{snippets}/get-vote-statistics-fail-not-found/http-request.adoc[]
 
