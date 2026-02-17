@@ -49,6 +49,7 @@ public class TeamFixture {
                 .teamName("제출완료팀")
                 .projectName("제출완료 프로젝트")
                 .itemOrder(1)
+                .teamMembers(new ArrayList<>())
                 .build();
         team.submit();
         return team;
