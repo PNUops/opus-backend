@@ -1,13 +1,9 @@
 package com.opus.opus.modules.contest.application.convenience;
 
-import static com.opus.opus.modules.contest.domain.ContestTeamTemplateFieldType.HIDDEN;
-import static com.opus.opus.modules.contest.domain.ContestTeamTemplateFieldType.OPTIONAL;
-import static com.opus.opus.modules.contest.domain.ContestTeamTemplateFieldType.REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
 
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTeamTemplate;
-import com.opus.opus.modules.contest.domain.ContestTeamTemplateFieldType;
 import com.opus.opus.modules.contest.domain.dao.ContestTeamTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
 import java.util.HashMap;
@@ -29,72 +25,71 @@ public class ContestTeamTemplateConvenience {
     }
 
     public void createTemplate(final Contest contest, final String categoryName) {
-        final Map<String, ContestTeamTemplateFieldType> settings = getTemplateDefaultSettings(categoryName);
+        final Map<String, Boolean> settings = getTemplateDefaultSettings(categoryName);
 
         ContestTeamTemplate template = ContestTeamTemplate.builder()
                 .contest(contest)
-                .division(settings.get("division"))
-                .projectName(settings.get("projectName"))
-                .teamName(settings.get("teamName"))
-                .leader(settings.get("leader"))
-                .teamMembers(settings.get("teamMembers"))
-                .professor(settings.get("professor"))
-                .githubPath(settings.get("githubPath"))
-                .youtubePath(settings.get("youtubePath"))
-                .productionPath(settings.get("productionPath"))
-                .overview(settings.get("overview"))
-                .poster(settings.get("poster"))
-                .images(settings.get("images"))
+                .divisionRequired(settings.get("division"))
+                .projectNameRequired(settings.get("projectName"))
+                .teamNameRequired(settings.get("teamName"))
+                .leaderRequired(settings.get("leader"))
+                .teamMembersRequired(settings.get("teamMembers"))
+                .professorRequired(settings.get("professor"))
+                .githubPathRequired(settings.get("githubPath"))
+                .youtubePathRequired(settings.get("youtubePath"))
+                .productionPathRequired(settings.get("productionPath"))
+                .overviewRequired(settings.get("overview"))
+                .posterRequired(settings.get("poster"))
+                .imagesRequired(settings.get("images"))
                 .build();
 
         contestTeamTemplateRepository.save(template);
     }
 
-    private Map<String, ContestTeamTemplateFieldType> getTemplateDefaultSettings(final String categoryName) {
-
-        Map<String, ContestTeamTemplateFieldType> map = new HashMap<>();
+    private Map<String, Boolean> getTemplateDefaultSettings(final String categoryName) {
+        Map<String, Boolean> map = new HashMap<>();
 
         if (categoryName.contains("창의융합")) {
-            map.put("division", REQUIRED);
-            map.put("projectName", REQUIRED);
-            map.put("teamName", REQUIRED);
-            map.put("leader", REQUIRED);
-            map.put("teamMembers", REQUIRED);
-            map.put("professor", HIDDEN);
-            map.put("githubPath", REQUIRED);
-            map.put("youtubePath", OPTIONAL);
-            map.put("productionPath", OPTIONAL);
-            map.put("overview", REQUIRED);
-            map.put("poster", REQUIRED);
-            map.put("images", REQUIRED);
+            map.put("division", true);
+            map.put("projectName", true);
+            map.put("teamName", true);
+            map.put("leader", true);
+            map.put("teamMembers", true);
+            map.put("professor", false);
+            map.put("githubPath", true);
+            map.put("youtubePath", false);
+            map.put("productionPath", false);
+            map.put("overview", true);
+            map.put("poster", true);
+            map.put("images", true);
 
         } else if (categoryName.contains("캡스톤")) {
-            map.put("division", REQUIRED);
-            map.put("projectName", REQUIRED);
-            map.put("teamName", REQUIRED);
-            map.put("leader", REQUIRED);
-            map.put("teamMembers", REQUIRED);
-            map.put("professor", REQUIRED);
-            map.put("githubPath", REQUIRED);
-            map.put("youtubePath", REQUIRED);
-            map.put("productionPath", OPTIONAL);
-            map.put("overview", REQUIRED);
-            map.put("poster", OPTIONAL);
-            map.put("images", REQUIRED);
+            map.put("division", true);
+            map.put("projectName", true);
+            map.put("teamName", true);
+            map.put("leader", true);
+            map.put("teamMembers", true);
+            map.put("professor", true);
+            map.put("githubPath", true);
+            map.put("youtubePath", true);
+            map.put("productionPath", false);
+            map.put("overview", true);
+            map.put("poster", false);
+            map.put("images", true);
 
         } else {
-            map.put("division", OPTIONAL);
-            map.put("projectName", OPTIONAL);
-            map.put("teamName", OPTIONAL);
-            map.put("leader", OPTIONAL);
-            map.put("teamMembers", OPTIONAL);
-            map.put("professor", OPTIONAL);
-            map.put("githubPath", OPTIONAL);
-            map.put("youtubePath", OPTIONAL);
-            map.put("productionPath", OPTIONAL);
-            map.put("overview", OPTIONAL);
-            map.put("poster", OPTIONAL);
-            map.put("images", OPTIONAL);
+            map.put("division", false);
+            map.put("projectName", false);
+            map.put("teamName", false);
+            map.put("leader", false);
+            map.put("teamMembers", false);
+            map.put("professor", false);
+            map.put("githubPath", false);
+            map.put("youtubePath", false);
+            map.put("productionPath", false);
+            map.put("overview", false);
+            map.put("poster", false);
+            map.put("images", false);
         }
         return map;
     }

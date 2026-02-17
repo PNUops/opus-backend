@@ -23,18 +23,18 @@ public class ContestTeamTemplateCommandService {
                 contestId);
 
         template.updateTemplate(
-                request.division(),
-                request.projectName(),
-                request.teamName(),
-                request.leader(),
-                request.teamMembers(),
-                request.professor(),
-                request.githubPath(),
-                request.youtubePath(),
-                request.productionPath(),
-                request.overview(),
-                request.poster(),
-                request.images()
+                request.divisionRequired(),
+                request.projectNameRequired(),
+                request.teamNameRequired(),
+                request.leaderRequired(),
+                request.teamMembersRequired(),
+                request.professorRequired(),
+                request.githubPathRequired(),
+                request.youtubePathRequired(),
+                request.productionPathRequired(),
+                request.overviewRequired(),
+                request.posterRequired(),
+                request.imagesRequired()
         );
     }
 }

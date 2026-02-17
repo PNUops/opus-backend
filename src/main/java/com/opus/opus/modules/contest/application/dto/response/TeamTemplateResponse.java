@@ -1,38 +1,35 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
 import com.opus.opus.modules.contest.domain.ContestTeamTemplate;
-import com.opus.opus.modules.contest.domain.ContestTeamTemplateFieldType;
 
 public record TeamTemplateResponse(
-        Long contestId,
-        ContestTeamTemplateFieldType division,
-        ContestTeamTemplateFieldType projectName,
-        ContestTeamTemplateFieldType teamName,
-        ContestTeamTemplateFieldType leader,
-        ContestTeamTemplateFieldType teamMembers,
-        ContestTeamTemplateFieldType professor,
-        ContestTeamTemplateFieldType githubPath,
-        ContestTeamTemplateFieldType youtubePath,
-        ContestTeamTemplateFieldType productionPath,
-        ContestTeamTemplateFieldType overview,
-        ContestTeamTemplateFieldType poster,
-        ContestTeamTemplateFieldType images
+        Boolean divisionRequired,
+        Boolean projectNameRequired,
+        Boolean teamNameRequired,
+        Boolean leaderRequired,
+        Boolean teamMembersRequired,
+        Boolean professorRequired,
+        Boolean githubPathRequired,
+        Boolean youtubePathRequired,
+        Boolean productionPathRequired,
+        Boolean overviewRequired,
+        Boolean posterRequired,
+        Boolean imagesRequired
 ) {
     public static TeamTemplateResponse from(final ContestTeamTemplate template) {
         return new TeamTemplateResponse(
-                template.getContest().getId(),
-                template.getDivision(),
-                template.getProjectName(),
-                template.getTeamName(),
-                template.getLeader(),
-                template.getTeamMembers(),
-                template.getProfessor(),
-                template.getGithubPath(),
-                template.getYoutubePath(),
-                template.getProductionPath(),
-                template.getOverview(),
-                template.getPoster(),
-                template.getImages()
+                template.getDivisionRequired(),
+                template.getProjectNameRequired(),
+                template.getTeamNameRequired(),
+                template.getLeaderRequired(),
+                template.getTeamMembersRequired(),
+                template.getProfessorRequired(),
+                template.getGithubPathRequired(),
+                template.getYoutubePathRequired(),
+                template.getProductionPathRequired(),
+                template.getOverviewRequired(),
+                template.getPosterRequired(),
+                template.getImagesRequired()
         );
     }
 }

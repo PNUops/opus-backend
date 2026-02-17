@@ -5,8 +5,6 @@ import static jakarta.persistence.FetchType.LAZY;
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,53 +32,41 @@ public class ContestTeamTemplate extends BaseEntity {
     @JoinColumn(name = "contest_id", nullable = false, unique = true)
     private Contest contest;
 
-    @Column(name = "division", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType division;
+    @Column(name = "division_required", nullable = false)
+    private Boolean divisionRequired;
 
-    @Column(name = "project_name", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType projectName;
+    @Column(name = "project_name_required", nullable = false)
+    private Boolean projectNameRequired;
 
-    @Column(name = "team_name", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType teamName;
+    @Column(name = "team_name_required", nullable = false)
+    private Boolean teamNameRequired;
 
-    @Column(name = "leader", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType leader;
+    @Column(name = "leader_required", nullable = false)
+    private Boolean leaderRequired;
 
-    @Column(name = "team_members", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType teamMembers;
+    @Column(name = "team_members_required", nullable = false)
+    private Boolean teamMembersRequired;
 
-    @Column(name = "professor", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType professor;
+    @Column(name = "professor_required", nullable = false)
+    private Boolean professorRequired;
 
-    @Column(name = "github_path", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType githubPath;
+    @Column(name = "github_path_required", nullable = false)
+    private Boolean githubPathRequired;
 
-    @Column(name = "youtube_path", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType youtubePath;
+    @Column(name = "youtube_path_required", nullable = false)
+    private Boolean youtubePathRequired;
 
-    @Column(name = "production_path", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType productionPath;
+    @Column(name = "production_path_required", nullable = false)
+    private Boolean productionPathRequired;
 
-    @Column(name = "overview", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType overview;
+    @Column(name = "overview_required", nullable = false)
+    private Boolean overviewRequired;
 
-    @Column(name = "poster", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType poster;
+    @Column(name = "poster_required", nullable = false)
+    private Boolean posterRequired;
 
-    @Column(name = "images", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ContestTeamTemplateFieldType images;
+    @Column(name = "images_required", nullable = false)
+    private Boolean imagesRequired;
 
     @Column(nullable = false)
     private Boolean isDeleted;
@@ -88,58 +74,58 @@ public class ContestTeamTemplate extends BaseEntity {
     @Builder
     private ContestTeamTemplate(
             final Contest contest,
-            final ContestTeamTemplateFieldType division,
-            final ContestTeamTemplateFieldType projectName,
-            final ContestTeamTemplateFieldType teamName,
-            final ContestTeamTemplateFieldType leader,
-            final ContestTeamTemplateFieldType teamMembers,
-            final ContestTeamTemplateFieldType professor,
-            final ContestTeamTemplateFieldType githubPath,
-            final ContestTeamTemplateFieldType youtubePath,
-            final ContestTeamTemplateFieldType productionPath,
-            final ContestTeamTemplateFieldType overview,
-            final ContestTeamTemplateFieldType poster,
-            final ContestTeamTemplateFieldType images) {
+            final Boolean divisionRequired,
+            final Boolean projectNameRequired,
+            final Boolean teamNameRequired,
+            final Boolean leaderRequired,
+            final Boolean teamMembersRequired,
+            final Boolean professorRequired,
+            final Boolean githubPathRequired,
+            final Boolean youtubePathRequired,
+            final Boolean productionPathRequired,
+            final Boolean overviewRequired,
+            final Boolean posterRequired,
+            final Boolean imagesRequired) {
         this.contest = contest;
-        this.division = division;
-        this.projectName = projectName;
-        this.teamName = teamName;
-        this.leader = leader;
-        this.teamMembers = teamMembers;
-        this.professor = professor;
-        this.githubPath = githubPath;
-        this.youtubePath = youtubePath;
-        this.productionPath = productionPath;
-        this.overview = overview;
-        this.poster = poster;
-        this.images = images;
+        this.divisionRequired = divisionRequired;
+        this.projectNameRequired = projectNameRequired;
+        this.teamNameRequired = teamNameRequired;
+        this.leaderRequired = leaderRequired;
+        this.teamMembersRequired = teamMembersRequired;
+        this.professorRequired = professorRequired;
+        this.githubPathRequired = githubPathRequired;
+        this.youtubePathRequired = youtubePathRequired;
+        this.productionPathRequired = productionPathRequired;
+        this.overviewRequired = overviewRequired;
+        this.posterRequired = posterRequired;
+        this.imagesRequired = imagesRequired;
         this.isDeleted = false;
     }
 
     public void updateTemplate(
-            final ContestTeamTemplateFieldType division,
-            final ContestTeamTemplateFieldType projectName,
-            final ContestTeamTemplateFieldType teamName,
-            final ContestTeamTemplateFieldType leader,
-            final ContestTeamTemplateFieldType teamMembers,
-            final ContestTeamTemplateFieldType professor,
-            final ContestTeamTemplateFieldType githubPath,
-            final ContestTeamTemplateFieldType youtubePath,
-            final ContestTeamTemplateFieldType productionPath,
-            final ContestTeamTemplateFieldType overview,
-            final ContestTeamTemplateFieldType poster,
-            final ContestTeamTemplateFieldType images) {
-        this.division = division;
-        this.projectName = projectName;
-        this.teamName = teamName;
-        this.leader = leader;
-        this.teamMembers = teamMembers;
-        this.professor = professor;
-        this.githubPath = githubPath;
-        this.youtubePath = youtubePath;
-        this.productionPath = productionPath;
-        this.overview = overview;
-        this.poster = poster;
-        this.images = images;
+            final Boolean divisionRequired,
+            final Boolean projectNameRequired,
+            final Boolean teamNameRequired,
+            final Boolean leaderRequired,
+            final Boolean teamMembersRequired,
+            final Boolean professorRequired,
+            final Boolean githubPathRequired,
+            final Boolean youtubePathRequired,
+            final Boolean productionPathRequired,
+            final Boolean overviewRequired,
+            final Boolean posterRequired,
+            final Boolean imagesRequired) {
+        this.divisionRequired = divisionRequired;
+        this.projectNameRequired = projectNameRequired;
+        this.teamNameRequired = teamNameRequired;
+        this.leaderRequired = leaderRequired;
+        this.teamMembersRequired = teamMembersRequired;
+        this.professorRequired = professorRequired;
+        this.githubPathRequired = githubPathRequired;
+        this.youtubePathRequired = youtubePathRequired;
+        this.productionPathRequired = productionPathRequired;
+        this.overviewRequired = overviewRequired;
+        this.posterRequired = posterRequired;
+        this.imagesRequired = imagesRequired;
     }
 }
