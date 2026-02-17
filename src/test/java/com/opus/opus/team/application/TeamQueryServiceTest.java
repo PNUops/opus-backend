@@ -1,5 +1,6 @@
 package com.opus.opus.team.application;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
@@ -12,8 +13,10 @@ import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -29,7 +32,7 @@ import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 public class TeamQueryServiceTest extends IntegrationTest {
 
@@ -151,5 +153,41 @@ public class TeamQueryServiceTest extends IntegrationTest {
         MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 팀별 프로젝트 등록 현황을 조회할 수 있다.")
+    void 대회의_팀별_프로젝트_등록_현황을_조회할_수_있다() {
+        final Team submittedTeam = teamRepository.save(TeamFixture.createSubmittedTeamWithContestId(contest.getId()));
+
+        final List<ContestSubmissionResponse> responseList = teamQueryService.getTeamSubmissions(contest.getId());
+        final ContestSubmissionResponse firstTeam = responseList.get(0);
+        final ContestSubmissionResponse secondTeam = responseList.get(1);
+
+        assertThat(responseList).hasSize(2);
+        assertThat(firstTeam.teamId()).isEqualTo(team.getId()); // setUp에서 생성한 팀
+        assertThat(firstTeam.isSubmitted()).isFalse();
+        assertThat(secondTeam.teamId()).isEqualTo(submittedTeam.getId());
+        assertThat(secondTeam.isSubmitted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[성공] 팀이 없는 대회는 빈 리스트를 반환한다.")
+    void 팀이_없는_대회는_빈_리스트를_반환한다() {
+        final Contest emptyContest = contestRepository.save(ContestFixture.createContest());
+
+        final List<ContestSubmissionResponse> responseList = teamQueryService.getTeamSubmissions(emptyContest.getId());
+
+        assertThat(responseList).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 등록 현황 조회 시 예외가 발생한다.")
+    void 존재하지_않는_대회의_등록_현황_조회_시_예외가_발생한다() {
+        final long invalidContestId = 999L;
+
+        assertThatThrownBy(() -> teamQueryService.getTeamSubmissions(invalidContestId))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
 }

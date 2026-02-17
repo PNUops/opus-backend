@@ -42,4 +42,14 @@ public class TeamFixture {
                 .teamMembers(new ArrayList<>())
                 .build();
     }
+
+    public static Team createSubmittedTeamWithContestId(final Long contestId) {
+        Team team = Team.builder()
+                .contestId(contestId)
+                .teamName("제출완료된 팀")
+                .projectName("제출완료된 프로젝트")
+                .build();
+        team.submit();
+        return team;
+    }
 }

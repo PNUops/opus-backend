@@ -1,7 +1,6 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
@@ -9,6 +8,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
@@ -18,7 +18,10 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.domain.dao.TeamSubmissionResult;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -36,6 +39,7 @@ public class TeamQueryService {
 
     private final FileRepository fileRepository;
     private final TeamVoteRepository teamVoteRepository;
+    private final TeamRepository teamRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -61,6 +65,20 @@ public class TeamQueryService {
         final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
         final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
         return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
+    }
+
+    public List<ContestSubmissionResponse> getTeamSubmissions(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+        final List<TeamSubmissionResult> submissionResults = teamRepository.findTeamSubmissionsByContestId(contestId);
+        return submissionResults.stream()
+                .map(submission -> new ContestSubmissionResponse(
+                        submission.teamId(),
+                        submission.teamName(),
+                        submission.projectName(),
+                        submission.trackName(),
+                        submission.isSubmitted()
+                ))
+                .toList();
     }
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {

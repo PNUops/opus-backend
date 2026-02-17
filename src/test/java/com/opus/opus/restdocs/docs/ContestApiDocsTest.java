@@ -40,6 +40,7 @@ import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRe
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -676,5 +677,55 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .content(objectMapper.writeValueAsString(requests)))
                 .andExpect(status().isBadRequest())
                 .andDo(document("update-contest-sort-custom-fail-over-itemOrder"));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 팀별 프로젝트 등록 현황을 조회할 수 있다.")
+    void 대회의_팀별_프로젝트_등록_현황을_조회할_수_있다() throws Exception {
+        final List<ContestSubmissionResponse> responses = List.of(
+                new ContestSubmissionResponse(1L, "딥러닝 드리머즈", "AI 음성 번역기", "소프트웨어/인공지능", true),
+                new ContestSubmissionResponse(2L, "패킷 마스터즈", "실시간 트래픽 분석기", "네트워크/통신", true),
+                new ContestSubmissionResponse(3L, "시큐리티 가디언즈", "IoT 취약점 스캐너", "하드웨어/보안", false)
+        );
+
+        when(teamQueryService.getTeamSubmissions(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-submissions",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀별 프로젝트 등록 현황 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙/분과명"),
+                                booleanFieldWithPath("[].isSubmitted", "프로젝트 제출 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 프로젝트 등록 현황 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_프로젝트_등록_현황_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(teamQueryService)
+                .getTeamSubmissions(any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-submissions-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
     }
 }
