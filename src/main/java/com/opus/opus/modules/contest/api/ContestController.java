@@ -13,6 +13,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResp
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -171,5 +172,11 @@ public class ContestController {
                                                                       @LoginMember Member member) {
         MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/vote-log")
+    public ResponseEntity<List<ContestVoteLogResponse>> getContestVoteLog(@PathVariable Long contestId) {
+        return ResponseEntity.ok(contestQueryService.getContestVoteLog(contestId));
     }
 }

@@ -6,13 +6,16 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY
 import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
+import static java.util.stream.Collectors.toMap;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
-import java.util.List;
 import java.security.SecureRandom;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -108,5 +111,14 @@ public class MemberConvenience {
         }
 
         return passwordEncoder.encode(password.toString());
+    }
+
+    public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {
+        return memberRepository.findAllById(memberIds)
+                .stream()
+                .collect(toMap(
+                        Member::getId,
+                        Function.identity()
+                ));
     }
 }

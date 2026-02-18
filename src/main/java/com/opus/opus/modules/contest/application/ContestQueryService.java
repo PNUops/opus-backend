@@ -12,8 +12,9 @@ import com.opus.opus.modules.contest.application.convenience.ContestSortConvenie
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
@@ -21,8 +22,15 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -41,6 +49,9 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final TeamConvenience teamConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
+    private final MemberConvenience memberConvenience;
     private final FileConvenience fileConvenience;
 
     public ImageResponse getContestBanner(final Long contestId) {
@@ -93,6 +104,43 @@ public class ContestQueryService {
         final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
 
         return new ContestSortResponse(contestSort.getMode());
+    }
+
+    public List<ContestVoteLogResponse> getContestVoteLog(final Long contestId) {
+        contestConvenience.validateExistContest(contestId);
+
+        final List<TeamVote> votes = getContestVotes(contestId);
+        final Map<Long, Member> memberMap = getMemberMap(votes);
+
+        return votes.stream()
+                .map(vote -> {
+                    final Member member = memberMap.get(vote.getMemberId());
+                    return new ContestVoteLogResponse(
+                            member.getName(),
+                            member.getEmail(),
+                            vote.getTeam().getTeamName(),
+                            vote.getCreatedAt()
+                    );
+                })
+                .toList();
+    }
+
+    private List<TeamVote> getContestVotes(final Long contestId) {
+        final List<Long> teamIds = teamConvenience.getTeamsOfContest(contestId)
+                .stream()
+                .map(Team::getId)
+                .toList();
+
+        return teamVoteConvenience.getAllTeamVoteDesc(teamIds);
+    }
+
+    private Map<Long, Member> getMemberMap(final List<TeamVote> votes) {
+        return memberConvenience.getMembersByIds(
+                votes.stream()
+                        .map(TeamVote::getMemberId)
+                        .distinct()
+                        .toList()
+        );
     }
 
     private void checkImageConverted(final File findFile) {
