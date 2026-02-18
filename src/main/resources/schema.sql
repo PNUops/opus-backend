@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest_track`;
+DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `member_roles`;
@@ -14,7 +15,6 @@ DROP TABLE IF EXISTS `team_contest_award`;
 DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
-DROP TABLE IF EXISTS `team_sort`;
 DROP TABLE IF EXISTS `team_vote`;
 
 CREATE TABLE `contest` (
@@ -59,6 +59,16 @@ CREATE TABLE `contest_track` (
   `track_name` varchar(255) NOT NULL,
   `contest_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_sort` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `mode` enum('ASC','CUSTOM','RANDOM') NOT NULL,
+  `contest_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_id` (`contest_id`)
 );
 
 CREATE TABLE `file` (
@@ -170,15 +180,6 @@ CREATE TABLE `team_member_roles` (
   `team_member_id` bigint NOT NULL,
   `role` enum('ROLE_팀원','ROLE_팀장') NOT NULL,
   PRIMARY KEY (`team_member_id`,`role`)
-);
-
-CREATE TABLE `team_sort` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `mode` enum('ASC','CUSTOM','RANDOM') NOT NULL,
-  `team_id` bigint NOT NULL,
-  PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `team_vote` (

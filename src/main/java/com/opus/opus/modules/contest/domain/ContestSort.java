@@ -1,6 +1,6 @@
-package com.opus.opus.modules.team.domain;
+package com.opus.opus.modules.contest.domain;
 
-import static com.opus.opus.modules.team.domain.SortType.RANDOM;
+import static com.opus.opus.modules.contest.domain.SortType.RANDOM;
 import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamSort extends BaseEntity {
+public class ContestSort extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,12 +32,16 @@ public class TeamSort extends BaseEntity {
     private SortType mode;
 
     @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
+    @JoinColumn(name = "contest_id", nullable = false, unique = true)
+    private Contest contest;
 
     @Builder
-    private TeamSort(final Team team) {
+    private ContestSort(final Contest contest) {
         this.mode = RANDOM;
-        this.team = team;
+        this.contest = contest;
+    }
+
+    public void updateMode(final SortType mode) {
+        this.mode = mode;
     }
 }
