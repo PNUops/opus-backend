@@ -366,3 +366,22 @@ include::{snippets}/get-all-contest/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-contest/response-fields.adoc[]
+
+== 투표 로그 관리
+
+=== `GET`: 투표 로그 조회
+
+.HTTP Request Headers
+include::{snippets}/get-contest-vote-log/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-contest-vote-log/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-vote-log/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-vote-log/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-contest-vote-log/response-fields.adoc[]
