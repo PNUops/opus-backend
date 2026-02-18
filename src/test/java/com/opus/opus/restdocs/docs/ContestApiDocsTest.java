@@ -40,6 +40,7 @@ import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRe
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -676,5 +677,34 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .content(objectMapper.writeValueAsString(requests)))
                 .andExpect(status().isBadRequest())
                 .andDo(document("update-contest-sort-custom-fail-over-itemOrder"));
+    }
+
+    @Test
+    @DisplayName("[성공] 정상적인 요청이면 투표_로그가_최신순으로_조회된다.")
+    void 정상적인_요청이면_투표_로그가_최신순으로_조회된다() throws Exception {
+        final List<ContestVoteLogResponse> responses = List.of(
+                new ContestVoteLogResponse("이옵스", "lee@pusan.ac.kr", "teamA", now()),
+                new ContestVoteLogResponse("김옵스", "kim@pusan.ac.kr", "teamB", now()));
+
+        when(contestQueryService.getContestVoteLog(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/vote-log", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-vote-log",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "투표 로그 목록 (최신순)"),
+                                stringFieldWithPath("[].voterName", "투표자 이름"),
+                                stringFieldWithPath("[].voterEmail", "투표자 이메일"),
+                                stringFieldWithPath("[].teamName", "투표한 팀 이름"),
+                                dateTimeFieldWithPath("[].votedAt", "투표 시점")
+                        )
+                ));
     }
 }
