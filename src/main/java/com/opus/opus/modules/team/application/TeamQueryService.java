@@ -1,9 +1,9 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
@@ -17,6 +17,8 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.domain.Team;
+import java.util.Optional;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +50,29 @@ public class TeamQueryService {
     }
 
     public ImageResponse getThumbnailImage(final Long teamId) {
-        return getImage(teamId, THUMBNAIL);
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+
+        return getTeamThumbnail(teamId)
+                .or(() -> getTrackThumbnail(team.getTrackId()))
+                .orElseGet(this::getDefaultThumbnailResponse);
+    }
+
+    private Optional<ImageResponse> getTeamThumbnail(final Long teamId) {
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
+
+    private Optional<ImageResponse> getTrackThumbnail(final Long trackId) {
+        if (trackId == null) {
+            return Optional.empty();
+        }
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
+
+    private ImageResponse getDefaultThumbnailResponse() {
+        final Pair<Resource, String> defaultResult = fileStorageUtil.findDefaultThumbnail();
+        return new ImageResponse(defaultResult.a, defaultResult.b);
     }
 
     public ImageResponse getPosterImage(final Long teamId) {
@@ -66,6 +90,10 @@ public class TeamQueryService {
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, fileImageType);
+        return getImageResponse(findFile);
+    }
+
+    private ImageResponse getImageResponse(final File findFile) {
         checkImageConverted(findFile);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);

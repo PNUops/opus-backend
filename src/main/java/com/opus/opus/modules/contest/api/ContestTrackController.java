@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Validated
@@ -59,5 +61,22 @@ public class ContestTrackController {
     public ResponseEntity<List<ContestTrackResponse>> getAllContestTracks(@PathVariable final Long contestId) {
         List<ContestTrackResponse> response = contestTrackQueryService.getAllContestTracks(contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/{trackId}/thumbnail")
+    public ResponseEntity<Void> saveContestTrackDefaultThumbnail(@PathVariable final Long contestId,
+                                                                 @PathVariable final Long trackId,
+                                                                 @RequestPart("image") final MultipartFile image) {
+        contestTrackCommandService.saveContestTrackDefaultThumbnail(contestId, trackId, image);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/{trackId}/thumbnail")
+    public ResponseEntity<Void> deleteContestTrackDefaultThumbnail(@PathVariable final Long contestId,
+                                                                   @PathVariable final Long trackId) {
+        contestTrackCommandService.deleteContestTrackDefaultThumbnail(contestId, trackId);
+        return ResponseEntity.noContent().build();
     }
 }
