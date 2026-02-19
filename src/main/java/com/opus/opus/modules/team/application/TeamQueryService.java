@@ -78,8 +78,7 @@ public class TeamQueryService {
     public ImageResponse getPosterImage(final Long teamId) {
         return getImage(teamId, POSTER);
     }
-
-    @Transactional(readOnly = true)
+    
     public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
