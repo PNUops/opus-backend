@@ -5,6 +5,6 @@ public record TeamSubmissionResult(
         String teamName,
         String projectName,
         String trackName,
-        boolean isSubmitted
+        Boolean isSubmitted
 ) {
 }

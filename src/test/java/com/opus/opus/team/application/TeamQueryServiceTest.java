@@ -1,8 +1,6 @@
 package com.opus.opus.team.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +12,7 @@ import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
@@ -51,7 +50,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class TeamQueryServiceTest extends IntegrationTest {
 
     @Autowired
-    private TeamQueryService teamQueryService;
+    private ContestQueryService contestQueryService;
+    @Autowired
+    private  TeamQueryService teamQueryService;
 
     @Autowired
     private TeamRepository teamRepository;
@@ -132,7 +133,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 사용자의_남은_투표_개수를_조회할_수_있다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
 
-        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -141,7 +142,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표하지 않은 사용자는 최대 투표 수만큼 남은 투표 개수가 있다.")
     void 투표하지_않은_사용자는_최대_투표_수만큼_남은_투표_개수가_있다() {
-        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(2L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -154,7 +155,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), false));
 
-        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
     }
@@ -229,7 +230,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // team2: 1표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // team3: 1표
 
-        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contest.getId());
 
         assertThat(responses).hasSize(4); // team1, team2, team3, setUp에서 만든 team
         assertThat(responses.get(0).rank()).isEqualTo(1);
@@ -245,7 +246,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표가 없는 팀도 랭킹에 포함된다.")
     void 투표가_없는_팀도_랭킹에_포함된다() {
-        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contest.getId());
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).rank()).isEqualTo(1);
@@ -262,7 +263,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true)); // team2: 1표
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 999L, true)); // team1: 1표
 
-        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
+        final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(3L);
         assertThat(response.totalVoters()).isEqualTo(2L);
@@ -272,7 +273,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표가 없는 경우 집계 수치는 0으로 반환된다.")
     void 투표가_없는_경우_집계는_0이다() {
-        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contest.getId());
+        final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(0L);
         assertThat(response.totalVoters()).isEqualTo(0L);
@@ -290,7 +291,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 103L, true)); // team3: 1표
 
         // 투표 수가 모두 1표로 동일 → team ID 오름차순 정렬 확인
-        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contest.getId());
+        final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contest.getId());
         List<ContestRankingResponse> sameVoteResponses = responses.stream()
                 .filter(r -> r.voteCount() == 1L)
                 .toList();
@@ -306,7 +307,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 대회의_팀별_프로젝트_등록_현황을_조회할_수_있다() {
         final Team submittedTeam = teamRepository.save(TeamFixture.createSubmittedTeamWithContestId(contest.getId()));
 
-        final List<ContestSubmissionResponse> responseList = teamQueryService.getTeamSubmissions(contest.getId());
+        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(contest.getId());
         final ContestSubmissionResponse firstTeam = responseList.get(0);
         final ContestSubmissionResponse secondTeam = responseList.get(1);
 
@@ -322,7 +323,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 팀이_없는_대회는_빈_리스트를_반환한다() {
         final Contest emptyContest = contestRepository.save(ContestFixture.createContest());
 
-        final List<ContestSubmissionResponse> responseList = teamQueryService.getTeamSubmissions(emptyContest.getId());
+        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(emptyContest.getId());
 
         assertThat(responseList).isEmpty();
     }
@@ -332,7 +333,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 존재하지_않는_대회의_등록_현황_조회_시_예외가_발생한다() {
         final long invalidContestId = 999L;
 
-        assertThatThrownBy(() -> teamQueryService.getTeamSubmissions(invalidContestId))
+        assertThatThrownBy(() -> contestQueryService.getTeamSubmissions(invalidContestId))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }

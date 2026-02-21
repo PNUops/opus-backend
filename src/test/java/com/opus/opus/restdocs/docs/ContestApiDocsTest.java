@@ -691,7 +691,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new ContestRankingResponse(3, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)
         );
 
-        when(teamQueryService.getTeamRanking(any())).thenReturn(responses);
+        when(contestQueryService.getTeamRanking(any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -720,7 +720,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 랭킹 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_랭킹_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getTeamRanking(any());
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 999)
@@ -742,7 +742,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 대회의_투표_집계를_조회할_수_있다() throws Exception {
         final ContestVoteStatisticsResponse response = new ContestVoteStatisticsResponse(366L, 249L, 1.5);
 
-        when(teamQueryService.getVoteStatistics(any())).thenReturn(response);
+        when(contestQueryService.getVoteStatistics(any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -767,7 +767,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 집계 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_집계_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getVoteStatistics(any());
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 999)
@@ -793,7 +793,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new ContestSubmissionResponse(3L, "시큐리티 가디언즈", "IoT 취약점 스캐너", "하드웨어/보안", false)
         );
 
-        when(teamQueryService.getTeamSubmissions(any())).thenReturn(responses);
+        when(contestQueryService.getTeamSubmissions(any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/submissions", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -821,7 +821,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 프로젝트 등록 현황 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_프로젝트_등록_현황_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getTeamSubmissions(any());
 
         mockMvc.perform(get("/contests/{contestId}/submissions", 999)

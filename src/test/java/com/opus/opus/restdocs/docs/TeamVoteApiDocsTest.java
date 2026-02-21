@@ -282,7 +282,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 사용자의_투표_개수를_조회한다() throws Exception {
         final MemberVoteCountResponse response = new MemberVoteCountResponse(1L, 2L);
 
-        given(teamQueryService.getMemberVoteCount(any(), any())).willReturn(response);
+        given(contestQueryService.getMemberVoteCount(any(), any())).willReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/votes/me", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -305,7 +305,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회 ID로 투표 개수 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회_ID로_투표_개수_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getMemberVoteCount(any(), any());
 
         mockMvc.perform(get("/contests/{contestId}/votes/me", 999)
