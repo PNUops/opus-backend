@@ -78,6 +78,8 @@ include::{snippets}/delete-team-poster/request-headers.adoc[]
 
 === `GET`: 팀 썸네일 이미지 조회
 
+NOTE: 팀 썸네일 조회 시 우선순위: [팀 전용 썸네일] > [분과 기본 썸네일] > [시스템 기본 썸네일] 순으로 조회됩니다. 따라서 별도로 등록한 팀 썸네일이 없더라도 기본 이미지가 반환됩니다.
+
 .HTTP Request
 include::{snippets}/get-team-thumbnail/http-request.adoc[]
 
