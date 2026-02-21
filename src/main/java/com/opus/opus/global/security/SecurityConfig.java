@@ -2,6 +2,9 @@ package com.opus.opus.global.security;
 
 import com.opus.opus.global.security.handler.CustomAccessDeniedHandler;
 import com.opus.opus.global.security.handler.CustomAuthenticationEntryPoint;
+import com.opus.opus.global.security.oauth2.OAuth2UserService;
+import com.opus.opus.global.security.oauth2.OAuth2LoginFailureHandler;
+import com.opus.opus.global.security.oauth2.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +30,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final OAuth2UserService oAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,9 +47,16 @@ public class SecurityConfig {
                 .httpBasic(HttpBasicConfigurer::disable)
                 .formLogin(FormLoginConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/sign-up/**", "/sign-in/**", "/oauth/**").permitAll()
+                        .requestMatchers("/sign-up/**", "/sign-in/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/teams/**", "/contests/**", "/notices/**").permitAll()
                         .anyRequest().hasAnyRole("회원", "관리자", "팀장", "팀원")
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(oAuth2UserService)
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .accessDeniedHandler(customAccessDeniedHandler)

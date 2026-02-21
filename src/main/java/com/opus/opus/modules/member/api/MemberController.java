@@ -13,9 +13,7 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.validation.Valid;
-import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Validated
 @RestController
@@ -81,25 +78,6 @@ public class MemberController {
     @GetMapping("/sign-in/{studentId}/email-find")
     public ResponseEntity<EmailFindResponse> getMyEmail(@PathVariable final String studentId) {
         final EmailFindResponse response = memberQueryService.getMyEmail(studentId);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/oauth/google")
-    public ResponseEntity<Void> googleOAuthRedirect() {
-        final String redirectURL = memberCommandService.getGoogleOAuthRedirectURL();
-
-        URI uri = UriComponentsBuilder.fromUriString(redirectURL).encode().build().toUri();
-
-        return ResponseEntity.status(HttpStatus.FOUND).location(uri).build();
-    }
-
-    @GetMapping("/oauth/google/callback")
-    public ResponseEntity<SignInResponse> googleOAuthCallback(
-            final String code,
-            final String state,
-            final String error
-    ) {
-        final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code, state, error);
         return ResponseEntity.ok(response);
     }
 }

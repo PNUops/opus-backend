@@ -1,0 +1,49 @@
+package com.opus.opus.global.security.oauth2;
+
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class OAuth2UserService extends DefaultOAuth2UserService {
+
+    private final MemberRepository memberRepository;
+
+    @Override
+    @Transactional
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        final OAuth2User oAuth2User = super.loadUser(userRequest);
+
+        final Map<String, Object> attributes = oAuth2User.getAttributes();
+        final String email = (String) attributes.get("email");
+        final String name = (String) attributes.get("name");
+
+        final Member member = memberRepository.findByEmail(email)
+                .orElseGet(() -> registerNewSocialMember(name, email));
+
+        return new GoogleOAuth2MemberDetails(member, attributes);
+    }
+
+    private Member registerNewSocialMember(final String name, final String email) {
+        final String uniqueStudentId = "fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+
+        return memberRepository.save(Member.builder()
+                .name(name)
+                .studentId(uniqueStudentId)
+                .email(email)
+                .password(UUID.randomUUID().toString())
+                .roles(Set.of(MemberRoleType.ROLE_회원))
+                .build());
+    }
+}

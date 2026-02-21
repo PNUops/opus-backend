@@ -1,8 +1,8 @@
 package com.opus.opus.member.application;
 
-import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
-import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
-import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
+import static com.opus.opus.global.security.oauth2.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
+import static com.opus.opus.global.security.oauth2.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
+import static com.opus.opus.global.security.oauth2.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.opus.opus.global.util.oauth.dto.GoogleUser;
 import com.opus.opus.global.util.oauth.dto.OAuthResult;
-import com.opus.opus.global.util.oauth.exception.OAuthException;
+import com.opus.opus.global.security.oauth2.exception.OAuthException;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;

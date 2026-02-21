@@ -1,4 +1,4 @@
-package com.opus.opus.global.util.oauth.exception;
+package com.opus.opus.global.security.oauth2.exception;
 
 
 import com.opus.opus.global.base.BaseException;
