@@ -1,21 +1,21 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-import com.opus.opus.modules.team.domain.dao.TeamSubmissionResult;
+import com.opus.opus.modules.team.domain.Team;
 
 public record ContestSubmissionResponse(
         Long teamId,
         String teamName,
         String projectName,
         String trackName,
-        boolean isSubmitted
+        Boolean isSubmitted
 ) {
-    public static ContestSubmissionResponse from(TeamSubmissionResult result) {
+    public static ContestSubmissionResponse from(Team team, String trackName) {
         return new ContestSubmissionResponse(
-                result.teamId(),
-                result.teamName(),
-                result.projectName(),
-                result.trackName(),
-                result.isSubmitted()
+                team.getId(),
+                team.getTeamName(),
+                team.getProjectName(),
+                trackName,
+                team.getIsSubmitted()
         );
     }
 }

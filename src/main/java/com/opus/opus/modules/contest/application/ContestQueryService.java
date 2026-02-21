@@ -20,19 +20,23 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitR
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.domain.dao.TeamSubmissionResult;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -49,6 +53,7 @@ public class ContestQueryService {
     private final ContestRepository contestRepository;
     private final TeamRepository teamRepository;
     private final TeamVoteRepository teamVoteRepository;
+    private final ContestTrackRepository contestTrackRepository;
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
@@ -131,9 +136,14 @@ public class ContestQueryService {
 
     public List<ContestSubmissionResponse> getTeamSubmissions(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final List<TeamSubmissionResult> results = teamRepository.findTeamSubmissionsByContestId(contestId);
-        return results.stream()
-                .map(ContestSubmissionResponse::from)
+
+        final List<Team> teamList = teamRepository.findAllByContestId(contestId);
+        final Map<Long, String> trackNameMap = contestTrackRepository.findAllByContestId(contestId)
+                .stream()
+                .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
+
+        return teamList.stream()
+                .map(team -> ContestSubmissionResponse.from(team, trackNameMap.get(team.getTrackId())))
                 .toList();
     }
 
