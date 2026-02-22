@@ -6,14 +6,14 @@ import com.opus.opus.modules.contest.application.ContestTeamTemplateCommandServi
 import com.opus.opus.modules.contest.application.ContestTeamTemplateQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
-import com.opus.opus.modules.contest.application.dto.request.TeamTemplateRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamTemplateResponse;
-import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
-import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
@@ -113,16 +113,16 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/{contestId}/team-detail-template")
-    public ResponseEntity<TeamTemplateResponse> getTeamDetailTemplate(@PathVariable final Long contestId) {
+    @GetMapping("/{contestId}/template")
+    public ResponseEntity<TeamTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
         TeamTemplateResponse response = contestTeamTemplateQueryService.getTeamTemplate(contestId);
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{contestId}/team-detail-template")
+    @PutMapping("/{contestId}/template")
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> updateTeamDetailTemplate(@PathVariable final Long contestId,
-                                                         @Valid @RequestBody final TeamTemplateRequest request) {
+    public ResponseEntity<Void> updateContestTemplate(@PathVariable final Long contestId,
+                                                      @Valid @RequestBody final ContestTemplateRequest request) {
         contestTeamTemplateCommandService.updateTeamTemplate(contestId, request);
         return ResponseEntity.noContent().build();
     }

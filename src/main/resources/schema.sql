@@ -51,7 +51,7 @@ CREATE TABLE `contest_category` (
   PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `contest_team_template` (
+CREATE TABLE `contest_template` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,

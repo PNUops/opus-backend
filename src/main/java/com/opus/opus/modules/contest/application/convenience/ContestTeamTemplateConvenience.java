@@ -3,8 +3,8 @@ package com.opus.opus.modules.contest.application.convenience;
 import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
 
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestTeamTemplate;
-import com.opus.opus.modules.contest.domain.dao.ContestTeamTemplateRepository;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,17 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ContestTeamTemplateConvenience {
 
-    private final ContestTeamTemplateRepository contestTeamTemplateRepository;
+    private final ContestTemplateRepository contestTemplateRepository;
 
-    public ContestTeamTemplate getValidateExistTemplate(final Long contestId) {
-        return contestTeamTemplateRepository.findByContestId(contestId)
+    public ContestTemplate getValidateExistTemplate(final Long contestId) {
+        return contestTemplateRepository.findByContestId(contestId)
                 .orElseThrow(() -> new ContestTeamTemplateException(NOT_FOUND_TEMPLATE));
     }
 
     public void createTemplate(final Contest contest, final String categoryName) {
         final Map<String, Boolean> settings = getTemplateDefaultSettings(categoryName);
 
-        ContestTeamTemplate template = ContestTeamTemplate.builder()
+        ContestTemplate template = ContestTemplate.builder()
                 .contest(contest)
                 .divisionRequired(settings.get("division"))
                 .projectNameRequired(settings.get("projectName"))
@@ -43,7 +43,7 @@ public class ContestTeamTemplateConvenience {
                 .imagesRequired(settings.get("images"))
                 .build();
 
-        contestTeamTemplateRepository.save(template);
+        contestTemplateRepository.save(template);
     }
 
     private Map<String, Boolean> getTemplateDefaultSettings(final String categoryName) {

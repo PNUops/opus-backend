@@ -2,11 +2,7 @@ package com.opus.opus.modules.contest.application.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 
-/**
- * 필수 항목 설정 요청
- * 각 항목은 필수 여부만 설정 가능합니다. (true: 필수 입력, false: 선택 입력)
- */
-public record TeamTemplateRequest(
+public record ContestTemplateRequest(
         @NotNull(message = "분과 필수 여부는 필수입니다.")
         Boolean divisionRequired,
         @NotNull(message = "프로젝트명 필수 여부는 필수입니다.")
@@ -33,4 +29,3 @@ public record TeamTemplateRequest(
         Boolean imagesRequired
 ) {
 }
-
