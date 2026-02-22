@@ -4,16 +4,30 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
+import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +56,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final TeamQueryService teamQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -109,20 +124,6 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/{contestId}/template")
-    public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
-        ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/{contestId}/template")
-    @Secured("ROLE_관리자")
-    public ResponseEntity<Void> updateContestTemplate(@PathVariable final Long contestId,
-                                                      @Valid @RequestBody final ContestTemplateRequest request) {
-        contestCommandService.updateContestTemplate(contestId, request);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/{contestId}/vote")
     public ResponseEntity<VotePeriodResponse> getVotePeriod(@PathVariable final Long contestId) {
         return ResponseEntity.ok(contestQueryService.getVotePeriod(contestId));
@@ -149,5 +150,63 @@ public class ContestController {
     public ResponseEntity<ContestVotesLimitResponse> getMaxVotesLimit(@PathVariable final Long contestId) {
         final ContestVotesLimitResponse response = contestQueryService.getMaxVotesLimit(contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/sort")
+    public ResponseEntity<Void> updateContestSort(@PathVariable final Long contestId,
+                                                  @RequestBody @Valid final ContestSortRequest request) {
+        contestCommandService.updateContestSort(contestId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/sort")
+    public ResponseEntity<ContestSortResponse> getContestSort(@PathVariable final Long contestId) {
+        return ResponseEntity.ok(contestQueryService.getContestSort(contestId));
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/sort/custom")
+    public ResponseEntity<Void> updateContestSortCustom(@PathVariable final Long contestId,
+                                                        @Valid @RequestBody final List<ContestSortCustomRequest> requests) {
+        contestCommandService.updateContestSortCustom(contestId, requests);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @GetMapping("/{contestId}/votes/me")
+    public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@PathVariable Long contestId,
+                                                                      @LoginMember Member member) {
+        final MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/ranking")
+    public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
+        final List<ContestRankingResponse> responses = teamQueryService.getTeamRanking(contestId);
+        return ResponseEntity.ok(responses);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/votes/statistics")
+    public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
+        final ContestVoteStatisticsResponse response = teamQueryService.getVoteStatistics(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{contestId}/template")
+    public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
+        ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{contestId}/template")
+    @Secured("ROLE_관리자")
+    public ResponseEntity<Void> updateContestTemplate(@PathVariable final Long contestId,
+                                                      @Valid @RequestBody final ContestTemplateRequest request) {
+        contestCommandService.updateContestTemplate(contestId, request);
+        return ResponseEntity.noContent().build();
     }
 }

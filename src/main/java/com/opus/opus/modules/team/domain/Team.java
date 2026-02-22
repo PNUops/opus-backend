@@ -77,6 +77,9 @@ public class Team extends BaseEntity {
     @OneToMany(mappedBy = "team")
     private List<TeamLike> teamLikes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "team")
+    private List<TeamVote> teamVotes = new ArrayList<>();
+
     @Builder
     private Team(final String teamName, final String projectName, final String professorName, final String overview,
                  final String githubPath, final String productionPath, final String youTubePath, final Long contestId,
@@ -96,4 +99,7 @@ public class Team extends BaseEntity {
         this.teamMembers = teamMembers;
     }
 
+    public void updateItemOrder(final Integer newOrder) {
+        this.itemOrder = newOrder;
+    }
 }

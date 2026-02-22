@@ -14,7 +14,9 @@ endif::[]
 
 link:../opus.html[API 목록으로 돌아가기]
 
-== `GET`: 팀 포스터 이미지 조회
+== 팀 이미지 관리
+
+=== `GET`: 팀 포스터 이미지 조회
 
 .HTTP Request
 include::{snippets}/get-team-poster/http-request.adoc[]
@@ -25,7 +27,25 @@ include::{snippets}/get-team-poster/http-response.adoc[]
 .Path Parameters
 include::{snippets}/get-team-poster/path-parameters.adoc[]
 
-== `POST`: 팀 포스터 이미지 등록
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 등록되지 않은 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-poster-fail-image-not-found/http-request.adoc[]
+include::{snippets}/get-team-poster-fail-image-not-found/http-response.adoc[]
+====
+
+.❌ Case 2: 변환 중인 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-poster-fail-converting/http-request.adoc[]
+include::{snippets}/get-team-poster-fail-converting/http-response.adoc[]
+====
+
+=== `POST`: 팀 포스터 이미지 등록
 
 .HTTP Request
 include::{snippets}/save-team-poster/http-request.adoc[]
@@ -42,7 +62,7 @@ include::{snippets}/save-team-poster/request-headers.adoc[]
 .Request Parts
 include::{snippets}/save-team-poster/request-parts.adoc[]
 
-== `DELETE`: 팀 포스터 이미지 삭제
+=== `DELETE`: 팀 포스터 이미지 삭제
 
 .HTTP Request
 include::{snippets}/delete-team-poster/http-request.adoc[]
@@ -55,3 +75,146 @@ include::{snippets}/delete-team-poster/path-parameters.adoc[]
 
 .Request Headers
 include::{snippets}/delete-team-poster/request-headers.adoc[]
+
+=== `GET`: 팀 썸네일 이미지 조회
+
+NOTE: 팀 썸네일 조회 시 우선순위: [팀 전용 썸네일] > [분과 기본 썸네일] > [시스템 기본 썸네일] 순으로 조회됩니다. 따라서 별도로 등록한 팀 썸네일이 없더라도 기본 이미지가 반환됩니다.
+
+.HTTP Request
+include::{snippets}/get-team-thumbnail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-thumbnail/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-thumbnail/path-parameters.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 등록되지 않은 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-thumbnail-fail-image-not-found/http-request.adoc[]
+include::{snippets}/get-team-thumbnail-fail-image-not-found/http-response.adoc[]
+====
+
+.❌ Case 2: 변환 중인 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-thumbnail-fail-converting/http-request.adoc[]
+include::{snippets}/get-team-thumbnail-fail-converting/http-response.adoc[]
+====
+
+=== `POST`: 팀 썸네일 이미지 등록
+
+.HTTP Request
+include::{snippets}/save-team-thumbnail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/save-team-thumbnail/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/save-team-thumbnail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/save-team-thumbnail/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/save-team-thumbnail/request-parts.adoc[]
+
+=== `DELETE`: 팀 썸네일 이미지 삭제
+
+.HTTP Request
+include::{snippets}/delete-team-thumbnail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team-thumbnail/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-team-thumbnail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-team-thumbnail/request-headers.adoc[]
+
+=== `GET`: 팀 프리뷰 이미지 조회
+
+.HTTP Request
+include::{snippets}/get-team-preview/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-preview/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-preview/path-parameters.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-preview-fail-not-found/http-request.adoc[]
+include::{snippets}/get-team-preview-fail-not-found/http-response.adoc[]
+====
+
+.❌ Case 2: 변환 중인 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-team-preview-fail-converting/http-request.adoc[]
+include::{snippets}/get-team-preview-fail-converting/http-response.adoc[]
+====
+
+.❌ Case 3: 물리적 파일이 존재하지 않음
+
+[%collapsible]
+====
+include::{snippets}/get-team-preview-fail-physical-not-found/http-request.adoc[]
+include::{snippets}/get-team-preview-fail-physical-not-found/http-response.adoc[]
+====
+
+=== `POST`: 팀 프리뷰 이미지 등록
+
+.HTTP Request
+include::{snippets}/save-team-preview/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/save-team-preview/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/save-team-preview/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/save-team-preview/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/save-team-preview/request-parts.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 이미지 개수 초과 (5개 초과)
+
+[%collapsible]
+====
+include::{snippets}/save-team-preview-fail-limit-exceeded/http-request.adoc[]
+include::{snippets}/save-team-preview-fail-limit-exceeded/http-response.adoc[]
+====
+
+=== `DELETE`: 팀 프리뷰 이미지 삭제
+
+.HTTP Request
+include::{snippets}/delete-team-preview/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team-preview/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-team-preview/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-team-preview/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/delete-team-preview/request-fields.adoc[]

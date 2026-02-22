@@ -1,18 +1,17 @@
 package com.opus.opus.modules.team.domain;
 
-import static com.opus.opus.modules.team.domain.SortType.RANDOM;
 import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,23 +20,33 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamSort extends BaseEntity {
+@Table(uniqueConstraints = {
+        @UniqueConstraint(name = "uk_team_vote_member_team", columnNames = {"member_id", "team_id"})
+})
+public class TeamVote extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SortType mode;
+    private Long memberId;
 
-    @OneToOne(fetch = LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
+    @Column(nullable = false)
+    private Boolean isVoted;
+
     @Builder
-    private TeamSort(final Team team) {
-        this.mode = RANDOM;
+    private TeamVote(final Long memberId, final Team team, final Boolean isVoted) {
+        this.memberId = memberId;
         this.team = team;
+        this.isVoted = isVoted;
+    }
+
+    public void updateIsVoted(final Boolean isVoted) {
+        this.isVoted = isVoted;
     }
 }

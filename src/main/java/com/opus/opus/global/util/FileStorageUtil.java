@@ -36,6 +36,10 @@ public class FileStorageUtil {
     private static final Path ROOT_PATH = Paths.get(System.getProperty("user.dir"));
     private static final Path RESOURCE_PATH = ROOT_PATH.resolve("ops_files");
     private static final Path DEFAULT_FILE_PATH = RESOURCE_PATH.resolve("files");
+    private static final String DEFAULT_THUMBNAIL_FILENAME = "default_thumbnail.jpg";
+    private static final Path DEFAULT_THUMBNAIL_PATH = RESOURCE_PATH.resolve(DEFAULT_THUMBNAIL_FILENAME);
+
+    private static final MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
 
     private final FileRepository fileRepository;
     private final FileEncodingUtil fileEncodingUtil;
@@ -46,6 +50,7 @@ public class FileStorageUtil {
             Files.createDirectories(DEFAULT_FILE_PATH);
         } catch (IOException ignored) {
         }
+        mimeTypesMap.addMimeTypes("image/webp webp WEBP");
     }
 
     public Pair<Resource, String> findFileAndType(final Long fileId) {
@@ -53,10 +58,17 @@ public class FileStorageUtil {
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID));
         final ByteArrayResource findResource =
                 findPhysicalFile(RESOURCE_PATH.resolve(findFile.getFilePath()).normalize());
-        MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-        mimeTypesMap.addMimeTypes("image/webp webp WEBP");
+
         final String mimeType = mimeTypesMap
                 .getContentType(RESOURCE_PATH.resolve(findFile.getFilePath()).normalize().toFile());
+        return new Pair<>(findResource, mimeType);
+    }
+
+    public Pair<Resource, String> findDefaultThumbnail() {
+        final ByteArrayResource findResource = findPhysicalFile(DEFAULT_THUMBNAIL_PATH);
+
+        final String mimeType = mimeTypesMap.getContentType(DEFAULT_THUMBNAIL_PATH.toFile());
+
         return new Pair<>(findResource, mimeType);
     }
 

@@ -5,7 +5,13 @@ import java.util.ArrayList;
 
 public class TeamFixture {
 
+    private static final Long DEFAULT_CONTEST_ID = 1L;
+
     public static Team createTeam() {
+        return createTeamWithContestId(DEFAULT_CONTEST_ID);
+    }
+
+    public static Team createTeamWithContestId(final Long contestId) {
         return Team.builder()
                 .teamName("팀 옵스")
                 .projectName("옵스 프로젝트")
@@ -14,9 +20,25 @@ public class TeamFixture {
                 .githubPath("http://github.com/example")
                 .productionPath("http://production.example.com")
                 .youTubePath("http://youtube.com/example")
-                .contestId(1L)
+                .contestId(contestId)
                 .trackId(1L)
                 .itemOrder(1)
+                .teamMembers(new ArrayList<>())
+                .build();
+    }
+
+    public static Team createTeamWithContestIdAndItemOrder(final Long contestId, final int itemOrder) {
+        return Team.builder()
+                .teamName("팀 옵스")
+                .projectName("옵스 프로젝트")
+                .professorName("김교수")
+                .overview("이 프로젝트는 옵스 프로젝트입니다.")
+                .githubPath("http://github.com/example")
+                .productionPath("http://production.example.com")
+                .youTubePath("http://youtube.com/example")
+                .contestId(contestId)
+                .trackId(1L)
+                .itemOrder(itemOrder)
                 .teamMembers(new ArrayList<>())
                 .build();
     }
