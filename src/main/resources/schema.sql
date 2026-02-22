@@ -3,7 +3,7 @@ USE opus;
 DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
-DROP TABLE IF EXISTS `contest_team_template`;
+DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_track`;
 DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `file`;

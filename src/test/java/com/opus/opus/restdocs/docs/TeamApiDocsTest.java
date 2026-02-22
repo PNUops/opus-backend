@@ -72,7 +72,8 @@ public class TeamApiDocsTest extends RestDocsTest {
         final Long teamId = 999L;
 
         when(teamQueryService.getPosterImage(any()))
-                .thenThrow(new FileException(FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID)); // Assuming logic or specific TeamException. checking service...
+                .thenThrow(new FileException(
+                        FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID)); // Assuming logic or specific TeamException. checking service...
         // Wait, service uses teamConvenience.validateExistTeam(teamId).
         // I need to mock the service call to throw the exception that represents "Team Not Found" or "Image Not Found".
         // In TeamQueryService.getImage:
@@ -150,7 +151,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         ),
                         requestParts(
                                 partWithName("image").description("등록할 포스터 이미지 (모든 이미지 형식 지원)")
@@ -174,7 +176,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         )
                 ));
     }
@@ -262,7 +265,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         ),
                         requestParts(
                                 partWithName("image").description("등록할 썸네일 이미지 (모든 이미지 형식 지원)")
@@ -286,7 +290,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         )
                 ));
     }
@@ -345,7 +350,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         ),
                         requestParts(
                                 partWithName("images").description("등록할 프리뷰 이미지 목록 (리스트)")
@@ -373,7 +379,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         ),
                         requestFields(
                                 arrayFieldWithPath("imageIds", "삭제할 프리뷰 이미지 ID 리스트")
@@ -407,7 +414,8 @@ public class TeamApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
                         ),
                         requestParts(
                                 partWithName("images").description("등록할 프리뷰 이미지")

@@ -40,8 +40,8 @@ import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRe
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -171,6 +171,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 numberFieldWithPath("maxVotesLimit", "최대 투표 개수")
@@ -198,6 +200,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 dateTimeFieldWithPath("voteStartAt", "투표 시작일"),

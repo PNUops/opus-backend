@@ -1,8 +1,6 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
@@ -11,6 +9,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
@@ -20,16 +19,15 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.domain.Team;
-import java.util.Optional;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
+import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -50,6 +48,25 @@ public class TeamQueryService {
     private final TeamRepository teamRepository;
 
     private final FileStorageUtil fileStorageUtil;
+
+    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+        int curRank = 0;     // 현재 순위
+        long prevCount = -1; // 이전 팀 투표 수
+        for (TeamRankingResult result : votesPerTeam) {
+            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
+            if (prevCount != result.voteCount()) {
+                curRank++;
+            }
+            prevCount = result.voteCount();
+
+            responseList.add(
+                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
+                            result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
+    }
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
@@ -115,7 +132,8 @@ public class TeamQueryService {
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, fileImageType);
+        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
+                fileImageType);
         return getImageResponse(findFile);
     }
 
@@ -129,20 +147,5 @@ public class TeamQueryService {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
-    }
-
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) curRank++;
-            prevCount = result.voteCount();
-
-            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
     }
 }
