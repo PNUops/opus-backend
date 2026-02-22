@@ -23,6 +23,7 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
@@ -68,6 +69,7 @@ public class ContestCommandService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
+    private final ContestTemplateConvenience contestTemplateConvenience;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -275,7 +277,7 @@ public class ContestCommandService {
 
     public void updateContestTemplate(final Long contestId, final ContestTemplateRequest request) {
         contestConvenience.getValidateExistContest(contestId);
-        final ContestTemplate template = contestConvenience.getValidateExistTemplate(contestId);
+        final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
 
         template.updateTemplate(
                 request.trackRequired(), request.projectNameRequired(), request.teamNameRequired(),

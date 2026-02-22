@@ -6,15 +6,11 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTE
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_VOTE_PERIOD_NOW;
-import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestConvenience {
 
     private final ContestRepository contestRepository;
-    private final ContestTemplateRepository contestTemplateRepository;
 
     public Contest getValidateExistContest(final Long contestId) {
         return contestRepository.findById(contestId).orElseThrow(() -> new ContestException(NOT_FOUND_CONTEST));
@@ -72,10 +67,5 @@ public class ContestConvenience {
         if (!contest.isVotingPeriod()) {
             throw new ContestException(NOT_VOTE_PERIOD_NOW);
         }
-    }
-
-    public ContestTemplate getValidateExistTemplate(final Long contestId) {
-        return contestTemplateRepository.findByContestId(contestId)
-                .orElseThrow(() -> new ContestTemplateException(NOT_FOUND_TEMPLATE));
     }
 }
