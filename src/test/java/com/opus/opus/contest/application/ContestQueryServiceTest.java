@@ -1,17 +1,22 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +30,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private ContestRepository contestRepository;
+
+    @Autowired
+    private ContestTemplateRepository contestTemplateRepository;
 
     private Contest contest;
 
@@ -73,5 +81,34 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestQueryService.getMaxVotesLimit(invalidContestId);
         }).isInstanceOf(ContestException.class).hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 템플릿를 조회한다.")
+    void 대회_템플릿를_조회한다() {
+        contestTemplateRepository.save(ContestTemplateFixture.createContestTemplate(contest));
+
+        final ContestTemplateResponse response = contestQueryService.getContestTemplate(contest.getId());
+
+        assertThat(response.trackRequired()).isTrue();
+        assertThat(response.projectNameRequired()).isTrue();
+        assertThat(response.teamNameRequired()).isTrue();
+        assertThat(response.leaderRequired()).isTrue();
+        assertThat(response.teamMembersRequired()).isTrue();
+        assertThat(response.professorRequired()).isTrue();
+        assertThat(response.githubPathRequired()).isTrue();
+        assertThat(response.youTubePathRequired()).isTrue();
+        assertThat(response.productionPathRequired()).isTrue();
+        assertThat(response.overviewRequired()).isTrue();
+        assertThat(response.posterRequired()).isTrue();
+        assertThat(response.imagesRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 대회 템플릿이 존재하지 않으면 예외가 발생한다.")
+    void 대회_템플릿이_존재하지_않으면_예외가_발생한다() {
+        assertThatThrownBy(() -> {
+            contestQueryService.getContestTemplate(contest.getId());
+        }).isInstanceOf(ContestTeamTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
     }
 }

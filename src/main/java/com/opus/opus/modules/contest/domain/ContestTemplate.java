@@ -29,43 +29,43 @@ public class ContestTemplate extends BaseEntity {
     private Long id;
 
     @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "contest_id", nullable = false, unique = true)
+    @JoinColumn(name = "contest_id", nullable = false)
     private Contest contest;
 
-    @Column(name = "track_required", nullable = false)
+    @Column(nullable = false)
     private Boolean trackRequired;
 
-    @Column(name = "project_name_required", nullable = false)
+    @Column(nullable = false)
     private Boolean projectNameRequired;
 
-    @Column(name = "team_name_required", nullable = false)
+    @Column(nullable = false)
     private Boolean teamNameRequired;
 
-    @Column(name = "leader_required", nullable = false)
+    @Column(nullable = false)
     private Boolean leaderRequired;
 
-    @Column(name = "team_members_required", nullable = false)
+    @Column(nullable = false)
     private Boolean teamMembersRequired;
 
-    @Column(name = "professor_required", nullable = false)
+    @Column(nullable = false)
     private Boolean professorRequired;
 
-    @Column(name = "github_path_required", nullable = false)
+    @Column(nullable = false)
     private Boolean githubPathRequired;
 
-    @Column(name = "youTube_path_required", nullable = false)
+    @Column(nullable = false)
     private Boolean youTubePathRequired;
 
-    @Column(name = "production_path_required", nullable = false)
+    @Column(nullable = false)
     private Boolean productionPathRequired;
 
-    @Column(name = "overview_required", nullable = false)
+    @Column(nullable = false)
     private Boolean overviewRequired;
 
-    @Column(name = "poster_required", nullable = false)
+    @Column(nullable = false)
     private Boolean posterRequired;
 
-    @Column(name = "images_required", nullable = false)
+    @Column(nullable = false)
     private Boolean imagesRequired;
 
     @Column(nullable = false)

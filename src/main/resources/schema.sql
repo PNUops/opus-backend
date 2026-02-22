@@ -64,7 +64,7 @@ CREATE TABLE `contest_template` (
   `team_members_required` bit(1) NOT NULL,
   `professor_required` bit(1) NOT NULL,
   `github_path_required` bit(1) NOT NULL,
-  `youTube_path_required` bit(1) NOT NULL,
+  `you_tube_path_required` bit(1) NOT NULL,
   `production_path_required` bit(1) NOT NULL,
   `overview_required` bit(1) NOT NULL,
   `poster_required` bit(1) NOT NULL,
