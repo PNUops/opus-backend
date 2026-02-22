@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ContestTemplateRequest(
         @NotNull(message = "분과 필수 여부는 필수입니다.")
-        Boolean divisionRequired,
+        Boolean trackRequired,
         @NotNull(message = "프로젝트명 필수 여부는 필수입니다.")
         Boolean projectNameRequired,
         @NotNull(message = "팀명 필수 여부는 필수입니다.")
@@ -18,7 +18,7 @@ public record ContestTemplateRequest(
         @NotNull(message = "GitHub 링크 필수 여부는 필수입니다.")
         Boolean githubPathRequired,
         @NotNull(message = "YouTube 링크 필수 여부는 필수입니다.")
-        Boolean youtubePathRequired,
+        Boolean youTubePathRequired,
         @NotNull(message = "배포 링크 필수 여부는 필수입니다.")
         Boolean productionPathRequired,
         @NotNull(message = "프로젝트 개요 필수 여부는 필수입니다.")

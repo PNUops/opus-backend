@@ -193,7 +193,7 @@ public class ContestController {
 
     @GetMapping("/{contestId}/template")
     public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
-        ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
+        final ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
         return ResponseEntity.ok(response);
     }
 

@@ -256,14 +256,14 @@ public class ContestCommandService {
 
         ContestTemplate template = ContestTemplate.builder()
                 .contest(contest)
-                .divisionRequired(settings.get("division"))
+                .trackRequired(settings.get("track"))
                 .projectNameRequired(settings.get("projectName"))
                 .teamNameRequired(settings.get("teamName"))
                 .leaderRequired(settings.get("leader"))
                 .teamMembersRequired(settings.get("teamMembers"))
                 .professorRequired(settings.get("professor"))
                 .githubPathRequired(settings.get("githubPath"))
-                .youtubePathRequired(settings.get("youtubePath"))
+                .youTubePathRequired(settings.get("youTubePath"))
                 .productionPathRequired(settings.get("productionPath"))
                 .overviewRequired(settings.get("overview"))
                 .posterRequired(settings.get("poster"))
@@ -278,9 +278,9 @@ public class ContestCommandService {
         final ContestTemplate template = contestConvenience.getValidateExistTemplate(contestId);
 
         template.updateTemplate(
-                request.divisionRequired(), request.projectNameRequired(), request.teamNameRequired(),
+                request.trackRequired(), request.projectNameRequired(), request.teamNameRequired(),
                 request.leaderRequired(), request.teamMembersRequired(), request.professorRequired(),
-                request.githubPathRequired(), request.youtubePathRequired(), request.productionPathRequired(),
+                request.githubPathRequired(), request.youTubePathRequired(), request.productionPathRequired(),
                 request.overviewRequired(), request.posterRequired(), request.imagesRequired()
         );
     }
@@ -289,42 +289,42 @@ public class ContestCommandService {
         Map<String, Boolean> map = new HashMap<>();
 
         if (categoryName.contains("창의융합")) {
-            map.put("division", true);
+            map.put("track", true);
             map.put("projectName", true);
             map.put("teamName", true);
             map.put("leader", true);
             map.put("teamMembers", true);
             map.put("professor", false);
             map.put("githubPath", true);
-            map.put("youtubePath", false);
+            map.put("youTubePath", false);
             map.put("productionPath", false);
             map.put("overview", true);
             map.put("poster", true);
             map.put("images", true);
 
         } else if (categoryName.contains("캡스톤")) {
-            map.put("division", true);
+            map.put("track", true);
             map.put("projectName", true);
             map.put("teamName", true);
             map.put("leader", true);
             map.put("teamMembers", true);
             map.put("professor", true);
             map.put("githubPath", true);
-            map.put("youtubePath", true);
+            map.put("youTubePath", true);
             map.put("productionPath", false);
             map.put("overview", true);
             map.put("poster", false);
             map.put("images", true);
 
         } else {
-            map.put("division", false);
+            map.put("track", false);
             map.put("projectName", false);
             map.put("teamName", false);
             map.put("leader", false);
             map.put("teamMembers", false);
             map.put("professor", false);
             map.put("githubPath", false);
-            map.put("youtubePath", false);
+            map.put("youTubePath", false);
             map.put("productionPath", false);
             map.put("overview", false);
             map.put("poster", false);

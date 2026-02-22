@@ -32,8 +32,8 @@ public class ContestTemplate extends BaseEntity {
     @JoinColumn(name = "contest_id", nullable = false, unique = true)
     private Contest contest;
 
-    @Column(name = "division_required", nullable = false)
-    private Boolean divisionRequired;
+    @Column(name = "track_required", nullable = false)
+    private Boolean trackRequired;
 
     @Column(name = "project_name_required", nullable = false)
     private Boolean projectNameRequired;
@@ -53,8 +53,8 @@ public class ContestTemplate extends BaseEntity {
     @Column(name = "github_path_required", nullable = false)
     private Boolean githubPathRequired;
 
-    @Column(name = "youtube_path_required", nullable = false)
-    private Boolean youtubePathRequired;
+    @Column(name = "youTube_path_required", nullable = false)
+    private Boolean youTubePathRequired;
 
     @Column(name = "production_path_required", nullable = false)
     private Boolean productionPathRequired;
@@ -74,27 +74,27 @@ public class ContestTemplate extends BaseEntity {
     @Builder
     private ContestTemplate(
             final Contest contest,
-            final Boolean divisionRequired,
+            final Boolean trackRequired,
             final Boolean projectNameRequired,
             final Boolean teamNameRequired,
             final Boolean leaderRequired,
             final Boolean teamMembersRequired,
             final Boolean professorRequired,
             final Boolean githubPathRequired,
-            final Boolean youtubePathRequired,
+            final Boolean youTubePathRequired,
             final Boolean productionPathRequired,
             final Boolean overviewRequired,
             final Boolean posterRequired,
             final Boolean imagesRequired) {
         this.contest = contest;
-        this.divisionRequired = divisionRequired;
+        this.trackRequired = trackRequired;
         this.projectNameRequired = projectNameRequired;
         this.teamNameRequired = teamNameRequired;
         this.leaderRequired = leaderRequired;
         this.teamMembersRequired = teamMembersRequired;
         this.professorRequired = professorRequired;
         this.githubPathRequired = githubPathRequired;
-        this.youtubePathRequired = youtubePathRequired;
+        this.youTubePathRequired = youTubePathRequired;
         this.productionPathRequired = productionPathRequired;
         this.overviewRequired = overviewRequired;
         this.posterRequired = posterRequired;
@@ -103,26 +103,26 @@ public class ContestTemplate extends BaseEntity {
     }
 
     public void updateTemplate(
-            final Boolean divisionRequired,
+            final Boolean trackRequired,
             final Boolean projectNameRequired,
             final Boolean teamNameRequired,
             final Boolean leaderRequired,
             final Boolean teamMembersRequired,
             final Boolean professorRequired,
             final Boolean githubPathRequired,
-            final Boolean youtubePathRequired,
+            final Boolean youTubePathRequired,
             final Boolean productionPathRequired,
             final Boolean overviewRequired,
             final Boolean posterRequired,
             final Boolean imagesRequired) {
-        this.divisionRequired = divisionRequired;
+        this.trackRequired = trackRequired;
         this.projectNameRequired = projectNameRequired;
         this.teamNameRequired = teamNameRequired;
         this.leaderRequired = leaderRequired;
         this.teamMembersRequired = teamMembersRequired;
         this.professorRequired = professorRequired;
         this.githubPathRequired = githubPathRequired;
-        this.youtubePathRequired = youtubePathRequired;
+        this.youTubePathRequired = youTubePathRequired;
         this.productionPathRequired = productionPathRequired;
         this.overviewRequired = overviewRequired;
         this.posterRequired = posterRequired;
