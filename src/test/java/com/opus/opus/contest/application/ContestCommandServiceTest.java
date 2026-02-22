@@ -12,7 +12,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_A
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
-import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +31,7 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import java.time.LocalDateTime;
@@ -291,7 +291,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
 
         assertThatThrownBy(() -> {
             contestCommandService.updateContestTemplate(contest.getId(), request);
-        }).isInstanceOf(ContestTeamTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
+        }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
     }
 
     @Test

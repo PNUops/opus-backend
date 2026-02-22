@@ -1,7 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -16,7 +16,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -109,6 +109,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 대회_템플릿이_존재하지_않으면_예외가_발생한다() {
         assertThatThrownBy(() -> {
             contestQueryService.getContestTemplate(contest.getId());
-        }).isInstanceOf(ContestTeamTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
+        }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
     }
 }

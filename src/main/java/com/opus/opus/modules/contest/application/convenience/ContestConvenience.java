@@ -1,20 +1,20 @@
 package com.opus.opus.modules.contest.application.convenience;
 
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CATEGORY_HAS_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_VOTE_PERIOD_NOW;
-import static com.opus.opus.modules.contest.exception.ContestTeamTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestTeamTemplateException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -76,6 +76,6 @@ public class ContestConvenience {
 
     public ContestTemplate getValidateExistTemplate(final Long contestId) {
         return contestTemplateRepository.findByContestId(contestId)
-                .orElseThrow(() -> new ContestTeamTemplateException(NOT_FOUND_TEMPLATE));
+                .orElseThrow(() -> new ContestTemplateException(NOT_FOUND_TEMPLATE));
     }
 }
