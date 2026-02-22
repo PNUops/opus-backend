@@ -10,23 +10,21 @@ import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.contest.api.ContestController;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.ContestTeamTemplateCommandService;
-import com.opus.opus.modules.contest.application.ContestTeamTemplateQueryService;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
-import com.opus.opus.modules.team.api.TeamCommentController;
-import com.opus.opus.modules.team.application.TeamCommentCommandService;
-import com.opus.opus.modules.team.application.TeamCommentQueryService;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
+import com.opus.opus.modules.team.api.TeamCommentController;
 import com.opus.opus.modules.team.api.TeamController;
-import com.opus.opus.modules.team.application.TeamCommandService;
-import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.api.TeamMemberController;
+import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamCommentCommandService;
+import com.opus.opus.modules.team.application.TeamCommentQueryService;
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
+import com.opus.opus.modules.team.application.TeamQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,12 +84,6 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestQueryService contestQueryService;
-
-    @MockitoBean
-    protected ContestTeamTemplateCommandService contestTeamTemplateCommandService;
-
-    @MockitoBean
-    protected ContestTeamTemplateQueryService contestTeamTemplateQueryService;
 
     // Setting
     @Autowired

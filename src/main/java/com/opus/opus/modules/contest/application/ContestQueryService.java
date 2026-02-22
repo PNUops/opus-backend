@@ -10,11 +10,14 @@ import com.opus.opus.modules.contest.application.convenience.ContestCategoryConv
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
@@ -34,6 +37,7 @@ public class ContestQueryService {
     private final FileStorageUtil fileStorageUtil;
 
     private final ContestRepository contestRepository;
+    private final ContestTemplateRepository contestTemplateRepository;
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
@@ -88,5 +92,11 @@ public class ContestQueryService {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
+    }
+
+    public ContestTemplateResponse getContestTemplate(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+        final ContestTemplate template = contestConvenience.getValidateExistTemplate(contestId);
+        return ContestTemplateResponse.from(template);
     }
 }

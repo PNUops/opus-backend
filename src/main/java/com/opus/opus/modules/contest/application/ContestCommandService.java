@@ -1,11 +1,11 @@
 package com.opus.opus.modules.contest.application;
 
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.*;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ALREADY_NOT_CURRENT_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNOT_CHANGE_VOTES_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
@@ -13,21 +13,23 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestTeamTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,14 +44,13 @@ public class ContestCommandService {
 
     private final ContestRepository contestRepository;
     private final FileRepository fileRepository;
+    private final ContestTemplateRepository contestTemplateRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final TeamConvenience teamConvenience;
-    private final ContestTeamTemplateConvenience contestTeamTemplateConvenience;
 
     private final FileStorageUtil fileStorageUtil;
-
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
@@ -79,7 +80,7 @@ public class ContestCommandService {
         contestRepository.save(contest);
 
         // 템플릿 자동 생성
-        contestTeamTemplateConvenience.createTemplate(contest, contestCategory.getCategoryName());
+        createTemplate(contest, contestCategory.getCategoryName());
 
         return ContestResponse.from(contest, contestCategory.getCategoryName());
     }
@@ -154,5 +155,87 @@ public class ContestCommandService {
         if (currentCount >= MAX_CURRENT_CONTEST_COUNT) {
             throw new ContestException(CURRENT_CONTEST_LIMIT_EXCEEDED);
         }
+    }
+
+    public void createTemplate(final Contest contest, final String categoryName) {
+        final Map<String, Boolean> settings = getDefaultTemplate(categoryName);
+
+        ContestTemplate template = ContestTemplate.builder()
+                .contest(contest)
+                .divisionRequired(settings.get("division"))
+                .projectNameRequired(settings.get("projectName"))
+                .teamNameRequired(settings.get("teamName"))
+                .leaderRequired(settings.get("leader"))
+                .teamMembersRequired(settings.get("teamMembers"))
+                .professorRequired(settings.get("professor"))
+                .githubPathRequired(settings.get("githubPath"))
+                .youtubePathRequired(settings.get("youtubePath"))
+                .productionPathRequired(settings.get("productionPath"))
+                .overviewRequired(settings.get("overview"))
+                .posterRequired(settings.get("poster"))
+                .imagesRequired(settings.get("images"))
+                .build();
+
+        contestTemplateRepository.save(template);
+    }
+
+    public void updateContestTemplate(final Long contestId, final ContestTemplateRequest request) {
+        contestConvenience.getValidateExistContest(contestId);
+        final ContestTemplate template = contestConvenience.getValidateExistTemplate(contestId);
+
+        template.updateTemplate(
+                request.divisionRequired(), request.projectNameRequired(), request.teamNameRequired(),
+                request.leaderRequired(), request.teamMembersRequired(), request.professorRequired(),
+                request.githubPathRequired(), request.youtubePathRequired(), request.productionPathRequired(),
+                request.overviewRequired(), request.posterRequired(), request.imagesRequired()
+        );
+    }
+
+    private Map<String, Boolean> getDefaultTemplate(final String categoryName) {
+        Map<String, Boolean> map = new HashMap<>();
+
+        if (categoryName.contains("창의융합")) {
+            map.put("division", true);
+            map.put("projectName", true);
+            map.put("teamName", true);
+            map.put("leader", true);
+            map.put("teamMembers", true);
+            map.put("professor", false);
+            map.put("githubPath", true);
+            map.put("youtubePath", false);
+            map.put("productionPath", false);
+            map.put("overview", true);
+            map.put("poster", true);
+            map.put("images", true);
+
+        } else if (categoryName.contains("캡스톤")) {
+            map.put("division", true);
+            map.put("projectName", true);
+            map.put("teamName", true);
+            map.put("leader", true);
+            map.put("teamMembers", true);
+            map.put("professor", true);
+            map.put("githubPath", true);
+            map.put("youtubePath", true);
+            map.put("productionPath", false);
+            map.put("overview", true);
+            map.put("poster", false);
+            map.put("images", true);
+
+        } else {
+            map.put("division", false);
+            map.put("projectName", false);
+            map.put("teamName", false);
+            map.put("leader", false);
+            map.put("teamMembers", false);
+            map.put("professor", false);
+            map.put("githubPath", false);
+            map.put("youtubePath", false);
+            map.put("productionPath", false);
+            map.put("overview", false);
+            map.put("poster", false);
+            map.put("images", false);
+        }
+        return map;
     }
 }

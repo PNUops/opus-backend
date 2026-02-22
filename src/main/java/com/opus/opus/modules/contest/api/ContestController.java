@@ -2,8 +2,6 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.ContestTeamTemplateCommandService;
-import com.opus.opus.modules.contest.application.ContestTeamTemplateQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
@@ -12,8 +10,8 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
@@ -44,8 +42,6 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
-    private final ContestTeamTemplateCommandService contestTeamTemplateCommandService;
-    private final ContestTeamTemplateQueryService contestTeamTemplateQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -114,8 +110,8 @@ public class ContestController {
     }
 
     @GetMapping("/{contestId}/template")
-    public ResponseEntity<TeamTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
-        TeamTemplateResponse response = contestTeamTemplateQueryService.getTeamTemplate(contestId);
+    public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
+        ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
         return ResponseEntity.ok(response);
     }
 
@@ -123,7 +119,7 @@ public class ContestController {
     @Secured("ROLE_관리자")
     public ResponseEntity<Void> updateContestTemplate(@PathVariable final Long contestId,
                                                       @Valid @RequestBody final ContestTemplateRequest request) {
-        contestTeamTemplateCommandService.updateTeamTemplate(contestId, request);
+        contestCommandService.updateContestTemplate(contestId, request);
         return ResponseEntity.noContent().build();
     }
 
