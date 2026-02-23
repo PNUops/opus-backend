@@ -8,7 +8,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -18,8 +17,6 @@ import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.Optional;
-import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -33,11 +30,8 @@ public class TeamQueryService {
 
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
-    private final ContestConvenience contestConvenience;
 
     private final FileRepository fileRepository;
-    private final TeamVoteRepository teamVoteRepository;
-    private final TeamRepository teamRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
