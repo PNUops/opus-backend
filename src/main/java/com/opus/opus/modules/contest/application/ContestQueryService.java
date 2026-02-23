@@ -6,16 +6,15 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
@@ -128,8 +127,28 @@ public class ContestQueryService {
                 .map(team -> TeamSummaryResponse.of(team, teamAwards,
                         likeMap.getOrDefault(team.getId(), false),
                         voteMap.getOrDefault(team.getId(), false),
-                        isVotingPeriod)).toList();
+                        isVotingPeriod
+                ))
+                .toList();
+    }
 
+    public List<TeamSummaryResponse> getContestTeamSummariesPublic(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        final List<Team> teams = teamConvenience.findAllByContestId(contestId);
+
+        final boolean isVotingPeriod = checkVotingPeriod(contest);
+
+        final List<ContestAward> teamAwards = contestAwardConvenience.getTeamAwards(teams);
+
+        teamConvenience.shuffleTeams(teams);
+
+        return teams.stream()
+                .map(team -> TeamSummaryResponse.of(team, teamAwards,
+                        false,
+                        false,
+                        isVotingPeriod
+                ))
+                .toList();
     }
 
     private Pair<Map<Long, Boolean>, Map<Long, Boolean>> getVoteAndLikeMaps(

@@ -11,18 +11,17 @@ import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRe
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamQueryService;
-import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
-import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +35,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -196,6 +196,13 @@ public class ContestController {
             @LoginMember final Member member
     ) {
         final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contestId, member);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{contestId}/teams/public")
+    public ResponseEntity<List<TeamSummaryResponse>> getAllContestTeamSummariesPublic(
+            @PathVariable final Long contestId) {
+        final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummariesPublic(contestId);
         return ResponseEntity.ok(responses);
     }
 }

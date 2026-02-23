@@ -9,8 +9,8 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -58,6 +58,10 @@ public class TeamConvenience {
         } else {
             Collections.shuffle(teams);
         }
+    }
+
+    public void shuffleTeams(final List<Team> teams) {
+        Collections.shuffle(teams);
     }
 
 }
