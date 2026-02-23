@@ -118,7 +118,8 @@ public class MemberConvenience {
                 .stream()
                 .collect(toMap(
                         Member::getId,
-                        Function.identity()
+                        Function.identity(),
+                        (existing, replacement) -> existing
                 ));
     }
 }
