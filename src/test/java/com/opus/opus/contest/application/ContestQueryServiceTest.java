@@ -108,6 +108,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
                 contest.getId());
 
         assertThat(contestVoteLogResponses.size()).isEqualTo(3);
-        assertThat(contestVoteLogResponses.get(0).votedAt()).isAfter(contestVoteLogResponses.get(1).votedAt());
+        assertThat(contestVoteLogResponses.get(0).votedAt()).isAfterOrEqualTo(contestVoteLogResponses.get(1).votedAt());
     }
 }

@@ -684,7 +684,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 정상적인_요청이면_투표_로그가_최신순으로_조회된다() throws Exception {
         final List<ContestVoteLogResponse> responses = List.of(
                 new ContestVoteLogResponse("이옵스", "lee@pusan.ac.kr", "teamA", now()),
-                new ContestVoteLogResponse("김옵스", "kim@pusan.ac.kr", "teamB", now()));
+                new ContestVoteLogResponse("김옵스", "kim@pusan.ac.kr", "teamB", now().minusSeconds(1)));
 
         when(contestQueryService.getContestVoteLog(any())).thenReturn(responses);
 
