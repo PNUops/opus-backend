@@ -4,6 +4,7 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -15,5 +16,6 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             "WHERE tv.memberId = :memberId AND tv.isVoted = true AND t.contestId = :contestId")
     long countMemberVotesInContest(Long memberId, Long contestId);
 
+    @EntityGraph(attributePaths = "team")
     List<TeamVote> findAllByTeamIdInOrderByCreatedAtDesc(final List<Long> teamIds);
 }
