@@ -9,8 +9,8 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
-import java.util.Collections;
 import java.util.List;
+import java.util.Collections;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,6 +41,10 @@ public class TeamConvenience {
         if (teamRepository.existsByTrackId(trackId)) {
             throw new TeamException(TRACK_HAS_TEAM);
         }
+    }
+
+    public List<Team> getTeamsOfContest(final Long contestId) {
+        return teamRepository.findAllByContestId(contestId);
     }
 
     public List<Team> findAllByContestId(final Long contestId) {

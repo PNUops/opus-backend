@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest_track`;
+DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `member_roles`;
@@ -15,7 +16,7 @@ DROP TABLE IF EXISTS `team_like`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_member_roles`;
-DROP TABLE IF EXISTS `team_sort`;
+DROP TABLE IF EXISTS `team_vote`;
 
 CREATE TABLE `contest` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -61,16 +62,26 @@ CREATE TABLE `contest_track` (
   PRIMARY KEY (`id`)
 );
 
+CREATE TABLE `contest_sort` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `mode` enum('ASC','CUSTOM','RANDOM') NOT NULL,
+  `contest_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_id` (`contest_id`)
+);
+
 CREATE TABLE `file` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_path` varchar(255) NOT NULL,
-  `image_type` enum('BANNER','PREVIEW','THUMBNAIL') NOT NULL,
+  `image_type` enum('BANNER','PREVIEW','THUMBNAIL','POSTER') NOT NULL,
   `is_webp_converted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
   `reference_id` bigint NOT NULL,
-  `reference_type` enum('CONTEST','TEAM') NOT NULL,
+  `reference_type` enum('CONTEST','TEAM','TRACK') NOT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -152,7 +163,8 @@ CREATE TABLE `team_like` (
   `is_liked` bit(1) NOT NULL,
   `member_id` bigint NOT NULL,
   `team_id` bigint NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_team_like_member_team` (`member_id`, `team_id`)
 );
 
 CREATE TABLE `team_vote` (
@@ -181,11 +193,13 @@ CREATE TABLE `team_member_roles` (
   PRIMARY KEY (`team_member_id`,`role`)
 );
 
-CREATE TABLE `team_sort` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `mode` enum('ASC','CUSTOM','RANDOM') NOT NULL,
-  `team_id` bigint NOT NULL,
-  PRIMARY KEY (`id`)
+CREATE TABLE `team_vote` (
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `created_at` datetime(6) DEFAULT NULL,
+    `updated_at` datetime(6) DEFAULT NULL,
+    `is_voted` bit(1) NOT NULL,
+    `member_id` bigint NOT NULL,
+    `team_id` bigint NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_team_vote_member_team` (`member_id`, `team_id`)
 );

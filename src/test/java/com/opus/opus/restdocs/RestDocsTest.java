@@ -5,7 +5,17 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.security.annotation.MemberArgumentResolver;
 import com.opus.opus.helper.ApiTestHelper;
+import com.opus.opus.modules.contest.api.ContestCategoryController;
+import com.opus.opus.modules.contest.api.ContestController;
+import com.opus.opus.modules.contest.api.ContestTrackController;
+import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
+import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
+import com.opus.opus.modules.contest.application.ContestCommandService;
+import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestTrackCommandService;
+import com.opus.opus.modules.contest.application.ContestTrackQueryService;
 import com.opus.opus.modules.contest.api.ContestController;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
@@ -13,9 +23,17 @@ import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.team.api.TeamCommentController;
+import com.opus.opus.modules.team.application.TeamCommentCommandService;
+import com.opus.opus.modules.team.application.TeamCommentQueryService;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
+import com.opus.opus.modules.team.api.TeamController;
+import com.opus.opus.modules.team.application.TeamCommandService;
+import com.opus.opus.modules.team.application.TeamQueryService;
+import com.opus.opus.modules.team.api.TeamMemberController;
+import com.opus.opus.modules.team.application.TeamMemberCommandService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +51,14 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @WebMvcTest({
         MemberController.class,
         NoticeController.class,
-        ContestController.class
+        TeamController.class,
+        TeamMemberController.class,
+        ContestController.class,
+        TeamCommentController.class,
+        ContestCategoryController.class,
+        ContestTrackController.class,
+        NoticeController.class,
+        ContestController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -47,16 +72,43 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected MemberQueryService memberQueryService;
 
     @MockitoBean
+    protected TeamCommentCommandService teamCommentCommandService;
+
+    @MockitoBean
+    protected TeamCommentQueryService teamCommentQueryService;
+
+    @MockitoBean
+    protected TeamMemberCommandService teamMemberCommandService;
+
+    @MockitoBean
     protected NoticeCommandService noticeCommandService;
 
     @MockitoBean
     protected NoticeQueryService noticeQueryService;
 
     @MockitoBean
+    protected TeamCommandService teamCommandService;
+
+    @MockitoBean
+    protected TeamQueryService teamQueryService;
+
+    @MockitoBean
     protected ContestCommandService contestCommandService;
 
     @MockitoBean
     protected ContestQueryService contestQueryService;
+
+    @MockitoBean
+    protected ContestCategoryCommandService contestCategoryCommandService;
+
+    @MockitoBean
+    protected ContestCategoryQueryService contestCategoryQueryService;
+
+    @MockitoBean
+    protected ContestTrackCommandService contestTrackCommandService;
+
+    @MockitoBean
+    protected ContestTrackQueryService contestTrackQueryService;
 
     // Setting
     @Autowired
@@ -67,6 +119,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected MemberRepository memberRepository;
+
+    @MockitoBean
+    protected MemberArgumentResolver memberArgumentResolver;
 
     @BeforeEach
     void setUp(final RestDocumentationContextProvider restDocumentation) {

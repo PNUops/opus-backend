@@ -9,12 +9,17 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
+import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
@@ -46,7 +51,7 @@ public class ContestQueryService {
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
-    private final ContestAwardConvenience contestAwardConvenience;
+    private final ContestSortConvenience contestSortConvenience;
     private final FileConvenience fileConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
@@ -85,6 +90,23 @@ public class ContestQueryService {
                     return ContestResponse.from(contest, category.getCategoryName());
                 })
                 .toList();
+    }
+
+    public VotePeriodResponse getVotePeriod(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return new VotePeriodResponse(contest.getVoteStartAt(), contest.getVoteEndAt());
+    }
+
+    public ContestVotesLimitResponse getMaxVotesLimit(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return ContestVotesLimitResponse.from(contest.getMaxVotesLimit());
+    }
+
+    public ContestSortResponse getContestSort(final Long contestId) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+
+        return new ContestSortResponse(contestSort.getMode());
     }
 
     public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {

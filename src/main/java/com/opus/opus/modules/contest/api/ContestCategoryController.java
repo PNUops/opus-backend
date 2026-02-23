@@ -29,24 +29,23 @@ public class ContestCategoryController {
     private final ContestCategoryCommandService contestCategoryCommandService;
     private final ContestCategoryQueryService contestCategoryQueryService;
 
-    @PostMapping
     @Secured("ROLE_관리자")
-    public ResponseEntity<Void> createContestCategory(
-            @Valid @RequestBody final ContestCategoryRequest request) {
+    @PostMapping
+    public ResponseEntity<Void> createContestCategory(@Valid @RequestBody final ContestCategoryRequest request) {
         contestCategoryCommandService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/{categoryId}")
     @Secured("ROLE_관리자")
+    @PatchMapping("/{categoryId}")
     public ResponseEntity<Void> updateContestCategory(@Valid @RequestBody final ContestCategoryRequest request,
                                                       @PathVariable final Long categoryId) {
         contestCategoryCommandService.updateCategory(categoryId, request);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{categoryId}")
     @Secured("ROLE_관리자")
+    @DeleteMapping("/{categoryId}")
     public ResponseEntity<Void> deleteContestCategory(@PathVariable final Long categoryId) {
         contestCategoryCommandService.deleteCategory(categoryId);
         return ResponseEntity.noContent().build();

@@ -34,24 +34,23 @@ import org.springframework.http.MediaType;
 public class NoticeApiDocsTest extends RestDocsTest {
 
     private Member admin;
-    private String adminToken;
+    private static final String ADMIN_TOKEN = "Bearer admin.access.token";
 
     @BeforeEach
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
-        adminToken = "mock_admin_access_token";
     }
 
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 생성된다.")
     void 유효한_요청이면_정상적으로_전체_공지사항이_생성된다() throws Exception {
-        final NoticeRequest request = new NoticeRequest("공지 제목", "공지 내용");
+        final NoticeRequest request = new NoticeRequest("전체 공지 제목", "전체 공지 내용");
 
         doNothing().when(noticeCommandService).createNotice(any());
 
         mockMvc.perform(post("/notices")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -69,12 +68,12 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 수정된다.")
     void 유효한_요청이면_정상적으로_전체_공지사항이_수정된다() throws Exception {
-        final NoticeRequest request = new NoticeRequest("수정된 공지 제목", "수정된 공지 내용");
+        final NoticeRequest request = new NoticeRequest("수정된 전체 공지 제목", "수정된 전체 공지 내용");
 
         doNothing().when(noticeCommandService).updateNotice(any(), any());
 
         mockMvc.perform(patch("/notices/{noticeId}", 1)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
@@ -98,7 +97,7 @@ public class NoticeApiDocsTest extends RestDocsTest {
         doNothing().when(noticeCommandService).deleteNotice(any());
 
         mockMvc.perform(delete("/notices/{noticeId}", 1)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNoContent())
                 .andDo(document("delete-notice",
                         pathParameters(
@@ -113,11 +112,11 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 상세 조회를 할 수 있다.")
     void 유효한_요청이면_정상적으로_전체_공지사항_상세_조회를_할_수_있다() throws Exception {
-        final NoticeDetailResponse response = new NoticeDetailResponse("공지 제목", "공지 내용", now(), now());
+        final NoticeDetailResponse response = new NoticeDetailResponse("전체 공지 제목", "전체 공지 내용", now(), now());
 
         when(noticeQueryService.getNotice(any())).thenReturn(response);
 
-        mockMvc.perform(get("/notices/{noticeId}", 1L))
+        mockMvc.perform(get("/notices/{noticeId}", 1))
                 .andExpect(status().isOk())
                 .andDo(document("get-notice",
                         pathParameters(
@@ -136,8 +135,8 @@ public class NoticeApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항 목록을 조회할 수 있다.")
     void 유효한_요청이면_정상적으로_전체_공지사항_목록을_조회할_수_있다() throws Exception {
         final List<NoticeSummaryResponse> responses = List.of(
-                new NoticeSummaryResponse(1L, "공지 제목 1", now()),
-                new NoticeSummaryResponse(2L, "공지 제목 2", now())
+                new NoticeSummaryResponse(1L, "전체 공지 제목 1", now()),
+                new NoticeSummaryResponse(2L, "전체 공지 제목 2", now())
         );
 
         when(noticeQueryService.getAllNotices()).thenReturn(responses);
@@ -145,6 +144,126 @@ public class NoticeApiDocsTest extends RestDocsTest {
         mockMvc.perform(get("/notices"))
                 .andExpect(status().isOk())
                 .andDo(document("get-all-notices",
+                        responseFields(
+                                arrayFieldWithPath("[]", "공지 목록"),
+                                numberFieldWithPath("[].noticeId", "공지 ID"),
+                                stringFieldWithPath("[].title", "공지 제목"),
+                                dateTimeFieldWithPath("[].createdAt", "공지 생성 시각")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 생성된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_생성된다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("공지 제목", "공지 내용");
+
+        doNothing().when(noticeCommandService).createContestNotice(any(), any());
+
+        mockMvc.perform(post("/contests/{contestId}/notices", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("create-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "공지 제목"),
+                                stringFieldWithPath("description", "공지 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 수정된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_수정된다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("수정된 대회별 공지 제목", "수정된 대회별 공지 내용");
+
+        doNothing().when(noticeCommandService).updateContestNotice(any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/notices/{noticeId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "수정된 대회별 공지 제목"),
+                                stringFieldWithPath("description", "수정된 대회별 공지 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항이 삭제된다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항이_삭제된다() throws Exception {
+        doNothing().when(noticeCommandService).deleteContestNotice(any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/notices/{noticeId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항 상세 조회를 할 수 있다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항_상세_조회를_할_수_있다() throws Exception {
+        final NoticeDetailResponse response = new NoticeDetailResponse("대회별 공지 제목", "대회별 공지 내용", now(), now());
+
+        when(noticeQueryService.getContestNotice(any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/notices/{noticeId}", 1, 1))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-notice",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        responseFields(
+                                stringFieldWithPath("title", "공지 제목"),
+                                stringFieldWithPath("description", "공지 내용"),
+                                dateTimeFieldWithPath("createdAt", "공지 생성 시각"),
+                                dateTimeFieldWithPath("updatedAt", "공지 수정 시각")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 대회별 공지사항 목록을 조회할 수 있다.")
+    void 유효한_요청이면_정상적으로_대회별_공지사항_목록을_조회할_수_있다() throws Exception {
+        final List<NoticeSummaryResponse> responses = List.of(
+                new NoticeSummaryResponse(1L, "대회별 공지 제목 1", now()),
+                new NoticeSummaryResponse(2L, "대회별 공지 제목 2", now())
+        );
+
+        when(noticeQueryService.getAllContestNotices(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/notices", 1))
+                .andExpect(status().isOk())
+                .andDo(document("get-all-contest-notices",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
                         responseFields(
                                 arrayFieldWithPath("[]", "공지 목록"),
                                 numberFieldWithPath("[].noticeId", "공지 ID"),

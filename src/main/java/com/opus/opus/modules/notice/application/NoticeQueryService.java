@@ -1,6 +1,7 @@
 package com.opus.opus.modules.notice.application;
 
-import com.opus.opus.modules.notice.application.dto.NoticeConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.notice.application.convenience.NoticeConvenience;
 import com.opus.opus.modules.notice.application.dto.response.NoticeDetailResponse;
 import com.opus.opus.modules.notice.application.dto.response.NoticeSummaryResponse;
 import com.opus.opus.modules.notice.domain.Notice;
@@ -18,14 +19,28 @@ public class NoticeQueryService {
     private final NoticeRepository noticeRepository;
 
     private final NoticeConvenience noticeConvenience;
+    private final ContestConvenience contestConvenience;
 
     public NoticeDetailResponse getNotice(final Long noticeId) {
-        final Notice notice = noticeConvenience.getValidateExistNotice(noticeId);
+        final Notice notice = noticeConvenience.getValidateGlobalNotice(noticeId);
         return NoticeDetailResponse.from(notice);
     }
 
     public List<NoticeSummaryResponse> getAllNotices() {
-        return noticeRepository.findAllByOrderByCreatedAtDesc()
+        return noticeRepository.findAllByContestIdIsNullOrderByCreatedAtDesc()
+                .stream()
+                .map(NoticeSummaryResponse::from)
+                .toList();
+    }
+
+    public NoticeDetailResponse getContestNotice(final Long contestId, final Long noticeId) {
+        final Notice notice = noticeConvenience.getValidateContestNotice(contestId, noticeId);
+        return NoticeDetailResponse.from(notice);
+    }
+
+    public List<NoticeSummaryResponse> getAllContestNotices(final Long contestId) {
+        contestConvenience.validateExistContest(contestId);
+        return noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId)
                 .stream()
                 .map(NoticeSummaryResponse::from)
                 .toList();
