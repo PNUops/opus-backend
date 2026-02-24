@@ -15,16 +15,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class GoogleOAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${oauth2.redirect.url}")
-    private String redirectUrl;
+    @Value("${oauth2.redirect-callback-url}")
+    private String redirectCallbackUrl;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
-        log.error("OAuth2 로그인 실패: {}", exception.getMessage());
+        log.error("OAuth2 로그인 실패 원인 : {}", exception.getMessage());
 
-        final String errorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
-        final String targetUrl = redirectUrl + "?error=" + errorMessage;
+        final String encodedErrorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
+        final String targetUrl = redirectCallbackUrl + "?error=" + encodedErrorMessage;
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

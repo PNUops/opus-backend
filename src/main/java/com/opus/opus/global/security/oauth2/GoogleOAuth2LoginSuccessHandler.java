@@ -20,8 +20,8 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
 
     private final JwtProvider jwtProvider;
 
-    @Value("${oauth2.redirect.url}")
-    private String redirectUrl;
+    @Value("${oauth2.redirect-callback-url}")
+    private String redirectCallbackUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -34,7 +34,7 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
 
         final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
 
-        final String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
+        final String targetUrl = UriComponentsBuilder.fromUriString(redirectCallbackUrl)
                 .queryParam("token", token)
                 .build()
                 .toUriString();
