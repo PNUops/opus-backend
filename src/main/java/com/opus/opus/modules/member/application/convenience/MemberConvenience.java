@@ -89,7 +89,7 @@ public class MemberConvenience {
         final String randomPassword = generateRandomPassword();
 
         return memberRepository.save(
-                Member.builder()
+                Member.generalMember()
                         .name(name)
                         .studentId(studentId)
                         .email(email)

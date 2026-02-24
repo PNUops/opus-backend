@@ -150,7 +150,7 @@ public class MemberCommandService {
                                    final String password) {
         memberConvenience.checkIsDuplicateStudentId(studentId);
 
-        memberRepository.save(Member.builder()
+        memberRepository.save(Member.generalMember()
                 .name(name)
                 .studentId(studentId)
                 .email(email)

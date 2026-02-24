@@ -1,7 +1,6 @@
 package com.opus.opus.modules.member.domain;
 
 import static jakarta.persistence.FetchType.EAGER;
-import static jakarta.persistence.FetchType.LAZY;
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -41,11 +40,15 @@ public class Member extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String studentId;
+
+    @Enumerated(EnumType.STRING)
+    private SocialType socialType;
+
+    private String socialId;
 
     @ElementCollection(fetch = EAGER)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
@@ -56,13 +59,24 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @Builder
+    @Builder(builderMethodName = "generalMember")
     private Member(final String name, final String email, final String password, final String studentId,
                   final Set<MemberRoleType> roles) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.studentId = studentId;
+        this.roles = roles;
+        this.isDeleted = false;
+    }
+
+    @Builder(builderMethodName = "socialMember")
+    private Member(final String name, final String email, final SocialType socialType, final String socialId,
+                   final Set<MemberRoleType> roles) {
+        this.name = name;
+        this.email = email;
+        this.socialType = socialType;
+        this.socialId = socialId;
         this.roles = roles;
         this.isDeleted = false;
     }
