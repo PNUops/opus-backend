@@ -91,8 +91,10 @@ CREATE TABLE `member` (
   `email` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `student_id` varchar(255) NOT NULL,
+  `password` varchar(255) NULL,
+  `student_id` varchar(255) NULL,
+  `social_type` varchar(20) NULL,
+  `social_id` varchar(255) NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_member_email` (`email`),
   UNIQUE KEY `uk_member_student_id` (`student_id`)
