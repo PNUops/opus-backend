@@ -11,10 +11,12 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -54,6 +56,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -682,28 +688,46 @@ public class ContestApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 정상적인 요청이면 투표_로그가_최신순으로_조회된다.")
     void 정상적인_요청이면_투표_로그가_최신순으로_조회된다() throws Exception {
-        final List<ContestVoteLogResponse> responses = List.of(
+        final List<ContestVoteLogResponse> content = List.of(
                 new ContestVoteLogResponse("이옵스", "lee@pusan.ac.kr", "teamA", now()),
                 new ContestVoteLogResponse("김옵스", "kim@pusan.ac.kr", "teamB", now().minusSeconds(1)));
 
-        when(contestQueryService.getContestVoteLog(any())).thenReturn(responses);
+        final Page<ContestVoteLogResponse> page = new PageImpl<>(content,
+                PageRequest.of(0, 20, Sort.by(DESC, "votedAt")), 2);
+
+        when(contestQueryService.getContestVoteLog(any(), anyInt(), anyInt())).thenReturn(page);
 
         mockMvc.perform(get("/contests/{contestId}/vote-log", 1)
+                        .param("page", "0")
+                        .param("size", "20")
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-contest-vote-log",
                         pathParameters(
-                                parameterWithName("contestId").description("대회 ID")
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         responseFields(
-                                arrayFieldWithPath("[]", "투표 로그 목록 (최신순)"),
-                                stringFieldWithPath("[].voterName", "투표자 이름"),
-                                stringFieldWithPath("[].voterEmail", "투표자 이메일"),
-                                stringFieldWithPath("[].teamName", "투표한 팀 이름"),
-                                dateTimeFieldWithPath("[].votedAt", "투표 시점")
+                                arrayFieldWithPath("content[]", "투표 로그 목록 (최신순)"),
+                                stringFieldWithPath("content[].voterName", "투표자 이름"),
+                                stringFieldWithPath("content[].voterEmail", "투표자 이메일"),
+                                stringFieldWithPath("content[].teamName", "투표한 팀 이름"),
+                                dateTimeFieldWithPath("content[].votedAt", "투표 시점"),
+
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부")
                         )
                 ));
     }

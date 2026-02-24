@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 public class ContestQueryServiceTest extends IntegrationTest {
 
@@ -104,9 +105,11 @@ public class ContestQueryServiceTest extends IntegrationTest {
         teamVoteRepository.save(createTeamVote(otherTeam, member.getId(), true));
         teamVoteRepository.save(createTeamVote(team, otherMember.getId(), true));
 
-        final List<ContestVoteLogResponse> contestVoteLogResponses = contestQueryService.getContestVoteLog(
-                contest.getId());
+        final Page<ContestVoteLogResponse> page = contestQueryService.getContestVoteLog(contest.getId(), 0, 20);
 
+        final List<ContestVoteLogResponse> contestVoteLogResponses = page.getContent();
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
         assertThat(contestVoteLogResponses.size()).isEqualTo(3);
         assertThat(contestVoteLogResponses.get(0).votedAt()).isAfterOrEqualTo(contestVoteLogResponses.get(1).votedAt());
     }
