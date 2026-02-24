@@ -4,6 +4,8 @@ import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +16,7 @@ public class TeamVoteConvenience {
 
     private final TeamVoteRepository teamVoteRepository;
 
-    public List<TeamVote> getAllTeamVoteDesc(final List<Long> teamIds) {
-        return teamVoteRepository.findAllByTeamIdInOrderByCreatedAtDesc(teamIds);
+    public Page<TeamVote> getAllTeamVoteDesc(final List<Long> teamIds, final Pageable pageable) {
+        return teamVoteRepository.findByTeamIdInOrderByCreatedAtDesc(teamIds, pageable);
     }
 }

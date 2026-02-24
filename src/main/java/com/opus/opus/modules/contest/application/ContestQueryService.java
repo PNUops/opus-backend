@@ -4,6 +4,7 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
@@ -34,6 +35,10 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,37 +111,37 @@ public class ContestQueryService {
         return new ContestSortResponse(contestSort.getMode());
     }
 
-    public List<ContestVoteLogResponse> getContestVoteLog(final Long contestId) {
+    public Page<ContestVoteLogResponse> getContestVoteLog(final Long contestId, final int page, final int size) {
         contestConvenience.validateExistContest(contestId);
 
-        final List<TeamVote> votes = getContestVotes(contestId);
-        final Map<Long, Member> memberMap = getMemberMap(votes);
+        final Pageable pageable = PageRequest.of(page, size, Sort.by(DESC, "createdAt"));
 
-        return votes.stream()
-                .map(vote -> {
-                    final Member member = memberMap.get(vote.getMemberId());
-                    return new ContestVoteLogResponse(
-                            member.getName(),
-                            member.getEmail(),
-                            vote.getTeam().getTeamName(),
-                            vote.getCreatedAt()
-                    );
-                })
-                .toList();
+        final Page<TeamVote> votePage = getContestVotes(contestId, pageable);
+        final Map<Long, Member> memberMap = getMemberMap(votePage);
+
+        return votePage.map(vote -> {
+            final Member member = memberMap.get(vote.getMemberId());
+            return new ContestVoteLogResponse(
+                    member.getName(),
+                    member.getEmail(),
+                    vote.getTeam().getTeamName(),
+                    vote.getCreatedAt()
+            );
+        });
     }
 
-    private List<TeamVote> getContestVotes(final Long contestId) {
+    private Page<TeamVote> getContestVotes(final Long contestId, final Pageable pageable) {
         final List<Long> teamIds = teamConvenience.getTeamsOfContest(contestId)
                 .stream()
                 .map(Team::getId)
                 .toList();
 
-        return teamVoteConvenience.getAllTeamVoteDesc(teamIds);
+        return teamVoteConvenience.getAllTeamVoteDesc(teamIds, pageable);
     }
 
-    private Map<Long, Member> getMemberMap(final List<TeamVote> votes) {
+    private Map<Long, Member> getMemberMap(final Page<TeamVote> votePage) {
         return memberConvenience.getMembersByIds(
-                votes.stream()
+                votePage.getContent().stream()
                         .map(TeamVote::getMemberId)
                         .distinct()
                         .toList()

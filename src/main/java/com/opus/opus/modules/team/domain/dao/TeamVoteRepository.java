@@ -4,6 +4,8 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,5 +19,5 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     long countMemberVotesInContest(Long memberId, Long contestId);
 
     @EntityGraph(attributePaths = "team")
-    List<TeamVote> findAllByTeamIdInOrderByCreatedAtDesc(final List<Long> teamIds);
+    Page<TeamVote> findByTeamIdInOrderByCreatedAtDesc(final List<Long> teamIds, final Pageable pageable);
 }
