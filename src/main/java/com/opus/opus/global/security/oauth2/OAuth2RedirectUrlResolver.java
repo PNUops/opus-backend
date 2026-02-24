@@ -1,6 +1,7 @@
 package com.opus.opus.global.security.oauth2;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,10 +17,12 @@ public class OAuth2RedirectUrlResolver {
     private String prodRedirectCallbackUrl;
 
     public String resolve(final HttpServletRequest request) {
-        final String origin = request.getHeader("Origin");
-        log.debug("감지된 Origin 헤더: {}", origin);
+        final HttpSession session = request.getSession(false);
+        final String redirect = session != null ? (String) session.getAttribute("redirect") : null;
 
-        if (origin != null && origin.contains("localhost:5173")) {
+        log.info("세션에서 감지된 redirect: {}", redirect);
+
+        if ("local".equals(redirect)) {
             return localRedirectCallbackUrl;
         }
         return prodRedirectCallbackUrl;

@@ -12,6 +12,7 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
@@ -79,5 +81,11 @@ public class MemberController {
     public ResponseEntity<EmailFindResponse> getMyEmail(@PathVariable final String studentId) {
         final EmailFindResponse response = memberQueryService.getMyEmail(studentId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/oauth2/set-redirect")
+    public ResponseEntity<Void> setRedirect(@RequestParam final String type, final HttpServletRequest request) {
+        request.getSession().setAttribute("redirect", type);
+        return ResponseEntity.noContent().build();
     }
 }
