@@ -1,5 +1,7 @@
 package com.opus.opus.global.security.oauth2;
 
+import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
+
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.SocialType;
@@ -22,18 +24,31 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
 
     @Override
     @Transactional
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+    public OAuth2User loadUser(final OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         final OAuth2User oAuth2User = super.loadUser(userRequest);
-
         final Map<String, Object> attributes = oAuth2User.getAttributes();
+
         final String socialId = (String) attributes.get("sub");
         final String email = (String) attributes.get("email");
         final String name = (String) attributes.get("name");
 
         final Member member = memberRepository.findBySocialTypeAndSocialId(SocialType.GOOGLE, socialId)
-                .orElseGet(() -> registerNewSocialMember(name, email, socialId));
+                .orElseGet(() -> findOrRegisterSocialMember(name, email, socialId));
 
         return new GoogleOAuth2MemberDetails(member, attributes);
+    }
+
+    private Member findOrRegisterSocialMember(final String name, final String email, final String socialId) {
+        return memberRepository.findByEmail(email)
+                .map(this::validateSocialMember)
+                .orElseGet(() -> registerNewSocialMember(name, email, socialId));
+    }
+
+    private Member validateSocialMember(final Member member) {
+        if (!member.isSocialMember()) {
+            throw new OAuth2AuthenticationException(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage());
+        }
+        return member;
     }
 
     private Member registerNewSocialMember(final String name, final String email, final String socialId) {

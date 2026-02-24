@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-public class GoogleOAuth2MemberDetails implements OAuth2User {
+public class GoogleOAuth2MemberDetails implements OAuth2MemberDetails {
 
     @Getter
     private final Member member;

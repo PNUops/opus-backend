@@ -25,7 +25,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        final GoogleOAuth2MemberDetails oAuth2MemberDetails = (GoogleOAuth2MemberDetails) authentication.getPrincipal();
+        final OAuth2MemberDetails oAuth2MemberDetails = (OAuth2MemberDetails) authentication.getPrincipal();
         final Member member = oAuth2MemberDetails.getMember();
 
         final List<String> roles = member.getRoles().stream()

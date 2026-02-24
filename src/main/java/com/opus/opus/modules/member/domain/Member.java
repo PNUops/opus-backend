@@ -89,4 +89,8 @@ public class Member extends BaseEntity {
     public void updatePassword(final String newPassword) {
         this.password = newPassword;
     }
+
+    public boolean isSocialMember() {
+        return socialType != null && socialId != null;
+    }
 }

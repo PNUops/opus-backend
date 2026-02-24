@@ -6,6 +6,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
@@ -202,6 +203,12 @@ public class MemberCommandService {
     private void checkEqualPassword(final String newPassword, final Member member) {
         if (passwordEncoder.matches(newPassword, member.getPassword())) {
             throw new MemberException(CANNOT_CHANGE_SAME_PASSWORD);
+        }
+    }
+
+    private void checkGeneralMember(final Member member) {
+        if (member.isSocialMember()) {
+            throw new MemberException(SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN);
         }
     }
 
