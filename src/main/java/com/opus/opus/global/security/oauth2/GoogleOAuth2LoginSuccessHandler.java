@@ -8,20 +8,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtProvider jwtProvider;
-
-    @Value("${oauth2.redirect-callback-url}")
-    private String redirectCallbackUrl;
+    private final OAuth2RedirectUrlResolver redirectUrlResolver;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -34,7 +33,7 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
 
         final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
 
-        final String targetUrl = UriComponentsBuilder.fromUriString(redirectCallbackUrl)
+        final String targetUrl = UriComponentsBuilder.fromUriString(redirectUrlResolver.resolve(request))
                 .queryParam("token", token)
                 .build()
                 .toUriString();
@@ -42,4 +41,3 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
-

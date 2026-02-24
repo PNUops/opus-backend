@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class GoogleOAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${oauth2.redirect-callback-url}")
-    private String redirectCallbackUrl;
+    private final OAuth2RedirectUrlResolver redirectUrlResolver;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
@@ -24,7 +25,7 @@ public class GoogleOAuth2LoginFailureHandler extends SimpleUrlAuthenticationFail
         log.error("OAuth2 로그인 실패 원인 : {}", exception.getMessage());
 
         final String encodedErrorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
-        final String targetUrl = redirectCallbackUrl + "?error=" + encodedErrorMessage;
+        final String targetUrl = redirectUrlResolver.resolve(request) + "?error=" + encodedErrorMessage;
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
