@@ -90,3 +90,34 @@ include::{snippets}/get-all-contest-track/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-contest-track/response-fields.adoc[]
+
+== `POST`: 분과 기본 썸네일 등록
+
+.HTTP Request Headers
+include::{snippets}/save-contest-track-thumbnail/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/save-contest-track-thumbnail/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/save-contest-track-thumbnail/http-request.adoc[]
+
+.Request Parts
+include::{snippets}/save-contest-track-thumbnail/request-parts.adoc[]
+
+.HTTP Response
+include::{snippets}/save-contest-track-thumbnail/http-response.adoc[]
+
+== `DELETE`: 분과 기본 썸네일 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-track-thumbnail/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-track-thumbnail/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-track-thumbnail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-track-thumbnail/http-response.adoc[]

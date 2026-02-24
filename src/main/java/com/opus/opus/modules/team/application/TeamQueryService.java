@@ -1,15 +1,13 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
-import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -17,8 +15,8 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.domain.Team;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -32,10 +30,8 @@ public class TeamQueryService {
 
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
-    private final ContestConvenience contestConvenience;
 
     private final FileRepository fileRepository;
-    private final TeamVoteRepository teamVoteRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -48,24 +44,42 @@ public class TeamQueryService {
     }
 
     public ImageResponse getThumbnailImage(final Long teamId) {
-        return getImage(teamId, THUMBNAIL);
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+
+        return getTeamThumbnail(teamId)
+                .or(() -> getTrackThumbnail(team.getTrackId()))
+                .orElseGet(this::getDefaultThumbnailResponse);
+    }
+
+    private Optional<ImageResponse> getTeamThumbnail(final Long teamId) {
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
+
+    private Optional<ImageResponse> getTrackThumbnail(final Long trackId) {
+        if (trackId == null) {
+            return Optional.empty();
+        }
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
+                .map(this::getImageResponse);
+    }
+
+    private ImageResponse getDefaultThumbnailResponse() {
+        final Pair<Resource, String> defaultResult = fileStorageUtil.findDefaultThumbnail();
+        return new ImageResponse(defaultResult.a, defaultResult.b);
     }
 
     public ImageResponse getPosterImage(final Long teamId) {
         return getImage(teamId, POSTER);
     }
 
-    @Transactional(readOnly = true)
-    public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
-        final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
-        final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
-        return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
-    }
-
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, fileImageType);
+        return getImageResponse(findFile);
+    }
+
+    private ImageResponse getImageResponse(final File findFile) {
         checkImageConverted(findFile);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);

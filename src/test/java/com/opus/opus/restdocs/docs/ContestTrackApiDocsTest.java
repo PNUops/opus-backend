@@ -33,6 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
+import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
+import org.springframework.mock.web.MockMultipartFile;
+
 public class ContestTrackApiDocsTest extends RestDocsTest {
 
     private Member admin;
@@ -155,6 +160,61 @@ public class ContestTrackApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].trackId", "분과 ID"),
                                 stringFieldWithPath("[].trackName", "분과 이름"),
                                 dateTimeFieldWithPath("[].updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 분과 기본 썸네일을 등록한다.")
+    void 분과_기본_썸네일을_등록한다() throws Exception {
+        final Long contestId = 1L;
+        final Long trackId = 1L;
+        final MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "track_thumbnail.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "test-image-content".getBytes()
+        );
+
+        doNothing().when(contestTrackCommandService).saveContestTrackDefaultThumbnail(any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/tracks/{trackId}/thumbnail", contestId, trackId)
+                        .file(image)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andDo(document("save-contest-track-thumbnail",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("trackId").description("분과 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestParts(
+                                partWithName("image").description("등록할 분과 기본 썸네일 이미지")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 분과 기본 썸네일을 삭제한다.")
+    void 분과_기본_썸네일을_삭제한다() throws Exception {
+        final Long contestId = 1L;
+        final Long trackId = 1L;
+
+        doNothing().when(contestTrackCommandService).deleteContestTrackDefaultThumbnail(any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/tracks/{trackId}/thumbnail", contestId, trackId)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-track-thumbnail",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("trackId").description("분과 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         )
                 ));
     }

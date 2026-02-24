@@ -366,3 +366,108 @@ include::{snippets}/get-all-contest/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-contest/response-fields.adoc[]
+
+== 프로젝트 등록 현황 조회
+
+=== `GET`: 대회 팀별 프로젝트 등록 현황 조회
+
+.Path Parameters
+include::{snippets}/get-team-submissions/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-submissions/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-team-submissions/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-submissions/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-submissions/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-team-submissions-fail-not-found/path-parameters.adoc[]
+
+include::{snippets}/get-team-submissions-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-team-submissions-fail-not-found/http-response.adoc[]
+
+====
+
+== 투표 랭킹 조회
+
+=== `GET`: 대회 투표 랭킹 조회
+
+.Path Parameters
+include::{snippets}/get-team-ranking/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-ranking/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-team-ranking/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-ranking/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-ranking/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-team-ranking-fail-not-found/path-parameters.adoc[]
+
+include::{snippets}/get-team-ranking-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-team-ranking-fail-not-found/http-response.adoc[]
+
+====
+
+== 투표 집계 조회
+
+=== `GET`: 대회 투표 집계 조회
+
+.Path Parameters
+include::{snippets}/get-vote-statistics/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-vote-statistics/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-vote-statistics/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-vote-statistics/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-vote-statistics/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-vote-statistics-fail-not-found/path-parameters.adoc[]
+
+include::{snippets}/get-vote-statistics-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-vote-statistics-fail-not-found/http-response.adoc[]
+
+====
