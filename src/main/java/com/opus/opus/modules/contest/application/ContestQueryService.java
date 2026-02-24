@@ -6,6 +6,7 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -30,7 +31,6 @@ import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +51,7 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final ContestAwardConvenience contestAwardConvenience;
     private final FileConvenience fileConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
@@ -114,17 +115,18 @@ public class ContestQueryService {
 
         final boolean isVotingPeriod = checkVotingPeriod(contest);
 
-        final Pair<Map<Long, Boolean>, Map<Long, Boolean>> voteAndLikeMaps = getVoteAndLikeMaps(teams, member,
-                isVotingPeriod);
-        final Map<Long, Boolean> voteMap = voteAndLikeMaps.a;
-        final Map<Long, Boolean> likeMap = voteAndLikeMaps.b;
+        final ReactionMaps reactionMaps = getReactionMaps(contestId, member, isVotingPeriod);
+        final Map<Long, Boolean> voteMap = reactionMaps.voteMap();
+        final Map<Long, Boolean> likeMap = reactionMaps.likeMap();
 
         final List<ContestAward> teamAwards = contestAwardConvenience.getTeamAwards(teams);
 
         teamConvenience.shuffleTeams(teams, member);
 
         return teams.stream()
-                .map(team -> TeamSummaryResponse.of(team, teamAwards,
+                .map(team -> TeamSummaryResponse.of(
+                        team,
+                        teamAwards,
                         likeMap.getOrDefault(team.getId(), false),
                         voteMap.getOrDefault(team.getId(), false),
                         isVotingPeriod
@@ -133,35 +135,23 @@ public class ContestQueryService {
     }
 
     public List<TeamSummaryResponse> getContestTeamSummariesPublic(final Long contestId) {
-        final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final List<Team> teams = teamConvenience.findAllByContestId(contestId);
-
-        final boolean isVotingPeriod = checkVotingPeriod(contest);
-
-        final List<ContestAward> teamAwards = contestAwardConvenience.getTeamAwards(teams);
-
-        teamConvenience.shuffleTeams(teams);
-
-        return teams.stream()
-                .map(team -> TeamSummaryResponse.of(team, teamAwards,
-                        false,
-                        false,
-                        isVotingPeriod
-                ))
-                .toList();
+        return getContestTeamSummaries(contestId, null);
     }
 
-    private Pair<Map<Long, Boolean>, Map<Long, Boolean>> getVoteAndLikeMaps(
-            final List<Team> teams, final Member member, final boolean isVotingPeriod) {
+    private ReactionMaps getReactionMaps(final Long contestId, final Member member, final boolean isVotingPeriod) {
+        if (member == null) {
+            return new ReactionMaps(Map.of(), Map.of());
+        }
+
         if (isVotingPeriod) {
-            return new Pair<>(
-                    teamVoteConvenience.getVoteMap(teams, member),
-                    Collections.emptyMap()
+            return new ReactionMaps(
+                    teamVoteConvenience.getVoteMap(contestId, member),
+                    Map.of()
             );
         } else {
-            return new Pair<>(
-                    Collections.emptyMap(),
-                    teamLikeConvenience.getLikeMap(teams, member)
+            return new ReactionMaps(
+                    Map.of(),
+                    teamLikeConvenience.getLikeMap(contestId, member)
             );
         }
     }
@@ -176,5 +166,8 @@ public class ContestQueryService {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
+    }
+
+    private record ReactionMaps(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
     }
 }

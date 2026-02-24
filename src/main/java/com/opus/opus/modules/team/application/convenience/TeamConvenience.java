@@ -48,7 +48,7 @@ public class TeamConvenience {
     }
 
     public List<Team> findAllByContestId(final Long contestId) {
-        return teamRepository.findByContestId(contestId);
+        return teamRepository.findAllByContestId(contestId);
     }
 
     public void shuffleTeams(final List<Team> teams, final Member member) {
@@ -58,10 +58,6 @@ public class TeamConvenience {
         } else {
             Collections.shuffle(teams);
         }
-    }
-
-    public void shuffleTeams(final List<Team> teams) {
-        Collections.shuffle(teams);
     }
 
 }

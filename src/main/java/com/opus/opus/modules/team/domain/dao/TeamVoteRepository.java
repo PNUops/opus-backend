@@ -2,6 +2,7 @@ package com.opus.opus.modules.team.domain.dao;
 
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +21,12 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             "JOIN vote.team team " +
             "WHERE team.contestId = :contestId AND vote.isVoted = true")
     VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
+
+    @Query("""
+                SELECT tv
+                FROM TeamVote tv
+                JOIN tv.team t
+                WHERE tv.memberId = :memberId AND t.contestId = :contestId
+            """)
+    List<TeamVote> findAllByMemberIdAndContestId(final Long memberId, final Long contestId);
 }
