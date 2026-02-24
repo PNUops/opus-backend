@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class OAuth2UserService extends DefaultOAuth2UserService {
+public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
 

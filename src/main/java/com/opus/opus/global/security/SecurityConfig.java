@@ -2,9 +2,9 @@ package com.opus.opus.global.security;
 
 import com.opus.opus.global.security.handler.CustomAccessDeniedHandler;
 import com.opus.opus.global.security.handler.CustomAuthenticationEntryPoint;
-import com.opus.opus.global.security.oauth2.OAuth2UserService;
-import com.opus.opus.global.security.oauth2.OAuth2LoginFailureHandler;
-import com.opus.opus.global.security.oauth2.OAuth2LoginSuccessHandler;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2LoginFailureHandler;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,9 +30,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    private final OAuth2UserService oAuth2UserService;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final GoogleOAuth2UserService googleOAuth2UserService;
+    private final GoogleOAuth2LoginSuccessHandler googleOAuth2LoginSuccessHandler;
+    private final GoogleOAuth2LoginFailureHandler googleOAuth2LoginFailureHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -52,11 +52,9 @@ public class SecurityConfig {
                         .anyRequest().hasAnyRole("회원", "관리자", "팀장", "팀원")
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oAuth2UserService)
-                        )
-                        .successHandler(oAuth2LoginSuccessHandler)
-                        .failureHandler(oAuth2LoginFailureHandler)
+                        .userInfoEndpoint(userInfo -> userInfo.userService(googleOAuth2UserService))
+                        .successHandler(googleOAuth2LoginSuccessHandler)
+                        .failureHandler(googleOAuth2LoginFailureHandler)
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .accessDeniedHandler(customAccessDeniedHandler)

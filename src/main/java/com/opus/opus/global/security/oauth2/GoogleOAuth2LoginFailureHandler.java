@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class OAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
+public class GoogleOAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     @Value("${oauth2.redirect.url}")
     private String redirectUrl;
