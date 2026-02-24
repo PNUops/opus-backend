@@ -59,7 +59,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @Builder(builderMethodName = "generalMember")
+    @Builder(builderMethodName = "generalMember", builderClassName = "GeneralMemberBuilder")
     private Member(final String name, final String email, final String password, final String studentId,
                   final Set<MemberRoleType> roles) {
         this.name = name;
@@ -70,7 +70,7 @@ public class Member extends BaseEntity {
         this.isDeleted = false;
     }
 
-    @Builder(builderMethodName = "socialMember")
+    @Builder(builderMethodName = "socialMember", builderClassName = "SocialMemberBuilder")
     private Member(final String name, final String email, final SocialType socialType, final String socialId,
                    final Set<MemberRoleType> roles) {
         this.name = name;
