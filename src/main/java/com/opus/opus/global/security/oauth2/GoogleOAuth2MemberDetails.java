@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-public class GoogleOAuth2MemberDetails implements OAuth2MemberDetails {
+public class GoogleOAuth2MemberDetails implements OAuth2User {
 
     @Getter
     private final Member member;
@@ -29,7 +29,7 @@ public class GoogleOAuth2MemberDetails implements OAuth2MemberDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return member.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.toString()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
