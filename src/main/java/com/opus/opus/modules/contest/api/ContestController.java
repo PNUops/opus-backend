@@ -13,6 +13,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResp
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
@@ -22,8 +23,10 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +40,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -175,6 +179,13 @@ public class ContestController {
     }
 
     @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/vote-log")
+    public ResponseEntity<Page<ContestVoteLogResponse>> getContestVoteLog(@PathVariable final Long contestId,
+                                                                          @RequestParam(defaultValue = "0") @PositiveOrZero int page,
+                                                                          @RequestParam(defaultValue = "20") @PositiveOrZero int size) {
+        return ResponseEntity.ok(contestQueryService.getContestVoteLog(contestId, page, size));
+    }
+
     @GetMapping("/{contestId}/ranking")
     public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
         final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contestId);

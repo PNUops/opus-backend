@@ -4,6 +4,7 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
@@ -13,6 +14,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResp
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
@@ -26,20 +28,31 @@ import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamVote;
+import java.util.List;
+import java.util.Map;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +71,9 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final TeamConvenience teamConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
+    private final MemberConvenience memberConvenience;
     private final FileConvenience fileConvenience;
 
     public ImageResponse getContestBanner(final Long contestId) {
@@ -110,6 +126,43 @@ public class ContestQueryService {
         final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
 
         return new ContestSortResponse(contestSort.getMode());
+    }
+
+    public Page<ContestVoteLogResponse> getContestVoteLog(final Long contestId, final int page, final int size) {
+        contestConvenience.validateExistContest(contestId);
+
+        final Pageable pageable = PageRequest.of(page, size, Sort.by(DESC, "createdAt"));
+
+        final Page<TeamVote> votePage = getContestVotes(contestId, pageable);
+        final Map<Long, Member> memberMap = getMemberMap(votePage);
+
+        return votePage.map(vote -> {
+            final Member member = memberMap.get(vote.getMemberId());
+            return new ContestVoteLogResponse(
+                    member.getName(),
+                    member.getEmail(),
+                    vote.getTeam().getTeamName(),
+                    vote.getCreatedAt()
+            );
+        });
+    }
+
+    private Page<TeamVote> getContestVotes(final Long contestId, final Pageable pageable) {
+        final List<Long> teamIds = teamConvenience.getTeamsOfContest(contestId)
+                .stream()
+                .map(Team::getId)
+                .toList();
+
+        return teamVoteConvenience.getAllTeamVoteDesc(teamIds, pageable);
+    }
+
+    private Map<Long, Member> getMemberMap(final Page<TeamVote> votePage) {
+        return memberConvenience.getMembersByIds(
+                votePage.getContent().stream()
+                        .map(TeamVote::getMemberId)
+                        .distinct()
+                        .toList()
+        );
     }
 
     public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
@@ -167,4 +220,5 @@ public class ContestQueryService {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
     }
+
 }
