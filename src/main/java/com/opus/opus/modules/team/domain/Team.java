@@ -102,4 +102,8 @@ public class Team extends BaseEntity {
     public void updateItemOrder(final Integer newOrder) {
         this.itemOrder = newOrder;
     }
+
+    public void submit() {
+        this.isSubmitted = true;
+    }
 }

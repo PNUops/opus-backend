@@ -8,8 +8,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
-import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -19,8 +17,6 @@ import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.Optional;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -34,10 +30,8 @@ public class TeamQueryService {
 
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
-    private final ContestConvenience contestConvenience;
 
     private final FileRepository fileRepository;
-    private final TeamVoteRepository teamVoteRepository;
 
     private final FileStorageUtil fileStorageUtil;
 
@@ -77,14 +71,6 @@ public class TeamQueryService {
 
     public ImageResponse getPosterImage(final Long teamId) {
         return getImage(teamId, POSTER);
-    }
-
-    @Transactional(readOnly = true)
-    public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
-        final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
-        final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
-        return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
     }
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {

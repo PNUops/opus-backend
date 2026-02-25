@@ -20,4 +20,11 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
 
     @EntityGraph(attributePaths = "team")
     Page<TeamVote> findByTeamIdInOrderByCreatedAtDesc(final List<Long> teamIds, final Pageable pageable);
+
+    @Query("SELECT new com.opus.opus.modules.team.domain.dao.VoteStatisticsResult(" +
+            "COUNT(vote), COUNT(DISTINCT vote.memberId)) " +
+            "FROM TeamVote vote " +
+            "JOIN vote.team team " +
+            "WHERE team.contestId = :contestId AND vote.isVoted = true")
+    VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
 }

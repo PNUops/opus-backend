@@ -14,12 +14,14 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentTogg
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -51,7 +53,6 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
-    private final TeamQueryService teamQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -173,7 +174,7 @@ public class ContestController {
     @GetMapping("/{contestId}/votes/me")
     public ResponseEntity<MemberVoteCountResponse> getMemberVoteCount(@PathVariable Long contestId,
                                                                       @LoginMember Member member) {
-        MemberVoteCountResponse response = teamQueryService.getMemberVoteCount(member.getId(), contestId);
+        final MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contestId);
         return ResponseEntity.ok(response);
     }
 
@@ -183,5 +184,25 @@ public class ContestController {
                                                                           @RequestParam(defaultValue = "0") @PositiveOrZero int page,
                                                                           @RequestParam(defaultValue = "20") @PositiveOrZero int size) {
         return ResponseEntity.ok(contestQueryService.getContestVoteLog(contestId, page, size));
+    }
+
+    @GetMapping("/{contestId}/ranking")
+    public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
+        final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contestId);
+        return ResponseEntity.ok(responses);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/votes/statistics")
+    public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
+        final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/{contestId}/submissions")
+    public ResponseEntity<List<ContestSubmissionResponse>> getTeamSubmissions(@PathVariable final Long contestId) {
+        final List<ContestSubmissionResponse> responses = contestQueryService.getTeamSubmissions(contestId);
+        return ResponseEntity.ok(responses);
     }
 }
