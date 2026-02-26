@@ -287,8 +287,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
-}
-
 
     @Test
     @DisplayName("[성공] 대회 템플릿를 조회한다.")
