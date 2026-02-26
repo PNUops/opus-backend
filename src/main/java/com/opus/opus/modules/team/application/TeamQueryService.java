@@ -8,10 +8,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
-import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
-import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -19,14 +15,7 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
-import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
-import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
@@ -41,32 +30,10 @@ public class TeamQueryService {
 
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
-    private final ContestConvenience contestConvenience;
 
     private final FileRepository fileRepository;
-    private final TeamVoteRepository teamVoteRepository;
-    private final TeamRepository teamRepository;
 
     private final FileStorageUtil fileStorageUtil;
-
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) {
-                curRank++;
-            }
-            prevCount = result.voteCount();
-
-            responseList.add(
-                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
-                            result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
-    }
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
@@ -106,34 +73,9 @@ public class TeamQueryService {
         return getImage(teamId, POSTER);
     }
 
-    public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
-        final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
-        final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
-        return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
-    }
-
-    public List<ContestRankingResponse> getTeamRanking(Long contestId) {
-        contestConvenience.getValidateExistContest(contestId);
-        final List<TeamRankingResult> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
-        return applyDenseRanking(votesPerTeam);
-    }
-
-    public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
-        contestConvenience.getValidateExistContest(contestId);
-
-        final VoteStatisticsResult result = teamVoteRepository.countVoteStatisticsByContest(contestId);
-        final double average = result.totalVoters() > 0
-                ? Math.round((double) result.totalVotes() / result.totalVoters() * 10) / 10.0
-                : 0.0;
-
-        return new ContestVoteStatisticsResponse(result.totalVotes(), result.totalVoters(), average);
-    }
-
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
-                fileImageType);
+        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, fileImageType);
         return getImageResponse(findFile);
     }
 

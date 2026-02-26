@@ -11,10 +11,12 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -42,6 +44,8 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
@@ -57,6 +61,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -549,8 +557,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(
-                                        String.format(authorizationHeaderDescription, "admin"))
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         responseFields(
                                 stringFieldWithPath("currentMode", "현재 적용되어 있는 모드 정보")
@@ -684,6 +691,51 @@ public class ContestApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[성공] 정상적인 요청이면 투표_로그가_최신순으로_조회된다.")
+    void 정상적인_요청이면_투표_로그가_최신순으로_조회된다() throws Exception {
+        final List<ContestVoteLogResponse> content = List.of(
+                new ContestVoteLogResponse("이옵스", "lee@pusan.ac.kr", "teamA", now()),
+                new ContestVoteLogResponse("김옵스", "kim@pusan.ac.kr", "teamB", now().minusSeconds(1)));
+
+        final Page<ContestVoteLogResponse> page = new PageImpl<>(content,
+                PageRequest.of(0, 20, Sort.by(DESC, "votedAt")), 2);
+
+        when(contestQueryService.getContestVoteLog(any(), anyInt(), anyInt())).thenReturn(page);
+
+        mockMvc.perform(get("/contests/{contestId}/vote-log", 1)
+                        .param("page", "0")
+                        .param("size", "20")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-vote-log",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("content[]", "투표 로그 목록 (최신순)"),
+                                stringFieldWithPath("content[].voterName", "투표자 이름"),
+                                stringFieldWithPath("content[].voterEmail", "투표자 이메일"),
+                                stringFieldWithPath("content[].teamName", "투표한 팀 이름"),
+                                dateTimeFieldWithPath("content[].votedAt", "투표 시점"),
+
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부"))));
+    }
+
+    @Test
     @DisplayName("[성공] 대회의 투표 랭킹을 조회할 수 있다.")
     void 대회의_투표_랭킹을_조회할_수_있다() throws Exception {
         final List<ContestRankingResponse> responses = List.of(
@@ -693,7 +745,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new ContestRankingResponse(3, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)
         );
 
-        when(teamQueryService.getTeamRanking(any())).thenReturn(responses);
+        when(contestQueryService.getTeamRanking(any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -722,7 +774,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 랭킹 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_랭킹_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getTeamRanking(any());
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 999)
@@ -744,7 +796,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 대회의_투표_집계를_조회할_수_있다() throws Exception {
         final ContestVoteStatisticsResponse response = new ContestVoteStatisticsResponse(366L, 249L, 1.5);
 
-        when(teamQueryService.getVoteStatistics(any())).thenReturn(response);
+        when(contestQueryService.getVoteStatistics(any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -769,7 +821,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 집계 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_집계_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(teamQueryService)
+                .given(contestQueryService)
                 .getVoteStatistics(any());
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 999)
@@ -782,6 +834,56 @@ public class ContestApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 팀별 프로젝트 등록 현황을 조회할 수 있다.")
+    void 대회의_팀별_프로젝트_등록_현황을_조회할_수_있다() throws Exception {
+        final List<ContestSubmissionResponse> responses = List.of(
+                new ContestSubmissionResponse(1L, "딥러닝 드리머즈", "AI 음성 번역기", "소프트웨어/인공지능", true),
+                new ContestSubmissionResponse(2L, "패킷 마스터즈", "실시간 트래픽 분석기", "네트워크/통신", true),
+                new ContestSubmissionResponse(3L, "시큐리티 가디언즈", "IoT 취약점 스캐너", "하드웨어/보안", false)
+        );
+
+        when(contestQueryService.getTeamSubmissions(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-submissions",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀별 프로젝트 등록 현황 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙/분과명"),
+                                booleanFieldWithPath("[].isSubmitted", "프로젝트 제출 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 프로젝트 등록 현황 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_프로젝트_등록_현황_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getTeamSubmissions(any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-submissions-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         )
                 ));
     }
