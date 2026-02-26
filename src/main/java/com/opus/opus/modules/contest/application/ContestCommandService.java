@@ -290,7 +290,7 @@ public class ContestCommandService {
     private Map<String, Boolean> getDefaultTemplate(final String categoryName) {
         Map<String, Boolean> map = new HashMap<>();
 
-        if (categoryName.contains("창의융합")) {
+        if (categoryName != null && categoryName.contains("창의융합")) {
             map.put("track", true);
             map.put("projectName", true);
             map.put("teamName", true);
@@ -304,7 +304,7 @@ public class ContestCommandService {
             map.put("poster", true);
             map.put("images", true);
 
-        } else if (categoryName.contains("캡스톤")) {
+        } else if (categoryName != null && categoryName.contains("캡스톤")) {
             map.put("track", true);
             map.put("projectName", true);
             map.put("teamName", true);
