@@ -256,7 +256,7 @@ public class ContestCommandService {
     public void createTemplate(final Contest contest, final String categoryName) {
         final Map<String, Boolean> settings = getDefaultTemplate(categoryName);
 
-        ContestTemplate template = ContestTemplate.builder()
+        final ContestTemplate template = ContestTemplate.builder()
                 .contest(contest)
                 .trackRequired(settings.get("track"))
                 .projectNameRequired(settings.get("projectName"))
