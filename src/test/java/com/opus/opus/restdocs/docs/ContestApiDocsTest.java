@@ -46,8 +46,8 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
@@ -908,7 +908,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
         );
 
-        given(contestQueryService.getContestTeamSummariesPublic(anyLong())).willReturn(responses);
+        when(contestQueryService.getContestTeamSummariesPublic(anyLong())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/teams/public", 1L))
                 .andExpect(status().isOk())
@@ -923,7 +923,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].projectName", "프로젝트명"),
                                 booleanFieldWithPath("[].isLiked", "좋아요 여부 (항상 false)"),
                                 booleanFieldWithPath("[].isVoted", "투표 여부 (항상 false)"),
-                                arrayFieldWithPath("[].awards", "awards"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
                                 stringFieldWithPath("[].awards[].awardName", "수상명"),
                                 stringFieldWithPath("[].awards[].awardColor", "수상 색상")
                         )
@@ -941,7 +941,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
         );
 
-        given(contestQueryService.getContestTeamSummaries(anyLong(), any())).willReturn(responses);
+        when(contestQueryService.getContestTeamSummaries(anyLong(), any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/teams", 1L)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -952,7 +952,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
-                                        "Authorization: Bearer ${ACCESS_TOKEN} 인증 방식, 액세스 토큰으로 인증 요청 (선택)")
+                                        String.format(authorizationHeaderDescription, "member"))
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "팀 목록"),
@@ -963,7 +963,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                         "좋아요 여부 (투표 기간인 경우 false, 회원은 로그인한 사용자의 좋아요 여부에 따라)"),
                                 booleanFieldWithPath("[].isVoted",
                                         "투표 여부 (투표 기간이 아닌 경우 false, 회원은 로그인한 사용자의 투표 여부에 따라)"),
-                                arrayFieldWithPath("[].awards", "awards"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
                                 stringFieldWithPath("[].awards[].awardName", "수상명"),
                                 stringFieldWithPath("[].awards[].awardColor", "수상 색상")
                         )
@@ -981,7 +981,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
         );
 
-        given(contestQueryService.getContestTeamSummaries(anyLong(), any())).willReturn(responses);
+        when(contestQueryService.getContestTeamSummaries(anyLong(), any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/teams", 1L)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -991,7 +991,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회의 고유 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "팀 목록"),
@@ -1002,7 +1003,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                         "좋아요 여부 (투표 기간인 경우 false, 회원은 로그인한 사용자의 좋아요 여부에 따라)"),
                                 booleanFieldWithPath("[].isVoted",
                                         "투표 여부 (투표 기간이 아닌 경우 false, 회원은 로그인한 사용자의 투표 여부에 따라)"),
-                                arrayFieldWithPath("[].awards", "awards"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
                                 stringFieldWithPath("[].awards[].awardName", "수상명"),
                                 stringFieldWithPath("[].awards[].awardColor", "수상 색상")
                         )
