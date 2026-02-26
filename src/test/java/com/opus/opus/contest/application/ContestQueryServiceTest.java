@@ -2,10 +2,10 @@ package com.opus.opus.contest.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
 import static com.opus.opus.team.TeamVoteFixture.createTeamVote;
 import static java.time.LocalDateTime.now;
-import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -14,27 +14,26 @@ import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestQueryService;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamVoteFixture;
-
-import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -273,7 +272,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 팀이_없는_대회는_빈_리스트를_반환한다() {
         final Contest emptyContest = contestRepository.save(ContestFixture.createContest());
 
-        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(emptyContest.getId());
+        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(
+                emptyContest.getId());
 
         assertThat(responseList).isEmpty();
     }
@@ -289,8 +289,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 대회 템플릿를 조회한다.")
-    void 대회_템플릿를_조회한다() {
+    @DisplayName("[성공] 대회 템플릿을 조회한다.")
+    void 대회_템플릿을_조회한다() {
         contestTemplateRepository.save(ContestTemplateFixture.createContestTemplate(contest));
 
         final ContestTemplateResponse response = contestQueryService.getContestTemplate(contest.getId());

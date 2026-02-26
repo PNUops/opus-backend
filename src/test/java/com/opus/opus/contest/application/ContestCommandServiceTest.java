@@ -282,7 +282,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 대회 템플릿 정보가 존재하지 않으면 수정에 실패한다.")
+    @DisplayName("[실패] 대회 템플릿 정보가 존재하지 않으면 수정에 실패한다.")
     void 대회_템플릿_정보가_존재하지_않으면_수정에_실패한다() {
         final ContestTemplateRequest request = new ContestTemplateRequest(
                 false, false, false, false, false, false,

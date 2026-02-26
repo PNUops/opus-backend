@@ -413,7 +413,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .andExpect(status().isOk())
                 .andDo(document("create-contest",
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("contestName", "대회 이름"),
@@ -466,7 +467,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("contestName", "대회 이름"),
@@ -488,7 +490,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }
@@ -535,7 +538,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("mode", "수정할 대회 정렬 모드")
@@ -557,7 +561,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 stringFieldWithPath("currentMode", "현재 적용되어 있는 모드 정보")
@@ -714,7 +719,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("size").description("페이지 크기").optional()
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 arrayFieldWithPath("content[]", "투표 로그 목록 (최신순)"),
@@ -957,7 +963,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 booleanFieldWithPath("trackRequired", "트랙/분과 필수 여부"),
@@ -998,7 +1005,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }
