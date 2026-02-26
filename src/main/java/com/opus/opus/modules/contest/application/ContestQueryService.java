@@ -128,8 +128,7 @@ public class ContestQueryService {
                         team,
                         teamAwards,
                         likeMap.getOrDefault(team.getId(), false),
-                        voteMap.getOrDefault(team.getId(), false),
-                        isVotingPeriod
+                        voteMap.getOrDefault(team.getId(), false)
                 ))
                 .toList();
     }

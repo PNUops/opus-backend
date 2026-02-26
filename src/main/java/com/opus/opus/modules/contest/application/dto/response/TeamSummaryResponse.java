@@ -16,32 +16,20 @@ public record TeamSummaryResponse(
             final Team team,
             final List<ContestAward> contestAwards,
             final Boolean isLiked,
-            final Boolean isVoted,
-            final boolean isVotingPeriod
+            final Boolean isVoted
     ) {
         final List<AwardInfo> awardInfos = contestAwards.stream()
                 .map(AwardInfo::from)
                 .toList();
 
-        if (isVotingPeriod) {
-            return new TeamSummaryResponse(
-                    team.getId(),
-                    team.getTeamName(),
-                    team.getProjectName(),
-                    null,
-                    isVoted,
-                    awardInfos
-            );
-        } else {
-            return new TeamSummaryResponse(
-                    team.getId(),
-                    team.getTeamName(),
-                    team.getProjectName(),
-                    isLiked,
-                    null,
-                    awardInfos
-            );
-        }
+        return new TeamSummaryResponse(
+                team.getId(),
+                team.getTeamName(),
+                team.getProjectName(),
+                isLiked,
+                isVoted,
+                awardInfos
+        );
     }
 
     public record AwardInfo(
