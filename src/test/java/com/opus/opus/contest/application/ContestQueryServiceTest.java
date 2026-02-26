@@ -8,7 +8,6 @@ import static java.time.LocalDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.opus.opus.contest.ContestCategoryFixture;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -21,7 +20,6 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitR
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -57,7 +55,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Autowired
     private ContestCategoryRepository contestCategoryRepository;
 
-    private ContestCategory category;
     private Contest contest;
     private Team team;
     private Member member;
@@ -67,13 +64,10 @@ public class ContestQueryServiceTest extends IntegrationTest {
         Contest newContest = ContestFixture.createContest();
         newContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         newContest.updateMaxVotesLimit(2);
-        // TODO : category to newContest
-        category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
 
         contest = contestRepository.save(newContest);
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         member = memberRepository.save(MemberFixture.createMember());
-
     }
 
     @Test
@@ -300,9 +294,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contest.getId(),
                 member);
 
-        assertThat(responses).hasSize(2);
+        assertThat(responses).hasSize(3); // setup에서 저장된 team 포함
         assertThat(responses)
                 .extracting(TeamSummaryResponse::teamId)
-                .containsExactlyInAnyOrder(team1.getId(), team2.getId());
+                .containsExactlyInAnyOrder(team.getId(), team1.getId(), team2.getId());
     }
 }
