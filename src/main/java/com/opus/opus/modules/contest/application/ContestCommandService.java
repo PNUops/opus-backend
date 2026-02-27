@@ -44,7 +44,6 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -254,22 +253,11 @@ public class ContestCommandService {
     }
 
     public void createTemplate(final Contest contest, final String categoryName) {
-        final Map<String, Boolean> settings = getDefaultTemplate(categoryName);
+        final ContestTemplateRequest request = getDefaultTemplateRequest(categoryName);
 
         final ContestTemplate template = ContestTemplate.builder()
                 .contest(contest)
-                .trackRequired(settings.get("track"))
-                .projectNameRequired(settings.get("projectName"))
-                .teamNameRequired(settings.get("teamName"))
-                .leaderRequired(settings.get("leader"))
-                .teamMembersRequired(settings.get("teamMembers"))
-                .professorRequired(settings.get("professor"))
-                .githubPathRequired(settings.get("githubPath"))
-                .youTubePathRequired(settings.get("youTubePath"))
-                .productionPathRequired(settings.get("productionPath"))
-                .overviewRequired(settings.get("overview"))
-                .posterRequired(settings.get("poster"))
-                .imagesRequired(settings.get("images"))
+                .request(request)
                 .build();
 
         contestTemplateRepository.save(template);
@@ -278,60 +266,46 @@ public class ContestCommandService {
     public void updateContestTemplate(final Long contestId, final ContestTemplateRequest request) {
         contestConvenience.validateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
-
-        template.updateTemplate(
-                request.trackRequired(), request.projectNameRequired(), request.teamNameRequired(),
-                request.leaderRequired(), request.teamMembersRequired(), request.professorRequired(),
-                request.githubPathRequired(), request.youTubePathRequired(), request.productionPathRequired(),
-                request.overviewRequired(), request.posterRequired(), request.imagesRequired()
-        );
+        template.updateTemplate(request);
     }
 
-    private Map<String, Boolean> getDefaultTemplate(final String categoryName) {
-        Map<String, Boolean> map = new HashMap<>();
-
+    private ContestTemplateRequest getDefaultTemplateRequest(final String categoryName) {
         if (categoryName != null && categoryName.contains("창의융합")) {
-            map.put("track", true);
-            map.put("projectName", true);
-            map.put("teamName", true);
-            map.put("leader", true);
-            map.put("teamMembers", true);
-            map.put("professor", false);
-            map.put("githubPath", true);
-            map.put("youTubePath", false);
-            map.put("productionPath", false);
-            map.put("overview", true);
-            map.put("poster", true);
-            map.put("images", true);
-
-        } else if (categoryName != null && categoryName.contains("캡스톤")) {
-            map.put("track", true);
-            map.put("projectName", true);
-            map.put("teamName", true);
-            map.put("leader", true);
-            map.put("teamMembers", true);
-            map.put("professor", true);
-            map.put("githubPath", true);
-            map.put("youTubePath", true);
-            map.put("productionPath", false);
-            map.put("overview", true);
-            map.put("poster", false);
-            map.put("images", true);
-
-        } else {
-            map.put("track", false);
-            map.put("projectName", false);
-            map.put("teamName", false);
-            map.put("leader", false);
-            map.put("teamMembers", false);
-            map.put("professor", false);
-            map.put("githubPath", false);
-            map.put("youTubePath", false);
-            map.put("productionPath", false);
-            map.put("overview", false);
-            map.put("poster", false);
-            map.put("images", false);
+            return new ContestTemplateRequest(
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    false,
+                    true,
+                    false,
+                    false,
+                    true,
+                    true,
+                    true
+            );
         }
-        return map;
+
+        if (categoryName != null && categoryName.contains("캡스톤")) {
+            return new ContestTemplateRequest(
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    false,
+                    true,
+                    false,
+                    true
+            );
+        }
+
+        return new ContestTemplateRequest(
+                false, false, false, false, false, false, false, false, false, false, false, false
+        );
     }
 }

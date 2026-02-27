@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.domain;
 import static jakarta.persistence.FetchType.LAZY;
 
 import com.opus.opus.global.base.BaseEntity;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -72,60 +73,38 @@ public class ContestTemplate extends BaseEntity {
     private Boolean isDeleted;
 
     @Builder
-    private ContestTemplate(
-            final Contest contest,
-            final Boolean trackRequired,
-            final Boolean projectNameRequired,
-            final Boolean teamNameRequired,
-            final Boolean leaderRequired,
-            final Boolean teamMembersRequired,
-            final Boolean professorRequired,
-            final Boolean githubPathRequired,
-            final Boolean youTubePathRequired,
-            final Boolean productionPathRequired,
-            final Boolean overviewRequired,
-            final Boolean posterRequired,
-            final Boolean imagesRequired) {
+    private ContestTemplate(final Contest contest, final ContestTemplateRequest request
+    ) {
         this.contest = contest;
-        this.trackRequired = trackRequired;
-        this.projectNameRequired = projectNameRequired;
-        this.teamNameRequired = teamNameRequired;
-        this.leaderRequired = leaderRequired;
-        this.teamMembersRequired = teamMembersRequired;
-        this.professorRequired = professorRequired;
-        this.githubPathRequired = githubPathRequired;
-        this.youTubePathRequired = youTubePathRequired;
-        this.productionPathRequired = productionPathRequired;
-        this.overviewRequired = overviewRequired;
-        this.posterRequired = posterRequired;
-        this.imagesRequired = imagesRequired;
+
+        this.trackRequired = request.trackRequired();
+        this.projectNameRequired = request.projectNameRequired();
+        this.teamNameRequired = request.teamNameRequired();
+        this.leaderRequired = request.leaderRequired();
+        this.teamMembersRequired = request.teamMembersRequired();
+        this.professorRequired = request.professorRequired();
+        this.githubPathRequired = request.githubPathRequired();
+        this.youTubePathRequired = request.youTubePathRequired();
+        this.productionPathRequired = request.productionPathRequired();
+        this.overviewRequired = request.overviewRequired();
+        this.posterRequired = request.posterRequired();
+        this.imagesRequired = request.imagesRequired();
+
         this.isDeleted = false;
     }
 
-    public void updateTemplate(
-            final Boolean trackRequired,
-            final Boolean projectNameRequired,
-            final Boolean teamNameRequired,
-            final Boolean leaderRequired,
-            final Boolean teamMembersRequired,
-            final Boolean professorRequired,
-            final Boolean githubPathRequired,
-            final Boolean youTubePathRequired,
-            final Boolean productionPathRequired,
-            final Boolean overviewRequired,
-            final Boolean posterRequired,
-            final Boolean imagesRequired) {
-        this.trackRequired = trackRequired;
-        this.projectNameRequired = projectNameRequired;
-        this.teamNameRequired = teamNameRequired;
-        this.leaderRequired = leaderRequired;
-        this.teamMembersRequired = teamMembersRequired;
-        this.professorRequired = professorRequired;
-        this.githubPathRequired = githubPathRequired;
-        this.youTubePathRequired = youTubePathRequired;
-        this.productionPathRequired = productionPathRequired;
-        this.overviewRequired = overviewRequired;
-        this.posterRequired = posterRequired;
-        this.imagesRequired = imagesRequired;
+    public void updateTemplate(final ContestTemplateRequest request) {
+        this.trackRequired = request.trackRequired();
+        this.projectNameRequired = request.projectNameRequired();
+        this.teamNameRequired = request.teamNameRequired();
+        this.leaderRequired = request.leaderRequired();
+        this.teamMembersRequired = request.teamMembersRequired();
+        this.professorRequired = request.professorRequired();
+        this.githubPathRequired = request.githubPathRequired();
+        this.youTubePathRequired = request.youTubePathRequired();
+        this.productionPathRequired = request.productionPathRequired();
+        this.overviewRequired = request.overviewRequired();
+        this.posterRequired = request.posterRequired();
+        this.imagesRequired = request.imagesRequired();
     }
 }
