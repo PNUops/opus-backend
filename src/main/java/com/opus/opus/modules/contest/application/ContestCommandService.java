@@ -276,7 +276,7 @@ public class ContestCommandService {
     }
 
     public void updateContestTemplate(final Long contestId, final ContestTemplateRequest request) {
-        contestConvenience.getValidateExistContest(contestId);
+        contestConvenience.validateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
 
         template.updateTemplate(
