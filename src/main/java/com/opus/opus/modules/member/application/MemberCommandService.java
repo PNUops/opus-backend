@@ -10,6 +10,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
+import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -46,6 +47,7 @@ public class MemberCommandService {
     private final JwtProvider jwtProvider;
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
+    private final GoogleTokenManager googleTokenManager;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
@@ -227,5 +229,18 @@ public class MemberCommandService {
 
     private static String signInVerifiedKey(final String email) {
         return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
+    }
+
+    private void unlinkGoogleAccount(final Long memberId) {
+        googleTokenManager.get(memberId).ifPresent(token -> {
+            try {
+                googleTokenManager.revoke(token.accessToken());
+            } catch (Exception e) {
+                if (!token.refreshToken().isEmpty()) {
+                    googleTokenManager.revoke(googleTokenManager.refreshAccessToken(token.refreshToken()));
+                }
+            }
+            googleTokenManager.delete(memberId);
+        });
     }
 }
