@@ -99,6 +99,7 @@ public class MemberCommandService {
 
     public SignInResponse signIn(final SignInRequest request) {
         final Member member = memberConvenience.getValidateExistMemberByEmail(request.email());
+        checkGeneralMember(member);
         checkCorrectPassword(member.getPassword(), request.password());
 
         final List<String> roles = member.getRoles().stream()

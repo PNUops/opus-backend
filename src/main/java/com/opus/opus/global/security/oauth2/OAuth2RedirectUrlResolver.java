@@ -1,7 +1,8 @@
 package com.opus.opus.global.security.oauth2;
 
+import com.opus.opus.global.util.CookieUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,14 +18,9 @@ public class OAuth2RedirectUrlResolver {
     private String prodRedirectCallbackUrl;
 
     public String resolve(final HttpServletRequest request) {
-        final HttpSession session = request.getSession(false);
-        final String redirect = session != null ? (String) session.getAttribute("redirect") : null;
-
-        log.info("세션에서 감지된 redirect: {}", redirect);
-
-        if ("local".equals(redirect)) {
-            return localRedirectCallbackUrl;
-        }
-        return prodRedirectCallbackUrl;
+        return CookieUtil.getCookie(request, "redirect_type")
+                .map(Cookie::getValue)
+                .map(type -> "local".equals(type) ? localRedirectCallbackUrl : prodRedirectCallbackUrl)
+                .orElse(prodRedirectCallbackUrl);
     }
 }

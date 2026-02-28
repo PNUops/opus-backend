@@ -3,6 +3,7 @@ package com.opus.opus.modules.member.api;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
+import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -12,7 +13,7 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -84,8 +85,8 @@ public class MemberController {
     }
 
     @GetMapping("/oauth2/set-redirect")
-    public ResponseEntity<Void> setRedirect(@RequestParam final String type, final HttpServletRequest request) {
-        request.getSession().setAttribute("redirect", type);
+    public ResponseEntity<Void> setRedirect(@RequestParam final String type, HttpServletResponse response) {
+        CookieUtil.addCookie(response, "redirect_type", type, 180);
         return ResponseEntity.noContent().build();
     }
 }
