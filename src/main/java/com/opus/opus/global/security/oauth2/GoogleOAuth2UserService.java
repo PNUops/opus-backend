@@ -26,8 +26,8 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
     @Transactional
     public OAuth2User loadUser(final OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         final OAuth2User oAuth2User = super.loadUser(userRequest);
-        final Map<String, Object> attributes = oAuth2User.getAttributes();
 
+        final Map<String, Object> attributes = oAuth2User.getAttributes();
         final String socialId = (String) attributes.get("sub");
         final String email = (String) attributes.get("email");
         final String name = (String) attributes.get("name");

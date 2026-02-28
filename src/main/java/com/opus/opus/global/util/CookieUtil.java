@@ -8,10 +8,7 @@ import java.util.Optional;
 
 public class CookieUtil {
 
-    public static void addCookie(final HttpServletResponse response,
-                                 final String name,
-                                 final String value,
-                                 final int maxAge) {
+    public static void addCookie(final HttpServletResponse response, final String name, final String value, final int maxAge) {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
         cookie.setHttpOnly(true);

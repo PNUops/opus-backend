@@ -71,8 +71,6 @@ public class GoogleTokenManager {
     }
 
     public void revoke(final String accessToken) {
-        restTemplate.postForEntity(
-                "https://oauth2.googleapis.com/revoke?token=" + accessToken,
-                null, String.class);
+        restTemplate.postForEntity("https://oauth2.googleapis.com/revoke?token=" + accessToken, null, String.class);
     }
 }

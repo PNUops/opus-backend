@@ -19,12 +19,12 @@ public class GoogleOAuth2LoginFailureHandler extends SimpleUrlAuthenticationFail
     private final OAuth2RedirectUrlResolver redirectUrlResolver;
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-                                        AuthenticationException exception) throws IOException {
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         log.error("OAuth2 로그인 실패 원인 : {}", exception.getMessage());
 
         final String encodedErrorMessage = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
         final String targetUrl = redirectUrlResolver.resolve(request) + "?error=" + encodedErrorMessage;
+
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

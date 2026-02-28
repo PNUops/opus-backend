@@ -42,15 +42,14 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
 
         final String accessToken = authorizedClient.getAccessToken().getTokenValue();
         final String refreshToken = authorizedClient.getRefreshToken() != null
-                    ? authorizedClient.getRefreshToken().getTokenValue() : "";
+                ? authorizedClient.getRefreshToken().getTokenValue() : "";
 
         googleTokenManager.save(member.getId(), accessToken, refreshToken);
     }
 
     private void redirectWithJwtToken(final HttpServletRequest request, final HttpServletResponse response, final Member member) throws IOException {
         final List<String> roles = member.getRoles().stream()
-                .map(MemberRoleType::toString)
-                .toList();
+                .map(MemberRoleType::toString).toList();
         final String token = jwtProvider.createToken(String.valueOf(member.getId()), roles, member.getName());
         final String targetUrl = UriComponentsBuilder.fromUriString(redirectUrlResolver.resolve(request))
                 .queryParam("token", token)
