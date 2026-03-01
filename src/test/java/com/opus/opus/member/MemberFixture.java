@@ -8,7 +8,7 @@ import java.util.Set;
 public class MemberFixture {
 
     public static Member createMember() {
-        return Member.builder()
+        return Member.generalMember()
                 .name("테스트회원")
                 .email("example@pusan.ac.kr")
                 .password("{noop}123456789")
@@ -18,7 +18,7 @@ public class MemberFixture {
     }
 
     public static Member createMemberWithUniqueNum(int number) {
-        return Member.builder()
+        return Member.generalMember()
                 .name("테스트회원" + number)
                 .email("example" + number + "@pusan.ac.kr")
                 .password("{noop}123456789")

@@ -1,7 +1,6 @@
 package com.opus.opus.modules.member.domain;
 
 import static jakarta.persistence.FetchType.EAGER;
-import static jakarta.persistence.FetchType.LAZY;
 import com.opus.opus.global.base.BaseEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -44,8 +43,13 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String studentId;
+
+    @Enumerated(EnumType.STRING)
+    private SocialType socialType;
+
+    private String socialId;
 
     @ElementCollection(fetch = EAGER)
     @CollectionTable(name = "member_roles", joinColumns = @JoinColumn(name = "member_id"))
@@ -56,13 +60,24 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @Builder
+    @Builder(builderMethodName = "generalMember", builderClassName = "GeneralMemberBuilder")
     private Member(final String name, final String email, final String password, final String studentId,
                   final Set<MemberRoleType> roles) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.studentId = studentId;
+        this.roles = roles;
+        this.isDeleted = false;
+    }
+
+    @Builder(builderMethodName = "socialMember", builderClassName = "SocialMemberBuilder")
+    private Member(final String name, final String email, final SocialType socialType, final String socialId,
+                   final Set<MemberRoleType> roles) {
+        this.name = name;
+        this.email = email;
+        this.socialType = socialType;
+        this.socialId = socialId;
         this.roles = roles;
         this.isDeleted = false;
     }
@@ -74,5 +89,9 @@ public class Member extends BaseEntity {
 
     public void updatePassword(final String newPassword) {
         this.password = newPassword;
+    }
+
+    public boolean isSocialMember() {
+        return socialType != null && socialId != null;
     }
 }

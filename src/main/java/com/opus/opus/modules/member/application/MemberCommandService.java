@@ -234,7 +234,7 @@ public class MemberCommandService {
         final String randomPassword = generateRandomPassword();
         final String uniqueStudentId = "fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
-        return memberRepository.save(Member.builder()
+        return memberRepository.save(Member.generalMember()
                 .name(name)
                 .studentId(uniqueStudentId)
                 .email(email)
@@ -264,7 +264,7 @@ public class MemberCommandService {
                                    final String password) {
         memberConvenience.checkIsDuplicateStudentId(studentId);
 
-        memberRepository.save(Member.builder()
+        memberRepository.save(Member.generalMember()
                 .name(name)
                 .studentId(studentId)
                 .email(email)
