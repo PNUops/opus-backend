@@ -1,6 +1,9 @@
 package com.opus.opus.global.util;
 
+import static com.opus.opus.global.security.oauth2.OAuthExceptionType.GOOGLE_REVOKE_FAILED;
+
 import com.opus.opus.global.security.oauth2.GoogleToken;
+import com.opus.opus.global.security.oauth2.OAuthException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +79,10 @@ public class GoogleTokenManager {
     }
 
     public void revoke(final String accessToken) {
-        restTemplate.postForEntity("https://oauth2.googleapis.com/revoke?token=" + accessToken, null, String.class);
+        final ResponseEntity<String> response = restTemplate.postForEntity("https://oauth2.googleapis.com/revoke?token=" + accessToken, null, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new OAuthException(GOOGLE_REVOKE_FAILED);
+        }
     }
 }
