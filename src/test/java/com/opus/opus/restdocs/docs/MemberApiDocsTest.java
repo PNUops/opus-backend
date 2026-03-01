@@ -15,6 +15,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -261,5 +262,13 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("email", "가입된 이메일")
                         )
                 ));
+    }
+
+    @Test
+    @DisplayName("[성공] 로컬 환경 리다이렉트 쿠키가 정상적으로 설정된다.")
+    void 로컬_환경_리다이렉트_쿠키가_정상적으로_설정된다() throws Exception {
+        mockMvc.perform(post("/oauth2/set-redirect"))
+                .andExpect(status().isNoContent())
+                .andDo(document("oauth2-set-redirect"));
     }
 }
