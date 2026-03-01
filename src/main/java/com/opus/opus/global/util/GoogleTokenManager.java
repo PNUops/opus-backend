@@ -79,10 +79,16 @@ public class GoogleTokenManager {
     }
 
     public void revoke(final String accessToken) {
-        final ResponseEntity<String> response = restTemplate.postForEntity("https://oauth2.googleapis.com/revoke?token=" + accessToken, null, String.class);
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new OAuthException(GOOGLE_REVOKE_FAILED);
-        }
+        final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("token", accessToken);
+
+        restTemplate.postForEntity(
+                "https://oauth2.googleapis.com/revoke",
+                new HttpEntity<>(params, headers),
+                String.class
+        );
     }
 }
