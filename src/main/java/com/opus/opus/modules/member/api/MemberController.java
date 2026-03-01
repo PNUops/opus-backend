@@ -85,8 +85,8 @@ public class MemberController {
     }
 
     @PostMapping("/oauth2/set-redirect")
-    public ResponseEntity<Void> setRedirect(@RequestParam final String type, HttpServletResponse response) {
-        CookieUtil.addCookie(response, "redirect_type", type, 180); // 만료시간 3분
+    public ResponseEntity<Void> setRedirect(HttpServletResponse response) {
+        CookieUtil.addCookie(response, "redirect_type", "local", 180);
         return ResponseEntity.noContent().build();
     }
 }
