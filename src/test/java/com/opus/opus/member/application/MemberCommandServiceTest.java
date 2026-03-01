@@ -1,12 +1,14 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
@@ -24,37 +26,26 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpSession;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberCommandService memberCommandService;
+    @Autowired
+    private GoogleOAuth2UserService googleOAuth2UserService;
 
     @Autowired
     private MemberRepository memberRepository;
 
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
-    private MockHttpServletRequest mockRequest;
 
     @BeforeEach
     void setUp() {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
-    }
-
-    private void setUpMockRequest() {
-        mockRequest = new MockHttpServletRequest();
-        mockRequest.setSession(new MockHttpSession());
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(mockRequest));
-    }
-
-    private String getSessionId() {
-        return mockRequest.getSession().getId();
     }
 
     @Test
@@ -203,5 +194,27 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         assertThat(response.memberId()).isEqualTo(teamLeader.getId());
         assertThat(response.token()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 일반 회원이 소셜 로그인 시도 시 예외가 발생한다.")
+    void 일반_회원이_소셜_로그인_시도_시_예외가_발생한다() {
+        assertThatThrownBy(() ->
+                ReflectionTestUtils.invokeMethod(googleOAuth2UserService, "validateSocialMember", teamLeader)
+        ).isInstanceOf(OAuth2AuthenticationException.class)
+                .satisfies(e -> {
+                    OAuth2AuthenticationException ex = (OAuth2AuthenticationException) e;
+                    assertThat(ex.getError().getErrorCode()).isEqualTo(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage());
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 신규 소셜 회원은 자동 가입된다.")
+    void 신규_소셜_회원은_자동_가입된다() {
+        ReflectionTestUtils.invokeMethod(googleOAuth2UserService, "registerNewSocialMember", "김태윤", "pykido@gmail.com", "google-sub-999");
+
+        final Member savedMember = memberRepository.findByEmail("pykido@gmail.com").orElseThrow();
+        assertThat(savedMember.isSocialMember()).isTrue();
+        assertThat(savedMember.getName()).isEqualTo("김태윤");
     }
 }
