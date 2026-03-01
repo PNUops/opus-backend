@@ -5,15 +5,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Optional;
+import org.springframework.http.ResponseCookie;
 
 public class CookieUtil {
 
     public static void addCookie(final HttpServletResponse response, final String name, final String value, final int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")
+                .httpOnly(true)
+                .maxAge(maxAge)
+                .sameSite("None")
+                .secure(true)
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
     public static Optional<Cookie> getCookie(final HttpServletRequest request, final String name) {
