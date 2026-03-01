@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -62,9 +64,12 @@ public class GoogleTokenManager {
         params.add("refresh_token", refreshToken);
         params.add("grant_type", "refresh_token");
 
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
         final ResponseEntity<Map> response = restTemplate.postForEntity(
                 "https://oauth2.googleapis.com/token",
-                new HttpEntity<>(params),
+                new HttpEntity<>(params, headers),
                 Map.class
         );
         return (String) response.getBody().get("access_token");
