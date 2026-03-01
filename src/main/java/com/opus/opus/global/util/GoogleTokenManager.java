@@ -43,7 +43,7 @@ public class GoogleTokenManager {
     }
 
     private GoogleToken parseGoogleToken(final String value) {
-        final String[] tokens = value.split(DELIMITER, 2);
+        final String[] tokens = value.split("\\|", 2);
         return new GoogleToken(tokens[0], tokens.length > 1 ? tokens[1] : "");
     }
 
