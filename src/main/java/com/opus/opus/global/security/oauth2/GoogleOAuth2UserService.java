@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +47,10 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
 
     private Member validateSocialMember(final Member member) {
         if (!member.isSocialMember()) {
-            throw new OAuth2AuthenticationException(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage());
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.name()),
+                    GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage()
+            );
         }
         return member;
     }
