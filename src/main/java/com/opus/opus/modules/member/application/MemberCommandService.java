@@ -114,7 +114,8 @@ public class MemberCommandService {
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
-        memberConvenience.validateExistMemberByEmail(email);
+        final Member member = memberConvenience.getValidateExistMemberByEmail(email);
+        checkGeneralMember(member);
 
         final String code = generateRandomAuthCode();
 
@@ -124,7 +125,8 @@ public class MemberCommandService {
 
     public void confirmSignInEmailAuth(final EmailAuthConfirmRequest request) {
         final String email = request.email();
-        memberConvenience.validateExistMemberByEmail(email);
+        final Member member = memberConvenience.getValidateExistMemberByEmail(email);
+        checkGeneralMember(member);
 
         validateSignInAuthCode(email, request.authCode());
 
@@ -135,6 +137,7 @@ public class MemberCommandService {
     public void updatePassword(final PasswordUpdateRequest request) {
         final String email = request.email();
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
+        checkGeneralMember(member);
 
         verifyVerifiedKey(signInVerifiedKey(email));
 
