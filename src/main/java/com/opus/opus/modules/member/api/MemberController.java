@@ -10,8 +10,11 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -101,5 +104,12 @@ public class MemberController {
     ) {
         final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code, state, error);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/members/me/student-id")
+    public ResponseEntity<Void> updateStudentId(@LoginMember final Member member,
+                                                @Valid @RequestBody final StudentIdUpdateRequest studentIdUpdateRequest) {
+        memberCommandService.updateStudentId(member.getId(), studentIdUpdateRequest);
+        return ResponseEntity.noContent().build();
     }
 }

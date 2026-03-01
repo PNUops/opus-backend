@@ -10,6 +10,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +25,7 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -183,6 +185,21 @@ public class MemberCommandService {
             throw new OAuthException(FAILED_TO_GET_SOCIAL_USER_INFO);
         } catch (Exception e) {
             throw new OAuthException(SOCIAL_LOGIN_SERVER_ERROR);
+        }
+    }
+
+    public void updateStudentId(final Long memberId, final StudentIdUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+
+        validateStudentIdUpdatable(member);
+        memberConvenience.checkIsDuplicateStudentId(request.studentId());
+
+        member.updateStudentId(request.studentId());
+    }
+
+    private void validateStudentIdUpdatable(final Member member) {
+        if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
+            throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
         }
     }
 
