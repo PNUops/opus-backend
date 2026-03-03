@@ -758,7 +758,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "팀 랭킹 목록"),
-                                numberFieldWithPath("[].rank", "투표 기준 순위 (Ranking)"),
+                                numberFieldWithPath("[].rank", "투표 기준 순위 (Ranking) 예: 1-2-2-4"),
                                 numberFieldWithPath("[].teamId", "팀 ID"),
                                 stringFieldWithPath("[].teamName", "팀명"),
                                 stringFieldWithPath("[].projectName", "프로젝트명"),
