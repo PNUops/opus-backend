@@ -44,6 +44,7 @@ import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
 
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -175,7 +176,7 @@ public class ContestQueryService {
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final List<TeamRankingResult> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
-        return applyDenseRanking(votesPerTeam);
+        return applyRanking(votesPerTeam);
     }
 
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
@@ -200,20 +201,21 @@ public class ContestQueryService {
                 .toList();
     }
 
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
+    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) curRank++;
-            prevCount = result.voteCount();
 
-            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
+        for (int i = 0; i < votesPerTeam.size(); i++) {
+            TeamRankingResult result = votesPerTeam.get(i);
+            int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
+
+            responseList.add(new ContestRankingResponse(
+                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()
+            ));
         }
 
         return responseList;
     }
+
 
     private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
