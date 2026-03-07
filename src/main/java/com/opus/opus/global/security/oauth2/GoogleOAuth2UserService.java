@@ -48,7 +48,7 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
     private Member validateSocialMember(final Member member) {
         if (!member.isSocialMember()) {
             throw new OAuth2AuthenticationException(
-                    new OAuth2Error(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.name()),
+                    new OAuth2Error(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage()),
                     GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage()
             );
         }
