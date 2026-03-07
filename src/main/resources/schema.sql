@@ -97,7 +97,12 @@ CREATE TABLE `member` (
   `social_id` varchar(255) NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_member_email` (`email`),
-  UNIQUE KEY `uk_member_student_id` (`student_id`)
+  UNIQUE KEY `uk_member_student_id` (`student_id`),
+  CONSTRAINT `ck_member_login_type` CHECK (
+    (social_type IS NULL     AND social_id IS NULL     AND student_id IS NOT NULL AND password IS NOT NULL)
+    OR
+    (social_type IS NOT NULL AND social_id IS NOT NULL AND student_id IS NULL     AND password IS NULL)
+  )
 );
 
 CREATE TABLE `member_roles` (
