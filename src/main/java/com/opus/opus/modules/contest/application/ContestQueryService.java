@@ -205,8 +205,8 @@ public class ContestQueryService {
         List<ContestRankingResponse> responseList = new ArrayList<>();
 
         for (int i = 0; i < votesPerTeam.size(); i++) {
-            TeamRankingResult result = votesPerTeam.get(i);
-            int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
+            final TeamRankingResult result = votesPerTeam.get(i);
+            final int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
 
             responseList.add(new ContestRankingResponse(
                     rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()
@@ -215,7 +215,6 @@ public class ContestQueryService {
 
         return responseList;
     }
-
 
     private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
