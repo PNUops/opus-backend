@@ -9,7 +9,6 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VER
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
 
 import com.opus.opus.global.security.JwtProvider;
-import com.opus.opus.global.security.oauth2.GoogleToken;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
@@ -238,28 +237,11 @@ public class MemberCommandService {
     private void unlinkGoogleAccount(final Long memberId) {
         googleTokenManager.get(memberId).ifPresent(token -> {
             try {
-                revokeWithAccessToken(token);
+                googleTokenManager.revoke(googleTokenManager.refreshAccessToken(token.refreshToken()));
+            } catch (Exception ignored) {
             } finally {
                 googleTokenManager.delete(memberId);
             }
         });
-    }
-
-    private void revokeWithAccessToken(final GoogleToken token) {
-        try {
-            googleTokenManager.revoke(token.accessToken());
-        } catch (Exception e) {
-            revokeWithRefreshToken(token.refreshToken());
-        }
-    }
-
-    private void revokeWithRefreshToken(final String refreshToken) {
-        if (refreshToken.isEmpty()) {
-            return;
-        }
-        try {
-            googleTokenManager.revoke(googleTokenManager.refreshAccessToken(refreshToken));
-        } catch (Exception ignored) {
-        }
     }
 }

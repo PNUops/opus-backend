@@ -1,9 +1,6 @@
 package com.opus.opus.global.util;
 
-import static com.opus.opus.global.security.oauth2.OAuthExceptionType.GOOGLE_REVOKE_FAILED;
-
 import com.opus.opus.global.security.oauth2.GoogleToken;
-import com.opus.opus.global.security.oauth2.OAuthException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +10,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -24,32 +22,26 @@ public class GoogleTokenManager {
 
     private final AuthRedisUtil authRedisUtil;
     private final RestTemplate restTemplate;
+    private final TextEncryptor textEncryptor;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String googleClientSecret;
+
     private static final String GOOGLE_TOKEN_KEY_PREFIX = "oauth2:google:token:";
     private static final long GOOGLE_TOKEN_TTL = 3L;
-    private static final String DELIMITER = "|";
 
-    public void save(final Long memberId, final String accessToken, final String refreshToken) {
-        authRedisUtil.set(
-                generateKey(memberId),
-                accessToken + DELIMITER + refreshToken,
-                GOOGLE_TOKEN_TTL,
-                TimeUnit.HOURS
-        );
+    public void save(final Long memberId, final String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return;
+        }
+        authRedisUtil.set(generateKey(memberId), textEncryptor.encrypt(refreshToken), GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
     }
 
     public Optional<GoogleToken> get(final Long memberId) {
         return Optional.ofNullable(authRedisUtil.get(generateKey(memberId)))
-                .map(this::parseGoogleToken);
-    }
-
-    private GoogleToken parseGoogleToken(final String value) {
-        final String[] tokens = value.split("\\|", 2);
-        return new GoogleToken(tokens[0], tokens.length > 1 ? tokens[1] : "");
+                .map(encrypted -> new GoogleToken(textEncryptor.decrypt(encrypted)));
     }
 
     public void delete(final Long memberId) {

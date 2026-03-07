@@ -40,11 +40,10 @@ public class GoogleOAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSucc
         final OAuth2AuthorizedClient authorizedClient = authorizedClientService
                 .loadAuthorizedClient("google", authentication.getName());
 
-        final String accessToken = authorizedClient.getAccessToken().getTokenValue();
         final String refreshToken = authorizedClient.getRefreshToken() != null
                 ? authorizedClient.getRefreshToken().getTokenValue() : "";
 
-        googleTokenManager.save(member.getId(), accessToken, refreshToken);
+        googleTokenManager.save(member.getId(), refreshToken);
     }
 
     private void redirectWithJwtToken(final HttpServletRequest request, final HttpServletResponse response, final Member member) throws IOException {
