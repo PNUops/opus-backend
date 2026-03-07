@@ -204,7 +204,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         ).isInstanceOf(OAuth2AuthenticationException.class)
                 .satisfies(e -> {
                     OAuth2AuthenticationException ex = (OAuth2AuthenticationException) e;
-                    assertThat(ex.getError().getErrorCode()).isEqualTo(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage());
+                    assertThat(ex.getError().getErrorCode()).isEqualTo(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.name());
                 });
     }
 
