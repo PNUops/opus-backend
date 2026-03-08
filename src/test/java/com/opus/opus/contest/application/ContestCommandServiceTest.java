@@ -12,20 +12,26 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_A
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import java.time.LocalDateTime;
@@ -37,18 +43,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class ContestCommandServiceTest extends IntegrationTest {
 
+    private static final Integer MAX_VOTES_LIMIT = 5;
     @Autowired
     private ContestCommandService contestCommandService;
-
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
     private ContestSortRepository contestSortRepository;
     @Autowired
     private TeamRepository teamRepository;
-
+    @Autowired
+    private ContestTemplateRepository contestTemplateRepository;
     private Contest contest;
-    private static final Integer MAX_VOTES_LIMIT = 5;
 
     @BeforeEach
     void setUp() {
@@ -221,7 +227,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         contestCommandService.updateContestSort(contest.getId(), new ContestSortRequest(CUSTOM));
         final Team teamOne = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 1));
         final Team teamTwo = teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 2));
-        teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(),3));
+        teamRepository.save(createTeamWithContestIdAndItemOrder(contest.getId(), 3));
         final List<ContestSortCustomRequest> requests = List.of(new ContestSortCustomRequest(teamOne.getId(), 2),
                 new ContestSortCustomRequest(teamTwo.getId(), 1));
 
@@ -243,5 +249,97 @@ public class ContestCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestCommandService.updateContestSortCustom(contest.getId(), requests);
         }).isInstanceOf(ContestException.class).hasMessage(INVALID_ITEM_ORDER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 템플릿을 수정한다.")
+    void 대회_템플릿을_수정한다() {
+        // given
+        contestTemplateRepository.save(ContestTemplateFixture.createContestTemplate(contest));
+        final ContestTemplateRequest request = new ContestTemplateRequest(
+                false, false, false, false, false, false,
+                false, false, false, false, false, false
+        );
+
+        // when
+        contestCommandService.updateContestTemplate(contest.getId(), request);
+
+        // then
+        final ContestTemplate updatedTemplate = contestTemplateRepository.findByContestId(contest.getId())
+                .orElseThrow();
+        assertThat(updatedTemplate.getTrackRequired()).isFalse();
+        assertThat(updatedTemplate.getProjectNameRequired()).isFalse();
+        assertThat(updatedTemplate.getTeamNameRequired()).isFalse();
+        assertThat(updatedTemplate.getLeaderRequired()).isFalse();
+        assertThat(updatedTemplate.getTeamMembersRequired()).isFalse();
+        assertThat(updatedTemplate.getProfessorRequired()).isFalse();
+        assertThat(updatedTemplate.getGithubPathRequired()).isFalse();
+        assertThat(updatedTemplate.getYouTubePathRequired()).isFalse();
+        assertThat(updatedTemplate.getProductionPathRequired()).isFalse();
+        assertThat(updatedTemplate.getOverviewRequired()).isFalse();
+        assertThat(updatedTemplate.getPosterRequired()).isFalse();
+        assertThat(updatedTemplate.getImagesRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[실패] 대회 템플릿 정보가 존재하지 않으면 수정에 실패한다.")
+    void 대회_템플릿_정보가_존재하지_않으면_수정에_실패한다() {
+        final ContestTemplateRequest request = new ContestTemplateRequest(
+                false, false, false, false, false, false,
+                false, false, false, false, false, false
+        );
+
+        assertThatThrownBy(() -> {
+            contestCommandService.updateContestTemplate(contest.getId(), request);
+        }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 창의융합 카테고리로 템플릿을 생성한다.")
+    void 창의융합_카테고리로_템플릿을_생성한다() {
+        // given
+        final String categoryName = "창의융합공학";
+
+        // when
+        contestCommandService.createTemplate(contest, categoryName);
+
+        // then
+        final ContestTemplate template = contestTemplateRepository.findByContestId(contest.getId()).orElseThrow();
+        assertThat(template.getTrackRequired()).isTrue();
+        assertThat(template.getProfessorRequired()).isFalse();
+        assertThat(template.getYouTubePathRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 캡스톤 카테고리로 템플릿을 생성한다.")
+    void 캡스톤_카테고리로_템플릿을_생성한다() {
+        // given
+        final String categoryName = "캡스톤디자인";
+
+        // when
+        contestCommandService.createTemplate(contest, categoryName);
+
+        // then
+        final ContestTemplate template = contestTemplateRepository.findByContestId(contest.getId()).orElseThrow();
+        assertThat(template.getTrackRequired()).isTrue();
+        assertThat(template.getProfessorRequired()).isTrue();
+        assertThat(template.getYouTubePathRequired()).isTrue();
+        assertThat(template.getPosterRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 기본 카테고리로 템플릿을 생성한다.")
+    void 기본_카테고리로_템플릿을_생성한다() {
+        // given
+        final String categoryName = "기타";
+
+        // when
+        contestCommandService.createTemplate(contest, categoryName);
+
+        // then
+        final ContestTemplate template = contestTemplateRepository.findByContestId(contest.getId()).orElseThrow();
+        assertThat(template.getTrackRequired()).isFalse();
+        assertThat(template.getProjectNameRequired()).isFalse();
+        assertThat(template.getImagesRequired()).isFalse();
     }
 }
