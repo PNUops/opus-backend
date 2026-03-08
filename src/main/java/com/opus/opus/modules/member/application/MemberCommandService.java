@@ -197,12 +197,6 @@ public class MemberCommandService {
         member.updateStudentId(request.studentId());
     }
 
-    private void validateStudentIdUpdatable(final Member member) {
-        if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
-            throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
-        }
-    }
-
     public void unlinkGoogleAccount(final Long memberId) {
         final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
         final String storedValue = authRedisUtil.get(key);
@@ -391,5 +385,11 @@ public class MemberCommandService {
         final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
         final String value = oAuthResult.accessToken() + ":" + oAuthResult.refreshToken();
         authRedisUtil.set(key, value, GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
+    }
+
+    private void validateStudentIdUpdatable(final Member member) {
+        if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
+            throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
+        }
     }
 }
