@@ -1,6 +1,7 @@
 package com.opus.opus.global.security.oauth2;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_TYPE_MISMATCH;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
@@ -41,15 +42,21 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
 
     private Member findOrRegisterSocialMember(final String name, final String email, final String socialId) {
         return memberRepository.findByEmail(email)
-                .map(this::validateSocialMember)
+                .map(member -> validateSocialMember(member, socialId))
                 .orElseGet(() -> registerNewSocialMember(name, email, socialId));
     }
 
-    private Member validateSocialMember(final Member member) {
+    private Member validateSocialMember(final Member member, final String socialId) {
+        // 일반 회원으로 가입된 이메일인 경우
         if (!member.isSocialMember()) {
             throw new OAuth2AuthenticationException(
-                    new OAuth2Error(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.name()),
-                    GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage()
+                    new OAuth2Error(GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.name()), GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN.errorMessage()
+            );
+        }
+        // 소셜 타입 또는 소셜 ID가 일치하지 않는 경우
+        if (member.getSocialType() != SocialType.GOOGLE || !member.getSocialId().equals(socialId)) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(SOCIAL_TYPE_MISMATCH.name()), SOCIAL_TYPE_MISMATCH.errorMessage()
             );
         }
         return member;
