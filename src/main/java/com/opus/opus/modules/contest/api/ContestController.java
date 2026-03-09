@@ -15,9 +15,9 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentTogg
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
@@ -29,8 +29,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -224,10 +224,10 @@ public class ContestController {
         return ResponseEntity.noContent().build();
     }
 
+    @Secured("ROLE_회원")
     @GetMapping("/{contestId}/teams")
-    public ResponseEntity<List<TeamSummaryResponse>> getAllContestTeamSummaries(
-            @PathVariable final Long contestId,
-            @LoginMember final Member member
+    public ResponseEntity<List<TeamSummaryResponse>> getAllContestTeamSummaries(@PathVariable final Long contestId,
+                                                                                @LoginMember final Member member
     ) {
         final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contestId, member);
         return ResponseEntity.ok(responses);

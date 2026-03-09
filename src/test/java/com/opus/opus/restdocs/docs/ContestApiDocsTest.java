@@ -1142,11 +1142,16 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .given(contestQueryService)
                 .getContestTeamSummaries(anyLong(), any());
 
-        mockMvc.perform(get("/contests/{contestId}/teams", 999L))
+        mockMvc.perform(get("/contests/{contestId}/teams", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-contest-team-summaries-fail-contest-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
                         )
                 ));
     }
