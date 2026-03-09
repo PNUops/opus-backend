@@ -16,6 +16,8 @@ link:./opus.html[API 목록으로 돌아가기]
 
 == `POST`: 회원가입 이메일 인증
 
+NOTE: 이메일 인증 시도는 계정당 하루에 5회만 가능합니다. 5회 이상 인증 코드 요청 시 24시간 뒤 재요청 가능합니다.
+
 .HTTP Request
 include::{snippets}/signup-auth/http-request.adoc[]
 
@@ -95,8 +97,6 @@ include::{snippets}/signup/request-fields.adoc[]
 
 == `POST`: 로그인
 
-NOTE: 로그인 시도는 5회만 가능합니다. 5회 이내로 로그인 못하면 비밀번호를 변경해야 합니다.
-
 .HTTP Request
 include::{snippets}/signin/http-request.adoc[]
 
@@ -110,6 +110,8 @@ include::{snippets}/signin/request-fields.adoc[]
 include::{snippets}/signin/response-fields.adoc[]
 
 == `POST`: 비밀번호 변경 이메일 인증
+
+NOTE: 이메일 인증 시도는 계정당 하루에 5회만 가능합니다. 5회 이상 인증 코드 요청 시 24시간 뒤 재요청 가능합니다.
 
 .HTTP Request
 include::{snippets}/signin-auth/http-request.adoc[]
