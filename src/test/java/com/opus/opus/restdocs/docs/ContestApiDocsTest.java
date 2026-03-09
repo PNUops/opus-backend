@@ -41,6 +41,7 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
@@ -420,7 +421,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .andExpect(status().isOk())
                 .andDo(document("create-contest",
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("contestName", "대회 이름"),
@@ -473,7 +475,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("contestName", "대회 이름"),
@@ -495,7 +498,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }
@@ -542,7 +546,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         requestFields(
                                 stringFieldWithPath("mode", "수정할 대회 정렬 모드")
@@ -564,7 +569,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 stringFieldWithPath("currentMode", "현재 적용되어 있는 모드 정보")
@@ -721,7 +727,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 parameterWithName("size").description("페이지 크기").optional()
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         ),
                         responseFields(
                                 arrayFieldWithPath("content[]", "투표 로그 목록 (최신순)"),
@@ -891,6 +898,123 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .andDo(document("get-team-submissions-fail-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 템플릿을 조회한다.")
+    void 대회의_템플릿_설정을_조회한다() throws Exception {
+        final ContestTemplateResponse response = new ContestTemplateResponse(
+                true, true, true, true, true, true,
+                true, true, true, true, true, true
+        );
+
+        when(contestQueryService.getContestTemplate(any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/template", 1))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-template",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        responseFields(
+                                booleanFieldWithPath("trackRequired", "트랙/분과 필수 여부"),
+                                booleanFieldWithPath("projectNameRequired", "프로젝트명 필수 여부"),
+                                booleanFieldWithPath("teamNameRequired", "팀명 필수 여부"),
+                                booleanFieldWithPath("leaderRequired", "팀장 필수 여부"),
+                                booleanFieldWithPath("teamMembersRequired", "팀원 필수 여부"),
+                                booleanFieldWithPath("professorRequired", "지도교수 필수 여부"),
+                                booleanFieldWithPath("githubPathRequired", "GitHub 링크 필수 여부"),
+                                booleanFieldWithPath("youTubePathRequired", "YouTube 링크 필수 여부"),
+                                booleanFieldWithPath("productionPathRequired", "배포 링크 필수 여부"),
+                                booleanFieldWithPath("overviewRequired", "프로젝트 개요 필수 여부"),
+                                booleanFieldWithPath("posterRequired", "포스터 필수 여부"),
+                                booleanFieldWithPath("imagesRequired", "이미지 필수 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 템플릿 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_템플릿_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getContestTemplate(any());
+
+        mockMvc.perform(get("/contests/{contestId}/template", 999))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-template-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 템플릿을 수정한다.")
+    void 대회의_템플릿_설정을_수정한다() throws Exception {
+        final ContestTemplateRequest request = new ContestTemplateRequest(
+                false, false, false, false, false, false,
+                false, false, false, false, false, false
+        );
+
+        doNothing().when(contestCommandService).updateContestTemplate(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/template", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-template",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        requestFields(
+                                booleanFieldWithPath("trackRequired", "트랙/분과 필수 여부"),
+                                booleanFieldWithPath("projectNameRequired", "프로젝트명 필수 여부"),
+                                booleanFieldWithPath("teamNameRequired", "팀명 필수 여부"),
+                                booleanFieldWithPath("leaderRequired", "팀장 필수 여부"),
+                                booleanFieldWithPath("teamMembersRequired", "팀원 필수 여부"),
+                                booleanFieldWithPath("professorRequired", "지도교수 필수 여부"),
+                                booleanFieldWithPath("githubPathRequired", "GitHub 링크 필수 여부"),
+                                booleanFieldWithPath("youTubePathRequired", "YouTube 링크 필수 여부"),
+                                booleanFieldWithPath("productionPathRequired", "배포 링크 필수 여부"),
+                                booleanFieldWithPath("overviewRequired", "프로젝트 개요 필수 여부"),
+                                booleanFieldWithPath("posterRequired", "포스터 필수 여부"),
+                                booleanFieldWithPath("imagesRequired", "이미지 필수 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 템플릿 수정 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_템플릿_수정_시_에러를_반환한다() throws Exception {
+        final ContestTemplateRequest request = new ContestTemplateRequest(
+                false, false, false, false, false, false,
+                false, false, false, false, false, false
+        );
+
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestCommandService)
+                .updateContestTemplate(any(), any());
+
+        mockMvc.perform(put("/contests/{contestId}/template", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andDo(document("update-contest-template-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }

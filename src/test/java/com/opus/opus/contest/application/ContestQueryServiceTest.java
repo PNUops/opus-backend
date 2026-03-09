@@ -2,6 +2,7 @@ package com.opus.opus.contest.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
 import static com.opus.opus.team.TeamVoteFixture.createTeamVote;
 import static java.time.LocalDateTime.now;
@@ -9,11 +10,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
@@ -22,7 +26,9 @@ import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
@@ -52,6 +58,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     private TeamRepository teamRepository;
     @Autowired
     private TeamVoteRepository teamVoteRepository;
+    @Autowired
+    private ContestTemplateRepository contestTemplateRepository;
     @Autowired
     private ContestCategoryRepository contestCategoryRepository;
 
@@ -283,6 +291,35 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> contestQueryService.getTeamSubmissions(invalidContestId))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 템플릿을 조회한다.")
+    void 대회_템플릿을_조회한다() {
+        contestTemplateRepository.save(ContestTemplateFixture.createContestTemplate(contest));
+
+        final ContestTemplateResponse response = contestQueryService.getContestTemplate(contest.getId());
+
+        assertThat(response.trackRequired()).isTrue();
+        assertThat(response.projectNameRequired()).isTrue();
+        assertThat(response.teamNameRequired()).isTrue();
+        assertThat(response.leaderRequired()).isTrue();
+        assertThat(response.teamMembersRequired()).isTrue();
+        assertThat(response.professorRequired()).isTrue();
+        assertThat(response.githubPathRequired()).isTrue();
+        assertThat(response.youTubePathRequired()).isTrue();
+        assertThat(response.productionPathRequired()).isTrue();
+        assertThat(response.overviewRequired()).isTrue();
+        assertThat(response.posterRequired()).isTrue();
+        assertThat(response.imagesRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 대회 템플릿이 존재하지 않으면 예외가 발생한다.")
+    void 대회_템플릿이_존재하지_않으면_예외가_발생한다() {
+        assertThatThrownBy(() -> {
+            contestQueryService.getContestTemplate(contest.getId());
+        }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
     }
 
     @Test
