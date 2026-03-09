@@ -4,6 +4,7 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,6 +86,20 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             memberCommandService.signUpEmailAuth(notPusanEmailRequest);
         }).isInstanceOf(MemberException.class).hasMessage(NOT_PUSAN_UNIVERSITY_EMAIL.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입 이메일 인증 코드 발송을 5회 이상 요청하면 24시간 동안 인증 불가하다.")
+    void 회원가입_이메일_인증_코드_발송을_5회_이상_요청하면_24시간_동안_인증_불가하다() {
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signUpEmailAuth(emailAuthRequest);
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
     }
 
     @Test
