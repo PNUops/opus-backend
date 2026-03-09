@@ -7,7 +7,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -24,7 +23,6 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitR
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
@@ -36,6 +34,7 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
@@ -43,12 +42,13 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
+import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,7 +82,7 @@ public class ContestQueryService {
     private final TeamVoteConvenience teamVoteConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
     private final MemberConvenience memberConvenience;
-    private final ContestAwardConvenience contestAwardConvenience;
+    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final FileConvenience fileConvenience;
 
     private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
@@ -232,20 +232,21 @@ public class ContestQueryService {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
 
-        final boolean isVotingPeriod = checkVotingPeriod(contest);
+        // Vote & Like
+        final boolean isVotingPeriod = contest.isVotingPeriod();
 
-        final ReactionMaps reactionMaps = getReactionMaps(contestId, member, isVotingPeriod);
-        final Map<Long, Boolean> voteMap = reactionMaps.voteMap();
-        final Map<Long, Boolean> likeMap = reactionMaps.likeMap();
+        final Map<Long, Boolean> voteMap = getVoteMap(contestId, member, isVotingPeriod);
+        final Map<Long, Boolean> likeMap = getLikeMap(contestId, member, isVotingPeriod);
 
-        final List<ContestAward> teamAwards = contestAwardConvenience.getTeamAwards(teams);
+        // Award
+        final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap = getTeamAwardsMap(teams);
 
         teamConvenience.shuffleTeams(teams, member);
 
         return teams.stream()
                 .map(team -> TeamSummaryResponse.of(
                         team,
-                        teamAwards,
+                        teamAwardsMap.getOrDefault(team.getId(), Collections.emptyList()),
                         likeMap.getOrDefault(team.getId(), false),
                         voteMap.getOrDefault(team.getId(), false)
                 ))
@@ -256,28 +257,25 @@ public class ContestQueryService {
         return getContestTeamSummaries(contestId, null);
     }
 
-    private ReactionMaps getReactionMaps(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        if (member == null) {
-            return new ReactionMaps(Map.of(), Map.of());
-        }
+    private Map<Long, List<TeamSummaryResponse.AwardInfo>> getTeamAwardsMap(final List<Team> teams) {
+        final List<TeamAwardResult> teamAwardResults = teamContestAwardConvenience.findTeamAwardsByTeams(teams);
 
-        if (isVotingPeriod) {
-            return new ReactionMaps(
-                    teamVoteConvenience.getVoteMap(contestId, member),
-                    Map.of()
-            );
-        } else {
-            return new ReactionMaps(
-                    Map.of(),
-                    teamLikeConvenience.getLikeMap(contestId, member)
-            );
-        }
+        return teamAwardResults.stream()
+                .collect(Collectors.groupingBy(
+                        TeamAwardResult::teamId,
+                        Collectors.mapping(
+                                result -> new TeamSummaryResponse.AwardInfo(result.awardName(), result.awardColor()),
+                                Collectors.toList()
+                        )
+                ));
     }
 
-    private boolean checkVotingPeriod(final Contest contest) {
-        final LocalDateTime now = LocalDateTime.now();
-        return !now.isBefore(contest.getVoteStartAt())
-                && !now.isAfter(contest.getVoteEndAt());
+    private Map<Long, Boolean> getVoteMap(final Long contestId, final Member member, final boolean isVotingPeriod) {
+        return (member != null && isVotingPeriod) ? teamVoteConvenience.getVoteMap(contestId, member) : Map.of();
+    }
+
+    private Map<Long, Boolean> getLikeMap(final Long contestId, final Member member, final boolean isVotingPeriod) {
+        return (member != null && !isVotingPeriod) ? teamLikeConvenience.getLikeMap(contestId, member) : Map.of();
     }
 
     private void checkImageConverted(final File findFile) {
@@ -286,13 +284,9 @@ public class ContestQueryService {
         }
     }
 
-
     public ContestTemplateResponse getContestTemplate(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
         return ContestTemplateResponse.from(template);
-    }
-
-    private record ReactionMaps(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
     }
 }

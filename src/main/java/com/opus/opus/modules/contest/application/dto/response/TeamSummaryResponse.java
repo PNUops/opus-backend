@@ -1,6 +1,5 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.List;
 
@@ -14,14 +13,10 @@ public record TeamSummaryResponse(
 ) {
     public static TeamSummaryResponse of(
             final Team team,
-            final List<ContestAward> contestAwards,
+            final List<AwardInfo> awardInfos,
             final Boolean isLiked,
             final Boolean isVoted
     ) {
-        final List<AwardInfo> awardInfos = contestAwards.stream()
-                .map(AwardInfo::from)
-                .toList();
-
         return new TeamSummaryResponse(
                 team.getId(),
                 team.getTeamName(),
@@ -36,11 +31,5 @@ public record TeamSummaryResponse(
             String awardName,
             String awardColor
     ) {
-        public static AwardInfo from(final ContestAward contestAward) {
-            return new AwardInfo(
-                    contestAward.getAwardName(),
-                    contestAward.getAwardColor()
-            );
-        }
     }
 }
