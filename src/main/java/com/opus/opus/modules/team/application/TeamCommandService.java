@@ -47,13 +47,12 @@ public class TeamCommandService {
 
     private final FileStorageUtil fileStorageUtil;
 
-    private final FileRepository fileRepository;
     private final TeamConvenience teamConvenience;
     private final ContestConvenience contestConvenience;
 
     private final TeamVoteRepository teamVoteRepository;
-
     private final TeamLikeRepository teamLikeRepository;
+    private final FileRepository fileRepository;
 
 
     public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
