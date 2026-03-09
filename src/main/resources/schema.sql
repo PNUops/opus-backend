@@ -3,6 +3,7 @@ USE opus;
 DROP TABLE IF EXISTS `contest`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `contest_category`;
+DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_track`;
 DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `file`;
@@ -49,6 +50,28 @@ CREATE TABLE `contest_category` (
   `category_name` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_template` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `contest_id` bigint NOT NULL,
+  `track_required` bit(1) NOT NULL,
+  `project_name_required` bit(1) NOT NULL,
+  `team_name_required` bit(1) NOT NULL,
+  `leader_required` bit(1) NOT NULL,
+  `team_members_required` bit(1) NOT NULL,
+  `professor_required` bit(1) NOT NULL,
+  `github_path_required` bit(1) NOT NULL,
+  `you_tube_path_required` bit(1) NOT NULL,
+  `production_path_required` bit(1) NOT NULL,
+  `overview_required` bit(1) NOT NULL,
+  `poster_required` bit(1) NOT NULL,
+  `images_required` bit(1) NOT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_team_template_contest_id` (`contest_id`)
 );
 
 CREATE TABLE `contest_track` (

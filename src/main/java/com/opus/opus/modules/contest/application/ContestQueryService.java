@@ -10,18 +10,21 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
@@ -33,19 +36,17 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
-import java.util.List;
-import java.util.Map;
-import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
-
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -71,10 +72,30 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final ContestTemplateConvenience contestTemplateConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
     private final MemberConvenience memberConvenience;
     private final FileConvenience fileConvenience;
+
+    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+        int curRank = 0;     // 현재 순위
+        long prevCount = -1; // 이전 팀 투표 수
+        for (TeamRankingResult result : votesPerTeam) {
+            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
+            if (prevCount != result.voteCount()) {
+                curRank++;
+            }
+            prevCount = result.voteCount();
+
+            responseList.add(
+                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
+                            result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
+    }
 
     public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
@@ -200,25 +221,16 @@ public class ContestQueryService {
                 .toList();
     }
 
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) curRank++;
-            prevCount = result.voteCount();
-
-            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
-    }
-
     private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
     }
 
+
+    public ContestTemplateResponse getContestTemplate(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+        final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
+        return ContestTemplateResponse.from(template);
+    }
 }

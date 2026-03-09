@@ -7,21 +7,23 @@ import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggl
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -84,8 +86,8 @@ public class ContestController {
         return ResponseEntity.ok(responses);
     }
 
-    @PostMapping
     @Secured("ROLE_관리자")
+    @PostMapping
     public ResponseEntity<ContestResponse> createContest(@Valid @RequestBody final ContestRequest request) {
         ContestResponse response = contestCommandService.createContest(request);
         return ResponseEntity.ok(response);
@@ -204,5 +206,20 @@ public class ContestController {
     public ResponseEntity<List<ContestSubmissionResponse>> getTeamSubmissions(@PathVariable final Long contestId) {
         final List<ContestSubmissionResponse> responses = contestQueryService.getTeamSubmissions(contestId);
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{contestId}/template")
+    public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
+        final ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/{contestId}/template")
+    public ResponseEntity<Void> updateContestTemplate(@PathVariable final Long contestId,
+                                                      @Valid @RequestBody final ContestTemplateRequest request) {
+        contestCommandService.updateContestTemplate(contestId, request);
+        return ResponseEntity.noContent().build();
     }
 }
