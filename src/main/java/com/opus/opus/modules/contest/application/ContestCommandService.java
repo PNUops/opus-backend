@@ -23,26 +23,30 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import java.util.Optional;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,19 +62,21 @@ public class ContestCommandService {
     private final ContestRepository contestRepository;
     private final ContestSortRepository contestSortRepository;
     private final FileRepository fileRepository;
+    private final ContestTemplateRepository contestTemplateRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
+    private final ContestTemplateConvenience contestTemplateConvenience;
 
     private final FileStorageUtil fileStorageUtil;
-
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId,
+                CONTEST, BANNER);
         existingFile.ifPresent(this::checkWebpConverted);
 
         fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
@@ -98,6 +104,9 @@ public class ContestCommandService {
         contestSortRepository.save(ContestSort.builder()
                 .contest(contest)
                 .build());
+
+        // 템플릿 자동 생성
+        createTemplate(contest, contestCategory.getCategoryName());
 
         return ContestResponse.from(contest, contestCategory.getCategoryName());
     }
@@ -241,5 +250,62 @@ public class ContestCommandService {
             }
             team.updateItemOrder(r.itemOrder());
         }
+    }
+
+    public void createTemplate(final Contest contest, final String categoryName) {
+        final ContestTemplateRequest request = getDefaultTemplateRequest(categoryName);
+
+        final ContestTemplate template = ContestTemplate.builder()
+                .contest(contest)
+                .request(request)
+                .build();
+
+        contestTemplateRepository.save(template);
+    }
+
+    public void updateContestTemplate(final Long contestId, final ContestTemplateRequest request) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
+        template.updateTemplate(request);
+    }
+
+    private ContestTemplateRequest getDefaultTemplateRequest(final String categoryName) {
+        if (categoryName != null && categoryName.contains("창의융합")) {
+            return new ContestTemplateRequest(
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    false,
+                    true,
+                    false,
+                    false,
+                    true,
+                    true,
+                    true
+            );
+        }
+
+        if (categoryName != null && categoryName.contains("캡스톤")) {
+            return new ContestTemplateRequest(
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    false,
+                    true,
+                    false,
+                    true
+            );
+        }
+
+        return new ContestTemplateRequest(
+                false, false, false, false, false, false, false, false, false, false, false, false
+        );
     }
 }
