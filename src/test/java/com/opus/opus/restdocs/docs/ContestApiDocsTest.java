@@ -748,7 +748,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new ContestRankingResponse(1, 10L, "팀 A", "AI 번역기", "AI 트랙", 150L),
                 new ContestRankingResponse(2, 11L, "팀 B", "헬스 분석기", "헬스케어 트랙", 120L),
                 new ContestRankingResponse(2, 12L, "팀 C", "노인 케어봇", "AI 트랙", 120L),
-                new ContestRankingResponse(3, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)
+                new ContestRankingResponse(4, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)  // 3 → 4
         );
 
         when(contestQueryService.getTeamRanking(any())).thenReturn(responses);
@@ -766,7 +766,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "팀 랭킹 목록"),
-                                numberFieldWithPath("[].rank", "투표 기준 순위 (Dense Ranking)"),
+                                numberFieldWithPath("[].rank", "투표 기준 순위 (Ranking) 예: 1-2-2-4"),
                                 numberFieldWithPath("[].teamId", "팀 ID"),
                                 stringFieldWithPath("[].teamName", "팀명"),
                                 stringFieldWithPath("[].projectName", "프로젝트명"),
