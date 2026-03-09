@@ -1,16 +1,5 @@
 USE opus;
 
-DROP TABLE IF EXISTS `contest`;
-DROP TABLE IF EXISTS `contest_award`;
-DROP TABLE IF EXISTS `contest_category`;
-DROP TABLE IF EXISTS `contest_template`;
-DROP TABLE IF EXISTS `contest_track`;
-DROP TABLE IF EXISTS `contest_sort`;
-DROP TABLE IF EXISTS `file`;
-DROP TABLE IF EXISTS `member`;
-DROP TABLE IF EXISTS `member_roles`;
-DROP TABLE IF EXISTS `notice`;
-DROP TABLE IF EXISTS `team`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_like`;
@@ -21,6 +10,7 @@ DROP TABLE IF EXISTS `member_roles`;
 DROP TABLE IF EXISTS `team`;
 DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `contest_track`;
+DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
