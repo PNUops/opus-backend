@@ -3,6 +3,7 @@ package com.opus.opus.member.application;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
+import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -57,6 +58,12 @@ public class MemberCommandServiceTest extends IntegrationTest {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
 
+        authRedisUtil.delete("email:auth:count:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:verified:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:verified:" + emailAuthRequest.email());
+
         when(googleOauth.createOAuthStateKey(anyString(), anyString())).thenCallRealMethod(); // state key값이 null이 되는 문제 방지하기 위해 실제 메서드 호출
     }
 
@@ -99,6 +106,26 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         assertThatThrownBy(() -> {
             memberCommandService.signUpEmailAuth(emailAuthRequest);
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입과 비밀번호 변경 이메일 인증 코드 발송 제한 count는 합계 계산된다.")
+    void 회원가입과_비밀번호_변경_이메일_인증_코드_발송_제한_count는_합계_계산된다() {
+        final String newMemberEmail = "example100@pusan.ac.kr";
+        authRedisUtil.delete("email:auth:count:" + newMemberEmail);
+
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        memberRepository.save(createMemberWithUniqueNum(100));
+
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
         }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
     }
 
