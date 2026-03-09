@@ -21,8 +21,8 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
@@ -37,24 +37,21 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
-import com.opus.opus.modules.team.domain.Team;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
-
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -233,7 +230,7 @@ public class ContestQueryService {
 
     public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final List<Team> teams = teamConvenience.findAllByContestId(contestId);
+        final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
 
         final boolean isVotingPeriod = checkVotingPeriod(contest);
 
@@ -295,6 +292,7 @@ public class ContestQueryService {
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
         return ContestTemplateResponse.from(template);
     }
+
     private record ReactionMaps(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
     }
 }

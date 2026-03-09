@@ -6,7 +6,6 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.util.List;
-import java.util.Collections;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,9 +24,8 @@ public class TeamVoteConvenience {
         return teamVoteRepository.findByTeamIdInOrderByCreatedAtDesc(teamIds, pageable);
     }
 
-        public Map<Long, Boolean> getVoteMap(final Long contestId, final Member member) {
-        return (member != null) ? teamVoteRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
-                .collect(toMap(tv -> tv.getTeam().getId(), TeamVote::getIsVoted))
-                : Collections.emptyMap();
+    public Map<Long, Boolean> getVoteMap(final Long contestId, final Member member) {
+        return teamVoteRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
+                .collect(toMap(tv -> tv.getTeam().getId(), TeamVote::getIsVoted));
     }
 }

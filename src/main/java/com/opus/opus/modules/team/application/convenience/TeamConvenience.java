@@ -47,10 +47,6 @@ public class TeamConvenience {
         return teamRepository.findAllByContestId(contestId);
     }
 
-    public List<Team> findAllByContestId(final Long contestId) {
-        return teamRepository.findAllByContestId(contestId);
-    }
-
     public void shuffleTeams(final List<Team> teams, final Member member) {
         if (member != null) {
             Random seed = new Random(member.getId());
