@@ -4,31 +4,41 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
-import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
@@ -40,6 +50,10 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,7 +72,30 @@ public class ContestQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final ContestTemplateConvenience contestTemplateConvenience;
+    private final TeamConvenience teamConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
+    private final MemberConvenience memberConvenience;
     private final FileConvenience fileConvenience;
+
+    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+        int curRank = 0;     // 현재 순위
+        long prevCount = -1; // 이전 팀 투표 수
+        for (TeamRankingResult result : votesPerTeam) {
+            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
+            if (prevCount != result.voteCount()) {
+                curRank++;
+            }
+            prevCount = result.voteCount();
+
+            responseList.add(
+                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
+                            result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
+    }
 
     public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
@@ -112,6 +149,43 @@ public class ContestQueryService {
         return new ContestSortResponse(contestSort.getMode());
     }
 
+    public Page<ContestVoteLogResponse> getContestVoteLog(final Long contestId, final int page, final int size) {
+        contestConvenience.validateExistContest(contestId);
+
+        final Pageable pageable = PageRequest.of(page, size, Sort.by(DESC, "createdAt"));
+
+        final Page<TeamVote> votePage = getContestVotes(contestId, pageable);
+        final Map<Long, Member> memberMap = getMemberMap(votePage);
+
+        return votePage.map(vote -> {
+            final Member member = memberMap.get(vote.getMemberId());
+            return new ContestVoteLogResponse(
+                    member.getName(),
+                    member.getEmail(),
+                    vote.getTeam().getTeamName(),
+                    vote.getCreatedAt()
+            );
+        });
+    }
+
+    private Page<TeamVote> getContestVotes(final Long contestId, final Pageable pageable) {
+        final List<Long> teamIds = teamConvenience.getTeamsOfContest(contestId)
+                .stream()
+                .map(Team::getId)
+                .toList();
+
+        return teamVoteConvenience.getAllTeamVoteDesc(teamIds, pageable);
+    }
+
+    private Map<Long, Member> getMemberMap(final Page<TeamVote> votePage) {
+        return memberConvenience.getMembersByIds(
+                votePage.getContent().stream()
+                        .map(TeamVote::getMemberId)
+                        .distinct()
+                        .toList()
+        );
+    }
+
     public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
@@ -147,24 +221,16 @@ public class ContestQueryService {
                 .toList();
     }
 
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) curRank++;
-            prevCount = result.voteCount();
-
-            responseList.add(new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
-    }
-
     private void checkImageConverted(final File findFile) {
         if (!findFile.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
+    }
+
+
+    public ContestTemplateResponse getContestTemplate(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
+        final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
+        return ContestTemplateResponse.from(template);
     }
 }

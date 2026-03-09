@@ -367,6 +367,25 @@ include::{snippets}/get-all-contest/http-response.adoc[]
 .Response Body's Fields
 include::{snippets}/get-all-contest/response-fields.adoc[]
 
+== 투표 로그 관리
+
+=== `GET`: 투표 로그 조회
+
+.HTTP Request Headers
+include::{snippets}/get-contest-vote-log/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-contest-vote-log/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-vote-log/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-vote-log/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-contest-vote-log/response-fields.adoc[]
+
 == 프로젝트 등록 현황 조회
 
 === `GET`: 대회 팀별 프로젝트 등록 현황 조회
@@ -470,4 +489,59 @@ include::{snippets}/get-vote-statistics-fail-not-found/http-request.adoc[]
 
 include::{snippets}/get-vote-statistics-fail-not-found/http-response.adoc[]
 
+====
+
+== 대회 팀 템플릿 설정 관리
+
+=== `GET`: 대회의 템플릿 조회
+
+.Path Parameters
+include::{snippets}/get-contest-template/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-template/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-template/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-contest-template/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+====
+include::{snippets}/get-contest-template-fail-not-found/path-parameters.adoc[]
+include::{snippets}/get-contest-template-fail-not-found/http-request.adoc[]
+include::{snippets}/get-contest-template-fail-not-found/http-response.adoc[]
+====
+
+=== `PUT`: 대회의 템플릿 수정
+
+.Path Parameters
+include::{snippets}/update-contest-template/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/update-contest-template/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-template/request-fields.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-template/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-template/http-response.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+====
+include::{snippets}/update-contest-template-fail-not-found/path-parameters.adoc[]
+include::{snippets}/update-contest-template-fail-not-found/http-request.adoc[]
+include::{snippets}/update-contest-template-fail-not-found/http-response.adoc[]
 ====

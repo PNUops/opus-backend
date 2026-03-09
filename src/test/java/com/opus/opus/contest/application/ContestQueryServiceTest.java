@@ -1,21 +1,31 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
+import static com.opus.opus.team.TeamVoteFixture.createTeamVote;
+import static java.time.LocalDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
@@ -30,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 
 public class ContestQueryServiceTest extends IntegrationTest {
 
@@ -39,11 +50,13 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
     private TeamRepository teamRepository;
     @Autowired
     private TeamVoteRepository teamVoteRepository;
     @Autowired
-    private MemberRepository memberRepository;
+    private ContestTemplateRepository contestTemplateRepository;
 
     private Contest contest;
     private Team team;
@@ -63,8 +76,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표 기간 조회 시 저장된 기간을 반환한다.")
     void 투표_기간_조회_시_저장된_기간을_반환한다() {
-        LocalDateTime startAt = LocalDateTime.now().plusDays(2);
-        LocalDateTime endAt = LocalDateTime.now().plusDays(7);
+        LocalDateTime startAt = now().plusDays(2);
+        LocalDateTime endAt = now().plusDays(7);
         contest.updateVotePeriod(startAt, endAt);
 
         VotePeriodResponse response = contestQueryService.getVotePeriod(contest.getId());
@@ -102,7 +115,28 @@ public class ContestQueryServiceTest extends IntegrationTest {
             contestQueryService.getMaxVotesLimit(invalidContestId);
         }).isInstanceOf(ContestException.class).hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
-    
+
+    @Test
+    @DisplayName("[성공] 대회의 투표 로그를 최신순으로 정렬할 수 있다.")
+    void 대회의_투표_로그를_최신순으로_정렬할_수_있다() {
+        final Member member = memberRepository.save(createMemberWithUniqueNum(1));
+        final Member otherMember = memberRepository.save(createMemberWithUniqueNum(2));
+        final Team team = teamRepository.save(createTeamWithContestId(contest.getId()));
+        final Team otherTeam = teamRepository.save(createTeamWithContestId(contest.getId()));
+
+        teamVoteRepository.save(createTeamVote(team, member.getId(), true));
+        teamVoteRepository.save(createTeamVote(otherTeam, member.getId(), true));
+        teamVoteRepository.save(createTeamVote(team, otherMember.getId(), true));
+
+        final Page<ContestVoteLogResponse> page = contestQueryService.getContestVoteLog(contest.getId(), 0, 20);
+
+        final List<ContestVoteLogResponse> contestVoteLogResponses = page.getContent();
+
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(contestVoteLogResponses.size()).isEqualTo(3);
+        assertThat(contestVoteLogResponses.get(0).votedAt()).isAfterOrEqualTo(contestVoteLogResponses.get(1).votedAt());
+    }
+
     @Test
     @DisplayName("[성공] 사용자의 남은 투표 개수를 조회할 수 있다.")
     void 사용자의_남은_투표_개수를_조회할_수_있다() {
@@ -238,7 +272,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 팀이_없는_대회는_빈_리스트를_반환한다() {
         final Contest emptyContest = contestRepository.save(ContestFixture.createContest());
 
-        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(emptyContest.getId());
+        final List<ContestSubmissionResponse> responseList = contestQueryService.getTeamSubmissions(
+                emptyContest.getId());
 
         assertThat(responseList).isEmpty();
     }
@@ -251,5 +286,34 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> contestQueryService.getTeamSubmissions(invalidContestId))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 템플릿을 조회한다.")
+    void 대회_템플릿을_조회한다() {
+        contestTemplateRepository.save(ContestTemplateFixture.createContestTemplate(contest));
+
+        final ContestTemplateResponse response = contestQueryService.getContestTemplate(contest.getId());
+
+        assertThat(response.trackRequired()).isTrue();
+        assertThat(response.projectNameRequired()).isTrue();
+        assertThat(response.teamNameRequired()).isTrue();
+        assertThat(response.leaderRequired()).isTrue();
+        assertThat(response.teamMembersRequired()).isTrue();
+        assertThat(response.professorRequired()).isTrue();
+        assertThat(response.githubPathRequired()).isTrue();
+        assertThat(response.youTubePathRequired()).isTrue();
+        assertThat(response.productionPathRequired()).isTrue();
+        assertThat(response.overviewRequired()).isTrue();
+        assertThat(response.posterRequired()).isTrue();
+        assertThat(response.imagesRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 대회 템플릿이 존재하지 않으면 예외가 발생한다.")
+    void 대회_템플릿이_존재하지_않으면_예외가_발생한다() {
+        assertThatThrownBy(() -> {
+            contestQueryService.getContestTemplate(contest.getId());
+        }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
     }
 }

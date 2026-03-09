@@ -17,7 +17,6 @@
   <a href="https://opus.pnu.app">🔨 개발 서버 </a> | 
   <a href="https://github.com/PNUops/ops-mvp-back">📦 MVP Backend</a>
 </p>
-
 <br>
 
 <h2 align="left">🛠 Tech Stack</h2>
@@ -48,6 +47,7 @@
   <img src="https://img.shields.io/badge/JUnit5-25A162?style=for-the-badge&logo=junit5&logoColor=white">
   <img src="https://img.shields.io/badge/-Mockito-6DB33F?style=for-the-badge">
 </p>
+<br>
 
 ## 🏗️ Structure
 ```
@@ -118,12 +118,15 @@
 
 ## ✨ Key Features & Engineering Points
 (추가 예정)
+<br>
 
 ## 🗂 Database ERD
 (추가 예정)
+<br>
 
 ## 🌐 Infra Structure
-(추가 예정)
+ <img width="383" height="228" alt="Image" src="https://github.com/user-attachments/assets/cafec3d7-eeda-4f58-a3c7-344f46ed4481" />
+ <br>
 
 ## 👥 Backend Member
 
@@ -179,6 +182,7 @@
   </tr>
 </table>
 </div>
+<br>
 
 ## 🤝Project Contributors
 #### Backend / Infra / Frontend /Design

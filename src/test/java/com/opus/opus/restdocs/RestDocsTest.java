@@ -3,6 +3,7 @@ package com.opus.opus.restdocs;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.security.annotation.MemberArgumentResolver;
@@ -150,5 +151,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     protected FieldDescriptor dateTimeFieldWithPath(final String path, final String description) {
         return fieldWithPath(path).type(JsonFieldType.STRING).description(description + " (ISO-8601)");
+    }
+
+    protected FieldDescriptor subsectionFieldWithPath(final String path, final String description) {
+        return subsectionWithPath(path).description(description);
     }
 }
