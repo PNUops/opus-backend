@@ -10,6 +10,7 @@ import com.opus.opus.modules.contest.domain.SortType;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.Collections;
@@ -49,6 +50,10 @@ public class TeamConvenience {
 
     public List<Team> getTeamsOfContest(final Long contestId) {
         return teamRepository.findAllByContestId(contestId);
+    }
+
+    public List<TeamRankingResult> getTeamRankingResults(final Long contestId) {
+        return teamRepository.findTeamRankingByContestId(contestId);
     }
 
     public void sortTeams(final List<Team> teams, final SortType mode, final Member member) {
