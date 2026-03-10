@@ -10,6 +10,7 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
@@ -28,7 +29,6 @@ import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
@@ -44,13 +44,13 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
-import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
@@ -70,13 +70,11 @@ public class ContestQueryService {
     private final FileStorageUtil fileStorageUtil;
 
     private final ContestRepository contestRepository;
-    private final TeamRepository teamRepository;
-    private final TeamVoteRepository teamVoteRepository;
-    private final ContestTrackRepository contestTrackRepository;
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestSortConvenience contestSortConvenience;
+    private final ContestTrackConvenience contestTrackConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
@@ -195,20 +193,20 @@ public class ContestQueryService {
 
     public MemberVoteCountResponse getMemberVoteCount(Long memberId, Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final long currentVoteCount = teamVoteRepository.countMemberVotesInContest(memberId, contestId);
+        final long currentVoteCount = teamVoteConvenience.countMemberVotesInContest(memberId, contestId);
         final long remainingVotesCount = contest.getMaxVotesLimit() - currentVoteCount;
         return new MemberVoteCountResponse(remainingVotesCount, (long) contest.getMaxVotesLimit());
     }
 
     public List<ContestRankingResponse> getTeamRanking(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final List<TeamRankingResult> votesPerTeam = teamRepository.findTeamRankingByContestId(contestId);
-        return applyDenseRanking(votesPerTeam);
+        final List<TeamRankingResult> votesPerTeam = teamConvenience.getTeamRankingResults(contestId);
+        return applyRanking(votesPerTeam);
     }
 
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final VoteStatisticsResult result = teamVoteRepository.countVoteStatisticsByContest(contestId);
+        final VoteStatisticsResult result = teamVoteConvenience.getVoteStaticsResult(contestId);
         final double average = result.totalVoters() > 0
                 ? Math.round((double) result.totalVotes() / result.totalVoters() * 10) / 10.0
                 : 0.0;
@@ -218,14 +216,29 @@ public class ContestQueryService {
     public List<ContestSubmissionResponse> getTeamSubmissions(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final List<Team> teamList = teamRepository.findAllByContestId(contestId);
-        final Map<Long, String> trackNameMap = contestTrackRepository.findAllByContestId(contestId)
+        final List<Team> teamList = teamConvenience.getTeamsOfContest(contestId);
+        final Map<Long, String> trackNameMap = contestTrackConvenience.getValidateExistTracks(contestId)
                 .stream()
                 .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
 
         return teamList.stream()
                 .map(team -> ContestSubmissionResponse.from(team, trackNameMap.get(team.getTrackId())))
                 .toList();
+    }
+
+    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+
+        for (int i = 0; i < votesPerTeam.size(); i++) {
+            final TeamRankingResult result = votesPerTeam.get(i);
+            final int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
+
+            responseList.add(new ContestRankingResponse(
+                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()
+            ));
+        }
+
+        return responseList;
     }
 
     public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {

@@ -175,8 +175,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] Dense Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
-    void dense_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
+    @DisplayName("[성공] Standard Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
+    void standard_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
         final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
@@ -194,7 +194,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThat(responses.get(1).voteCount()).isEqualTo(1);
         assertThat(responses.get(2).rank()).isEqualTo(2);
         assertThat(responses.get(2).voteCount()).isEqualTo(1);
-        assertThat(responses.get(3).rank()).isEqualTo(3);
+        assertThat(responses.get(3).rank()).isEqualTo(4);
         assertThat(responses.get(3).voteCount()).isEqualTo(0);
     }
 
