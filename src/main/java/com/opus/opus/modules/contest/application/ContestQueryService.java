@@ -232,6 +232,10 @@ public class ContestQueryService {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
 
+        // SORT
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+        teamConvenience.sortTeams(teams, contestSort.getMode(), member);
+
         // Vote & Like
         final boolean isVotingPeriod = contest.isVotingPeriod();
 
@@ -240,8 +244,6 @@ public class ContestQueryService {
 
         // Award
         final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap = getTeamAwardsMap(teams);
-
-        teamConvenience.shuffleTeams(teams, member);
 
         return teams.stream()
                 .map(team -> TeamSummaryResponse.of(
