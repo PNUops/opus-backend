@@ -210,3 +210,52 @@ include::{snippets}/oauth-google-callback-fail-denied/http-request.adoc[]
 include::{snippets}/oauth-google-callback-fail-denied/http-response.adoc[]
 
 ====
+
+== 프로필 이미지 관리
+
+=== `GET`: 프로필 이미지 조회
+
+.HTTP Request
+include::{snippets}/get-member-profile-image/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-member-profile-image/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/get-member-profile-image/request-headers.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 등록되지 않은 프로필 이미지
+
+[%collapsible]
+====
+include::{snippets}/get-member-profile-image-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-member-profile-image-fail-not-found/http-response.adoc[]
+====
+
+=== `PATCH`: 프로필 이미지 변경
+
+.HTTP Request
+include::{snippets}/modify-member-profile-image/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/modify-member-profile-image/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/modify-member-profile-image/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/modify-member-profile-image/request-parts.adoc[]
+
+=== `DELETE`: 프로필 이미지 삭제
+
+.HTTP Request
+include::{snippets}/delete-member-profile-image/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-member-profile-image/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/delete-member-profile-image/request-headers.adoc[]
