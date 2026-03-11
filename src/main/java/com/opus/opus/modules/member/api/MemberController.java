@@ -15,6 +15,7 @@ import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -123,6 +125,13 @@ public class MemberController {
     public ResponseEntity<Void> modifyProfileImage(@LoginMember final Member member,
                                                    @RequestPart("image") final MultipartFile image) {
         memberCommandService.modifyProfileImage(member, image);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/members/me/images/profile")
+    public ResponseEntity<Void> deleteProfileImage(@LoginMember final Member member) {
+        memberCommandService.deleteProfileImage(member);
 
         return ResponseEntity.noContent().build();
     }

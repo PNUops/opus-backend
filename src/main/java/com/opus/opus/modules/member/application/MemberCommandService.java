@@ -391,4 +391,9 @@ public class MemberCommandService {
         fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
+
+    public void deleteProfileImage(final Member member) {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
+                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+    }
 }
