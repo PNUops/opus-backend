@@ -17,6 +17,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Validated
@@ -114,5 +117,13 @@ public class MemberController {
         return ResponseEntity.ok()
                 .contentType(imageResponse.getMediaType())
                 .body(imageResponse.resource());
+    }
+
+    @PatchMapping("/members/me/images/profile")
+    public ResponseEntity<Void> modifyProfileImage(@LoginMember final Member member,
+                                                   @RequestPart("image") final MultipartFile image) {
+        memberCommandService.modifyProfileImage(member, image);
+
+        return ResponseEntity.noContent().build();
     }
 }

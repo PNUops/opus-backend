@@ -5,6 +5,8 @@ import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_SERVER_ERROR;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
@@ -15,11 +17,14 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VER
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.oauth.component.GoogleOauth;
 import com.opus.opus.global.util.oauth.dto.GoogleUser;
 import com.opus.opus.global.util.oauth.dto.OAuthResult;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -45,6 +50,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -52,6 +58,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class MemberCommandService {
 
     private final MemberRepository memberRepository;
+    private final FileRepository fileRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -60,6 +67,8 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleOauth googleOauth;
+    private final FileStorageUtil fileStorageUtil;
+
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
@@ -374,5 +383,12 @@ public class MemberCommandService {
         final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
         final String value = oAuthResult.accessToken() + ":" + oAuthResult.refreshToken();
         authRedisUtil.set(key, value, GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
+    }
+
+    public void modifyProfileImage(final Member member, final MultipartFile image) {
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
+                member.getId(), MEMBER, PROFILE);
+        fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 }
