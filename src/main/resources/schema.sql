@@ -99,11 +99,11 @@ CREATE TABLE `file` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_path` varchar(255) NOT NULL,
-  `image_type` enum('BANNER','PREVIEW','THUMBNAIL','POSTER') NOT NULL,
+  `image_type` enum('BANNER','PREVIEW','THUMBNAIL','POSTER','PROFILE') NOT NULL,
   `is_webp_converted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
   `reference_id` bigint NOT NULL,
-  `reference_type` enum('CONTEST','TEAM','TRACK') NOT NULL,
+  `reference_type` enum('CONTEST','TEAM','TRACK','MEMBER') NOT NULL,
   PRIMARY KEY (`id`)
 );
 

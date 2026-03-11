@@ -3,6 +3,7 @@ package com.opus.opus.modules.member.api;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -12,9 +13,12 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -101,5 +105,14 @@ public class MemberController {
     ) {
         final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code, state, error);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/members/me/images/profile")
+    public ResponseEntity<Resource> getProfileImage(@LoginMember final Member member) {
+        final ImageResponse imageResponse = memberQueryService.getProfileImage(member);
+
+        return ResponseEntity.ok()
+                .contentType(imageResponse.getMediaType())
+                .body(imageResponse.resource());
     }
 }

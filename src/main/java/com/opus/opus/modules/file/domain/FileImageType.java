@@ -6,5 +6,6 @@ public enum FileImageType {
     THUMBNAIL,
     BANNER,
     POSTER,
+    PROFILE,
 }
 
