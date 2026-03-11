@@ -34,10 +34,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileStorageUtil {
 
     private static final Path ROOT_PATH = Paths.get(System.getProperty("user.dir"));
-    private static final Path RESOURCE_PATH = ROOT_PATH.resolve("ops_files");
+    private static final Path RESOURCE_PATH = ROOT_PATH.resolve("src/resources/opus_files");
     private static final Path DEFAULT_FILE_PATH = RESOURCE_PATH.resolve("files");
     private static final String DEFAULT_THUMBNAIL_FILENAME = "default_thumbnail.jpg";
     private static final Path DEFAULT_THUMBNAIL_PATH = RESOURCE_PATH.resolve(DEFAULT_THUMBNAIL_FILENAME);
+    private static final String DEFAULT_PROFILE_FILENAME = "default_profile.jpg";
+    private static final Path DEFAULT_PROFILE_PATH = ROOT_PATH.resolve("src/main/resources/opus_files").resolve(DEFAULT_PROFILE_FILENAME);
 
     private static final MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
 
@@ -68,6 +70,14 @@ public class FileStorageUtil {
         final ByteArrayResource findResource = findPhysicalFile(DEFAULT_THUMBNAIL_PATH);
 
         final String mimeType = mimeTypesMap.getContentType(DEFAULT_THUMBNAIL_PATH.toFile());
+
+        return new Pair<>(findResource, mimeType);
+    }
+
+    public Pair<Resource, String> findDefaultProfileImage() {
+        final ByteArrayResource findResource = findPhysicalFile(DEFAULT_PROFILE_PATH);
+
+        final String mimeType = mimeTypesMap.getContentType(DEFAULT_PROFILE_PATH.toFile());
 
         return new Pair<>(findResource, mimeType);
     }
