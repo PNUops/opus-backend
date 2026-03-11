@@ -3,14 +3,19 @@ package com.opus.opus.member.application;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.SOCIAL_LOGIN_FAILED_AUTH_CODE;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +24,9 @@ import com.opus.opus.global.util.oauth.dto.OAuthResult;
 import com.opus.opus.global.util.oauth.exception.OAuthException;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -28,6 +36,7 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import org.springframework.mock.web.MockMultipartFile;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -46,6 +55,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private FileRepository fileRepository;
 
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
@@ -406,5 +418,69 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.unlinkGoogleAccount(teamLeader.getId());
 
         verify(googleOauth).revokeToken("testAccessToken");
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없어도 새 이미지 저장이 호출된다.")
+    void 기존_프로필_이미지가_없어도_새_이미지_저장이_호출된다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 있으면 새 이미지 저장 후 기존 이미지 삭제가 호출된다.")
+    void 기존_프로필_이미지가_있으면_새_이미지_저장_후_기존_이미지_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+        final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없으면 이미지 변경 시 삭제가 호출되지 않는다.")
+    void 기존_프로필_이미지가_없으면_이미지_변경_시_삭제가_호출되지_않는다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 있으면 삭제가 호출된다.")
+    void 프로필_이미지가_있으면_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 없으면 삭제가 호출되지 않는다.")
+    void 프로필_이미지가_없으면_삭제가_호출되지_않는다() {
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
     }
 }
