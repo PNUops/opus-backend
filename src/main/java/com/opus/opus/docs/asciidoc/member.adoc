@@ -159,56 +159,83 @@ include::{snippets}/get-password/path-parameters.adoc[]
 .Response Body's Fields
 include::{snippets}/get-password/response-fields.adoc[]
 
-== `GET`: Google OAuth 로그인 리다이렉트
+== `POST`: 로컬 환경 OAuth 리다이렉트 설정
 
-NOTE: 사용자를 Google OAuth 인증 페이지로 리다이렉트합니다. CSRF 공격 방지를 위한 `state` 파라미터가 세션 ID와 함께 Redis에 저장됩니다. (TTL: 5분)
+NOTE: 로컬 개발 환경에서 구글 소셜 로그인 테스트 시 사전에 호출해야 합니다. 호출하지 않으면 기본값인 배포 사이트 URL로 리다이렉트됩니다.
 
 .HTTP Request
-include::{snippets}/oauth-google-redirect/http-request.adoc[]
+include::{snippets}/oauth2-set-redirect/http-request.adoc[]
 
 .HTTP Response
-include::{snippets}/oauth-google-redirect/http-response.adoc[]
+include::{snippets}/oauth2-set-redirect/http-response.adoc[]
+
+== `GET`: Google OAuth 로그인 리다이렉트
+
+NOTE: Spring Security가 자동으로 처리하는 엔드포인트입니다. CSRF 방어용 `state` 파라미터를 자동으로 생성하고 세션에 저장합니다.
+
+.HTTP Request
+----
+GET /oauth2/authorization/google HTTP/1.1
+Host: opus.pnu.app
+----
+
+.HTTP Response
+----
+HTTP/1.1 302 Found
+Location: https://accounts.google.com/o/oauth2/v2/auth
+          ?scope=email+profile
+          &response_type=code
+          &client_id=YOUR_CLIENT_ID
+          &redirect_uri=https://opus.pnu.app/login/oauth2/code/google
+          &state=SPRING_SECURITY_GENERATED_STATE
+----
 
 == `GET`: Google OAuth 콜백
 
-NOTE: Google OAuth 인증 완료 후 호출되는 콜백 엔드포인트입니다. 기존 회원이면 로그인 처리, 신규 회원이면 자동 가입 후 JWT 토큰을 발급합니다.
+NOTE:  구글 인증 완료 후 구글 서버가 자동으로 호출하는 엔드포인트입니다. 직접 호출할 필요 없으며 에러 처리 부분만 참고해주세요.
 
 .HTTP Request
-include::{snippets}/oauth-google-callback/http-request.adoc[]
+----
+GET /login/oauth2/code/google?code=4%2F0AX4X...&state=GENERATED_STATE HTTP/1.1
+Host: opus.pnu.app
+----
 
-.HTTP Response
-include::{snippets}/oauth-google-callback/http-response.adoc[]
+.HTTP Response (성공)
+----
+HTTP/1.1 302 Found
+Location: https://opus.pnu.app/oauth/callback?token=eyJhbGci...
+----
 
-.Query Parameters
-include::{snippets}/oauth-google-callback/query-parameters.adoc[]
-
-.Response Body's Fields
-include::{snippets}/oauth-google-callback/response-fields.adoc[]
+.HTTP Response (실패)
+----
+HTTP/1.1 302 Found
+Location: https://opus.pnu.app/oauth/callback?error=URL인코딩된값
+----
 
 === ⚠️ 실패 케이스
 
-.❌ Case 1: state 누락/불일치/만료
-
 [%collapsible]
-
 ====
+|===
+|디코딩된 error 값 |원인
 
-include::{snippets}/oauth-google-callback-fail-state/http-request.adoc[]
+|`access_denied`
+|사용자가 구글 로그인 취소
 
-include::{snippets}/oauth-google-callback-fail-state/http-response.adoc[]
+|`authorization_request_not_found`
+|세션 만료 또는 뒤로가기 후 재시도
 
-====
+|`invalid_state_parameter`
+|CSRF 의심
 
-.❌ Case 2: 사용자 권한 거부
+|`server_error`
+|구글 서버 오류
 
-[%collapsible]
+|`GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN`
+|일반 회원이 소셜 로그인 시도
+|===
 
-====
-
-include::{snippets}/oauth-google-callback-fail-denied/http-request.adoc[]
-
-include::{snippets}/oauth-google-callback-fail-denied/http-response.adoc[]
-
+NOTE: error 파라미터는 URL 인코딩되어 있으므로 반드시 `decodeURIComponent` 처리가 필요합니다!
 ====
 
 == `PATCH`: 학번 수정
