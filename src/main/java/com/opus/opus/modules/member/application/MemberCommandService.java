@@ -10,6 +10,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +25,7 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -186,6 +188,15 @@ public class MemberCommandService {
         }
     }
 
+    public void updateStudentId(final Long memberId, final StudentIdUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+
+        validateStudentIdUpdatable(member);
+        memberConvenience.checkIsDuplicateStudentId(request.studentId());
+
+        member.updateStudentId(request.studentId());
+    }
+
     public void unlinkGoogleAccount(final Long memberId) {
         final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
         final String storedValue = authRedisUtil.get(key);
@@ -234,7 +245,7 @@ public class MemberCommandService {
         final String randomPassword = generateRandomPassword();
         final String uniqueStudentId = "fake_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
-        return memberRepository.save(Member.builder()
+        return memberRepository.save(Member.generalMember()
                 .name(name)
                 .studentId(uniqueStudentId)
                 .email(email)
@@ -264,7 +275,7 @@ public class MemberCommandService {
                                    final String password) {
         memberConvenience.checkIsDuplicateStudentId(studentId);
 
-        memberRepository.save(Member.builder()
+        memberRepository.save(Member.generalMember()
                 .name(name)
                 .studentId(studentId)
                 .email(email)
@@ -374,5 +385,11 @@ public class MemberCommandService {
         final String key = GOOGLE_TOKEN_KEY_PREFIX + memberId;
         final String value = oAuthResult.accessToken() + ":" + oAuthResult.refreshToken();
         authRedisUtil.set(key, value, GOOGLE_TOKEN_TTL, TimeUnit.HOURS);
+    }
+
+    private void validateStudentIdUpdatable(final Member member) {
+        if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
+            throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
+        }
     }
 }

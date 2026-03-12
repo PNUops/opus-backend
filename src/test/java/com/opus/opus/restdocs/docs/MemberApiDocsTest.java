@@ -1,6 +1,7 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
@@ -28,6 +29,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -338,6 +340,45 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("code").description("Google 인가 코드"),
                                 parameterWithName("state").description("상태 토큰"),
                                 parameterWithName("error").description("에러 코드 (사용자 권한 거부)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 학번 수정이 정상적으로 이루어진다.")
+    void 학번_수정이_정상적으로_이루어진다() throws Exception {
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+
+        doNothing().when(memberCommandService).updateStudentId(any(), any());
+
+        mockMvc.perform(patch("/members/me/student-id")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-student-id",
+                        requestFields(
+                                stringFieldWithPath("studentId", "변경할 학번")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 학번 수정이 불가능한 사용자면 400 에러를 반환한다.")
+    void 학번_수정이_불가능한_사용자면_에러를_반환한다() throws Exception {
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+
+        willThrow(new MemberException(CANNOT_UPDATE_STUDENT_ID))
+                .given(memberCommandService).updateStudentId(any(), any());
+
+        mockMvc.perform(patch("/members/me/student-id")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-student-id-fail",
+                        requestFields(
+                                stringFieldWithPath("studentId", "변경할 학번")
                         )
                 ));
     }

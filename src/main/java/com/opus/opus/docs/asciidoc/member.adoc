@@ -210,3 +210,30 @@ include::{snippets}/oauth-google-callback-fail-denied/http-request.adoc[]
 include::{snippets}/oauth-google-callback-fail-denied/http-response.adoc[]
 
 ====
+
+== `PATCH`: 학번 수정
+
+NOTE: 부산대 메일로 구글 소셜 로그인한 사용자에 한해 1회만 수정 가능합니다.
+
+.HTTP Request
+include::{snippets}/update-student-id/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-student-id/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-student-id/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 학번 수정 불가 사용자 (소셜 회원 가입자만 1회의 학번 수정이 가능합니다.)
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-student-id-fail/http-request.adoc[]
+
+include::{snippets}/update-student-id-fail/http-response.adoc[]
+
+====

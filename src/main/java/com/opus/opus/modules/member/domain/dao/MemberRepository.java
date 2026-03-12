@@ -1,6 +1,7 @@
 package com.opus.opus.modules.member.domain.dao;
 
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.SocialType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,4 +16,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Boolean existsByEmail(final String Email);
 
     Boolean existsByStudentId(final String studentId);
+
+    Optional<Member> findBySocialTypeAndSocialId(SocialType socialType, String socialId);
 }

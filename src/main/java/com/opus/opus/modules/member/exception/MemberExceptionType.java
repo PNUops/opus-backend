@@ -16,6 +16,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     CANNOT_MATCH_EMAIL_AUTH_CODE(HttpStatus.BAD_REQUEST, "이메일 인증 코드가 일치하지 않습니다."),
     CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE(HttpStatus.BAD_REQUEST, "이메일 인증 코드 만료 시간이 초과되었습니다."),
     MISMATCH_STUDENT_ID_AND_NAME(HttpStatus.BAD_REQUEST, "입력한 학번과 이름이 일치하지 않습니다."),
+    CANNOT_UPDATE_STUDENT_ID(HttpStatus.BAD_REQUEST, "소셜 회원 가입자만 1회의 학번 수정이 가능합니다."),
     ;
 
     private final HttpStatus httpStatus;
