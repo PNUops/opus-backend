@@ -236,6 +236,15 @@ public class MemberCommandService {
         return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
     }
 
+    public void updateStudentId(final Long memberId, final StudentIdUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+
+        validateStudentIdUpdatable(member);
+        memberConvenience.checkIsDuplicateStudentId(request.studentId());
+
+        member.updateStudentId(request.studentId());
+    }
+
     private void unlinkGoogleAccount(final Long memberId) {
         googleTokenManager.get(memberId).ifPresent(token -> {
             try {
@@ -245,5 +254,11 @@ public class MemberCommandService {
                 googleTokenManager.delete(memberId);
             }
         });
+    }
+
+    private void validateStudentIdUpdatable(final Member member) {
+        if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
+            throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
+        }
     }
 }

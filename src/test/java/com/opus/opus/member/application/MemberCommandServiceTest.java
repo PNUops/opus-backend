@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class MemberCommandServiceTest extends IntegrationTest {
@@ -201,8 +202,10 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 일반 회원이 소셜 로그인 시도 시 예외가 발생한다.")
     void 일반_회원이_소셜_로그인_시도_시_예외가_발생한다() {
+        GoogleOAuth2UserService target = AopTestUtils.getTargetObject(googleOAuth2UserService);
+
         assertThatThrownBy(() ->
-                ReflectionTestUtils.invokeMethod(googleOAuth2UserService, "validateSocialMember", teamLeader)
+                ReflectionTestUtils.invokeMethod(target, "validateSocialMember", teamLeader, "some-social-id")
         ).isInstanceOf(OAuth2AuthenticationException.class)
                 .satisfies(e -> {
                     OAuth2AuthenticationException ex = (OAuth2AuthenticationException) e;
