@@ -2,6 +2,7 @@ package com.opus.opus.member.application;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,6 +17,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequ
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -216,5 +218,66 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Member savedMember = memberRepository.findByEmail("pykido@gmail.com").orElseThrow();
         assertThat(savedMember.isSocialMember()).isTrue();
         assertThat(savedMember.getName()).isEqualTo("김태윤");
+    }
+
+    @Test
+    @DisplayName("[성공] 학번 수정이 정상적으로 이루어진다.")
+    void 학번_수정이_정상적으로_이루어진다() {
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+        assertThat(socialMember.getStudentId()).isNull();
+
+        memberCommandService.updateStudentId(socialMember.getId(), request);
+
+        final Member updated = memberRepository.findById(socialMember.getId()).orElseThrow();
+        assertThat(updated.getStudentId()).isEqualTo("202512345");
+    }
+
+    @Test
+    @DisplayName("[실패] 소셜 회원이 아니면 학번 수정이 불가하다.")
+    void 소셜_회원이_아니면_학번_수정이_불가하다() {
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+
+        assertThatThrownBy(() ->
+                memberCommandService.updateStudentId(teamLeader.getId(), request)
+        ).isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_UPDATE_STUDENT_ID.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 부산대 메일이 아닌 소셜 회원은 학번 수정이 불가하다.")
+    void 부산대_메일이_아닌_소셜_회원은_학번_수정이_불가하다() {
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@gmail.com", "google-999"));
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+
+        assertThatThrownBy(() ->
+                memberCommandService.updateStudentId(socialMember.getId(), request)
+        ).isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_UPDATE_STUDENT_ID.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 학번이 있는 소셜 회원은 학번 수정이 불가하다.")
+    void 이미_학번이_있는_소셜_회원은_학번_수정이_불가하다() {
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("already@pusan.ac.kr", "google-999"));
+        socialMember.updateStudentId("202011111");
+        memberRepository.save(socialMember);
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
+
+        assertThatThrownBy(() ->
+                memberCommandService.updateStudentId(socialMember.getId(), request)
+        ).isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_UPDATE_STUDENT_ID.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 중복된 학번으로는 수정이 불가하다.")
+    void 중복된_학번으로는_수정이_불가하다() {
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest(teamLeader.getStudentId());
+
+        assertThatThrownBy(() ->
+                memberCommandService.updateStudentId(socialMember.getId(), request)
+        ).isInstanceOf(MemberException.class);
     }
 }

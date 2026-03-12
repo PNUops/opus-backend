@@ -94,4 +94,12 @@ public class Member extends BaseEntity {
     public boolean isSocialMember() {
         return socialType != null && socialId != null;
     }
+
+    public boolean isPusanEmail() {
+        return email != null && email.endsWith("@pusan.ac.kr");
+    }
+
+    public void updateStudentId(final String studentId) {
+        this.studentId = studentId;
+    }
 }

@@ -6,6 +6,7 @@ import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_T
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
 
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.List;
@@ -42,5 +43,9 @@ public class TeamConvenience {
 
     public List<Team> getTeamsOfContest(final Long contestId) {
         return teamRepository.findAllByContestId(contestId);
+    }
+
+    public List<TeamRankingResult> getTeamRankingResults(final Long contestId) {
+        return teamRepository.findTeamRankingByContestId(contestId);
     }
 }
