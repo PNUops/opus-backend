@@ -1,19 +1,5 @@
 package com.opus.opus.modules.team.application;
 
-import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
-import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
-import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
-
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
@@ -35,14 +21,21 @@ import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.opus.opus.modules.file.domain.FileImageType.*;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
+import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.*;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.*;
 
 @Service
 @Transactional
@@ -68,6 +61,11 @@ public class TeamCommandService {
         }
         final Team team = teamRepository.save(Team.from(request));
         return TeamCreateResponse.from(team);
+    }
+
+    public void deleteTeam(final Long teamId) {
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        teamRepository.delete(team);
     }
 
     public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {

@@ -47,6 +47,13 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/{teamId}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable final Long teamId) {
+        teamCommandService.deleteTeam(teamId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
         final ImageResponse imageResponse = teamQueryService.getPreviewImage(teamId, imageId);
