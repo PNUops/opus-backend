@@ -10,8 +10,8 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -97,6 +96,24 @@ public class ContestQueryService {
             responseList.add(
                     new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
                             result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
+    }
+
+    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+
+        for (int i = 0; i < votesPerTeam.size(); i++) {
+            final TeamRankingResult result = votesPerTeam.get(i);
+            final int rank =
+                    (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1
+                            : responseList.get(i - 1).rank();
+
+            responseList.add(new ContestRankingResponse(
+                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(),
+                    result.voteCount()
+            ));
         }
 
         return responseList;
@@ -226,44 +243,39 @@ public class ContestQueryService {
                 .toList();
     }
 
-    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-
-        for (int i = 0; i < votesPerTeam.size(); i++) {
-            final TeamRankingResult result = votesPerTeam.get(i);
-            final int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
-
-            responseList.add(new ContestRankingResponse(
-                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()
-            ));
-        }
-
-        return responseList;
-    }
-
     public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
-        final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
+        final List<Team> teams = getSortedTeams(contestId, member);
 
-        // SORT
-        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
-        teamConvenience.sortTeams(teams, contestSort.getMode(), member);
-
-        // Vote & Like
-        final boolean isVotingPeriod = contest.isVotingPeriod();
-
-        final Map<Long, Boolean> voteMap = getVoteMap(contestId, member, isVotingPeriod);
-        final Map<Long, Boolean> likeMap = getLikeMap(contestId, member, isVotingPeriod);
-
-        // Award
+        final VoteLikeResult voteLikeResult = getVoteLikeResult(contestId, member, contest.isVotingPeriod());
         final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap = getTeamAwardsMap(teams);
 
+        return buildTeamSummaryResponses(teams, teamAwardsMap, voteLikeResult);
+    }
+
+    private List<Team> getSortedTeams(final Long contestId, final Member member) {
+        final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+        teamConvenience.sortTeams(teams, contestSort.getMode(), member);
+        return teams;
+    }
+
+    private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
+        final Map<Long, Boolean> voteMap = getVoteMap(contestId, member, isVotingPeriod);
+        final Map<Long, Boolean> likeMap = getLikeMap(contestId, member, isVotingPeriod);
+        return new VoteLikeResult(voteMap, likeMap);
+    }
+
+    private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
+                                                                final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap,
+                                                                final VoteLikeResult voteLikeResult
+    ) {
         return teams.stream()
                 .map(team -> TeamSummaryResponse.of(
                         team,
                         teamAwardsMap.getOrDefault(team.getId(), Collections.emptyList()),
-                        likeMap.getOrDefault(team.getId(), false),
-                        voteMap.getOrDefault(team.getId(), false)
+                        voteLikeResult.likeMap().getOrDefault(team.getId(), false),
+                        voteLikeResult.voteMap().getOrDefault(team.getId(), false)
                 ))
                 .toList();
     }
@@ -303,5 +315,8 @@ public class ContestQueryService {
         contestConvenience.getValidateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
         return ContestTemplateResponse.from(template);
+    }
+
+    private record VoteLikeResult(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
     }
 }
