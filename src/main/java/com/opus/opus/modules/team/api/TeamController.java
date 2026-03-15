@@ -8,6 +8,7 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamLikeToggleRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
@@ -22,6 +23,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -45,6 +47,15 @@ public class TeamController {
     public ResponseEntity<TeamCreateResponse> createTeam(@RequestBody @Valid final TeamCreateRequest request) {
         final TeamCreateResponse response = teamCommandService.createTeam(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @PatchMapping("/{teamId}")
+    public ResponseEntity<Void> updateTeam(@PathVariable final Long teamId,
+                                           @RequestBody final TeamUpdateRequest request,
+                                           @LoginMember final Member member) {
+        teamCommandService.updateTeam(member, teamId, request);
+        return ResponseEntity.noContent().build();
     }
 
     @Secured("ROLE_관리자")

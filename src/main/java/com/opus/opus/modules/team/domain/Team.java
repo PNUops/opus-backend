@@ -2,6 +2,7 @@ package com.opus.opus.modules.team.domain;
 
 import com.opus.opus.global.base.BaseEntity;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -82,7 +83,7 @@ public class Team extends BaseEntity {
         this.teamMembers = teamMembers;
     }
 
-    public static Team from(TeamCreateRequest request) {
+    public static Team from(final TeamCreateRequest request) {
         return Team.builder()
                 .contestId(request.contestId())
                 .trackId(request.trackId())
@@ -99,6 +100,36 @@ public class Team extends BaseEntity {
 
     public void updateItemOrder(final Integer newOrder) {
         this.itemOrder = newOrder;
+    }
+
+    public void update(final TeamUpdateRequest request) {
+        if (request.contestId() != null) {
+            this.contestId = request.contestId();
+        }
+        if (request.trackId() != null) {
+            this.trackId = request.trackId();
+        }
+        if (request.teamName() != null) {
+            this.teamName = request.teamName();
+        }
+        if (request.projectName() != null) {
+            this.projectName = request.projectName();
+        }
+        if (request.professorName() != null) {
+            this.professorName = request.professorName();
+        }
+        if (request.overview() != null) {
+            this.overview = request.overview();
+        }
+        if (request.githubPath() != null) {
+            this.githubPath = request.githubPath();
+        }
+        if (request.productionPath() != null) {
+            this.productionPath = request.productionPath();
+        }
+        if (request.youTubePath() != null) {
+            this.youTubePath = request.youTubePath();
+        }
     }
 
     public void submit() {

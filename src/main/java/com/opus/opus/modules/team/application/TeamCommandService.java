@@ -1,15 +1,37 @@
 package com.opus.opus.modules.team.application;
 
+import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
+import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
+import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
+import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.FORBIDDEN_CONTEST_OR_TRACK_UPDATE;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.REQUIRED_FIELD_MISSING;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
+import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
+import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
+
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
@@ -17,25 +39,20 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import static com.opus.opus.modules.file.domain.FileImageType.*;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
-import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.*;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.*;
 
 @Service
 @Transactional
@@ -52,6 +69,10 @@ public class TeamCommandService {
     private final TeamVoteRepository teamVoteRepository;
     private final TeamLikeRepository teamLikeRepository;
     private final FileRepository fileRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final ContestTemplateConvenience contestTemplateConvenience;
+    private final MemberConvenience memberConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
 
 
     public TeamCreateResponse createTeam(final TeamCreateRequest request) {
@@ -66,6 +87,62 @@ public class TeamCommandService {
     public void deleteTeam(final Long teamId) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         teamRepository.delete(team);
+    }
+
+    public void updateTeam(final Member member, final Long teamId, final TeamUpdateRequest request) {
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+
+        if (member.isAdmin()) {
+            updateTeamByAdmin(team, request);
+        } else {
+            updateTeamByMember(member.getId(), team, request);
+        }
+    }
+
+    private void updateTeamByAdmin(final Team team, final TeamUpdateRequest request) {
+        validateTrackInContestIfChanged(team, request);
+        team.update(request);
+    }
+
+    private void validateTrackInContestIfChanged(final Team team, final TeamUpdateRequest request) {
+        final Long contestId = request.contestId() != null ? request.contestId() : team.getContestId();
+        final Long trackId = request.trackId() != null ? request.trackId() : team.getTrackId();
+        contestTrackConvenience.getValidateExistTrack(contestId, trackId);
+    }
+
+    private void updateTeamByMember(final Long memberId, final Team team, final TeamUpdateRequest request) {
+        teamMemberConvenience.getValidateExistTeamMember(team.getId(), memberId);
+        validateContestAndTrackNotChanged(team, request);
+        validateRequiredField(team, request);
+        team.update(request);
+        team.submit();
+    }
+
+    private void validateContestAndTrackNotChanged(final Team team, final TeamUpdateRequest request) {
+        if (request.contestId() != null && !request.contestId().equals(team.getContestId())) {
+            throw new TeamException(FORBIDDEN_CONTEST_OR_TRACK_UPDATE);
+        }
+        if (request.trackId() != null && !request.trackId().equals(team.getTrackId())) {
+            throw new TeamException(FORBIDDEN_CONTEST_OR_TRACK_UPDATE);
+        }
+    }
+
+    private void validateRequiredField(final Team team, final TeamUpdateRequest request) {
+        final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(team.getContestId());
+
+        validateField(template.getProjectNameRequired(), request.projectName(), team.getProjectName());
+        validateField(template.getTeamNameRequired(), request.teamName(), team.getTeamName());
+        validateField(template.getProfessorRequired(), request.professorName(), team.getProfessorName());
+        validateField(template.getGithubPathRequired(), request.githubPath(), team.getGithubPath());
+        validateField(template.getYouTubePathRequired(), request.youTubePath(), team.getYouTubePath());
+        validateField(template.getProductionPathRequired(), request.productionPath(), team.getProductionPath());
+        validateField(template.getOverviewRequired(), request.overview(), team.getOverview());
+    }
+
+    private void validateField(final boolean required, final String requestValue, final String currentValue) {
+        if (required && requestValue == null && currentValue == null) {
+            throw new TeamException(REQUIRED_FIELD_MISSING);
+        }
     }
 
     public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
