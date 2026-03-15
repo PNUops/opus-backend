@@ -6,9 +6,11 @@ import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamLikeToggleRequest;
-import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -37,6 +39,13 @@ public class TeamController {
 
     private final TeamQueryService teamQueryService;
     private final TeamCommandService teamCommandService;
+
+    @Secured("ROLE_관리자")
+    @PostMapping
+    public ResponseEntity<TeamCreateResponse> createTeam(@RequestBody @Valid final TeamCreateRequest request) {
+        final TeamCreateResponse response = teamCommandService.createTeam(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @GetMapping("/{teamId}/image/{imageId}")
     public ResponseEntity<Resource> getPreviewImage(@PathVariable final Long teamId, @PathVariable final Long imageId) {
@@ -125,7 +134,8 @@ public class TeamController {
     public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable final Long teamId,
                                                              @RequestBody @Valid final TeamLikeToggleRequest request,
                                                              @LoginMember final Member member) {
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), teamId, request.isLiked());
+        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), teamId,
+                request.isLiked());
         return ResponseEntity.ok(response);
     }
 }
