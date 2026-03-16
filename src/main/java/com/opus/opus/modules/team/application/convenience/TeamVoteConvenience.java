@@ -28,4 +28,8 @@ public class TeamVoteConvenience {
     public long countMemberVotesInContest(final Long memberId, final Long contestId) {
         return teamVoteRepository.countMemberVotesInContest(memberId, contestId);
     }
+
+    public List<TeamVote> getCurrentVotes(final Long memberId) {
+        return teamVoteRepository.findAllByMemberIdAndIsVotedTrueOrderByCreatedAtDesc(memberId);
+    }
 }

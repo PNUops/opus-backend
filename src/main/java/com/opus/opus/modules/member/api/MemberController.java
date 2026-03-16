@@ -14,6 +14,7 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.global.security.annotation.LoginMember;
@@ -106,6 +107,13 @@ public class MemberController {
     @GetMapping("/members/me/projects")
     public ResponseEntity<List<MyProjectResponse>> getMyProjects(@LoginMember final Member member) {
         final List<MyProjectResponse> responses = memberQueryService.getMyProjects(member.getId());
+        return ResponseEntity.ok(responses);
+    }
+
+    @Secured("ROLE_회원")
+    @GetMapping("/members/me/votes")
+    public ResponseEntity<List<MyVoteResponse>> getMyVotes(@LoginMember final Member member) {
+        final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
         return ResponseEntity.ok(responses);
     }
 }

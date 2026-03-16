@@ -14,6 +14,8 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
 
     Optional<TeamVote> findByMemberIdAndTeam(Long memberId, Team team);
 
+    List<TeamVote> findAllByMemberIdAndIsVotedTrueOrderByCreatedAtDesc(Long memberId);
+
     @Query("SELECT COUNT(tv) FROM TeamVote tv JOIN tv.team t " +
             "WHERE tv.memberId = :memberId AND tv.isVoted = true AND t.contestId = :contestId")
     long countMemberVotesInContest(Long memberId, Long contestId);

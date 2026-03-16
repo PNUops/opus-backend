@@ -9,9 +9,12 @@ import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ public class MemberQueryService {
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
 
     public EmailFindResponse getMyEmail(final String studentId) {
         final Member member = memberConvenience.getValidateExistMemberByStudentId(studentId);
@@ -62,6 +66,24 @@ public class MemberQueryService {
     private Map<Long, String> buildTrackNameMap(final List<Long> contestIds) {
         return contestTrackConvenience.getValidateExistTracks(contestIds).stream()
                 .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
+    }
+
+    public List<MyVoteResponse> getMyVotes(final Long memberId) {
+        final List<TeamVote> votes = teamVoteConvenience.getCurrentVotes(memberId);
+
+        final List<Team> votedTeams = votes.stream().map(TeamVote::getTeam).toList();
+        final List<Long> contestIds = votedTeams.stream().map(Team::getContestId).distinct().toList();
+
+        final Map<Long, Contest> contestMap = contestConvenience.getValidateContests(contestIds).stream()
+                .collect(Collectors.toMap(Contest::getId, contest -> contest));
+
+        return votedTeams.stream()
+                .filter(team -> {
+                    final Contest contest = contestMap.get(team.getContestId());
+                    return contest != null && contest.isVotingPeriod();
+                })
+                .map(team -> MyVoteResponse.of(team, contestMap.get(team.getContestId()).getContestName()))
+                .toList();
     }
 
     private Map<Long, List<ContestAward>> buildAwardMap(final List<Team> teams) {
