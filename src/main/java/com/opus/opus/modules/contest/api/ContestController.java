@@ -20,6 +20,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionR
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -221,5 +222,13 @@ public class ContestController {
                                                       @Valid @RequestBody final ContestTemplateRequest request) {
         contestCommandService.updateContestTemplate(contestId, request);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/{contestId}/teams/bulk")
+    public ResponseEntity<TeamBulkUploadResponse> bulkUploadTeams(@PathVariable final Long contestId,
+                                                                  @RequestPart("file") final MultipartFile file) {
+        final TeamBulkUploadResponse response = contestCommandService.bulkUploadTeams(contestId, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

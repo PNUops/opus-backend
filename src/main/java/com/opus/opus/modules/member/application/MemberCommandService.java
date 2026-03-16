@@ -72,13 +72,21 @@ public class MemberCommandService {
         verifyVerifiedKey(signUpVerifiedKey(email));
 
         final String encodingPassword = passwordEncoder.encode(request.password());
-        memberConvenience.checkIsDuplicateEmail(email);
 
-        memberRepository.findByStudentIdAndName(request.studentId(), request.name())
-                .ifPresentOrElse(
-                        member -> member.updateTeamLeaderInfo(email, encodingPassword),
-                        () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
-                );
+        // 가짜 회원 여부 먼저 확인
+        final Optional<Member> fakeMember = memberRepository.findByEmail(email)
+                .filter(Member::isFakeMember);
+
+        if (fakeMember.isPresent()) {
+            fakeMember.get().convertFromFakeToGeneral(email, encodingPassword, request.studentId());
+        } else {
+            memberConvenience.checkIsDuplicateEmail(email);
+            memberRepository.findByStudentIdAndName(request.studentId(), request.name())
+                    .ifPresentOrElse(
+                            member -> member.updateTeamLeaderInfo(email, encodingPassword),
+                            () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
+                    );
+        }
 
         authRedisUtil.delete(signUpVerifiedKey(email));
     }

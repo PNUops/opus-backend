@@ -102,6 +102,27 @@ public class MemberConvenience {
         );
     }
 
+    @Transactional
+    public Member getOrCreateFakeMemberByEmail(final String email, final String studentId, final String name) {
+        return memberRepository.findByEmail(email)
+                .orElseGet(() -> registerFakeMemberWithEmail(email, studentId, name));
+    }
+
+    private Member registerFakeMemberWithEmail(final String email, final String studentId, final String name) {
+        final String randomPassword = generateRandomPassword();
+
+        final Member member = Member.generalMember()
+                .name(name)
+                .studentId(studentId)
+                .email(email)
+                .password(randomPassword)
+                .roles(Set.of(ROLE_회원))
+                .build();
+        member.markAsFakeMember();
+
+        return memberRepository.save(member);
+    }
+
     private String generateRandomPassword() {
         final int passwordLength = 32;
 

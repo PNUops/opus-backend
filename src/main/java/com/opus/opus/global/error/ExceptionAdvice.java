@@ -1,6 +1,8 @@
 package com.opus.opus.global.error;
 
 import com.opus.opus.global.base.BaseException;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse;
+import com.opus.opus.modules.contest.exception.TeamBulkValidationException;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -22,6 +24,11 @@ public class ExceptionAdvice {
     public ResponseEntity<ExceptionResponse> BaseException(final BaseException e) {
         final String errorMessage = e.getMessage();
         return ResponseEntity.status(e.exceptionType().httpStatus()).body(new ExceptionResponse(errorMessage));
+    }
+
+    @ExceptionHandler(TeamBulkValidationException.class)
+    public ResponseEntity<TeamBulkErrorResponse> handleTeamBulkValidation(final TeamBulkValidationException e) {
+        return ResponseEntity.badRequest().body(e.getErrorResponse());
     }
 
     private static String getErrorMessage(final BindException e) {
