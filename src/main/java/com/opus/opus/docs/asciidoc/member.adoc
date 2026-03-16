@@ -238,6 +238,19 @@ Location: https://opus.pnu.app/oauth/callback?error=URL인코딩된값
 NOTE: error 파라미터는 URL 인코딩되어 있으므로 반드시 `decodeURIComponent` 처리가 필요합니다!
 ====
 
+== `GET`: 나의 프로젝트 조회
+
+NOTE: 로그인한 사용자가 팀원으로 참여한 모든 대회의 프로젝트 목록을 조회합니다. 수상 정보를 포함하며, 페이지네이션 없이 전체 반환됩니다.
+
+.HTTP Request
+include::{snippets}/get-my-projects/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-my-projects/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-my-projects/response-fields.adoc[]
+
 == `PATCH`: 학번 수정
 
 NOTE: 부산대 메일로 구글 소셜 로그인한 사용자에 한해 1회만 수정 가능합니다.

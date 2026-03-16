@@ -43,6 +43,22 @@ public class TeamFixture {
                 .build();
     }
 
+    public static Team createTeamWithContestIdAndTrackId(final Long contestId, final Long trackId) {
+        return Team.builder()
+                .teamName("팀 옵스")
+                .projectName("옵스 프로젝트")
+                .professorName("김교수")
+                .overview("이 프로젝트는 옵스 프로젝트입니다.")
+                .githubPath("http://github.com/example")
+                .productionPath("http://production.example.com")
+                .youTubePath("http://youtube.com/example")
+                .contestId(contestId)
+                .trackId(trackId)
+                .itemOrder(1)
+                .teamMembers(new ArrayList<>())
+                .build();
+    }
+
     public static Team createSubmittedTeamWithContestId(final Long contestId) {
         Team team = Team.builder()
                 .contestId(contestId)
