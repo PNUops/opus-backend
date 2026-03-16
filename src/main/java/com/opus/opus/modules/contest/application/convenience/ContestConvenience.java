@@ -51,6 +51,10 @@ public class ContestConvenience {
         return contestRepository.findAllByIsCurrentTrue();
     }
 
+    public List<Contest> getValidateContests(final List<Long> contestIds) {
+        return contestRepository.findAllById(contestIds);
+    }
+
     @Transactional(propagation = MANDATORY)
     public Contest getValidateExistContestForUpdate(final Long contestId) {
         return contestRepository.findByIdForUpdate(contestId)

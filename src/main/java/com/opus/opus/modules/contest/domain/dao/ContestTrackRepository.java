@@ -11,4 +11,6 @@ public interface ContestTrackRepository extends JpaRepository<ContestTrack, Long
     Optional<ContestTrack> findByIdAndContestId(final Long trackId, final Long contestId);
 
     List<ContestTrack> findAllByContestId(final Long contestId);
+
+    List<ContestTrack> findAllByContestIdIn(final List<Long> contestIds);
 }
