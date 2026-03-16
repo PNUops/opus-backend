@@ -28,6 +28,7 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -345,6 +346,30 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 arrayFieldWithPath("[].awards", "수상 내역 리스트"),
                                 stringFieldWithPath("[].awards[].awardName", "수상명"),
                                 stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 투표 기록을 조회할 수 있다.")
+    void 나의_투표_기록을_조회할_수_있다() throws Exception {
+        final List<MyVoteResponse> responses = List.of(
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 5L, "Team Alpha", "알파 프로젝트"),
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 12L, "Team Beta", "베타 프로젝트")
+        );
+
+        when(memberQueryService.getMyVotes(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/votes")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-votes",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명")
                         )
                 ));
     }

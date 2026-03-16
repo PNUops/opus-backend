@@ -17,6 +17,7 @@ import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -27,7 +28,10 @@ import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.team.TeamFixture;
+import com.opus.opus.team.TeamVoteFixture;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +58,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
     private ContestAwardRepository contestAwardRepository;
     @Autowired
     private TeamContestAwardRepository teamContestAwardRepository;
+    @Autowired
+    private TeamVoteRepository teamVoteRepository;
 
     private Member member;
 
@@ -137,6 +143,37 @@ public class MemberQueryServiceTest extends IntegrationTest {
         final List<MyProjectResponse> responses = memberQueryService.getMyProjects(member.getId());
 
         assertThat(responses).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 기간인 대회에서 투표한 프로젝트를 조회할 수 있다.")
+    void 투표_기간인_대회에서_투표한_프로젝트를_조회할_수_있다() {
+        final Contest contest = contestRepository.save(ContestFixture.createContest());
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), null));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+
+        final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).contestId()).isEqualTo(contest.getId());
+        assertThat(responses.get(0).contestName()).isEqualTo(contest.getContestName());
+        assertThat(responses.get(0).teamId()).isEqualTo(team.getId());
+        assertThat(responses.get(0).teamName()).isEqualTo(team.getTeamName());
+        assertThat(responses.get(0).projectName()).isEqualTo(team.getProjectName());
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 기간이 아닌 대회의 투표는 조회되지 않는다.")
+    void 투표_기간이_아닌_대회의_투표는_조회되지_않는다() {
+        final Contest contest = contestRepository.save(ContestFixture.createContest());
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1));
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), null));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+
+        final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
+
+        assertThat(responses).isEmpty();
     }
 
     private void saveTeamMember(final Team team) {
