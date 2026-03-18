@@ -1,6 +1,6 @@
 package com.opus.opus.modules.member.application.dto.response;
 
-import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.MyVoteInfo;
 
 public record MyVoteResponse(
         Long contestId,
@@ -9,13 +9,13 @@ public record MyVoteResponse(
         String teamName,
         String projectName
 ) {
-    public static MyVoteResponse of(final Team team, final String contestName) {
+    public static MyVoteResponse from(final MyVoteInfo info) {
         return new MyVoteResponse(
-                team.getContestId(),
-                contestName,
-                team.getId(),
-                team.getTeamName(),
-                team.getProjectName()
+                info.contestId(),
+                info.contestName(),
+                info.teamId(),
+                info.teamName(),
+                info.projectName()
         );
     }
 }
