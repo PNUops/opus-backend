@@ -63,7 +63,7 @@ public class TeamConvenience {
 
         switch (mode) {
             case RANDOM -> shuffleTeams(teams, member);
-            case ASC -> teams.sort(Comparator.comparing(Team::getTeamName));
+            case ASC -> teams.sort(Comparator.comparing(Team::getId));
             case CUSTOM -> teams.sort(Comparator.comparing(Team::getItemOrder));
             default -> throw new ContestException(NOT_FOUND_CONTEST_SORT);
         }
