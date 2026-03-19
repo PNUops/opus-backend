@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
 
     Optional<TeamLike> findByMemberIdAndTeam(Long memberId, Team team);
+
+    long countByIsLikedTrue();
 }

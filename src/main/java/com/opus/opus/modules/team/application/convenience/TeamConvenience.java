@@ -48,4 +48,8 @@ public class TeamConvenience {
     public List<TeamRankingResult> getTeamRankingResults(final Long contestId) {
         return teamRepository.findTeamRankingByContestId(contestId);
     }
+
+    public long countSubmittedTeams() {
+        return teamRepository.countByIsSubmittedTrue();
+    }
 }
