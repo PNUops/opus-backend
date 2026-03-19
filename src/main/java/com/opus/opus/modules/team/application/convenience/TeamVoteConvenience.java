@@ -37,4 +37,9 @@ public class TeamVoteConvenience {
         return teamVoteRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
                 .collect(toMap(tv -> tv.getTeam().getId(), TeamVote::getIsVoted));
     }
+
+    public Map<Long, Boolean> getVoteMapIfVotingPeriod(final Long contestId, final Member member,
+                                                       final boolean isVotingPeriod) {
+        return (member != null && isVotingPeriod) ? getVoteMap(contestId, member) : Map.of();
+    }
 }

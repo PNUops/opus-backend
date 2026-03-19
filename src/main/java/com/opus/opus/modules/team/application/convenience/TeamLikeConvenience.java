@@ -21,4 +21,9 @@ public class TeamLikeConvenience {
         return teamLikeRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
                 .collect(toMap(tl -> tl.getTeam().getId(), TeamLike::getIsLiked));
     }
+
+    public Map<Long, Boolean> getLikeMapIfNotVotingPeriod(final Long contestId, final Member member,
+                                                          final boolean isVotingPeriod) {
+        return (member != null && !isVotingPeriod) ? getLikeMap(contestId, member) : Map.of();
+    }
 }

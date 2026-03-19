@@ -262,8 +262,10 @@ public class ContestQueryService {
     }
 
     private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        final Map<Long, Boolean> voteMap = getVoteMap(contestId, member, isVotingPeriod);
-        final Map<Long, Boolean> likeMap = getLikeMap(contestId, member, isVotingPeriod);
+        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfVotingPeriod(contestId, member,
+                isVotingPeriod);
+        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfNotVotingPeriod(contestId, member,
+                isVotingPeriod);
         return new VoteLikeResult(voteMap, likeMap);
     }
 
@@ -283,14 +285,6 @@ public class ContestQueryService {
 
     public List<TeamSummaryResponse> getContestTeamSummariesPublic(final Long contestId) {
         return getContestTeamSummaries(contestId, null);
-    }
-
-    private Map<Long, Boolean> getVoteMap(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        return (member != null && isVotingPeriod) ? teamVoteConvenience.getVoteMap(contestId, member) : Map.of();
-    }
-
-    private Map<Long, Boolean> getLikeMap(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        return (member != null && !isVotingPeriod) ? teamLikeConvenience.getLikeMap(contestId, member) : Map.of();
     }
 
     private void checkImageConverted(final File findFile) {
