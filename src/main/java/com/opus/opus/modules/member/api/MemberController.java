@@ -3,6 +3,7 @@ package com.opus.opus.modules.member.api;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
+import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -10,12 +11,14 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
-import java.net.URI;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +26,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Validated
 @RestController
@@ -84,22 +87,16 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/oauth/google")
-    public ResponseEntity<Void> googleOAuthRedirect() {
-        final String redirectURL = memberCommandService.getGoogleOAuthRedirectURL();
-
-        URI uri = UriComponentsBuilder.fromUriString(redirectURL).encode().build().toUri();
-
-        return ResponseEntity.status(HttpStatus.FOUND).location(uri).build();
+    @PostMapping("/oauth2/set-redirect")
+    public ResponseEntity<Void> setRedirect(HttpServletResponse response) {
+        CookieUtil.addCookie(response, "redirect_type", "local", 180);
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/oauth/google/callback")
-    public ResponseEntity<SignInResponse> googleOAuthCallback(
-            final String code,
-            final String state,
-            final String error
-    ) {
-        final SignInResponse response = memberCommandService.getGoogleOAuthCallback(code, state, error);
-        return ResponseEntity.ok(response);
+    @PatchMapping("/members/me/student-id")
+    public ResponseEntity<Void> updateStudentId(@LoginMember final Member member,
+                                                @Valid @RequestBody final StudentIdUpdateRequest studentIdUpdateRequest) {
+        memberCommandService.updateStudentId(member.getId(), studentIdUpdateRequest);
+        return ResponseEntity.noContent().build();
     }
 }

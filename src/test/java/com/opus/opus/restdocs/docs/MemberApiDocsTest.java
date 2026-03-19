@@ -1,11 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
-import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.OAUTH_AUTHORIZATION_FAILED;
-import static com.opus.opus.global.util.oauth.exception.OAuthExceptionType.USER_DENIED_AUTHORIZATION;
-import com.opus.opus.global.util.oauth.exception.OAuthException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -28,6 +26,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -268,76 +267,48 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] Google OAuth 리다이렉트 URL을 반환한다.")
-    void Google_OAuth_리다이렉트_URL을_반환한다() throws Exception {
-        String redirectURL = "https://accounts.google.com/o/oauth2/v2/auth?client_id=test&redirect_uri=http://localhost:8080/oauth/google/callback&response_type=code&scope=email+profile&state=test-state";
-
-        when(memberCommandService.getGoogleOAuthRedirectURL()).thenReturn(redirectURL);
-
-        mockMvc.perform(get("/oauth/google"))
-                .andExpect(status().isFound())
-                .andDo(document("oauth-google-redirect"));
+    @DisplayName("[성공] 로컬 환경 리다이렉트 쿠키가 정상적으로 설정된다.")
+    void 로컬_환경_리다이렉트_쿠키가_정상적으로_설정된다() throws Exception {
+        mockMvc.perform(post("/oauth2/set-redirect"))
+                .andExpect(status().isNoContent())
+                .andDo(document("oauth2-set-redirect"));
     }
 
     @Test
-    @DisplayName("[성공] Google OAuth 콜백으로 로그인 처리된다.")
-    void Google_OAuth_콜백으로_로그인_처리된다() throws Exception {
-        SignInResponse response = new SignInResponse(member.getId(), member.getName(), "exampleToken", member.getRoles());
+    @DisplayName("[성공] 학번 수정이 정상적으로 이루어진다.")
+    void 학번_수정이_정상적으로_이루어진다() throws Exception {
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
 
-        when(memberCommandService.getGoogleOAuthCallback(any(), any(), any())).thenReturn(response);
+        doNothing().when(memberCommandService).updateStudentId(any(), any());
 
-        mockMvc.perform(get("/oauth/google/callback")
-                        .param("code", "authorization_code")
-                        .param("state", "state_token"))
-                .andExpect(status().isOk())
-                .andDo(document("oauth-google-callback",
-                        queryParameters(
-                                parameterWithName("code").description("Google 인가 코드"),
-                                parameterWithName("state").description("CSRF 방어용 상태 토큰")
-                        ),
-                        responseFields(
-                                numberFieldWithPath("memberId", "회원 고유 식별자"),
-                                stringFieldWithPath("name", "회원 이름"),
-                                stringFieldWithPath("token", "JWT 액세스 토큰"),
-                                arrayFieldWithPath("types", "회원 권한 목록(회원, 관리자)")
+        mockMvc.perform(patch("/members/me/student-id")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-student-id",
+                        requestFields(
+                                stringFieldWithPath("studentId", "변경할 학번")
                         )
                 ));
     }
 
     @Test
-    @DisplayName("[실패] Google OAuth 콜백에서 state가 유효하지 않으면 401 에러를 반환한다.")
-    void Google_OAuth_콜백에서_state가_유효하지_않으면_에러를_반환한다() throws Exception {
-        willThrow(new OAuthException(OAUTH_AUTHORIZATION_FAILED))
-                .given(memberCommandService).getGoogleOAuthCallback(any(), any(), any());
+    @DisplayName("[실패] 학번 수정이 불가능한 사용자면 400 에러를 반환한다.")
+    void 학번_수정이_불가능한_사용자면_에러를_반환한다() throws Exception {
+        final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
 
-        mockMvc.perform(get("/oauth/google/callback")
-                        .param("code", "authorization_code")
-                        .param("state", "invalid_state"))
-                .andExpect(status().isUnauthorized())
-                .andDo(document("oauth-google-callback-fail-state",
-                        queryParameters(
-                                parameterWithName("code").description("Google 인가 코드"),
-                                parameterWithName("state").description("유효하지 않은 상태 토큰")
-                        )
-                ));
-    }
+        willThrow(new MemberException(CANNOT_UPDATE_STUDENT_ID))
+                .given(memberCommandService).updateStudentId(any(), any());
 
-    @Test
-    @DisplayName("[실패] Google OAuth 콜백에서 사용자가 권한을 거부하면 400 에러를 반환한다.")
-    void Google_OAuth_콜백에서_사용자가_권한을_거부하면_에러를_반환한다() throws Exception {
-        willThrow(new OAuthException(USER_DENIED_AUTHORIZATION))
-                .given(memberCommandService).getGoogleOAuthCallback(any(), any(), any());
-
-        mockMvc.perform(get("/oauth/google/callback")
-                        .param("code", "authorization_code")
-                        .param("state", "state_token")
-                        .param("error", "access_denied"))
+        mockMvc.perform(patch("/members/me/student-id")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
                 .andExpect(status().isBadRequest())
-                .andDo(document("oauth-google-callback-fail-denied",
-                        queryParameters(
-                                parameterWithName("code").description("Google 인가 코드"),
-                                parameterWithName("state").description("상태 토큰"),
-                                parameterWithName("error").description("에러 코드 (사용자 권한 거부)")
+                .andDo(document("update-student-id-fail",
+                        requestFields(
+                                stringFieldWithPath("studentId", "변경할 학번")
                         )
                 ));
     }
