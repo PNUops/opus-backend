@@ -16,6 +16,7 @@ import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamLikeFixture;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,9 @@ public class StatisticsQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     @DisplayName("[성공] 통계 요약을 정상적으로 조회할 수 있다.")
@@ -86,6 +90,27 @@ public class StatisticsQueryServiceTest extends IntegrationTest {
         final Member member2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member1.getId(), true));
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member2.getId(), false));
+
+        final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
+
+        assertThat(response.totalLikes()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 삭제된 팀의 좋아요는 좋아요 수에 포함되지 않는다.")
+    void 삭제된_팀의_좋아요는_좋아요_수에_포함되지_않는다() {
+        final Contest contest = contestRepository.save(ContestFixture.createContest());
+        final Team activeTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team deletedTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Member member = memberRepository.save(MemberFixture.createMember());
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(activeTeam, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(deletedTeam, member.getId(), true));
+
+        entityManager.createQuery("UPDATE Team t SET t.isDeleted = true WHERE t.id = :id")
+                .setParameter("id", deletedTeam.getId())
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
 
         final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
 
