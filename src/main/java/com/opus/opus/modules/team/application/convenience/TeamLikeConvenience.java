@@ -13,6 +13,6 @@ public class TeamLikeConvenience {
     private final TeamLikeRepository teamLikeRepository;
 
     public long countAllLikes() {
-        return teamLikeRepository.countByIsLikedTrue();
+        return teamLikeRepository.countByIsLikedTrueAndTeamIsDeletedFalse();
     }
 }
