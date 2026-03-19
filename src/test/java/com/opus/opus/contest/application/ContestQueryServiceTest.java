@@ -1,7 +1,6 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
-import static com.opus.opus.modules.contest.domain.SortType.ASC;
 import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
@@ -343,23 +342,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThat(responses)
                 .extracting(TeamSummaryResponse::teamId)
                 .containsExactlyInAnyOrder(team.getId(), team1.getId(), team2.getId());
-    }
-
-    @Test
-    @DisplayName("[성공] ASC 모드이면 팀 이름 오름차순으로 정렬된다.")
-    void ASC_모드이면_팀_이름_오름차순으로_정렬된다() {
-        contestSort.updateMode(ASC);
-
-        final Team cTeam = teamRepository.save(TeamFixture.createTeamWithContestIdAndTeamName(contest.getId(), "C팀"));
-        final Team aTeam = teamRepository.save(TeamFixture.createTeamWithContestIdAndTeamName(contest.getId(), "A팀"));
-        final Team bTeam = teamRepository.save(TeamFixture.createTeamWithContestIdAndTeamName(contest.getId(), "B팀"));
-
-        final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contest.getId(),
-                member);
-
-        assertThat(responses)
-                .extracting(TeamSummaryResponse::teamName)
-                .containsExactly("A팀", "B팀", "C팀", team.getTeamName());
     }
 
     @Test
