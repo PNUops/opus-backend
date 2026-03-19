@@ -248,9 +248,10 @@ public class ContestQueryService {
         final List<Team> teams = getSortedTeams(contestId, member);
 
         final VoteLikeResult voteLikeResult = getVoteLikeResult(contestId, member, contest.isVotingPeriod());
-        final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap = getTeamAwardsMap(teams);
+        final Map<Long, List<TeamAwardResult>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardResultMap(
+                teams);
 
-        return buildTeamSummaryResponses(teams, teamAwardsMap, voteLikeResult);
+        return buildTeamSummaryResponses(teams, teamAwardResultMap, voteLikeResult);
     }
 
     private List<Team> getSortedTeams(final Long contestId, final Member member) {
@@ -267,13 +268,13 @@ public class ContestQueryService {
     }
 
     private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
-                                                                final Map<Long, List<TeamSummaryResponse.AwardInfo>> teamAwardsMap,
+                                                                final Map<Long, List<TeamAwardResult>> teamAwardResultMap,
                                                                 final VoteLikeResult voteLikeResult
     ) {
         return teams.stream()
                 .map(team -> TeamSummaryResponse.of(
                         team,
-                        teamAwardsMap.getOrDefault(team.getId(), Collections.emptyList()),
+                        teamAwardResultMap.getOrDefault(team.getId(), Collections.emptyList()),
                         voteLikeResult.likeMap().getOrDefault(team.getId(), false),
                         voteLikeResult.voteMap().getOrDefault(team.getId(), false)
                 ))
@@ -282,19 +283,6 @@ public class ContestQueryService {
 
     public List<TeamSummaryResponse> getContestTeamSummariesPublic(final Long contestId) {
         return getContestTeamSummaries(contestId, null);
-    }
-
-    private Map<Long, List<TeamSummaryResponse.AwardInfo>> getTeamAwardsMap(final List<Team> teams) {
-        final List<TeamAwardResult> teamAwardResults = teamContestAwardConvenience.findTeamAwardsByTeams(teams);
-
-        return teamAwardResults.stream()
-                .collect(Collectors.groupingBy(
-                        TeamAwardResult::teamId,
-                        Collectors.mapping(
-                                result -> new TeamSummaryResponse.AwardInfo(result.awardName(), result.awardColor()),
-                                Collectors.toList()
-                        )
-                ));
     }
 
     private Map<Long, Boolean> getVoteMap(final Long contestId, final Member member, final boolean isVotingPeriod) {
