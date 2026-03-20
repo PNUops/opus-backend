@@ -8,11 +8,13 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamMemberResponse;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
@@ -21,14 +23,14 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.domain.TeamMember;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +51,7 @@ public class TeamQueryService {
     private final MemberConvenience memberConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
-    private final TeamContestAwardConvenience teamContestAwardConvenience;
+    private final ContestAwardConvenience contestAwardConvenience;
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
 
@@ -65,6 +67,10 @@ public class TeamQueryService {
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
+    public TeamDetailResponse getTeamDetailPublic(final Long teamId) {
+        return getTeamDetail(teamId, null);
+    }
+
     public TeamDetailResponse getTeamDetail(final Long teamId, final Member member) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
@@ -72,22 +78,30 @@ public class TeamQueryService {
                 team.getTrackId());
 
         final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
-        final List<TeamAwardResult> teamAwardResult = teamContestAwardConvenience.getTeamAwards(teamId)
+        final TeamContestAwardResponse teamContestAwardResponse = getTeamContestAwardResponse(team);
         final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
 
         final Boolean isVoted = teamVoteConvenience.getIsVotedIfInPeriod(team, member, contest.isVotingPeriod());
         final Boolean isLiked = teamLikeConvenience.getIsLikedIfInPeriod(team, member, contest.isVotingPeriod());
 
-//        return TeamDetailResponse.of(
-//                team,
-//                contest.getContestName(),
-//                track.getTrackName(),
-//                teamMemberResponses,
-//                previewIds,
-//                teamAwardResult,
-//                isVoted,
-//                isLiked
-//        );
+        return TeamDetailResponse.of(
+                team,
+                contest.getContestName(),
+                track.getTrackName(),
+                teamMemberResponses,
+                previewIds,
+                teamContestAwardResponse,
+                isLiked,
+                isVoted
+        );
+    }
+
+    private TeamContestAwardResponse getTeamContestAwardResponse(final Team team) {
+        final List<Long> awardIds = team.getTeamAwards().stream()
+                .map(TeamContestAward::getContestAwardId)
+                .toList();
+        final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
+        return TeamContestAwardResponse.from(contestAwards);
     }
 
     private List<TeamMemberResponse> getTeamMemberResponses(final Team team) {

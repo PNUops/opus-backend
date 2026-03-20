@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.api;
 
 import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
@@ -13,7 +14,6 @@ import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -69,8 +69,14 @@ public class TeamController {
     @Secured("ROLE_회원")
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDetailResponse> getTeamDetail(@PathVariable final Long teamId,
-                                                              @LoginMember final Member member) {
+                                                            @LoginMember final Member member) {
         final TeamDetailResponse response = teamQueryService.getTeamDetail(teamId, member);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{teamId}/public")
+    public ResponseEntity<TeamDetailResponse> getTeamDetailPublic(@PathVariable final Long teamId) {
+        final TeamDetailResponse response = teamQueryService.getTeamDetailPublic(teamId);
         return ResponseEntity.ok(response);
     }
 

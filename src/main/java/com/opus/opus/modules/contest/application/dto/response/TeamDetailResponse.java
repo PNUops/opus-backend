@@ -1,8 +1,7 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamMemberRoleType;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import java.util.List;
 
 public record TeamDetailResponse(
@@ -22,7 +21,7 @@ public record TeamDetailResponse(
         List<Long> previewIds,
         Boolean isLiked,
         Boolean isVoted,
-        List<AwardResponse> awards
+        TeamContestAwardResponse awards
 ) {
 
     public static TeamDetailResponse of(
@@ -31,9 +30,9 @@ public record TeamDetailResponse(
             final String trackName,
             final List<TeamMemberResponse> teamMembers,
             final List<Long> previewIds,
-            final List<TeamAwardResult> teamAwardResults,
-            final Boolean isVoted,
-            final Boolean isLiked
+            final TeamContestAwardResponse awards,
+            final Boolean isLiked,
+            final Boolean isVoted
     ) {
         return new TeamDetailResponse(
                 team.getContestId(),
@@ -52,22 +51,7 @@ public record TeamDetailResponse(
                 previewIds,
                 isLiked,
                 isVoted,
-                teamAwardResults.stream()
-                        .map(result -> new AwardResponse(result.awardName(), result.awardColor()))
-                        .toList()
+                awards
         );
-    }
-
-    public record TeamMemberResponse(
-            Long teamMemberId,
-            String teamMemberName,
-            TeamMemberRoleType roleType
-    ) {
-    }
-
-    public record AwardResponse(
-            String awardName,
-            String awardColor
-    ) {
     }
 }
