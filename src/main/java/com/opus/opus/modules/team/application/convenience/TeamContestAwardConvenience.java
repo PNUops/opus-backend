@@ -18,6 +18,10 @@ public class TeamContestAwardConvenience {
 
     private final TeamContestAwardRepository teamContestAwardRepository;
 
+    public List<TeamAwardResult> getTeamAwardResult(final Long teamId) {
+        return teamContestAwardRepository.findTeamAwardsByTeamId(teamId);
+    }
+
     public List<TeamAwardResult> findTeamAwardsByTeams(final List<Team> teams) {
         final List<Long> teamIds = teams.stream().map(Team::getId).toList();
 

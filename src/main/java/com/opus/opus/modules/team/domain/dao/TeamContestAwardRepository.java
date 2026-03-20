@@ -18,4 +18,14 @@ public interface TeamContestAwardRepository extends JpaRepository<TeamContestAwa
             WHERE tca.team.id IN :teamIds
             """)
     List<TeamAwardResult> findTeamAwardsByTeamIds(@Param("teamIds") List<Long> teamIds);
+
+    @Query("""
+            SELECT new com.opus.opus.modules.team.domain.dao.TeamAwardResult(
+                tca.team.id, ca.awardName, ca.awardColor
+            )
+            FROM TeamContestAward tca
+            JOIN ContestAward ca ON tca.contestAwardId = ca.id
+            WHERE tca.team.id = :teamId
+            """)
+    List<TeamAwardResult> findTeamAwardsByTeamId(@Param("teamId") Long teamId);
 }

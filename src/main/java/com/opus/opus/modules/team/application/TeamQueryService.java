@@ -8,15 +8,31 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
+import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamMemberResponse;
+import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.core.io.Resource;
@@ -28,6 +44,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class TeamQueryService {
 
+    private final ContestConvenience contestConvenience;
+    private final ContestTrackConvenience contestTrackConvenience;
+    private final MemberConvenience memberConvenience;
+    private final TeamVoteConvenience teamVoteConvenience;
+    private final TeamLikeConvenience teamLikeConvenience;
+    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final TeamConvenience teamConvenience;
     private final FileConvenience fileConvenience;
 
@@ -41,6 +63,48 @@ public class TeamQueryService {
         checkImageConverted(findFile);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
+    }
+
+    public TeamDetailResponse getTeamDetail(final Long teamId, final Member member) {
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
+        final ContestTrack track = contestTrackConvenience.getValidateExistTrack(team.getContestId(),
+                team.getTrackId());
+
+        final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
+        final List<TeamAwardResult> teamAwardResult = teamContestAwardConvenience.getTeamAwards(teamId)
+        final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
+
+        final Boolean isVoted = teamVoteConvenience.getIsVotedIfInPeriod(team, member, contest.isVotingPeriod());
+        final Boolean isLiked = teamLikeConvenience.getIsLikedIfInPeriod(team, member, contest.isVotingPeriod());
+
+//        return TeamDetailResponse.of(
+//                team,
+//                contest.getContestName(),
+//                track.getTrackName(),
+//                teamMemberResponses,
+//                previewIds,
+//                teamAwardResult,
+//                isVoted,
+//                isLiked
+//        );
+    }
+
+    private List<TeamMemberResponse> getTeamMemberResponses(final Team team) {
+        final List<TeamMember> teamMembers = team.getTeamMembers();
+
+        final List<Long> memberIds = teamMembers.stream()
+                .map(TeamMember::getMemberId)
+                .distinct()
+                .toList();
+
+        final Map<Long, Member> memberMap = memberConvenience.findAllById(memberIds)
+                .stream()
+                .collect(Collectors.toMap(Member::getId, member -> member));
+
+        return teamMembers.stream()
+                .map(tm -> TeamMemberResponse.of(tm, memberMap.get(tm.getMemberId())))
+                .toList();
     }
 
     public ImageResponse getThumbnailImage(final Long teamId) {
@@ -75,7 +139,8 @@ public class TeamQueryService {
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, fileImageType);
+        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
+                fileImageType);
         return getImageResponse(findFile);
     }
 
