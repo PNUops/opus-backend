@@ -13,6 +13,7 @@ import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,14 @@ public class TeamController {
     public ResponseEntity<Void> deleteTeam(@PathVariable final Long teamId) {
         teamCommandService.deleteTeam(teamId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_회원")
+    @GetMapping("/{teamId}")
+    public ResponseEntity<TeamDetailResponse> getTeamDetail(@PathVariable final Long teamId,
+                                                              @LoginMember final Member member) {
+        final TeamDetailResponse response = teamQueryService.getTeamDetail(teamId, member);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{teamId}/image/{imageId}")
