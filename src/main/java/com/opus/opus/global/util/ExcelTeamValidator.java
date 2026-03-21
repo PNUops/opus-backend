@@ -137,28 +137,41 @@ public class ExcelTeamValidator {
                                           final List<TeamBulkError> errors) {
         final List<Team> existingTeams = teamConvenience.getTeamsOfContest(contestId);
 
+        validateTeamNameDuplicate(rows, existingTeams, errors);
+        validateMemberDuplicate(rows, existingTeams, errors);
+    }
+
+    private void validateTeamNameDuplicate(final List<TeamBulkRowDto> rows, final List<Team> existingTeams,
+                                            final List<TeamBulkError> errors) {
         final Set<String> existingTeamNames = existingTeams.stream()
                 .map(Team::getTeamName)
-                .collect(toSet());
-
-        final Set<Long> existingMemberIds = existingTeams.stream()
-                .flatMap(team -> team.getTeamMembers().stream())
-                .map(TeamMember::getMemberId)
                 .collect(toSet());
 
         for (final TeamBulkRowDto row : rows) {
             if (existingTeamNames.contains(row.teamName())) {
                 errors.add(new TeamBulkError(row.rowNumber(), row.rowNumber() + "번째 행: 팀 이름 '" + row.teamName() + "'이 해당 대회에 이미 존재합니다."));
             }
+        }
+    }
 
-            checkDuplicateMemberInContest(row.leaderEmail(), row.rowNumber(), row.leaderStudentId(), existingMemberIds, errors);
-            checkStudentIdConflict(row.leaderEmail(), row.rowNumber(), row.leaderStudentId(), errors);
+    private void validateMemberDuplicate(final List<TeamBulkRowDto> rows, final List<Team> existingTeams, final List<TeamBulkError> errors) {
+        final Set<Long> existingMemberIds = existingTeams.stream()
+                .flatMap(team -> team.getTeamMembers().stream())
+                .map(TeamMember::getMemberId)
+                .collect(toSet());
 
-            for (int i = 0; i < row.memberEmails().size(); i++) {
-                final String memberEmail = row.memberEmails().get(i);
-                final String memberStudentId = row.memberStudentIds().get(i);
-                checkDuplicateMemberInContest(memberEmail, row.rowNumber(), memberStudentId, existingMemberIds, errors);
-                checkStudentIdConflict(memberEmail, row.rowNumber(), memberStudentId, errors);
+        for (final TeamBulkRowDto row : rows) {
+            final List<String> allEmails = new ArrayList<>();
+            final List<String> allStudentIds = new ArrayList<>();
+
+            allEmails.add(row.leaderEmail());
+            allStudentIds.add(row.leaderStudentId());
+            allEmails.addAll(row.memberEmails());
+            allStudentIds.addAll(row.memberStudentIds());
+
+            for (int i = 0; i < allEmails.size(); i++) {
+                checkDuplicateMemberInContest(allEmails.get(i), row.rowNumber(), allStudentIds.get(i), existingMemberIds, errors);
+                checkStudentIdConflict(allEmails.get(i), row.rowNumber(), allStudentIds.get(i), errors);
             }
         }
     }
