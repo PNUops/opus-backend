@@ -8,6 +8,7 @@ public enum TeamExceptionType implements BaseExceptionType {
     NOT_FOUND_TEAM(HttpStatus.NOT_FOUND, "팀이 존재하지 않습니다."),
     CONTEST_HAS_TEAM(HttpStatus.CONFLICT, "해당 대회에 속한 팀이 존재합니다."),
     TRACK_HAS_TEAM(HttpStatus.CONFLICT, "해당 분과에 속한 팀이 존재합니다."),
+    FAILED_TO_VALIDATE_BULK_TEAMS(HttpStatus.INTERNAL_SERVER_ERROR, "팀 일괄 등록 유효성 검사에 실패했습니다.")
     ;
 
     private final HttpStatus httpStatus;

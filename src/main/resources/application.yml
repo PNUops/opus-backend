@@ -22,5 +22,5 @@ spring:
 
 cors:
   allow:
-    origins: https://test.url, https://opus.pnu.app, http://localhost:5173
+    origins: https://test.url
     methods: GET, POST, PUT, DELETE, PATCH, OPTIONS

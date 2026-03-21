@@ -19,6 +19,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -48,7 +49,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.TeamBulkValidationException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
@@ -61,6 +61,7 @@ import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -346,7 +347,7 @@ public class ContestCommandService {
 
         final List<TeamBulkError> errors = validateRows(rows, contestId);
         if (!errors.isEmpty()) {
-            throw new TeamBulkValidationException(new TeamBulkErrorResponse(errors));
+            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS);
         }
 
         return saveTeams(rows, contestId);
