@@ -12,8 +12,6 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     Optional<TeamMember> findByTeamIdAndMemberId(final Long teamId, final Long memberId);
 
-    List<TeamMember> findAllByMemberId(final Long memberId);
-
     @Query("""
             SELECT new com.opus.opus.modules.team.domain.dao.MyProjectFlatResult(
                    c.id, c.contestName, t.id, t.teamName, t.projectName,
