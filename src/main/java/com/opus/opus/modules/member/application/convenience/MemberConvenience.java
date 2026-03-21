@@ -41,10 +41,6 @@ public class MemberConvenience {
         return memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }
 
-    public void validateExistMemberByEmail(final String email) {
-        memberRepository.findByEmail(email).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
-    }
-
     public Member getValidateExistMemberByEmail(final String email) {
         return memberRepository.findByEmail(email).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }
@@ -102,7 +98,6 @@ public class MemberConvenience {
         );
     }
 
-    @Transactional
     public Member getOrCreateFakeMemberByEmail(final String email, final String studentId, final String name) {
         return memberRepository.findByEmail(email)
                 .orElseGet(() -> registerFakeMemberWithEmail(email, studentId, name));

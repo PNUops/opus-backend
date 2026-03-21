@@ -8,11 +8,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.CANNO
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CURRENT_CONTEST_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_REQUIRED;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_EXIST_TEAM_IN_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
@@ -23,6 +19,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import com.opus.opus.global.util.ExcelTeamParser;
 import com.opus.opus.global.util.FileStorageUtil;
@@ -38,7 +35,6 @@ import com.opus.opus.modules.contest.application.dto.request.TeamBulkRowDto;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse.TeamBulkError;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse.TeamBulkResult;
@@ -80,7 +76,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContestCommandService {
 
     private static final int MAX_CURRENT_CONTEST_COUNT = 2;
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private final ContestRepository contestRepository;
     private final ContestSortRepository contestSortRepository;
@@ -339,40 +334,20 @@ public class ContestCommandService {
 
     public TeamBulkUploadResponse bulkUploadTeams(final Long contestId, final MultipartFile file) {
         contestConvenience.validateExistContest(contestId);
-        validateFile(file);
 
-        final List<TeamBulkRowDto> rows = excelTeamParser.parse(file);
-        if (rows.isEmpty()) {
-            throw new ContestException(EMPTY_TEAM_DATA);
-        }
+        final List<TeamBulkRowDto> rows = excelTeamParser.parseAndValidate(file);
 
-        final List<TeamBulkError> errors = validateRows(rows, contestId);
-        if (!errors.isEmpty()) {
-            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
+        final List<TeamBulkError> errorList = validateRows(rows, contestId);
+        if (!errorList.isEmpty()) {
+            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errorList);
         }
 
         return saveTeams(rows, contestId);
     }
 
-    private void validateFile(final MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new ContestException(FILE_REQUIRED);
-        }
-
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new ContestException(FILE_SIZE_EXCEEDED);
-        }
-
-        final String filename = file.getOriginalFilename();
-        if (filename == null || !filename.endsWith(".xlsx")) {
-            throw new ContestException(INVALID_FILE_FORMAT);
-        }
-    }
-
     private List<TeamBulkError> validateRows(final List<TeamBulkRowDto> rows, final Long contestId) {
         final List<TeamBulkError> errors = new ArrayList<>();
 
-        // 1단계: 데이터 무결성 검사
         final Set<String> seenStudentIds = new HashSet<>();
         final Set<String> seenEmails = new HashSet<>();
         final Set<String> seenTeamNames = new HashSet<>();
@@ -380,7 +355,6 @@ public class ContestCommandService {
         for (final TeamBulkRowDto row : rows) {
             final int rowNum = row.rowNumber();
 
-            // 필수 필드 검사
             if (isBlank(row.teamName())) {
                 errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀 이름은 필수입니다."));
             } else if (!seenTeamNames.add(row.teamName())) {
@@ -416,7 +390,6 @@ public class ContestCommandService {
             }
         }
 
-        // 2단계: DB 검사
         if (errors.isEmpty()) {
             validateAgainstDatabase(rows, contestId, errors);
         }
@@ -448,20 +421,16 @@ public class ContestCommandService {
 
     private void validateAgainstDatabase(final List<TeamBulkRowDto> rows, final Long contestId,
                                           final List<TeamBulkError> errors) {
-        // 대회 내 기존 팀 이름 중복 검사
         final List<Team> existingTeams = teamRepository.findAllByContestId(contestId);
-        final Set<String> existingTeamNames = new HashSet<>();
-        for (final Team team : existingTeams) {
-            existingTeamNames.add(team.getTeamName());
-        }
 
-        // 대회 내 기존 팀원 학번 수집
-        final Set<Long> existingMemberIds = new HashSet<>();
-        for (final Team team : existingTeams) {
-            for (final TeamMember tm : team.getTeamMembers()) {
-                existingMemberIds.add(tm.getMemberId());
-            }
-        }
+        final Set<String> existingTeamNames = existingTeams.stream()
+                .map(Team::getTeamName)
+                .collect(toSet());
+
+        final Set<Long> existingMemberIds = existingTeams.stream()
+                .flatMap(team -> team.getTeamMembers().stream())
+                .map(TeamMember::getMemberId)
+                .collect(toSet());
 
         for (final TeamBulkRowDto row : rows) {
             if (existingTeamNames.contains(row.teamName())) {

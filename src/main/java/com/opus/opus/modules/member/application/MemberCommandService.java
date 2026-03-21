@@ -77,8 +77,8 @@ public class MemberCommandService {
         final Optional<Member> fakeMember = memberRepository.findByEmail(email)
                 .filter(Member::isFakeMember);
 
-        if (fakeMember.isPresent()) {
-            fakeMember.get().convertFromFakeToGeneral(email, encodingPassword, request.studentId());
+        if (fakeMember.isPresent()) { // 가짜 회원이 등록되어있는 경우 일반 회원으로 전환
+            fakeMember.get().convertFakeToGeneral(email, encodingPassword, request.studentId());
         } else {
             memberConvenience.checkIsDuplicateEmail(email);
             memberRepository.findByStudentIdAndName(request.studentId(), request.name())

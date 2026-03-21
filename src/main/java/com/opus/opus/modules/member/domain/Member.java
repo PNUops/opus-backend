@@ -116,14 +116,14 @@ public class Member extends BaseEntity {
         this.isFake = true;
     }
 
-    public void convertFromFakeToGeneral(final String email, final String password, final String studentId) {
+    public void convertFakeToGeneral(final String email, final String password, final String studentId) {
         this.email = email;
         this.password = password;
         this.studentId = studentId;
         this.isFake = false;
     }
 
-    public void convertFromFakeToSocial(final SocialType socialType, final String socialId) {
+    public void convertFakeToSocial(final SocialType socialType, final String socialId) {
         this.socialType = socialType;
         this.socialId = socialId;
         this.password = null;

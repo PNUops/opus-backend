@@ -1,6 +1,14 @@
 package com.opus.opus.global.util;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_REQUIRED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_SIZE_EXCEEDED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.CANT_READ_EXCEL_FILE;
+
 import com.opus.opus.modules.contest.application.dto.request.TeamBulkRowDto;
+import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -18,7 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class ExcelTeamParser {
 
-    private static final int DATA_START_ROW = 4; // 5행부터 (0-indexed = 4)
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+    private static final int DATA_START_ROW = 4;
     private static final int COL_TEAM_NAME = 0;
     private static final int COL_PROJECT_NAME = 1;
     private static final int COL_LEADER_NAME = 2;
@@ -28,7 +37,30 @@ public class ExcelTeamParser {
     private static final int COL_LEADER_EMAIL = 6;
     private static final int COL_MEMBER_EMAILS = 7;
 
-    public List<TeamBulkRowDto> parse(final MultipartFile file) {
+    public List<TeamBulkRowDto> parseAndValidate(final MultipartFile file) {
+        validateExcelFile(file);
+
+        final List<TeamBulkRowDto> rows = parseExcelFile(file);
+        if (rows.isEmpty()) {
+            throw new ContestException(EMPTY_TEAM_DATA);
+        }
+        return rows;
+    }
+
+    public void validateExcelFile(final MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ContestException(FILE_REQUIRED);
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ContestException(FILE_SIZE_EXCEEDED);
+        }
+        final String filename = file.getOriginalFilename();
+        if (filename == null || !filename.endsWith(".xlsx")) {
+            throw new ContestException(INVALID_FILE_FORMAT);
+        }
+    }
+
+    private List<TeamBulkRowDto> parseExcelFile(final MultipartFile file) {
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 
@@ -37,12 +69,12 @@ public class ExcelTeamParser {
 
             for (int i = DATA_START_ROW; i <= sheet.getLastRowNum(); i++) {
                 final Row row = sheet.getRow(i);
-                if (row == null || isEmptyRow(row)) {
+                if (row == null || checkEmptyRow(row)) {
                     continue;
                 }
 
                 rows.add(new TeamBulkRowDto(
-                        i + 1, // 사용자에게 보여줄 1-indexed 행 번호
+                        i + 1,
                         getCellStringValue(row, COL_TEAM_NAME),
                         getCellStringValue(row, COL_PROJECT_NAME),
                         getCellStringValue(row, COL_LEADER_NAME),
@@ -56,11 +88,11 @@ public class ExcelTeamParser {
 
             return rows;
         } catch (IOException e) {
-            throw new IllegalArgumentException("엑셀 파일을 읽을 수 없습니다.", e);
+            throw new TeamException(CANT_READ_EXCEL_FILE);
         }
     }
 
-    private boolean isEmptyRow(final Row row) {
+    private boolean checkEmptyRow(final Row row) {
         for (int i = 0; i < 8; i++) {
             final String value = getCellStringValue(row, i);
             if (value != null && !value.isBlank()) {
@@ -79,7 +111,6 @@ public class ExcelTeamParser {
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
-                // 학번 등 숫자가 NUMERIC으로 읽히는 경우 처리
                 double numericValue = cell.getNumericCellValue();
                 if (numericValue == Math.floor(numericValue)) {
                     yield String.valueOf((long) numericValue);

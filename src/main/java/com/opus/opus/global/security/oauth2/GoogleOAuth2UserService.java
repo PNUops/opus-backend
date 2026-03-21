@@ -47,9 +47,9 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     private Member handleExistingMember(final Member member, final String socialId) {
-        // 가짜 회원인 경우 소셜 회원으로 전환
+        // 가짜 회원이 등록되어있는 경우 소셜 회원으로 전환
         if (member.isFakeMember()) {
-            member.convertFromFakeToSocial(SocialType.GOOGLE, socialId);
+            member.convertFakeToSocial(SocialType.GOOGLE, socialId);
             return member;
         }
         return validateSocialMember(member, socialId);
