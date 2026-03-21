@@ -9,14 +9,18 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.opus.opus.contest.ContestExcelFixture;
 import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestCommandService;
@@ -24,6 +28,7 @@ import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRe
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
@@ -34,8 +39,11 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -341,5 +349,106 @@ public class ContestCommandServiceTest extends IntegrationTest {
         assertThat(template.getTrackRequired()).isFalse();
         assertThat(template.getProjectNameRequired()).isFalse();
         assertThat(template.getImagesRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 엑셀 파일로 팀을 일괄 등록한다.")
+    void 엑셀_파일로_팀을_일괄_등록한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"알파팀", "알파프로젝트", "김철수", "", "2021001", "", "kim@pusan.ac.kr", ""},
+                new String[]{"베타팀", "베타프로젝트", "이영희", "", "2021002", "", "lee@pusan.ac.kr", ""}
+        );
+
+        final TeamBulkUploadResponse response = contestCommandService.bulkUploadTeams(contest.getId(), file);
+
+        assertThat(response.teamCount()).isEqualTo(2);
+        assertThat(response.teams()).hasSize(2);
+        assertThat(response.teams().get(0).teamName()).isEqualTo("알파팀");
+        assertThat(response.teams().get(1).teamName()).isEqualTo("베타팀");
+    }
+
+    @Test
+    @DisplayName("[성공] 팀장과 팀원이 포함된 엑셀 파일로 팀을 일괄 등록한다.")
+    void 팀장과_팀원이_포함된_팀을_일괄_등록한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"감마팀", "감마프로젝트", "김리더", "이팀원, 박팀원", "2021010", "2021011, 2021012", "leader@pusan.ac.kr", "mem1@pusan.ac.kr, mem2@pusan.ac.kr"}
+        );
+
+        final TeamBulkUploadResponse response = contestCommandService.bulkUploadTeams(contest.getId(), file);
+
+        assertThat(response.teamCount()).isEqualTo(1);
+        assertThat(response.teams().get(0).teamName()).isEqualTo("감마팀");
+    }
+
+    @Test
+    @DisplayName("[실패] 잘못된 파일 형식이면 예외가 발생한다.")
+    void 잘못된_파일_형식이면_예외가_발생한다() {
+        final MockMultipartFile file = new MockMultipartFile(
+                "file", "teams.txt", MediaType.TEXT_PLAIN_VALUE, "test".getBytes()
+        );
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(INVALID_FILE_FORMAT.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 빈 엑셀 파일이면 예외가 발생한다.")
+    void 빈_엑셀_파일이면_예외가_발생한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile();
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(EMPTY_TEAM_DATA.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 유효성 검사 실패 시 TeamException이 발생한다.")
+    void 유효성_검사_실패_시_TeamException이_발생한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"", "프로젝트", "김리더", "", "2021020", "", "test@pusan.ac.kr", ""} // 팀 이름 누락
+        );
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
+                .isInstanceOf(TeamException.class)
+                .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 이메일 도메인이 올바르지 않으면 유효성 검사에 실패한다.")
+    void 이메일_도메인이_올바르지_않으면_유효성_검사에_실패한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"테스트팀", "프로젝트", "김리더", "", "2021030", "", "test@gmail.com", ""}
+        );
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
+                .isInstanceOf(TeamException.class)
+                .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 파일 내 학번이 중복되면 유효성 검사에 실패한다.")
+    void 파일_내_학번이_중복되면_유효성_검사에_실패한다() throws Exception {
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"팀A", "프로젝트A", "김리더", "", "2021040", "", "a@pusan.ac.kr", ""},
+                new String[]{"팀B", "프로젝트B", "이리더", "", "2021040", "", "b@pusan.ac.kr", ""}
+        );
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
+                .isInstanceOf(TeamException.class)
+                .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회에 팀 일괄 등록 시 예외가 발생한다.")
+    void 존재하지_않는_대회에_팀_일괄_등록_시_예외가_발생한다() throws Exception {
+        final Long invalidContestId = 999L;
+        final MockMultipartFile file = ContestExcelFixture.createExcelFile(
+                new String[]{"테스트팀", "프로젝트", "김리더", "", "2021050", "", "test@pusan.ac.kr", ""}
+        );
+
+        assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(invalidContestId, file))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
 }
