@@ -32,8 +32,4 @@ public class ContestTrackConvenience {
     public List<ContestTrack> getValidateExistTracks(final Long contestId) {
         return contestTrackRepository.findAllByContestId(contestId);
     }
-
-    public List<ContestTrack> getValidateExistTracks(final List<Long> contestIds) {
-        return contestTrackRepository.findAllByContestIdIn(contestIds);
-    }
 }
