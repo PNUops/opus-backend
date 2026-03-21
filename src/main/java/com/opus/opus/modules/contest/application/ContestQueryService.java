@@ -10,8 +10,8 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -21,6 +21,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
@@ -33,18 +34,21 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
+import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +77,9 @@ public class ContestQueryService {
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
+    private final TeamLikeConvenience teamLikeConvenience;
     private final MemberConvenience memberConvenience;
+    private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final FileConvenience fileConvenience;
 
     private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
@@ -90,6 +96,24 @@ public class ContestQueryService {
             responseList.add(
                     new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
                             result.trackName(), result.voteCount()));
+        }
+
+        return responseList;
+    }
+
+    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
+        List<ContestRankingResponse> responseList = new ArrayList<>();
+
+        for (int i = 0; i < votesPerTeam.size(); i++) {
+            final TeamRankingResult result = votesPerTeam.get(i);
+            final int rank =
+                    (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1
+                            : responseList.get(i - 1).rank();
+
+            responseList.add(new ContestRankingResponse(
+                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(),
+                    result.voteCount()
+            ));
         }
 
         return responseList;
@@ -219,19 +243,48 @@ public class ContestQueryService {
                 .toList();
     }
 
-    private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
+    public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        final List<Team> teams = getSortedTeams(contestId, member);
 
-        for (int i = 0; i < votesPerTeam.size(); i++) {
-            final TeamRankingResult result = votesPerTeam.get(i);
-            final int rank = (i == 0 || !Objects.equals(result.voteCount(), votesPerTeam.get(i - 1).voteCount())) ? i + 1 : responseList.get(i - 1).rank();
+        final VoteLikeResult voteLikeResult = getVoteLikeResult(contestId, member, contest.isVotingPeriod());
+        final Map<Long, List<TeamAwardResult>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardResultMap(
+                teams);
 
-            responseList.add(new ContestRankingResponse(
-                    rank, result.teamId(), result.teamName(), result.projectName(), result.trackName(), result.voteCount()
-            ));
-        }
+        return buildTeamSummaryResponses(teams, teamAwardResultMap, voteLikeResult);
+    }
 
-        return responseList;
+    private List<Team> getSortedTeams(final Long contestId, final Member member) {
+        final List<Team> teams = teamConvenience.getTeamsOfContest(contestId);
+        final ContestSort contestSort = contestSortConvenience.getValidateExistContestSort(contestId);
+        teamConvenience.sortTeams(teams, contestSort.getMode(), member);
+        return teams;
+    }
+
+    private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
+        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfVotingPeriod(contestId, member,
+                isVotingPeriod);
+        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfNotVotingPeriod(contestId, member,
+                isVotingPeriod);
+        return new VoteLikeResult(voteMap, likeMap);
+    }
+
+    private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
+                                                                final Map<Long, List<TeamAwardResult>> teamAwardResultMap,
+                                                                final VoteLikeResult voteLikeResult
+    ) {
+        return teams.stream()
+                .map(team -> TeamSummaryResponse.of(
+                        team,
+                        teamAwardResultMap.getOrDefault(team.getId(), Collections.emptyList()),
+                        voteLikeResult.likeMap().getOrDefault(team.getId(), false),
+                        voteLikeResult.voteMap().getOrDefault(team.getId(), false)
+                ))
+                .toList();
+    }
+
+    public List<TeamSummaryResponse> getContestTeamSummariesPublic(final Long contestId) {
+        return getContestTeamSummaries(contestId, null);
     }
 
     private void checkImageConverted(final File findFile) {
@@ -240,10 +293,12 @@ public class ContestQueryService {
         }
     }
 
-
     public ContestTemplateResponse getContestTemplate(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
         return ContestTemplateResponse.from(template);
+    }
+
+    private record VoteLikeResult(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
     }
 }
