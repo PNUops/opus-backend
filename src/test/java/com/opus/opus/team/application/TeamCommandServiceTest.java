@@ -8,10 +8,10 @@ import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_T
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
 import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
-import static org.assertj.core.api.Assertions.assertThat;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,32 +21,40 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestExceptionType;
+import com.opus.opus.modules.contest.exception.ContestTrackException;
+import com.opus.opus.modules.contest.exception.ContestTrackExceptionType;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.TeamCommandService;
-import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
+import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.TeamLike;
+import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
-import com.opus.opus.modules.team.exception.TeamVoteException;
 import com.opus.opus.modules.team.exception.TeamLikeException;
+import com.opus.opus.modules.team.exception.TeamVoteException;
 import com.opus.opus.team.FileFixture;
 import com.opus.opus.team.TeamFixture;
+import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import com.opus.opus.team.TeamLikeFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,6 +74,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     private TeamVoteRepository teamVoteRepository;
     @Autowired
     private ContestRepository contestRepository;
+    @Autowired
+    private ContestTrackRepository contestTrackRepository;
     @Autowired
     private TeamLikeRepository teamLikeRepository;
     @Autowired
@@ -93,6 +103,70 @@ public class TeamCommandServiceTest extends IntegrationTest {
         newVotingContest.updateMaxVotesLimit(2);
         votingContest = contestRepository.save(newVotingContest); // 투표 가능한 대회 생성
         votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId())); // 투표 가능한 팀 생성
+    }
+
+    @Test
+    @DisplayName("[성공] 팀을 등록한다.")
+    void 팀을_등록한다() {
+        // given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                votingContest.getId(), null, "프로젝트", "팀", "교수",
+                "https://github.com/path", "https://youtube.com/path", "https://prod.path", "개요"
+        );
+
+        // when
+        final TeamCreateResponse response = teamCommandService.createTeam(request);
+
+        // then
+        assertThat(response.teamId()).isNotNull();
+        assertThat(teamRepository.findById(response.teamId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회 ID로 팀을 등록하면 예외가 발생한다.")
+    void 존재하지_않는_대회_ID로_팀을_등록하면_예외가_발생한다() {
+        // given
+        final Long invalidContestId = 999L;
+        final TeamCreateRequest request = new TeamCreateRequest(
+                invalidContestId, null, null, null, null, null, null, null, null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> teamCommandService.createTeam(request))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(ContestExceptionType.NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 분과 ID로 팀을 등록하면 예외가 발생한다.")
+    void 존재하지_않는_분과_ID로_팀을_등록하면_예외가_발생한다() {
+        // given
+        final Long invalidTrackId = 999L;
+        final TeamCreateRequest request = new TeamCreateRequest(
+                votingContest.getId(), invalidTrackId, null, null, null, null, null, null, null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> teamCommandService.createTeam(request))
+                .isInstanceOf(ContestTrackException.class)
+                .hasMessage(ContestTrackExceptionType.NOT_FOUND_TRACK.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 해당 대회에 속하지 않은 분과 ID로 팀을 등록하면 예외가 발생한다.")
+    void 해당_대회에_속하지_않은_분과_ID로_팀을_등록하면_예외가_발생한다() {
+        // given
+        final Contest otherContest = contestRepository.save(ContestFixture.createContest());
+        final ContestTrack otherTrack = contestTrackRepository.save(ContestTrackFixture.createTrack(otherContest));
+
+        final TeamCreateRequest request = new TeamCreateRequest(
+                votingContest.getId(), otherTrack.getId(), null, null, null, null, null, null, null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> teamCommandService.createTeam(request))
+                .isInstanceOf(ContestTrackException.class)
+                .hasMessage(ContestTrackExceptionType.INVALID_TRACK_FOR_CONTEST.errorMessage());
     }
 
     @Test
@@ -137,7 +211,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지를 저장한다.")
     void 팀_포스터_이미지를_저장한다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg", "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg",
+                "content".getBytes());
 
         // when
         teamCommandService.savePosterImage(generalTeam.getId(), image);
@@ -150,7 +225,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @DisplayName("[실패] 팀이 존재하지 않으면 포스터 이미지를 저장할 수 없다.")
     void 팀이_존재하지_않으면_포스터_이미지를_저장할_수_없다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg", "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "poster.jpg", "image/jpeg",
+                "content".getBytes());
         final long notExistTeamId = 999L;
 
         // when & then
@@ -194,7 +270,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
         setField(existingFile, "referenceId", generalTeam.getId());
         final File savedFile = fileRepository.save(existingFile);
 
-        final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg", "new_content".getBytes());
+        final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg",
+                "new_content".getBytes());
 
         // when
         teamCommandService.savePosterImage(generalTeam.getId(), newImage);
@@ -313,13 +390,15 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 처음 좋아요하면 TeamLike가 생성되고 좋아요가 등록된다.")
     void 처음_좋아요하면_TeamLike가_생성되고_좋아요가_등록된다() {
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), true);
+        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
+                true);
 
         assertThat(response.teamId()).isEqualTo(notVotingTeam.getId());
         assertThat(response.isLiked()).isTrue();
         assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");
 
-        final TeamLike savedLike = teamLikeRepository.findByMemberIdAndTeam(member.getId(), notVotingTeam).orElseThrow();
+        final TeamLike savedLike = teamLikeRepository.findByMemberIdAndTeam(member.getId(), notVotingTeam)
+                .orElseThrow();
         assertThat(savedLike.getIsLiked()).isTrue();
     }
 
@@ -328,7 +407,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 기존_좋아요를_취소할_수_있다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), true));
 
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), false);
+        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
+                false);
 
         assertThat(response.isLiked()).isFalse();
         assertThat(response.message()).isEqualTo("좋아요가 취소되었습니다.");
@@ -339,7 +419,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 취소한_좋아요를_다시_등록할_수_있다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), false));
 
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), true);
+        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
+                true);
 
         assertThat(response.isLiked()).isTrue();
         assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");

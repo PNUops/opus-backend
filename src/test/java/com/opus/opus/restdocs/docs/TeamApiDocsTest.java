@@ -10,7 +10,9 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
@@ -18,10 +20,16 @@ import static org.springframework.restdocs.request.RequestDocumentation.requestP
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestExceptionType;
+import com.opus.opus.modules.contest.exception.ContestTrackException;
+import com.opus.opus.modules.contest.exception.ContestTrackExceptionType;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -45,6 +53,149 @@ public class TeamApiDocsTest extends RestDocsTest {
         memberAccessToken = "Bearer member.access.token";
         authorizationHeaderDescription = "Bearer %s.access.token";
         testImage = "test-image-content".getBytes();
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 새로운 팀을 등록한다.")
+    void 관리자가_새로운_팀을_등록한다() throws Exception {
+        // Given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                1L, 10L, "프로젝트명", "팀 이름", "이도훈",
+                "https://github.com/team1/project", "https://youtube.com/watch?v=demo1",
+                "https://ditto.pnu.app", "team1 project overview"
+        );
+        final TeamCreateResponse response = new TeamCreateResponse(1L);
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        when(teamCommandService.createTeam(any())).thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(post("/teams")
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("create-team",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        requestFields(
+                                numberFieldWithPath("contestId", "대회 ID"),
+                                numberFieldWithPath("trackId", "분과 ID (선택)").optional(),
+                                stringFieldWithPath("projectName", "프로젝트명 (선택)").optional(),
+                                stringFieldWithPath("teamName", "팀명 (선택)").optional(),
+                                stringFieldWithPath("professorName", "지도 교수 이름 (선택)").optional(),
+                                stringFieldWithPath("githubPath", "GitHub 링크 (선택)").optional(),
+                                stringFieldWithPath("youTubePath", "YouTube 링크 (선택)").optional(),
+                                stringFieldWithPath("productionPath", "배포 주소 링크 (선택)").optional(),
+                                stringFieldWithPath("overview", "프로젝트 설명 (선택)").optional()
+                        ),
+                        responseFields(
+                                numberFieldWithPath("teamId", "생성된 팀 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회 ID로 팀을 등록하면 실패한다.")
+    void 팀_등록_실패_대회없음() throws Exception {
+        // Given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                999L, null, null, null, null, null, null, null, null
+        );
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        when(teamCommandService.createTeam(any()))
+                .thenThrow(new ContestException(ContestExceptionType.NOT_FOUND_CONTEST));
+
+        // When & Then
+        mockMvc.perform(post("/teams")
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andDo(document("create-team-fail-contest-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 분과 ID로 팀을 등록하면 실패한다.")
+    void 팀_등록_실패_분과없음() throws Exception {
+        // Given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                1L, 999L, null, null, null, null, null, null, null
+        );
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        when(teamCommandService.createTeam(any()))
+                .thenThrow(new ContestTrackException(ContestTrackExceptionType.NOT_FOUND_TRACK));
+
+        // When & Then
+        mockMvc.perform(post("/teams")
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andDo(document("create-team-fail-track-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 해당 대회에 속하지 않은 분과 ID로 팀을 등록하면 실패한다.")
+    void 팀_등록_실패_대회분과불일치() throws Exception {
+        // Given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                1L, 2L, null, null, null, null, null, null, null
+        );
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        when(teamCommandService.createTeam(any()))
+                .thenThrow(new ContestTrackException(ContestTrackExceptionType.INVALID_TRACK_FOR_CONTEST));
+
+        // When & Then
+        mockMvc.perform(post("/teams")
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-team-fail-invalid-track-for-contest",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 요청 바디에 오류가 있으면 400 에러를 반환한다.")
+    void 팀_등록_실패_바디데이터오류() throws Exception {
+        // Given
+        final TeamCreateRequest request = new TeamCreateRequest(
+                null, null, null, null, null, null, null, null, null
+        );
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        // When & Then
+        mockMvc.perform(post("/teams")
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-team-fail-bad-request",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
     }
 
     @Test

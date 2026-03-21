@@ -214,6 +214,57 @@ include::{snippets}/delete-team-preview/request-fields.adoc[]
 
 == 팀 정보 관리
 
+=== `POST`: 팀 등록
+
+.HTTP Request
+include::{snippets}/create-team/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-team/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/create-team/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/create-team/request-fields.adoc[]
+
+.Response Fields
+include::{snippets}/create-team/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 요청 바디 오류
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-bad-request/http-request.adoc[]
+include::{snippets}/create-team-fail-bad-request/http-response.adoc[]
+====
+
+.❌ Case 2: 존재하지 않는 대회 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-contest-not-found/http-request.adoc[]
+include::{snippets}/create-team-fail-contest-not-found/http-response.adoc[]
+====
+
+.❌ Case 3: 존재하지 않는 분과 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-track-not-found/http-request.adoc[]
+include::{snippets}/create-team-fail-track-not-found/http-response.adoc[]
+====
+
+.❌ Case 4: 해당 대회에 속하지 않은 분과 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-invalid-track-for-contest/http-request.adoc[]
+include::{snippets}/create-team-fail-invalid-track-for-contest/http-response.adoc[]
+====
+
 === `DELETE`: 팀 삭제
 
 .HTTP Request
