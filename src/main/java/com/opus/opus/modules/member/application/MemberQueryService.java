@@ -5,7 +5,7 @@ import static java.util.stream.Collectors.groupingBy;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
-import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;

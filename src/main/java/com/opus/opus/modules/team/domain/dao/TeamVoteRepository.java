@@ -1,6 +1,6 @@
 package com.opus.opus.modules.team.domain.dao;
 
-import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
@@ -14,8 +14,6 @@ import org.springframework.data.jpa.repository.Query;
 public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
 
     Optional<TeamVote> findByMemberIdAndTeam(Long memberId, Team team);
-
-    List<TeamVote> findAllByMemberIdAndIsVotedTrueOrderByCreatedAtDesc(Long memberId);
 
     @Query("SELECT COUNT(tv) FROM TeamVote tv JOIN tv.team t " +
             "WHERE tv.memberId = :memberId AND tv.isVoted = true AND t.contestId = :contestId")
@@ -32,7 +30,7 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
 
     @Query("""
-            SELECT new com.opus.opus.modules.member.application.dto.response.MyVoteResponse(
+            SELECT new com.opus.opus.modules.member.domain.dao.MyVoteResponse(
                    c.id, c.contestName, t.id, t.teamName, t.projectName)
             FROM TeamVote tv
             JOIN tv.team t

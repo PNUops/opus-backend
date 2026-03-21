@@ -1,4 +1,4 @@
-package com.opus.opus.modules.member.application.dto.response;
+package com.opus.opus.modules.member.domain.dao;
 
 public record MyVoteResponse(
         Long contestId,
