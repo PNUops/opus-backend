@@ -22,6 +22,8 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
+import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -292,6 +294,55 @@ public class TeamApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀을 삭제한다.")
+    void 팀을_삭제한다() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        doNothing().when(teamCommandService).deleteTeam(any());
+
+        // When & Then
+        mockMvc.perform(delete("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-team",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 팀을 삭제하면 실패한다.")
+    void 팀_삭제_실패_팀없음() throws Exception {
+        // Given
+        final Long teamId = 999L;
+        final String adminAccessToken = "Bearer admin.access.token";
+
+        doThrow(new TeamException(TeamExceptionType.NOT_FOUND_TEAM))
+                .when(teamCommandService).deleteTeam(any());
+
+        // When & Then
+        mockMvc.perform(delete("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, adminAccessToken))
+                .andExpect(status().isNotFound())
+                .andDo(document("delete-team-fail-not-found",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }

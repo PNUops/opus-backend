@@ -96,6 +96,44 @@ public class TeamCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 팀을 삭제한다.")
+    void 팀을_삭제한다() {
+        // given
+        final Long teamId = generalTeam.getId();
+
+        // when
+        teamCommandService.deleteTeam(teamId);
+
+        // then
+        assertThat(teamRepository.findById(teamId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 팀을 삭제하면 관련 이미지들도 모두 삭제된다.")
+    void 팀을_삭제하면_관련_이미지들도_모두_삭제된다() {
+        // given
+        final Long teamId = generalTeam.getId();
+
+        // 포스터, 썸네일, 프리뷰 파일 생성 및 저장
+        final File poster = fileRepository.save(FileFixture.createTeamPosterFile(teamId));
+        final File thumbnail = fileRepository.save(FileFixture.createTeamThumbnailFile(teamId));
+        final File preview1 = fileRepository.save(FileFixture.createTeamPreviewFile(teamId));
+        final File preview2 = fileRepository.save(FileFixture.createTeamPreviewFile(teamId));
+
+        // when
+        teamCommandService.deleteTeam(teamId);
+
+        // then
+        assertThat(teamRepository.findById(teamId)).isEmpty();
+
+        // storage 삭제 검증
+        verify(fileStorageUtil).deleteFile(poster.getId());
+        verify(fileStorageUtil).deleteFile(thumbnail.getId());
+        verify(fileStorageUtil).deleteFile(preview1.getId());
+        verify(fileStorageUtil).deleteFile(preview2.getId());
+    }
+
+    @Test
     @DisplayName("[성공] 팀 포스터 이미지를 저장한다.")
     void 팀_포스터_이미지를_저장한다() {
         // given
