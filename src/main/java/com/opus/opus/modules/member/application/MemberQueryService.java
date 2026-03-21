@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberQueryService {
 
     private final MemberConvenience memberConvenience;
+
     private final TeamMemberRepository teamMemberRepository;
     private final TeamVoteRepository teamVoteRepository;
 

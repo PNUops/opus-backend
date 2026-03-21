@@ -13,16 +13,16 @@ public record MyProjectResponse(
         String trackName,
         List<AwardInfo> awards
 ) {
-    public static MyProjectResponse from(final List<MyProjectFlatResult> group) {
-        final MyProjectFlatResult first = group.get(0);
-        final List<AwardInfo> awards = group.stream()
+    public static MyProjectResponse from(final List<MyProjectFlatResult> results) {
+        final MyProjectFlatResult firstResult = results.get(0);
+        final List<AwardInfo> awards = results.stream()
                 .filter(r -> r.awardName() != null)
                 .map(r -> new AwardInfo(r.awardName(), r.awardColor()))
                 .toList();
         return new MyProjectResponse(
-                first.contestId(), first.contestName(),
-                first.teamId(), first.teamName(), first.projectName(),
-                first.trackName(), awards
+                firstResult.contestId(), firstResult.contestName(),
+                firstResult.teamId(), firstResult.teamName(), firstResult.projectName(),
+                firstResult.trackName(), awards
         );
     }
 }
