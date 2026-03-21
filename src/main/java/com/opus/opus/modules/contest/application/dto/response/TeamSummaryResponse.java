@@ -2,6 +2,7 @@ package com.opus.opus.modules.contest.application.dto.response;
 
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import java.util.List;
 
 public record TeamSummaryResponse(
@@ -14,6 +15,7 @@ public record TeamSummaryResponse(
 ) {
     public static TeamSummaryResponse of(
             final Team team,
+            final List<TeamAwardResult> teamAwardResults,
             final List<ContestAward> contestAwards,
             final Boolean isLiked,
             final Boolean isVoted
@@ -28,6 +30,9 @@ public record TeamSummaryResponse(
                 team.getProjectName(),
                 isLiked,
                 isVoted,
+                teamAwardResults.stream()
+                        .map(result -> new AwardInfo(result.awardName(), result.awardColor()))
+                        .toList()
                 awardInfos
         );
     }

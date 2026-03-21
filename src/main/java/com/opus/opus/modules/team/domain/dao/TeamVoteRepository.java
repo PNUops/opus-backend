@@ -42,4 +42,12 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             ORDER BY tv.createdAt DESC
             """)
     List<MyVoteResponse> findMyVotes(Long memberId);
+
+    @Query("""
+                SELECT tv
+                FROM TeamVote tv
+                JOIN tv.team t
+                WHERE tv.memberId = :memberId AND t.contestId = :contestId
+            """)
+    List<TeamVote> findAllByMemberIdAndContestId(final Long memberId, final Long contestId);
 }

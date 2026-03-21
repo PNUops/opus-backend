@@ -12,6 +12,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -32,9 +33,11 @@ import static org.springframework.restdocs.request.RequestDocumentation.paramete
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
@@ -44,15 +47,17 @@ import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
@@ -72,13 +77,17 @@ import org.springframework.mock.web.MockMultipartFile;
 public class ContestApiDocsTest extends RestDocsTest {
 
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
+    private static final String MEMBER_TOKEN = "Bearer member.access.token";
     private String authorizationHeaderDescription;
     private byte[] testImage;
+    private Member member;
 
     @BeforeEach
     void setUp() {
         authorizationHeaderDescription = "Bearer %s.access.token";
         testImage = "test-image-content".getBytes();
+        member = MemberFixture.createMember();
+        setField(member, "id", 1L);
     }
 
     @Test
@@ -1007,6 +1016,142 @@ public class ContestApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 비회원용 메인 페이지 API로 대회의 팀 목록을 조회한다.")
+    void 비회원용_대회의_팀_목록을_조회한다() throws Exception {
+        final List<TeamSummaryResponse.AwardInfo> awards = List.of(
+                new TeamSummaryResponse.AwardInfo("대상", "#FF0000"),
+                new TeamSummaryResponse.AwardInfo("우수상", "#00A3FF")
+        );
+
+        final List<TeamSummaryResponse> responses = List.of(
+                new TeamSummaryResponse(1L, "team1", "team1 Project", false, false, awards),
+                new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
+        );
+
+        when(contestQueryService.getContestTeamSummariesPublic(anyLong())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/teams/public", 1L))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-team-summaries-public",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                booleanFieldWithPath("[].isLiked", "좋아요 여부 (항상 false)"),
+                                booleanFieldWithPath("[].isVoted", "투표 여부 (항상 false)"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 전용 메인 페이지 API로 팀 목록을 조회한다. (미투표 기간)")
+    void 회원이_대회의_팀_목록을_조회한다_미투표_기간() throws Exception {
+        final List<TeamSummaryResponse.AwardInfo> awards = List.of(
+                new TeamSummaryResponse.AwardInfo("대상", "#FF0000")
+        );
+        final List<TeamSummaryResponse> responses = List.of(
+                new TeamSummaryResponse(1L, "team1", "team1 Project", true, false, awards),
+                new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
+        );
+
+        when(contestQueryService.getContestTeamSummaries(anyLong(), any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/teams", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-team-summaries-member-non-voting",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                booleanFieldWithPath("[].isLiked",
+                                        "좋아요 여부 (투표 기간인 경우 false, 회원은 로그인한 사용자의 좋아요 여부에 따라)"),
+                                booleanFieldWithPath("[].isVoted",
+                                        "투표 여부 (투표 기간이 아닌 경우 false, 회원은 로그인한 사용자의 투표 여부에 따라)"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 전용 메인 페이지 API로 팀 목록을 조회한다. (투표 기간)")
+    void 회원이_대회의_팀_목록을_조회한다_투표_기간() throws Exception {
+        final List<TeamSummaryResponse.AwardInfo> awards = List.of(
+                new TeamSummaryResponse.AwardInfo("대상", "#FF0000")
+        );
+        final List<TeamSummaryResponse> responses = List.of(
+                new TeamSummaryResponse(1L, "team1", "team1 Project", false, true, awards),
+                new TeamSummaryResponse(2L, "team2", "team2 Project", false, false, List.of())
+        );
+
+        when(contestQueryService.getContestTeamSummaries(anyLong(), any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/teams", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-contest-team-summaries-member-voting",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                booleanFieldWithPath("[].isLiked",
+                                        "좋아요 여부 (투표 기간인 경우 false, 회원은 로그인한 사용자의 좋아요 여부에 따라)"),
+                                booleanFieldWithPath("[].isVoted",
+                                        "투표 여부 (투표 기간이 아닌 경우 false, 회원은 로그인한 사용자의 투표 여부에 따라)"),
+                                arrayFieldWithPath("[].awards", "수상 목록"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회 ID로 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회_ID로_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getContestTeamSummaries(anyLong(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/teams", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-contest-team-summaries-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
                         )
                 ));
     }

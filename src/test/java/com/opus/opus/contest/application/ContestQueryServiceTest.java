@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
@@ -10,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestSortFixture;
 import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -20,9 +22,13 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestTemplateException;
@@ -57,18 +63,24 @@ public class ContestQueryServiceTest extends IntegrationTest {
     private TeamVoteRepository teamVoteRepository;
     @Autowired
     private ContestTemplateRepository contestTemplateRepository;
+    @Autowired
+    private ContestCategoryRepository contestCategoryRepository;
+    @Autowired
+    private ContestSortRepository contestSortRepository;
 
     private Contest contest;
     private Team team;
     private Member member;
+    private ContestSort contestSort;
 
     @BeforeEach
     void setUp() {
         Contest newContest = ContestFixture.createContest();
         newContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         newContest.updateMaxVotesLimit(2);
-        contest = contestRepository.save(newContest);
 
+        contest = contestRepository.save(newContest);
+        contestSort = contestSortRepository.save(ContestSortFixture.createContestSort(contest));
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         member = memberRepository.save(MemberFixture.createMember());
     }
@@ -315,5 +327,43 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             contestQueryService.getContestTemplate(contest.getId());
         }).isInstanceOf(ContestTemplateException.class).hasMessage(NOT_FOUND_TEMPLATE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 팀 목록을 조회할 수 있다.")
+    void 대회의_팀_목록을_조회할_수_있다() {
+        final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+
+        final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(contest.getId(),
+                member);
+
+        assertThat(responses).hasSize(3); // setup에서 저장된 team 포함
+        assertThat(responses)
+                .extracting(TeamSummaryResponse::teamId)
+                .containsExactlyInAnyOrder(team.getId(), team1.getId(), team2.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] CUSTOM 모드이면 itemOrder 오름차순으로 정렬된다.")
+    void CUSTOM_모드이면_itemOrder_오름차순으로_정렬된다() {
+        final Contest localContest = contestRepository.save(ContestFixture.createContest());
+        final ContestSort localContestSort = contestSortRepository.save(
+                ContestSortFixture.createContestSort(localContest));
+        localContestSort.updateMode(CUSTOM);
+
+        final Team third = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndItemOrder(localContest.getId(), 3));
+        final Team first = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndItemOrder(localContest.getId(), 1));
+        final Team second = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndItemOrder(localContest.getId(), 2));
+
+        final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummaries(localContest.getId(),
+                member);
+
+        assertThat(responses)
+                .extracting(TeamSummaryResponse::teamId)
+                .containsExactly(first.getId(), second.getId(), third.getId());
     }
 }
