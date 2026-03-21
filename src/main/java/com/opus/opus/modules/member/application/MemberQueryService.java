@@ -2,6 +2,7 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
@@ -69,11 +70,21 @@ public class MemberQueryService {
     }
 
     private SearchConditionRequest createSearchCondition(final String sort, final LocalDate startDate, final LocalDate endDate, final int page, final int size) {
-        final Sort.Direction direction = "oldest".equalsIgnoreCase(sort) ? ASC : DESC;
+        final Sort.Direction direction = parseSortDirection(sort);
         final Pageable pageable = PageRequest.of(page, size, Sort.by(direction, "createdAt"));
         final LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
         final LocalDateTime endDateTime = endDate != null ? endDate.plusDays(1).atStartOfDay() : null;
         return new SearchConditionRequest(pageable, startDateTime, endDateTime);
+    }
+
+    private Sort.Direction parseSortDirection(final String sort) {
+        if (sort == null || "latest".equalsIgnoreCase(sort)) {
+            return DESC;
+        }
+        if ("oldest".equalsIgnoreCase(sort)) {
+            return ASC;
+        }
+        throw new MemberException(INVALID_SORT_VALUE);
     }
 
     private void validateDateRange(final LocalDate startDate, final LocalDate endDate) {

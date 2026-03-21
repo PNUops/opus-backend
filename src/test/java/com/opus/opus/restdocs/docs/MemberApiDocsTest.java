@@ -5,7 +5,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
-import static java.time.LocalDateTime.now;
+import static java.time.LocalDateTime.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.willThrow;
@@ -337,7 +337,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     void 나의_댓글_목록을_조회할_수_있다() throws Exception {
         final List<MyCommentResponse> content = List.of(
                 new MyCommentResponse(
-                        new CommentInfo(1L, "인정합니다.", now(), "홍지연"),
+                        new CommentInfo(1L, "인정합니다.", of(2026, 1, 1, 0, 0), "홍지연"),
                         new ProjectInfo(1L, "제6회창의융합해커톤대회", "해커톤", "창업트랙", 5L, "TeamName", "Project Name", "Artify는 일상 속 모든 순간을 예술로 재해석하는 크리에이티브 플랫폼입니다.")
                 )
         );
@@ -377,7 +377,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("content[].project.teamId", "팀 ID"),
                                 stringFieldWithPath("content[].project.teamName", "팀명"),
                                 stringFieldWithPath("content[].project.projectName", "프로젝트명"),
-                                stringFieldWithPath("content[].project.overview", "프로젝트 설명"),
+                                stringFieldWithPath("content[].project.overview", "프로젝트 설명 (최대 100자)"),
                                 subsectionFieldWithPath("pageable", "페이지 정보"),
                                 booleanFieldWithPath("last", "마지막 페이지 여부"),
                                 numberFieldWithPath("totalPages", "전체 페이지 수"),

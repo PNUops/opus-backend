@@ -22,6 +22,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     CANNOT_UPDATE_STUDENT_ID(HttpStatus.BAD_REQUEST, "소셜 회원 가입자만 1회의 학번 수정이 가능합니다."),
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "startDate와 endDate를 모두 입력해주세요"),
     INVALID_DATE_ORDER(HttpStatus.BAD_REQUEST, "startDate는 endDate보다 이전이어야 합니다."),
+    INVALID_SORT_VALUE(HttpStatus.BAD_REQUEST, "정렬 기준은 latest 또는 oldest만 가능합니다."),
     ;
 
     private final HttpStatus httpStatus;
