@@ -10,6 +10,7 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -29,9 +30,12 @@ import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamExceptionType;
+import com.opus.opus.modules.team.exception.TeamMemberException;
+import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -684,6 +688,129 @@ public class TeamApiDocsTest extends RestDocsTest {
                         pathParameters(
                                 parameterWithName("teamId").description("팀 ID"),
                                 parameterWithName("imageId").description("이미지 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 정보를 수정한다.")
+    void 팀_정보_수정() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final TeamUpdateRequest request = new TeamUpdateRequest(
+                1L, 10L, "AI 기반 추천 시스템", "Team A", "이도훈",
+                "https://github.com/teamA/project", "https://youtube.com/watch?v=demo1",
+                "https://teamA-demo.app", "프로젝트 설명 수정"
+        );
+
+        doNothing().when(teamCommandService).updateTeam(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-team",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(teamLeader/admin/teamMember)"))
+                        ),
+                        requestFields(
+                                numberFieldWithPath("contestId", "대회 ID (관리자만 변경 가능, 멤버는 변경 불가)").optional(),
+                                numberFieldWithPath("trackId", "분과 ID (관리자만 변경 가능, 멤버는 변경 불가)").optional(),
+                                stringFieldWithPath("projectName", "프로젝트명"),
+                                stringFieldWithPath("teamName", "팀명"),
+                                stringFieldWithPath("professorName", "지도 교수 이름"),
+                                stringFieldWithPath("githubPath", "GitHub 링크"),
+                                stringFieldWithPath("youTubePath", "YouTube 링크"),
+                                stringFieldWithPath("productionPath", "배포 링크"),
+                                stringFieldWithPath("overview", "프로젝트 설명")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 팀장/팀원 권한으로 필수 필드 누락 시 실패한다.")
+    void 팀_정보_수정_실패_필수필드누락() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final TeamUpdateRequest request = new TeamUpdateRequest(
+                null, null, null, "Team A", "이도훈",
+                "https://github.com/teamA/project", "https://youtube.com/watch?v=demo1",
+                "https://teamA-demo.app", "프로젝트 설명 수정"
+        );
+
+        doThrow(new TeamException(TeamExceptionType.REQUIRED_FIELD_MISSING))
+                .when(teamCommandService).updateTeam(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-team-fail-required-field-missing",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 팀장/팀원 권한으로 contestId/trackId 변경 시도 시 실패한다.")
+    void 팀_정보_수정_실패_대회분과변경시도() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final TeamUpdateRequest request = new TeamUpdateRequest(
+                2L, null, null, null, null, null, null, null, null
+        );
+
+        doThrow(new TeamException(TeamExceptionType.FORBIDDEN_CONTEST_OR_TRACK_UPDATE))
+                .when(teamCommandService).updateTeam(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andDo(document("update-team-fail-forbidden-contest-track-update",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 권한이 없는 사용자(ROLE_회원 중 팀원이 아닌 경우)가 수정을 시도하면 실패한다.")
+    void 팀_정보_수정_실패_권한없음_시나리오() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final TeamUpdateRequest request = new TeamUpdateRequest(
+                null, null, "프로젝트", "팀명", "교수명", null, null, null, null
+        );
+
+        // 서비스에서 팀원이 아님을 감지하고 예외를 던지는 상황 시뮬레이션
+        doThrow(new TeamMemberException(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM))
+                .when(teamCommandService).updateTeam(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken) // 일반 회원 토큰
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andDo(document("update-team-fail-no-permission",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        "팀장, 팀원, 혹은 관리자 권한이 없는 사용자의 Bearer 토큰")
                         )
                 ));
     }

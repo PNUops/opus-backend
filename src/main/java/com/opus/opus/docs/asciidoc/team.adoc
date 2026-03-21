@@ -265,6 +265,60 @@ include::{snippets}/create-team-fail-invalid-track-for-contest/http-request.adoc
 include::{snippets}/create-team-fail-invalid-track-for-contest/http-response.adoc[]
 ====
 
+=== `PATCH`: 팀 수정
+
+팀의 상세 정보를 수정합니다.
+관리자, 팀장, 팀원이 수정할 수 있습니다.
+입력 필드의 필수 여부는 대회의 팀 상세 템플릿 설정(boolean) 에 따라 결정됩니다.
+
+📌 권한별 수정 규칙
+
+1. 관리자
+* 일부 필드만 수정하는 부분 수정 가능
+* 템플릿에서 Required=true 인 필드를 모두 입력하지 않아도 저장 가능
+* contestId, trackId 변경 가능
+2. 해당 팀의 팀장 / 팀원
+* 템플릿에서 Required=true 인 모든 필드를 반드시 포함해야 저장 가능
+* contestId, trackId 변경 불가
+
+.HTTP Request
+include::{snippets}/update-team/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-team/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/update-team/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/update-team/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/update-team/request-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 팀장/팀원 권한으로 필수 필드 누락
+[%collapsible]
+====
+include::{snippets}/update-team-fail-required-field-missing/http-request.adoc[]
+include::{snippets}/update-team-fail-required-field-missing/http-response.adoc[]
+====
+
+.❌ Case 2: 팀장/팀원 권한으로 contestId/trackId 변경 시도
+[%collapsible]
+====
+include::{snippets}/update-team-fail-forbidden-contest-track-update/http-request.adoc[]
+include::{snippets}/update-team-fail-forbidden-contest-track-update/http-response.adoc[]
+====
+
+.❌ Case 3: 해당 팀에 대한 수정 권한 없음 (관리자 또는 해당 팀의 팀장/팀원만 수정 가능)
+[%collapsible]
+====
+include::{snippets}/update-team-fail-no-permission/http-request.adoc[]
+include::{snippets}/update-team-fail-no-permission/http-response.adoc[]
+====
+
 === `DELETE`: 팀 삭제
 
 .HTTP Request
