@@ -1,6 +1,7 @@
 package com.opus.opus.modules.member.application;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
@@ -10,6 +11,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,7 @@ public class MemberQueryService {
 
     public List<MyProjectResponse> getMyProjects(final Long memberId) {
         return teamMemberRepository.findMyProjectsWithAwards(memberId).stream()
-                .collect(groupingBy(MyProjectFlatResult::teamId))
+                .collect(groupingBy(MyProjectFlatResult::teamId, LinkedHashMap::new, toList()))
                 .values().stream()
                 .map(MyProjectResponse::from)
                 .toList();
