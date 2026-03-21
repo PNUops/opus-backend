@@ -107,12 +107,12 @@ public class MemberConvenience {
         );
     }
 
-    public Member getOrCreateFakeMemberByEmail(final String email, final String studentId, final String name) {
+    public Member getOrCreateFakeMember(final String email, final String studentId, final String name) {
         return memberRepository.findByEmail(email)
-                .orElseGet(() -> registerFakeMemberWithEmail(email, studentId, name));
+                .orElseGet(() -> registerFakeMemberWithEmailAndStudentId(email, studentId, name));
     }
 
-    private Member registerFakeMemberWithEmail(final String email, final String studentId, final String name) {
+    private Member registerFakeMemberWithEmailAndStudentId(final String email, final String studentId, final String name) {
         final String randomPassword = generateRandomPassword();
 
         final Member member = Member.generalMember()

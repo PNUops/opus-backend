@@ -383,7 +383,7 @@ public class ContestCommandService {
                     }
                     return member;
                 })
-                .orElseGet(() -> memberConvenience.getOrCreateFakeMemberByEmail(email, studentId, name));
+                .orElseGet(() -> memberConvenience.getOrCreateFakeMember(email, studentId, name));
     }
 
 }

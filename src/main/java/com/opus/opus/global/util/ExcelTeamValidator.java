@@ -172,13 +172,14 @@ public class ExcelTeamValidator {
     }
 
     private void checkStudentIdConflict(final String email, final int rowNum, final String studentId, final List<TeamBulkError> errors) {
-        if (!checkBlank(studentId)) {
-            memberConvenience.findByStudentId(studentId).ifPresent(member -> {
-                if (!email.equals(member.getEmail())) {
-                    errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
-                }
-            });
+        if (checkBlank(studentId)) {
+            return;
         }
+        memberConvenience.findByStudentId(studentId).ifPresent(member -> {
+            if (!email.equals(member.getEmail())) {
+                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
+            }
+        });
     }
 
     private boolean checkBlank(final String value) {
