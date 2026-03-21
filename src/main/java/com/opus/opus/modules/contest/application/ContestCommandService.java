@@ -347,32 +347,37 @@ public class ContestCommandService {
         for (int i = 0; i < rows.size(); i++) {
             final TeamBulkRowDto row = rows.get(i);
 
-            // 팀 생성
-            final Team team = Team.builder()
-                    .teamName(row.teamName())
-                    .projectName(row.projectName())
-                    .contestId(contestId)
-                    .itemOrder(existingTeamCount + i + 1)
-                    .build();
-            teamConvenience.save(team);
-
-            // 팀장 매핑/생성 + 팀원 등록
-            final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName());
-            teamMemberConvenience.saveTeamMember(leader.getId(), team, TeamMemberRoleType.ROLE_팀장);
-
-            // 팀원 매핑/생성 + 팀원 등록
-            for (int j = 0; j < row.memberNames().size(); j++) {
-                final Member member = getOrCreateMember(
-                        row.memberEmails().get(j),
-                        row.memberStudentIds().get(j),
-                        row.memberNames().get(j));
-                teamMemberConvenience.saveTeamMember(member.getId(), team, TeamMemberRoleType.ROLE_팀원);
-            }
+            final Team team = createTeam(row, contestId, existingTeamCount + i + 1);
+            registerTeamMembers(row, team);
 
             results.add(new TeamBulkResult(row.rowNumber(), row.teamName(), team.getId()));
         }
 
         return new TeamBulkUploadResponse(results.size(), results);
+    }
+
+    private Team createTeam(final TeamBulkRowDto row, final Long contestId, final int itemOrder) {
+        final Team team = Team.builder()
+                .teamName(row.teamName())
+                .projectName(row.projectName())
+                .contestId(contestId)
+                .itemOrder(itemOrder)
+                .build();
+        teamConvenience.save(team);
+        return team;
+    }
+
+    private void registerTeamMembers(final TeamBulkRowDto row, final Team team) {
+        final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName());
+        teamMemberConvenience.saveTeamMember(leader.getId(), team, TeamMemberRoleType.ROLE_팀장);
+
+        for (int j = 0; j < row.memberNames().size(); j++) {
+            final Member member = getOrCreateMember(
+                    row.memberEmails().get(j),
+                    row.memberStudentIds().get(j),
+                    row.memberNames().get(j));
+            teamMemberConvenience.saveTeamMember(member.getId(), team, TeamMemberRoleType.ROLE_팀원);
+        }
     }
 
     private Member getOrCreateMember(final String email, final String studentId, final String name) {

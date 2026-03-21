@@ -52,16 +52,16 @@ public class ExcelTeamValidator {
     public List<TeamBulkError> validateRows(final List<TeamBulkRowDto> rows, final Long contestId) {
         final List<TeamBulkError> errors = new ArrayList<>();
 
-        validateDataIntegrity(rows, errors);
+        validateRowFormat(rows, errors);
 
         if (errors.isEmpty()) {
-            validateAgainstDatabase(rows, contestId, errors);
+            validateDuplicate(rows, contestId, errors);
         }
 
         return errors;
     }
 
-    private void validateDataIntegrity(final List<TeamBulkRowDto> rows, final List<TeamBulkError> errors) {
+    private void validateRowFormat(final List<TeamBulkRowDto> rows, final List<TeamBulkError> errors) {
         final Set<String> seenStudentIds = new HashSet<>();
         final Set<String> seenEmails = new HashSet<>();
         final Set<String> seenTeamNames = new HashSet<>();
@@ -133,7 +133,7 @@ public class ExcelTeamValidator {
         }
     }
 
-    private void validateAgainstDatabase(final List<TeamBulkRowDto> rows, final Long contestId,
+    private void validateDuplicate(final List<TeamBulkRowDto> rows, final Long contestId,
                                           final List<TeamBulkError> errors) {
         final List<Team> existingTeams = teamConvenience.getTeamsOfContest(contestId);
 
