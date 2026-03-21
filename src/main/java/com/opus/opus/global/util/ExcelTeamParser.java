@@ -1,13 +1,8 @@
 package com.opus.opus.global.util;
 
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_REQUIRED;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_SIZE_EXCEEDED;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.CANT_READ_EXCEL_FILE;
 
 import com.opus.opus.modules.contest.application.dto.request.TeamBulkRowDto;
-import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class ExcelTeamParser {
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
     private static final int DATA_START_ROW = 4;
     private static final int COL_TEAM_NAME = 0;
     private static final int COL_PROJECT_NAME = 1;
@@ -37,30 +31,7 @@ public class ExcelTeamParser {
     private static final int COL_LEADER_EMAIL = 6;
     private static final int COL_MEMBER_EMAILS = 7;
 
-    public List<TeamBulkRowDto> parseAndValidate(final MultipartFile file) {
-        validateExcelFile(file);
-
-        final List<TeamBulkRowDto> rows = parseExcelFile(file);
-        if (rows.isEmpty()) {
-            throw new ContestException(EMPTY_TEAM_DATA);
-        }
-        return rows;
-    }
-
-    public void validateExcelFile(final MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new ContestException(FILE_REQUIRED);
-        }
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new ContestException(FILE_SIZE_EXCEEDED);
-        }
-        final String filename = file.getOriginalFilename();
-        if (filename == null || !filename.endsWith(".xlsx")) {
-            throw new ContestException(INVALID_FILE_FORMAT);
-        }
-    }
-
-    private List<TeamBulkRowDto> parseExcelFile(final MultipartFile file) {
+    public List<TeamBulkRowDto> parse(final MultipartFile file) {
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 

@@ -23,6 +23,10 @@ public class TeamMemberConvenience {
         }
     }
 
+    public TeamMember save(final TeamMember teamMember) {
+        return teamMemberRepository.save(teamMember);
+    }
+
     public TeamMember getValidateExistTeamMember(final Long teamId, final Long memberId) {
         return teamMemberRepository.findByTeamIdAndMemberId(teamId, memberId)
                 .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));

@@ -19,9 +19,9 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 
 import com.opus.opus.global.util.ExcelTeamParser;
+import com.opus.opus.global.util.ExcelTeamValidator;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -51,16 +51,13 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
-import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
-import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,19 +78,17 @@ public class ContestCommandService {
     private final ContestSortRepository contestSortRepository;
     private final FileRepository fileRepository;
     private final ContestTemplateRepository contestTemplateRepository;
-    private final TeamRepository teamRepository;
-    private final TeamMemberRepository teamMemberRepository;
-    private final MemberRepository memberRepository;
-
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final MemberConvenience memberConvenience;
 
     private final FileStorageUtil fileStorageUtil;
     private final ExcelTeamParser excelTeamParser;
+    private final ExcelTeamValidator excelTeamValidator;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
@@ -334,143 +329,21 @@ public class ContestCommandService {
 
     public TeamBulkUploadResponse bulkUploadTeams(final Long contestId, final MultipartFile file) {
         contestConvenience.validateExistContest(contestId);
+        excelTeamValidator.validateFile(file);
 
-        final List<TeamBulkRowDto> rows = excelTeamParser.parseAndValidate(file);
+        final List<TeamBulkRowDto> rows = excelTeamParser.parse(file);
 
-        final List<TeamBulkError> errorList = validateRows(rows, contestId);
-        if (!errorList.isEmpty()) {
-            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errorList);
+        excelTeamValidator.validateNotEmpty(rows);
+        final List<TeamBulkError> errors = excelTeamValidator.validateRows(rows, contestId);
+        if (!errors.isEmpty()) {
+            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
         }
 
         return saveTeams(rows, contestId);
     }
 
-    private List<TeamBulkError> validateRows(final List<TeamBulkRowDto> rows, final Long contestId) {
-        final List<TeamBulkError> errors = new ArrayList<>();
-
-        final Set<String> seenStudentIds = new HashSet<>();
-        final Set<String> seenEmails = new HashSet<>();
-        final Set<String> seenTeamNames = new HashSet<>();
-
-        for (final TeamBulkRowDto row : rows) {
-            final int rowNum = row.rowNumber();
-
-            if (isBlank(row.teamName())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀 이름은 필수입니다."));
-            } else if (!seenTeamNames.add(row.teamName())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀 이름 '" + row.teamName() + "'이 파일 내에서 중복됩니다."));
-            }
-
-            if (isBlank(row.projectName())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 프로젝트 이름은 필수입니다."));
-            }
-            if (isBlank(row.leaderName())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀장 이름은 필수입니다."));
-            }
-            if (isBlank(row.leaderStudentId())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀장 학번은 필수입니다."));
-            }
-            if (isBlank(row.leaderEmail())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀장 이메일은 필수입니다."));
-            }
-
-            // 팀원 이름/학번/이메일 개수 일치 검사
-            if (row.memberNames().size() != row.memberStudentIds().size()
-                    || row.memberNames().size() != row.memberEmails().size()) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 팀원 이름, 학번, 이메일의 개수가 일치하지 않습니다."));
-            }
-
-            // 학번 형식 및 중복 검사 (팀장 + 팀원)
-            validateStudentIdAndEmail(row.leaderStudentId(), row.leaderEmail(), rowNum, seenStudentIds, seenEmails, errors);
-            for (int i = 0; i < row.memberStudentIds().size(); i++) {
-                validateStudentIdAndEmail(
-                        row.memberStudentIds().get(i),
-                        i < row.memberEmails().size() ? row.memberEmails().get(i) : null,
-                        rowNum, seenStudentIds, seenEmails, errors);
-            }
-        }
-
-        if (errors.isEmpty()) {
-            validateAgainstDatabase(rows, contestId, errors);
-        }
-
-        return errors;
-    }
-
-    private void validateStudentIdAndEmail(final String studentId, final String email,
-                                            final int rowNum, final Set<String> seenStudentIds,
-                                            final Set<String> seenEmails, final List<TeamBulkError> errors) {
-        if (studentId != null && !studentId.isBlank()) {
-            if (!studentId.matches("\\d{7,9}")) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 형식이 올바르지 않습니다."));
-            }
-            if (!seenStudentIds.add(studentId)) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 " + studentId + "가 파일 내에서 중복됩니다."));
-            }
-        }
-
-        if (email != null && !email.isBlank()) {
-            if (!email.endsWith("@pusan.ac.kr")) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 부산대 이메일(@pusan.ac.kr)만 허용됩니다."));
-            }
-            if (!seenEmails.add(email)) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 이메일 " + email + "이 파일 내에서 중복됩니다."));
-            }
-        }
-    }
-
-    private void validateAgainstDatabase(final List<TeamBulkRowDto> rows, final Long contestId,
-                                          final List<TeamBulkError> errors) {
-        final List<Team> existingTeams = teamRepository.findAllByContestId(contestId);
-
-        final Set<String> existingTeamNames = existingTeams.stream()
-                .map(Team::getTeamName)
-                .collect(toSet());
-
-        final Set<Long> existingMemberIds = existingTeams.stream()
-                .flatMap(team -> team.getTeamMembers().stream())
-                .map(TeamMember::getMemberId)
-                .collect(toSet());
-
-        for (final TeamBulkRowDto row : rows) {
-            if (existingTeamNames.contains(row.teamName())) {
-                errors.add(new TeamBulkError(row.rowNumber(),
-                        row.rowNumber() + "번째 행: 팀 이름 '" + row.teamName() + "'이 해당 대회에 이미 존재합니다."));
-            }
-
-            // 팀장 + 팀원의 이메일/학번으로 기존 회원 조회 → 대회 내 중복 소속 검사 + studentId 충돌 검사
-            checkMemberAgainstDatabase(row.leaderEmail(), row.rowNumber(), row.leaderStudentId(),
-                    existingMemberIds, errors);
-            for (int i = 0; i < row.memberEmails().size(); i++) {
-                checkMemberAgainstDatabase(row.memberEmails().get(i), row.rowNumber(),
-                        row.memberStudentIds().get(i), existingMemberIds, errors);
-            }
-        }
-    }
-
-    private void checkMemberAgainstDatabase(final String email, final int rowNum, final String studentId,
-                                              final Set<Long> existingMemberIds, final List<TeamBulkError> errors) {
-        // 이메일로 기존 회원 조회 → 대회 내 중복 소속 검사
-        memberRepository.findByEmail(email).ifPresent(member -> {
-            if (existingMemberIds.contains(member.getId())) {
-                errors.add(new TeamBulkError(rowNum,
-                        rowNum + "번째 행: " + studentId + " 학생이 해당 대회의 다른 팀에 이미 소속되어 있습니다."));
-            }
-        });
-
-        // 학번으로 기존 회원 조회 → 이메일이 다른 회원이 같은 학번을 사용하는지 검사
-        if (studentId != null && !studentId.isBlank()) {
-            memberRepository.findByStudentId(studentId).ifPresent(member -> {
-                if (!email.equals(member.getEmail())) {
-                    errors.add(new TeamBulkError(rowNum,
-                            rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
-                }
-            });
-        }
-    }
-
     private TeamBulkUploadResponse saveTeams(final List<TeamBulkRowDto> rows, final Long contestId) {
-        final int existingTeamCount = teamRepository.findAllByContestId(contestId).size();
+        final int existingTeamCount = teamConvenience.getTeamsOfContest(contestId).size();
         final List<TeamBulkResult> results = new ArrayList<>();
 
         for (int i = 0; i < rows.size(); i++) {
@@ -483,7 +356,7 @@ public class ContestCommandService {
                     .contestId(contestId)
                     .itemOrder(existingTeamCount + i + 1)
                     .build();
-            teamRepository.save(team);
+            teamConvenience.save(team);
 
             // 팀장 매핑/생성 + 팀원 등록
             final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName());
@@ -505,7 +378,7 @@ public class ContestCommandService {
     }
 
     private Member getOrCreateMember(final String email, final String studentId, final String name) {
-        return memberRepository.findByEmail(email)
+        return memberConvenience.findByEmail(email)
                 .map(member -> {
                     if (member.getStudentId() == null && studentId != null) {
                         member.updateStudentId(studentId);
@@ -521,10 +394,6 @@ public class ContestCommandService {
                 .team(team)
                 .roles(Set.of(roleType))
                 .build();
-        teamMemberRepository.save(teamMember);
-    }
-
-    private boolean isBlank(final String value) {
-        return value == null || value.isBlank();
+        teamMemberConvenience.save(teamMember);
     }
 }

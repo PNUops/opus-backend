@@ -14,6 +14,7 @@ import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,14 @@ public class MemberConvenience {
 
     public Member getValidateExistMemberByEmail(final String email) {
         return memberRepository.findByEmail(email).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+    }
+
+    public Optional<Member> findByEmail(final String email) {
+        return memberRepository.findByEmail(email);
+    }
+
+    public Optional<Member> findByStudentId(final String studentId) {
+        return memberRepository.findByStudentId(studentId);
     }
 
     public void validatePusanDomain(final String email) {
