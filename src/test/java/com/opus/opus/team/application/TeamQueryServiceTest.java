@@ -86,6 +86,21 @@ public class TeamQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 비회원이 팀 상세 정보를 조회하면 isVoted와 isLiked는 항상 false를 반환한다.")
+    void 비회원_팀_상세_정보_조회() {
+        // given
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+        contestRepository.saveAndFlush(contest);
+
+        // when
+        final TeamDetailResponse response = teamQueryService.getTeamDetailPublic(team.getId());
+
+        // then
+        assertThat(response.isVoted()).isFalse();
+        assertThat(response.isLiked()).isFalse();
+    }
+
+    @Test
     @DisplayName("[성공] 투표 기간일 때 팀 상세 정보를 조회하면 isVoted는 실제 투표 여부, isLiked는 false를 반환한다.")
     void 투표_기간일_때_팀_상세_정보_조회() {
         // given

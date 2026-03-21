@@ -1,6 +1,6 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.List;
 
@@ -21,7 +21,7 @@ public record TeamDetailResponse(
         List<Long> previewIds,
         Boolean isLiked,
         Boolean isVoted,
-        TeamContestAwardResponse awards
+        List<AwardInfo> awards
 ) {
 
     public static TeamDetailResponse of(
@@ -30,7 +30,7 @@ public record TeamDetailResponse(
             final String trackName,
             final List<TeamMemberResponse> teamMembers,
             final List<Long> previewIds,
-            final TeamContestAwardResponse awards,
+            final List<AwardInfo> awards,
             final Boolean isLiked,
             final Boolean isVoted
     ) {

@@ -342,6 +342,32 @@ include::{snippets}/delete-team-fail-not-found/http-request.adoc[]
 include::{snippets}/delete-team-fail-not-found/http-response.adoc[]
 ====
 
+=== `GET`: 팀 상세 조회 (비회원용)
+
+해당 팀의 상세 정보를 조회합니다.
+**비회원 전용 상세 조회 API**입니다.
+비회원은 좋아요 및 투표 정보를 확인할 수 없기 때문에:
+
+- `isLiked`: 항상 `false`
+- `isVoted`: 항상 `false`
+
+또한, 상세 이미지 조회를 위한 previewIds 배열을 함께 반환합니다.
+
+- 반환된 previewIds로 `/teams/{teamId}/image/{imageId}` 호출
+- posters 조회는 `/teams/{teamId}/image/posters`
+
+.HTTP Request
+include::{snippets}/get-team-detail-public/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-detail-public/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-detail-public/path-parameters.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-detail-public/response-fields.adoc[]
+
 === `GET`: 팀 상세 조회 (회원용)
 
 해당 팀의 상세 정보를 조회합니다.

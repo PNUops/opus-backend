@@ -78,7 +78,7 @@ public class TeamQueryService {
                 team.getTrackId());
 
         final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
-        final TeamContestAwardResponse teamContestAwardResponse = getTeamContestAwardResponse(team);
+        final List<TeamContestAwardResponse.AwardInfo> awards = getAwardInfos(team);
         final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
 
         final Boolean isVoted = teamVoteConvenience.getIsVotedIfInPeriod(team, member, contest.isVotingPeriod());
@@ -90,18 +90,20 @@ public class TeamQueryService {
                 track.getTrackName(),
                 teamMemberResponses,
                 previewIds,
-                teamContestAwardResponse,
+                awards,
                 isLiked,
                 isVoted
         );
     }
 
-    private TeamContestAwardResponse getTeamContestAwardResponse(final Team team) {
+    private List<TeamContestAwardResponse.AwardInfo> getAwardInfos(final Team team) {
         final List<Long> awardIds = team.getTeamAwards().stream()
                 .map(TeamContestAward::getContestAwardId)
                 .toList();
         final List<ContestAward> contestAwards = contestAwardConvenience.findAllById(awardIds);
-        return TeamContestAwardResponse.from(contestAwards);
+        return contestAwards.stream()
+                .map(TeamContestAwardResponse.AwardInfo::from)
+                .toList();
     }
 
     private List<TeamMemberResponse> getTeamMemberResponses(final Team team) {
