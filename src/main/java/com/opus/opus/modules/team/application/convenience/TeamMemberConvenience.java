@@ -3,11 +3,9 @@ package com.opus.opus.modules.team.application.convenience;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
-import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +26,5 @@ public class TeamMemberConvenience {
     public TeamMember getValidateExistTeamMember(final Long teamId, final Long memberId) {
         return teamMemberRepository.findByTeamIdAndMemberId(teamId, memberId)
                 .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
-    }
-
-    public List<Team> getValidateExistTeams(final Long memberId) {
-        return teamMemberRepository.findAllByMemberId(memberId)
-                .stream()
-                .map(TeamMember::getTeam)
-                .toList();
     }
 }

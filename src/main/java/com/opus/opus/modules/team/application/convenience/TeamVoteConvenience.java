@@ -42,8 +42,4 @@ public class TeamVoteConvenience {
                                                        final boolean isVotingPeriod) {
         return (member != null && isVotingPeriod) ? getVoteMap(contestId, member) : Map.of();
     }
-
-    public List<TeamVote> getCurrentVotes(final Long memberId) {
-        return teamVoteRepository.findAllByMemberIdAndIsVotedTrueOrderByCreatedAtDesc(memberId);
-    }
 }
