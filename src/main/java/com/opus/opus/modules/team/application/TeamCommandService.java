@@ -78,7 +78,11 @@ public class TeamCommandService {
         if (request.trackId() != null) {
             contestTrackConvenience.getValidateExistTrack(request.contestId(), request.trackId());
         }
-        final Team team = teamRepository.save(Team.from(request));
+
+        // 해당 대회의 현재 팀 수 + 1로 순서 자동 부여
+        int nextOrder = teamRepository.countByContestId(request.contestId()) + 1;
+
+        final Team team = teamRepository.save(Team.from(request, nextOrder));
         return TeamCreateResponse.from(team);
     }
 
