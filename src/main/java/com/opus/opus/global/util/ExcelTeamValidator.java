@@ -11,8 +11,8 @@ import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorRespo
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamMember;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +28,7 @@ public class ExcelTeamValidator {
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final MemberConvenience memberConvenience;
 
     public void validateFile(final MultipartFile file) {
@@ -38,7 +39,7 @@ public class ExcelTeamValidator {
             throw new ContestException(FILE_SIZE_EXCEEDED);
         }
         final String filename = file.getOriginalFilename();
-        if (filename == null || !filename.endsWith(".xlsx")) {
+        if (filename == null || !filename.toLowerCase().endsWith(".xlsx")) {
             throw new ContestException(INVALID_FILE_FORMAT);
         }
     }
@@ -138,7 +139,7 @@ public class ExcelTeamValidator {
         final List<Team> existingTeams = teamConvenience.getTeamsOfContest(contestId);
 
         validateTeamNameDuplicate(rows, existingTeams, errors);
-        validateMemberDuplicate(rows, existingTeams, errors);
+        validateMemberDuplicate(rows, contestId, errors);
     }
 
     private void validateTeamNameDuplicate(final List<TeamBulkRowDto> rows, final List<Team> existingTeams,
@@ -154,11 +155,8 @@ public class ExcelTeamValidator {
         }
     }
 
-    private void validateMemberDuplicate(final List<TeamBulkRowDto> rows, final List<Team> existingTeams, final List<TeamBulkError> errors) {
-        final Set<Long> existingMemberIds = existingTeams.stream()
-                .flatMap(team -> team.getTeamMembers().stream())
-                .map(TeamMember::getMemberId)
-                .collect(toSet());
+    private void validateMemberDuplicate(final List<TeamBulkRowDto> rows, final Long contestId, final List<TeamBulkError> errors) {
+        final Set<Long> existingMemberIds = teamMemberConvenience.findMemberIdsByContestId(contestId);
 
         for (final TeamBulkRowDto row : rows) {
             final List<String> allEmails = new ArrayList<>();

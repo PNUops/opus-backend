@@ -96,7 +96,7 @@ public class Team extends BaseEntity {
         this.itemOrder = itemOrder;
         this.isDeleted = false;
         this.isSubmitted = false;
-        this.teamMembers = teamMembers;
+        this.teamMembers = teamMembers != null ? teamMembers : new ArrayList<>();
     }
 
     public void updateItemOrder(final Integer newOrder) {

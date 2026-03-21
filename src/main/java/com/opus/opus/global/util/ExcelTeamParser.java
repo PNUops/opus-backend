@@ -58,7 +58,7 @@ public class ExcelTeamParser {
             }
 
             return rows;
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             throw new TeamException(CANT_READ_EXCEL_FILE);
         }
     }

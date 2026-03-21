@@ -43,4 +43,8 @@ public class TeamMemberConvenience {
         return teamMemberRepository.findByTeamIdAndMemberId(teamId, memberId)
                 .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
     }
+
+    public Set<Long> findMemberIdsByContestId(final Long contestId) {
+        return teamMemberRepository.findMemberIdsByContestId(contestId);
+    }
 }
