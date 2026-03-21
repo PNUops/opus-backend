@@ -54,14 +54,12 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -360,7 +358,7 @@ public class ContestCommandService {
 
             // 팀장 매핑/생성 + 팀원 등록
             final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName());
-            saveTeamMember(leader, team, TeamMemberRoleType.ROLE_팀장);
+            teamMemberConvenience.saveTeamMember(leader.getId(), team, TeamMemberRoleType.ROLE_팀장);
 
             // 팀원 매핑/생성 + 팀원 등록
             for (int j = 0; j < row.memberNames().size(); j++) {
@@ -368,7 +366,7 @@ public class ContestCommandService {
                         row.memberEmails().get(j),
                         row.memberStudentIds().get(j),
                         row.memberNames().get(j));
-                saveTeamMember(member, team, TeamMemberRoleType.ROLE_팀원);
+                teamMemberConvenience.saveTeamMember(member.getId(), team, TeamMemberRoleType.ROLE_팀원);
             }
 
             results.add(new TeamBulkResult(row.rowNumber(), row.teamName(), team.getId()));
@@ -388,12 +386,4 @@ public class ContestCommandService {
                 .orElseGet(() -> memberConvenience.getOrCreateFakeMemberByEmail(email, studentId, name));
     }
 
-    private void saveTeamMember(final Member member, final Team team, final TeamMemberRoleType roleType) {
-        final TeamMember teamMember = TeamMember.builder()
-                .memberId(member.getId())
-                .team(team)
-                .roles(Set.of(roleType))
-                .build();
-        teamMemberConvenience.save(teamMember);
-    }
 }
