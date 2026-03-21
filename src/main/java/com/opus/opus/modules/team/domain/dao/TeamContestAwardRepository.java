@@ -9,8 +9,6 @@ import org.springframework.data.repository.query.Param;
 public interface TeamContestAwardRepository extends JpaRepository<TeamContestAward, Long> {
     List<TeamContestAward> findByTeamId(final Long teamId);
 
-    List<TeamContestAward> findByTeamIdIn(final List<Long> teamIds);
-
     @Query("""
             SELECT new com.opus.opus.modules.team.domain.dao.TeamAwardResult(
                 tca.team.id, ca.awardName, ca.awardColor
