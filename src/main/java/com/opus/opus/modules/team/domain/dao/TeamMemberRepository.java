@@ -16,10 +16,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     @Query("""
             SELECT new com.opus.opus.modules.team.domain.dao.MyProjectFlatResult(
-                   c.id, c.contestName,
-                   t.id, t.teamName, t.projectName,
-                   ct.trackName,
-                   ca.awardName, ca.awardColor)
+                   c.id, c.contestName, t.id, t.teamName, t.projectName,
+                   ct.trackName, ca.awardName, ca.awardColor)
             FROM TeamMember tm
             JOIN tm.team t
             JOIN Contest c ON c.id = t.contestId
@@ -27,6 +25,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             LEFT JOIN TeamContestAward tca ON tca.team = t
             LEFT JOIN ContestAward ca ON ca.id = tca.contestAwardId
             WHERE tm.memberId = :memberId
+            ORDER BY c.id DESC
             """)
     List<MyProjectFlatResult> findMyProjectsWithAwards(Long memberId);
 }

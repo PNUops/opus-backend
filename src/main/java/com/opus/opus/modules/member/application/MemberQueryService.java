@@ -1,10 +1,13 @@
 package com.opus.opus.modules.member.application;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyVoteResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.util.List;
@@ -27,12 +30,14 @@ public class MemberQueryService {
     }
 
     public List<MyProjectResponse> getMyProjects(final Long memberId) {
-        return MyProjectResponse.fromFlatResults(teamMemberRepository.findMyProjectsWithAwards(memberId));
+        return teamMemberRepository.findMyProjectsWithAwards(memberId).stream()
+                .collect(groupingBy(MyProjectFlatResult::teamId))
+                .values().stream()
+                .map(MyProjectResponse::from)
+                .toList();
     }
 
     public List<MyVoteResponse> getMyVotes(final Long memberId) {
-        return teamVoteRepository.findMyVotes(memberId).stream()
-                .map(MyVoteResponse::from)
-                .toList();
+        return teamVoteRepository.findMyVotes(memberId);
     }
 }
