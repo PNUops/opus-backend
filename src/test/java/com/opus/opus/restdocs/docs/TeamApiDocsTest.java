@@ -12,6 +12,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -32,6 +33,10 @@ import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamMemberResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.modules.team.exception.TeamMemberException;
@@ -781,6 +786,73 @@ public class TeamApiDocsTest extends RestDocsTest {
                 .andDo(document("update-team-fail-forbidden-contest-track-update",
                         pathParameters(
                                 parameterWithName("teamId").description("팀 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 상세 정보를 조회한다.")
+    void 팀_상세_정보_조회() throws Exception {
+        // Given
+        final Long teamId = 1L;
+        final TeamDetailResponse response = new TeamDetailResponse(
+                1L, "제6회 PNU 창의융합 SW 해커톤",
+                10L, "해커톤",
+                1L, "team1", "team1 Project",
+                List.of(
+                        new TeamMemberResponse(1L, "이지민", TeamMemberRoleType.ROLE_팀장),
+                        new TeamMemberResponse(2L, "김철수", TeamMemberRoleType.ROLE_팀원)
+                ),
+                "이도훈",
+                "https://github.com/team1/project",
+                "https://youtube.com/watch?v=demo1",
+                "https://ditto.pnu.app",
+                "team1 project overview",
+                List.of(101L, 102L, 103L),
+                false, true,
+                new TeamContestAwardResponse(List.of(
+                        new TeamContestAwardResponse.AwardInfo(1L, "대상", "#FF0000")
+                ))
+        );
+
+        when(teamQueryService.getTeamDetail(any(), any())).thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(get("/teams/{teamId}", teamId)
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-detail",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(authorizationHeaderDescription)
+                        ),
+                        responseFields(
+                                numberFieldWithPath("contestId", "대회 ID"),
+                                stringFieldWithPath("contestName", "대회명"),
+                                numberFieldWithPath("trackId", "분과 ID"),
+                                stringFieldWithPath("trackName", "분과 이름"),
+                                numberFieldWithPath("teamId", "팀 ID"),
+                                stringFieldWithPath("teamName", "팀명"),
+                                stringFieldWithPath("projectName", "프로젝트명"),
+                                arrayFieldWithPath("teamMembers", "팀원 목록"),
+                                numberFieldWithPath("teamMembers[].teamMemberId", "팀원 ID"),
+                                stringFieldWithPath("teamMembers[].teamMemberName", "팀원 이름"),
+                                stringFieldWithPath("teamMembers[].roleType", "팀원 권한 (ROLE_팀장, ROLE_팀원)"),
+                                stringFieldWithPath("professorName", "지도 교수 이름"),
+                                stringFieldWithPath("githubPath", "GitHub 링크"),
+                                stringFieldWithPath("youTubePath", "YouTube 링크"),
+                                stringFieldWithPath("productionPath", "배포 링크"),
+                                stringFieldWithPath("overview", "프로젝트 소개"),
+                                arrayFieldWithPath("previewIds", "상세 이미지 ID 목록"),
+                                booleanFieldWithPath("isLiked", "좋아요 여부 (투표 기간 아닐 때만 유효, 투표 기간엔 false)"),
+                                booleanFieldWithPath("isVoted", "투표 여부 (투표 기간일 때만 유효, 투표 기간 아닐 땐 false)"),
+                                fieldWithPath("awards").description("수상 정보"),
+                                arrayFieldWithPath("awards.awards", "수상 목록"),
+                                numberFieldWithPath("awards.awards[].awardId", "수상 ID"),
+                                stringFieldWithPath("awards.awards[].awardName", "수상명"),
+                                stringFieldWithPath("awards.awards[].awardColor", "수상 색상")
                         )
                 ));
     }

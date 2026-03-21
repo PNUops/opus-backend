@@ -24,6 +24,7 @@ public class TeamFixture {
                 .trackId(1L)
                 .itemOrder(1)
                 .teamMembers(new ArrayList<>())
+                .teamAwards(new ArrayList<>())
                 .build();
     }
 
@@ -40,6 +41,7 @@ public class TeamFixture {
                 .trackId(1L)
                 .itemOrder(1)
                 .teamMembers(new ArrayList<>())
+                .teamAwards(new ArrayList<>())
                 .build();
     }
 
@@ -56,6 +58,7 @@ public class TeamFixture {
                 .trackId(1L)
                 .itemOrder(itemOrder)
                 .teamMembers(new ArrayList<>())
+                .teamAwards(new ArrayList<>())
                 .build();
     }
 
@@ -66,6 +69,7 @@ public class TeamFixture {
                 .projectName("제출완료 프로젝트")
                 .itemOrder(1)
                 .teamMembers(new ArrayList<>())
+                .teamAwards(new ArrayList<>())
                 .build();
         team.submit();
         return team;

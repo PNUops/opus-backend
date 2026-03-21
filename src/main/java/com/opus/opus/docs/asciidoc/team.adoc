@@ -341,3 +341,36 @@ include::{snippets}/delete-team/request-headers.adoc[]
 include::{snippets}/delete-team-fail-not-found/http-request.adoc[]
 include::{snippets}/delete-team-fail-not-found/http-response.adoc[]
 ====
+
+=== `GET`: 팀 상세 조회 (회원용)
+
+해당 팀의 상세 정보를 조회합니다.
+**회원 전용 상세 조회 API**입니다.
+현재 시간(투표 기간 여부)에 따라 `isLiked`, `isVoted` 값이 달라집니다.
+
+- 현재가 **투표 기간인 경우**
+    - `isVoted`: 로그인한 사용자의 투표 여부
+    - `isLiked`: `false`
+- 현재가 **투표 기간이 아닌 경우**
+    - `isVoted`: `false`
+    - `isLiked`: 로그인한 사용자의 좋아요 여부
+
+또한, 상세 이미지 조회를 위한 previewIds 배열을 함께 반환합니다.
+
+- 반환된 previewIds로 `/teams/{teamId}/image/{imageId}` 호출
+- posters 조회는 `/teams/{teamId}/image/posters`
+
+.HTTP Request
+include::{snippets}/get-team-detail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-detail/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-detail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-detail/request-headers.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-detail/response-fields.adoc[]

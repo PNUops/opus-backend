@@ -67,7 +67,8 @@ public class Team extends BaseEntity {
     @Builder
     private Team(final String teamName, final String projectName, final String professorName, final String overview,
                  final String githubPath, final String productionPath, final String youTubePath, final Long contestId,
-                 final Long trackId, final Integer itemOrder, final List<TeamMember> teamMembers) {
+                 final Long trackId, final Integer itemOrder, final List<TeamMember> teamMembers,
+                 final List<TeamContestAward> teamAwards) {
         this.teamName = teamName;
         this.projectName = projectName;
         this.professorName = professorName;
@@ -80,7 +81,10 @@ public class Team extends BaseEntity {
         this.itemOrder = itemOrder;
         this.isDeleted = false;
         this.isSubmitted = false;
-        this.teamMembers = teamMembers;
+        this.teamMembers = teamMembers != null ? teamMembers : new ArrayList<>();
+        if (teamAwards != null) {
+            this.teamAwards.addAll(teamAwards);
+        }
     }
 
     public static Team from(final TeamCreateRequest request, final int itemOrder) {
