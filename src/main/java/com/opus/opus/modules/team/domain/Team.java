@@ -83,7 +83,7 @@ public class Team extends BaseEntity {
         this.teamMembers = teamMembers;
     }
 
-    public static Team from(final TeamCreateRequest request) {
+    public static Team from(final TeamCreateRequest request, final int itemOrder) {
         return Team.builder()
                 .contestId(request.contestId())
                 .trackId(request.trackId())
@@ -94,6 +94,7 @@ public class Team extends BaseEntity {
                 .productionPath(request.productionPath())
                 .youTubePath(request.youTubePath())
                 .overview(request.overview())
+                .itemOrder(itemOrder)
                 .teamMembers(new ArrayList<>())
                 .build();
     }
