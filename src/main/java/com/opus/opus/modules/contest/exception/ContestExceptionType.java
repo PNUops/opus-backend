@@ -25,6 +25,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, ".xlsx 파일만 업로드 가능합니다."),
     EMPTY_TEAM_DATA(HttpStatus.BAD_REQUEST, "등록할 팀 데이터가 없습니다."),
     FILE_REQUIRED(HttpStatus.BAD_REQUEST, "파일은 필수입니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 10MB를 초과할 수 없습니다."),
     TEAM_BULK_VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "팀 일괄 등록 유효성 검사에 실패했습니다."),
     ;
 

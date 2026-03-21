@@ -10,6 +10,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_REQUIRED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
@@ -79,25 +80,25 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContestCommandService {
 
     private static final int MAX_CURRENT_CONTEST_COUNT = 2;
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private final ContestRepository contestRepository;
     private final ContestSortRepository contestSortRepository;
     private final FileRepository fileRepository;
     private final ContestTemplateRepository contestTemplateRepository;
+    private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final MemberRepository memberRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
+    private final MemberConvenience memberConvenience;
 
     private final FileStorageUtil fileStorageUtil;
-
-    private final MemberConvenience memberConvenience;
     private final ExcelTeamParser excelTeamParser;
-    private final TeamRepository teamRepository;
-    private final TeamMemberRepository teamMemberRepository;
-    private final MemberRepository memberRepository;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
@@ -347,7 +348,7 @@ public class ContestCommandService {
 
         final List<TeamBulkError> errors = validateRows(rows, contestId);
         if (!errors.isEmpty()) {
-            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS);
+            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
         }
 
         return saveTeams(rows, contestId);
@@ -356,6 +357,10 @@ public class ContestCommandService {
     private void validateFile(final MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new ContestException(FILE_REQUIRED);
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ContestException(FILE_SIZE_EXCEEDED);
         }
 
         final String filename = file.getOriginalFilename();
@@ -464,24 +469,35 @@ public class ContestCommandService {
                         row.rowNumber() + "번째 행: 팀 이름 '" + row.teamName() + "'이 해당 대회에 이미 존재합니다."));
             }
 
-            // 팀장 + 팀원의 학번으로 기존 회원 조회 → 대회 내 중복 소속 검사
-            checkDuplicateMemberInContest(row.leaderEmail(), row.rowNumber(), row.leaderStudentId(),
+            // 팀장 + 팀원의 이메일/학번으로 기존 회원 조회 → 대회 내 중복 소속 검사 + studentId 충돌 검사
+            checkMemberAgainstDatabase(row.leaderEmail(), row.rowNumber(), row.leaderStudentId(),
                     existingMemberIds, errors);
             for (int i = 0; i < row.memberEmails().size(); i++) {
-                checkDuplicateMemberInContest(row.memberEmails().get(i), row.rowNumber(),
+                checkMemberAgainstDatabase(row.memberEmails().get(i), row.rowNumber(),
                         row.memberStudentIds().get(i), existingMemberIds, errors);
             }
         }
     }
 
-    private void checkDuplicateMemberInContest(final String email, final int rowNum, final String studentId,
-                                                final Set<Long> existingMemberIds, final List<TeamBulkError> errors) {
+    private void checkMemberAgainstDatabase(final String email, final int rowNum, final String studentId,
+                                              final Set<Long> existingMemberIds, final List<TeamBulkError> errors) {
+        // 이메일로 기존 회원 조회 → 대회 내 중복 소속 검사
         memberRepository.findByEmail(email).ifPresent(member -> {
             if (existingMemberIds.contains(member.getId())) {
                 errors.add(new TeamBulkError(rowNum,
                         rowNum + "번째 행: " + studentId + " 학생이 해당 대회의 다른 팀에 이미 소속되어 있습니다."));
             }
         });
+
+        // 학번으로 기존 회원 조회 → 이메일이 다른 회원이 같은 학번을 사용하는지 검사
+        if (studentId != null && !studentId.isBlank()) {
+            memberRepository.findByStudentId(studentId).ifPresent(member -> {
+                if (!email.equals(member.getEmail())) {
+                    errors.add(new TeamBulkError(rowNum,
+                            rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
+                }
+            });
+        }
     }
 
     private TeamBulkUploadResponse saveTeams(final List<TeamBulkRowDto> rows, final Long contestId) {

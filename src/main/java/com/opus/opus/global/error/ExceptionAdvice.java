@@ -1,6 +1,8 @@
 package com.opus.opus.global.error;
 
 import com.opus.opus.global.base.BaseException;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -16,6 +18,16 @@ public class ExceptionAdvice {
     public ResponseEntity<ExceptionResponse> methodArgumentNotValidException(final MethodArgumentNotValidException e) {
         final String errorMessage = getErrorMessage(e);
         return ResponseEntity.badRequest().body(new ExceptionResponse(errorMessage));
+    }
+
+    @ExceptionHandler(TeamException.class)
+    public ResponseEntity<?> teamException(final TeamException e) {
+        if (e.getBulkErrors() != null) {
+            return ResponseEntity.status(e.exceptionType().httpStatus())
+                    .body(new TeamBulkErrorResponse(e.getBulkErrors()));
+        }
+        return ResponseEntity.status(e.exceptionType().httpStatus())
+                .body(new ExceptionResponse(e.getMessage()));
     }
 
     @ExceptionHandler(BaseException.class)
