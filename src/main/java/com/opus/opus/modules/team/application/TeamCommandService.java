@@ -22,6 +22,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestTemplateConv
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
+import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
@@ -69,6 +70,7 @@ public class TeamCommandService {
     private final FileRepository fileRepository;
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
+    private final FileConvenience fileConvenience;
 
 
     public TeamCreateResponse createTeam(final TeamCreateRequest request) {
@@ -82,7 +84,15 @@ public class TeamCommandService {
 
     public void deleteTeam(final Long teamId) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
+        deleteTeamImages(teamId);
         teamRepository.delete(team);
+    }
+
+    private void deleteTeamImages(final Long teamId) {
+        deletePosterImage(teamId);
+        deleteThumbnailImage(teamId);
+        final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
+        deletePreviewImages(teamId, previewIds);
     }
 
     public void updateTeam(final Member member, final Long teamId, final TeamUpdateRequest request) {
