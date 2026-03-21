@@ -26,7 +26,6 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
@@ -39,7 +38,6 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
-import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
@@ -69,9 +67,7 @@ public class TeamCommandService {
     private final TeamVoteRepository teamVoteRepository;
     private final TeamLikeRepository teamLikeRepository;
     private final FileRepository fileRepository;
-    private final TeamMemberRepository teamMemberRepository;
     private final ContestTemplateConvenience contestTemplateConvenience;
-    private final MemberConvenience memberConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
 
 
