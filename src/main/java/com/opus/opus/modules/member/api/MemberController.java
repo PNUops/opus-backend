@@ -13,13 +13,21 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
+import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
+import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -98,5 +106,38 @@ public class MemberController {
                                                 @Valid @RequestBody final StudentIdUpdateRequest studentIdUpdateRequest) {
         memberCommandService.updateStudentId(member.getId(), studentIdUpdateRequest);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/members/me/comments")
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    public ResponseEntity<Page<MyCommentResponse>> getMyComments(@LoginMember final Member member,
+                                                                 @RequestParam(defaultValue = "latest") final String sort,
+                                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate startDate,
+                                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate endDate,
+                                                                 @RequestParam(defaultValue = "0") final int page,
+                                                                 @RequestParam(defaultValue = "10") final int size) {
+        final Page<MyCommentResponse> response = memberQueryService.getMyComments(member.getId(), sort, startDate, endDate, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/members/me/likes/preview")
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    public ResponseEntity<List<MyLikePreviewResponse>> getMyLikePreview(@LoginMember final Member member) {
+        final List<MyLikePreviewResponse> response = memberQueryService.getMyLikePreview(member.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/members/me/likes")
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    public ResponseEntity<Page<MyLikedProjectResponse>> getMyLikedProjects(@LoginMember final Member member,
+                                                                           @RequestParam(defaultValue = "latest") final String sort,
+                                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate startDate,
+                                                                           @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate endDate,
+                                                                           @RequestParam(required = false) final Long categoryId,
+                                                                           @RequestParam(required = false) final Long contestId,
+                                                                           @RequestParam(defaultValue = "0") final int page,
+                                                                           @RequestParam(defaultValue = "12") final int size) {
+        final Page<MyLikedProjectResponse> response = memberQueryService.getMyLikedProjects(member.getId(), sort, startDate, endDate, categoryId, contestId, page, size);
+        return ResponseEntity.ok(response);
     }
 }

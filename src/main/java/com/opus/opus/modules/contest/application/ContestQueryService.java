@@ -82,25 +82,6 @@ public class ContestQueryService {
     private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final FileConvenience fileConvenience;
 
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) {
-                curRank++;
-            }
-            prevCount = result.voteCount();
-
-            responseList.add(
-                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
-                            result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
-    }
-
     private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
 
