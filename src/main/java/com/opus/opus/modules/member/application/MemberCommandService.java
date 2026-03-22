@@ -17,6 +17,8 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubPathUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
@@ -243,6 +245,16 @@ public class MemberCommandService {
         memberConvenience.checkIsDuplicateStudentId(request.studentId());
 
         member.updateStudentId(request.studentId());
+    }
+
+    public void updateGithubPath(final Long memberId, final GithubPathUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        member.updateGithubUrl(request.githubPath());
+    }
+
+    public void updateProfileVisibility(final Long memberId, final ProfileVisibilityUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        member.updateProfileVisibility(request.isProfilePublic());
     }
 
     private void unlinkGoogleAccount(final Long memberId) {

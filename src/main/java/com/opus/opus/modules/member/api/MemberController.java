@@ -10,8 +10,11 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequ
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubPathUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -97,6 +100,26 @@ public class MemberController {
     public ResponseEntity<Void> updateStudentId(@LoginMember final Member member,
                                                 @Valid @RequestBody final StudentIdUpdateRequest studentIdUpdateRequest) {
         memberCommandService.updateStudentId(member.getId(), studentIdUpdateRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/members/me")
+    public ResponseEntity<AccountInfoResponse> getAccountInfo(@LoginMember final Member member) {
+        final AccountInfoResponse response = memberQueryService.getAccountInfo(member.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/members/me/github-path")
+    public ResponseEntity<Void> updateGithubPath(@LoginMember final Member member,
+                                                 @Valid @RequestBody final GithubPathUpdateRequest githubPathUpdateRequest) {
+        memberCommandService.updateGithubPath(member.getId(), githubPathUpdateRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/members/me/profile-visibility")
+    public ResponseEntity<Void> updateProfileVisibility(@LoginMember final Member member,
+                                                        @Valid @RequestBody final ProfileVisibilityUpdateRequest profileVisibilityUpdateRequest) {
+        memberCommandService.updateProfileVisibility(member.getId(), profileVisibilityUpdateRequest);
         return ResponseEntity.noContent().build();
     }
 }
