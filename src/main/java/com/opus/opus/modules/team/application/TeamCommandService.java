@@ -79,8 +79,8 @@ public class TeamCommandService {
             contestTrackConvenience.getValidateExistTrack(request.contestId(), request.trackId());
         }
 
-        // 해당 대회의 현재 팀 수 + 1로 순서 자동 부여
-        int nextOrder = teamRepository.countByContestId(request.contestId()) + 1;
+        // 해당 대회의 최대 itemOrder + 1로 순서 자동 부여
+        int nextOrder = teamRepository.findMaxItemOrderByContestId(request.contestId()) + 1;
 
         final Team team = teamRepository.save(Team.from(request, nextOrder));
         return TeamCreateResponse.from(team);
@@ -90,6 +90,14 @@ public class TeamCommandService {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         deleteTeamImages(teamId);
         teamRepository.delete(team);
+        reorderAfterTeamDeletion(team);
+    }
+
+    private void reorderAfterTeamDeletion(final Team team) {
+        final Long contestId = team.getContestId();
+        final int deletedOrder = team.getItemOrder();
+
+        teamRepository.updateItemOrderAfterDeletion(contestId, deletedOrder);
     }
 
     private void deleteTeamImages(final Long teamId) {
