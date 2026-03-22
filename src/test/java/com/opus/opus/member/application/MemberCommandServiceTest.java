@@ -17,6 +17,8 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequ
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubPathUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -282,5 +284,47 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() ->
                 memberCommandService.updateStudentId(socialMember.getId(), request)
         ).isInstanceOf(MemberException.class);
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크가 정상적으로 수정된다.")
+    void GitHub_링크가_정상적으로_수정된다() {
+        final GithubPathUpdateRequest request = new GithubPathUpdateRequest("https://github.com/hongjiyeon");
+
+        memberCommandService.updateGithubPath(teamLeader.getId(), request);
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getGithubUrl()).isEqualTo("https://github.com/hongjiyeon");
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크를 null로 수정할 수 있다.")
+    void GitHub_링크를_null로_수정할_수_있다() {
+        memberCommandService.updateGithubPath(teamLeader.getId(), new GithubPathUpdateRequest("https://github.com/test"));
+        memberCommandService.updateGithubPath(teamLeader.getId(), new GithubPathUpdateRequest(null));
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getGithubUrl()).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 공개 여부가 정상적으로 변경된다.")
+    void 프로필_공개_여부가_정상적으로_변경된다() {
+        final ProfileVisibilityUpdateRequest request = new ProfileVisibilityUpdateRequest(false);
+
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), request);
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getIsProfilePublic()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 비공개에서 공개로 변경할 수 있다.")
+    void 프로필_비공개에서_공개로_변경할_수_있다() {
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), new ProfileVisibilityUpdateRequest(false));
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), new ProfileVisibilityUpdateRequest(true));
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getIsProfilePublic()).isTrue();
     }
 }
