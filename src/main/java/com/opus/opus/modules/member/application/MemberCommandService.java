@@ -5,6 +5,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
@@ -65,6 +66,10 @@ public class MemberCommandService {
     private static final String SIGNIN_EMAIL_AUTH_KEY_PREFIX = "signin:email:auth:";
     private static final String SIGNIN_EMAIL_VERIFIED_KEY_PREFIX = "signin:email:verified:";
 
+    private static final int MAX_AUTH_ATTEMPTS = 5;
+    private static final long AUTH_ATTEMPT_TTL = 1L;
+    private static final String EMAIL_AUTH_COUNT_KEY_PREFIX = "email:auth:count:";
+
     private static final String VERIFIED_VALUE = "true";
 
     public void signUp(final SignUpRequest request) {
@@ -86,6 +91,7 @@ public class MemberCommandService {
     public void signUpEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
         memberConvenience.validatePusanDomain(email);
+        checkEmailAuthLimit(email);
 
         final String code = generateRandomAuthCode();
 
@@ -116,6 +122,9 @@ public class MemberCommandService {
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
+        memberConvenience.validateExistMemberByEmail(email);
+        checkEmailAuthLimit(email);
+
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
         checkGeneralMember(member);
 
@@ -259,6 +268,15 @@ public class MemberCommandService {
     private void validateStudentIdUpdatable(final Member member) {
         if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
             throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
+        }
+    }
+
+    private void checkEmailAuthLimit(final String email) {
+        final String key = EMAIL_AUTH_COUNT_KEY_PREFIX + email;
+        final Long count = authRedisUtil.incrementWithTtl(key, AUTH_ATTEMPT_TTL, TimeUnit.DAYS);
+
+        if (count > MAX_AUTH_ATTEMPTS) {
+            throw new MemberException(EMAIL_AUTH_LIMIT_EXCEEDED);
         }
     }
 }
