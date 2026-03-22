@@ -2,6 +2,9 @@ package com.opus.opus.global.security;
 
 import com.opus.opus.global.security.handler.CustomAccessDeniedHandler;
 import com.opus.opus.global.security.handler.CustomAuthenticationEntryPoint;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2LoginFailureHandler;
+import com.opus.opus.global.security.oauth2.GoogleOAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +18,9 @@ import org.springframework.security.config.annotation.web.configurers.FormLoginC
 import org.springframework.security.config.annotation.web.configurers.HttpBasicConfigurer;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -27,6 +33,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final GoogleOAuth2UserService googleOAuth2UserService;
+    private final GoogleOAuth2LoginSuccessHandler googleOAuth2LoginSuccessHandler;
+    private final GoogleOAuth2LoginFailureHandler googleOAuth2LoginFailureHandler;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,9 +51,17 @@ public class SecurityConfig {
                 .httpBasic(HttpBasicConfigurer::disable)
                 .formLogin(FormLoginConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/sign-up/**", "/sign-in/**", "/oauth/**").permitAll()
+                        .requestMatchers("/sign-up/**", "/sign-in/**", "/oauth2/set-redirect").permitAll()
                         .requestMatchers(HttpMethod.GET, "/teams/**", "/contests/**", "/notices/**").permitAll()
                         .anyRequest().hasAnyRole("회원", "관리자", "팀장", "팀원")
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(customAuthorizationRequestResolver())
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo.userService(googleOAuth2UserService))
+                        .successHandler(googleOAuth2LoginSuccessHandler)
+                        .failureHandler(googleOAuth2LoginFailureHandler)
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .accessDeniedHandler(customAccessDeniedHandler)
@@ -52,5 +70,18 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public OAuth2AuthorizationRequestResolver customAuthorizationRequestResolver() {
+        DefaultOAuth2AuthorizationRequestResolver resolver =
+                new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
+        resolver.setAuthorizationRequestCustomizer(customizer ->
+                customizer.additionalParameters(params -> {
+                    params.put("access_type", "offline");
+                    params.put("prompt", "consent");
+                })
+        );
+        return resolver;
     }
 }

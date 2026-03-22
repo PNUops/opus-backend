@@ -6,6 +6,7 @@ import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestTrackException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,5 +27,9 @@ public class ContestTrackConvenience {
     public ContestTrack getValidateExistTrack(final Long contestId, final Long trackId) {
         return contestTrackRepository.findByIdAndContestId(trackId, contestId)
                 .orElseThrow(() -> new ContestTrackException(NOT_FOUND_TRACK));
+    }
+
+    public List<ContestTrack> getValidateExistTracks(final Long contestId) {
+        return contestTrackRepository.findAllByContestId(contestId);
     }
 }
