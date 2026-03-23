@@ -5,7 +5,7 @@ import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 
 public record TeamMemberResponse(
-        Long teamMemberId,
+        Long memberId,
         String teamMemberName,
         TeamMemberRoleType roleType
 ) {
