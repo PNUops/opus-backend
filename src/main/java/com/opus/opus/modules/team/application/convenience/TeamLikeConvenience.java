@@ -21,7 +21,7 @@ public class TeamLikeConvenience {
     // 1. 대회 내 모든 팀 맵 조회
     public Map<Long, Boolean> getLikeMapIfInPeriod(final Long contestId, final Member member,
                                                    final boolean isVotingPeriod) {
-        return (member != null && isVotingPeriod)
+        return (member != null && !isVotingPeriod)
                 ? getLikeMapByContestId(contestId, member)
                 : Map.of();
     }

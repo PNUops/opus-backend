@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.application.dto.response;
+package com.opus.opus.modules.team.application.dto.response;
 
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse.AwardInfo;
 import com.opus.opus.modules.team.domain.Team;

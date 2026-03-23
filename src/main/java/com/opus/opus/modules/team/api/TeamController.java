@@ -1,7 +1,6 @@
 package com.opus.opus.modules.team.api;
 
 import com.opus.opus.global.security.annotation.LoginMember;
-import com.opus.opus.modules.contest.application.dto.response.TeamDetailResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.TeamQueryService;
@@ -12,6 +11,7 @@ import com.opus.opus.modules.team.application.dto.request.TeamLikeToggleRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamDetailResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import jakarta.validation.Valid;
@@ -53,7 +53,7 @@ public class TeamController {
     @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
     @PatchMapping("/{teamId}")
     public ResponseEntity<Void> updateTeam(@PathVariable final Long teamId,
-                                           @RequestBody final TeamUpdateRequest request,
+                                           @RequestBody @Valid final TeamUpdateRequest request,
                                            @LoginMember final Member member) {
         teamCommandService.updateTeam(member, teamId, request);
         return ResponseEntity.noContent().build();
