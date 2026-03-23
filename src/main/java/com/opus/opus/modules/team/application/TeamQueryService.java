@@ -74,8 +74,9 @@ public class TeamQueryService {
     public TeamDetailResponse getTeamDetail(final Long teamId, final Member member) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
-        final ContestTrack track = contestTrackConvenience.getValidateExistTrack(team.getContestId(),
-                team.getTrackId());
+        final ContestTrack track = team.getTrackId() != null
+                ? contestTrackConvenience.getValidateExistTrack(team.getContestId(), team.getTrackId())
+                : null;
 
         final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
         final List<TeamContestAwardResponse.AwardInfo> awards = getAwardInfos(team);

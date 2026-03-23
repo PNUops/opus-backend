@@ -118,14 +118,23 @@ public class TeamCommandService {
     }
 
     private void updateTeamByAdmin(final Team team, final TeamUpdateRequest request) {
+        validateContestIfChanged(team, request);
         validateTrackInContestIfChanged(team, request);
         team.update(request);
     }
 
+    private void validateContestIfChanged(final Team team, final TeamUpdateRequest request) {
+        if (request.contestId() != null && !request.contestId().equals(team.getContestId())) {
+            contestConvenience.validateExistContest(request.contestId());
+        }
+    }
+
     private void validateTrackInContestIfChanged(final Team team, final TeamUpdateRequest request) {
-        final Long contestId = request.contestId() != null ? request.contestId() : team.getContestId();
-        final Long trackId = request.trackId() != null ? request.trackId() : team.getTrackId();
-        contestTrackConvenience.getValidateExistTrack(contestId, trackId);
+        final Long contestIdToValidate = request.contestId() != null ? request.contestId() : team.getContestId();
+        final Long trackIdToValidate = request.trackId() != null ? request.trackId() : team.getTrackId();
+        if (trackIdToValidate != null) {
+            contestTrackConvenience.getValidateExistTrack(contestIdToValidate, trackIdToValidate);
+        }
     }
 
     private void updateTeamByMember(final Long memberId, final Team team, final TeamUpdateRequest request) {

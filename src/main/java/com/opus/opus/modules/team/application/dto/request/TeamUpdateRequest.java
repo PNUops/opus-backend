@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.application.dto.request;
 
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public record TeamUpdateRequest(
         Long contestId,
@@ -27,6 +28,7 @@ public record TeamUpdateRequest(
 
         String productionPath,
 
+        @Size(max = 3000, message = "overview는 최대 3000자까지 가능합니다.")
         String overview
 ) {
 }
