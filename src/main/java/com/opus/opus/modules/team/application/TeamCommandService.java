@@ -148,17 +148,21 @@ public class TeamCommandService {
     private void validateRequiredField(final Team team, final TeamUpdateRequest request) {
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(team.getContestId());
 
-        validateField(template.getProjectNameRequired(), request.projectName());
-        validateField(template.getTeamNameRequired(), request.teamName());
-        validateField(template.getProfessorRequired(), request.professorName());
-        validateField(template.getGithubPathRequired(), request.githubPath());
-        validateField(template.getYouTubePathRequired(), request.youTubePath());
-        validateField(template.getProductionPathRequired(), request.productionPath());
-        validateField(template.getOverviewRequired(), request.overview());
+        validateField(template.getTrackRequired(),
+                request.trackId() != null ? request.trackId().toString() : null,
+                team.getTrackId() != null ? team.getTrackId().toString() : null);
+        validateField(template.getProjectNameRequired(), request.projectName(), team.getProjectName());
+        validateField(template.getTeamNameRequired(), request.teamName(), team.getTeamName());
+        validateField(template.getProfessorRequired(), request.professorName(), team.getProfessorName());
+        validateField(template.getGithubPathRequired(), request.githubPath(), team.getGithubPath());
+        validateField(template.getYouTubePathRequired(), request.youTubePath(), team.getYouTubePath());
+        validateField(template.getProductionPathRequired(), request.productionPath(), team.getProductionPath());
+        validateField(template.getOverviewRequired(), request.overview(), team.getOverview());
     }
 
-    private void validateField(final boolean required, final String requestValue) {
-        if (required && requestValue == null) {
+    private void validateField(final boolean required, final String requestValue, final String currentValue) {
+        final String resolvedValue = requestValue != null ? requestValue : currentValue;
+        if (required && (resolvedValue == null || resolvedValue.isBlank())) {
             throw new TeamException(REQUIRED_FIELD_MISSING);
         }
     }
