@@ -1,6 +1,10 @@
 package com.opus.opus.member.application;
 
+import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -8,10 +12,20 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VER
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -22,6 +36,7 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import org.springframework.mock.web.MockMultipartFile;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -42,6 +57,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private FileRepository fileRepository;
+
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
 
@@ -49,6 +67,12 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void setUp() {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
+
+        authRedisUtil.delete("email:auth:count:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:verified:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:verified:" + emailAuthRequest.email());
     }
 
     @Test
@@ -67,6 +91,40 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             memberCommandService.signUpEmailAuth(notPusanEmailRequest);
         }).isInstanceOf(MemberException.class).hasMessage(NOT_PUSAN_UNIVERSITY_EMAIL.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입 이메일 인증 코드 발송을 5회 이상 요청하면 24시간 동안 인증 불가하다.")
+    void 회원가입_이메일_인증_코드_발송을_5회_이상_요청하면_24시간_동안_인증_불가하다() {
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signUpEmailAuth(emailAuthRequest);
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입과 비밀번호 변경 이메일 인증 코드 발송 제한 count는 합계 계산된다.")
+    void 회원가입과_비밀번호_변경_이메일_인증_코드_발송_제한_count는_합계_계산된다() {
+        final String newMemberEmail = "example100@pusan.ac.kr";
+        authRedisUtil.delete("email:auth:count:" + newMemberEmail);
+
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        memberRepository.save(createMemberWithUniqueNum(100));
+
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
     }
 
     @Test
@@ -282,5 +340,69 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() ->
                 memberCommandService.updateStudentId(socialMember.getId(), request)
         ).isInstanceOf(MemberException.class);
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없어도 새 이미지 저장이 호출된다.")
+    void 기존_프로필_이미지가_없어도_새_이미지_저장이_호출된다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 있으면 새 이미지 저장 후 기존 이미지 삭제가 호출된다.")
+    void 기존_프로필_이미지가_있으면_새_이미지_저장_후_기존_이미지_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+        final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없으면 이미지 변경 시 삭제가 호출되지 않는다.")
+    void 기존_프로필_이미지가_없으면_이미지_변경_시_삭제가_호출되지_않는다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 있으면 삭제가 호출된다.")
+    void 프로필_이미지가_있으면_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 없으면 삭제가 호출되지 않는다.")
+    void 프로필_이미지가_없으면_삭제가_호출되지_않는다() {
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
     }
 }

@@ -14,7 +14,7 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
-import com.opus.opus.team.FileFixture;
+import com.opus.opus.file.FileFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,20 +1,31 @@
 package com.opus.opus.member.application;
 
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.file.FileFixture;
+import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 
 public class MemberQueryServiceTest extends IntegrationTest {
 
@@ -23,6 +34,12 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private FileRepository fileRepository;
+
+    @Autowired
+    private FileStorageUtil fileStorageUtil;
 
     private Member member;
 
@@ -47,5 +64,34 @@ public class MemberQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             memberQueryService.getMyEmail(notExistMemberEmail);
         }).isInstanceOf(MemberException.class).hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 있으면 이미지 응답이 반환된다.")
+    void 프로필_이미지가_있으면_이미지_응답이_반환된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(member.getId()));
+        savedFile.updateIsWebpConverted(true);
+        fileRepository.saveAndFlush(savedFile);
+
+        final Resource resource = new ByteArrayResource("content".getBytes());
+        given(fileStorageUtil.findFileAndType(savedFile.getId()))
+                .willReturn(new Pair<>(resource, "image/webp"));
+
+        // when
+        final ImageResponse response = memberQueryService.getProfileImage(member);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.contentType()).isEqualTo("image/webp");
+    }
+
+    @Test
+    @DisplayName("[실패] 프로필 이미지가 없으면 예외가 발생한다.")
+    void 프로필_이미지가_없으면_예외가_발생한다() {
+        // when & then
+        assertThatThrownBy(() -> memberQueryService.getProfileImage(member))
+                .isInstanceOf(FileException.class)
+                .hasMessage(NOT_EXISTS_MATCHING_IMAGE_ID.errorMessage());
     }
 }

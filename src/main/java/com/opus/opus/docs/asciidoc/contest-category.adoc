@@ -87,3 +87,16 @@ include::{snippets}/get-all-contest-category/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-all-contest-category/response-fields.adoc[]
+
+== `GET`: 메인페이지 사이드바 조회
+
+NOTE: 모든 카테고리를 대회 목록과 함께 반환합니다. 대회가 없는 카테고리는 `contests` 가 빈 배열로 반환됩니다.
+
+.HTTP Request
+include::{snippets}/get-sidebar/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-sidebar/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-sidebar/response-fields.adoc[]
