@@ -545,3 +545,75 @@ include::{snippets}/update-contest-template-fail-not-found/path-parameters.adoc[
 include::{snippets}/update-contest-template-fail-not-found/http-request.adoc[]
 include::{snippets}/update-contest-template-fail-not-found/http-response.adoc[]
 ====
+
+== 대회 전체 팀 조회
+
+=== `GET`: 대회의 팀 목록 조회 (비회원용)
+
+NOTE: 비회원용 메인 페이지 API입니다. `isLiked`와 `isVoted` 값이 항상 `false` 입니다.
+
+.Path Parameters
+include::{snippets}/get-contest-team-summaries-public/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-team-summaries-public/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-team-summaries-public/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-contest-team-summaries-public/response-fields.adoc[]
+
+=== `GET`: 대회의 팀 목록 조회 (회원용 - 미투표 기간)
+
+NOTE: 회원만 접근 가능한 메인 페이지용 API입니다. 미투표 기간에는 로그인한 사용자의 `isLiked` 여부가 포함됩니다.
+
+.Path Parameters
+include::{snippets}/get-contest-team-summaries-member-non-voting/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-contest-team-summaries-member-non-voting/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-team-summaries-member-non-voting/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-team-summaries-member-non-voting/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-contest-team-summaries-member-non-voting/response-fields.adoc[]
+
+=== `GET`: 대회의 팀 목록 조회 (회원용 - 투표 기간)
+
+NOTE: 회원만 접근 가능한 메인 페이지용 API입니다. 투표 기간에는 로그인한 사용자의 `isVoted` 여부가 포함됩니다.
+
+.Path Parameters
+include::{snippets}/get-contest-team-summaries-member-voting/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-contest-team-summaries-member-voting/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-team-summaries-member-voting/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-team-summaries-member-voting/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-contest-team-summaries-member-voting/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회 ID
+
+[%collapsible]
+====
+.HTTP Request
+include::{snippets}/get-contest-team-summaries-fail-contest-not-found/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-team-summaries-fail-contest-not-found/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-contest-team-summaries-fail-contest-not-found/path-parameters.adoc[]
+====

@@ -1,22 +1,22 @@
 USE opus;
 
-DROP TABLE IF EXISTS `contest`;
-DROP TABLE IF EXISTS `contest_award`;
-DROP TABLE IF EXISTS `contest_category`;
-DROP TABLE IF EXISTS `contest_template`;
-DROP TABLE IF EXISTS `contest_track`;
-DROP TABLE IF EXISTS `contest_sort`;
-DROP TABLE IF EXISTS `file`;
-DROP TABLE IF EXISTS `member`;
-DROP TABLE IF EXISTS `member_roles`;
-DROP TABLE IF EXISTS `notice`;
-DROP TABLE IF EXISTS `team`;
-DROP TABLE IF EXISTS `team_comment`;
-DROP TABLE IF EXISTS `team_contest_award`;
-DROP TABLE IF EXISTS `team_like`;
-DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_vote`;
+DROP TABLE IF EXISTS `team_like`;
+DROP TABLE IF EXISTS `team_comment`;
+DROP TABLE IF EXISTS `team_contest_award`;
+DROP TABLE IF EXISTS `team_member`;
+DROP TABLE IF EXISTS `member_roles`;
+DROP TABLE IF EXISTS `team`;
+DROP TABLE IF EXISTS `contest_sort`;
+DROP TABLE IF EXISTS `contest_track`;
+DROP TABLE IF EXISTS `contest_template`;
+DROP TABLE IF EXISTS `contest_award`;
+DROP TABLE IF EXISTS `file`;
+DROP TABLE IF EXISTS `notice`;
+DROP TABLE IF EXISTS `member`;
+DROP TABLE IF EXISTS `contest_category`;
+DROP TABLE IF EXISTS `contest`;
 
 CREATE TABLE `contest` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -114,11 +114,18 @@ CREATE TABLE `member` (
   `email` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `student_id` varchar(255) NOT NULL,
+  `password` varchar(255) NULL,
+  `student_id` varchar(255) NULL,
+  `social_type` varchar(20) NULL,
+  `social_id` varchar(255) NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_member_email` (`email`),
-  UNIQUE KEY `uk_member_student_id` (`student_id`)
+  UNIQUE KEY `uk_member_student_id` (`student_id`),
+    CONSTRAINT `ck_member_login_type` CHECK (
+        (social_type IS NULL AND social_id IS NULL AND student_id IS NOT NULL AND password IS NOT NULL)
+        OR
+        (social_type IS NOT NULL AND social_id IS NOT NULL AND student_id IS NULL AND password IS NULL)
+    )
 );
 
 CREATE TABLE `member_roles` (
