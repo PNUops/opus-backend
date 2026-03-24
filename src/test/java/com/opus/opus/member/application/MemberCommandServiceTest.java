@@ -422,12 +422,37 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 소셜_회원_탈퇴_시_DB에서_조회되지_않는다() {
         // given
         final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social@pusan.ac.kr", "google-abc123"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
 
         // when
         memberCommandService.withdraw(socialMember);
 
         // then
         assertThat(memberRepository.findById(socialMember.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 일반 회원 탈퇴 시 Google 토큰 해제를 시도하지 않는다.")
+    void 일반_회원_탈퇴_시_Google_토큰_해제를_시도하지_않는다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        verify(googleTokenManager, never()).get(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 소셜 회원 탈퇴 시 Google 토큰 해제를 시도한다.")
+    void 소셜_회원_탈퇴_시_Google_토큰_해제를_시도한다() {
+        // given
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social2@pusan.ac.kr", "google-def456"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
+
+        // when
+        memberCommandService.withdraw(socialMember);
+
+        // then
+        verify(googleTokenManager, times(1)).get(socialMember.getId());
     }
 
     @Test
