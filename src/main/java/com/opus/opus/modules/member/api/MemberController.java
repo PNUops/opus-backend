@@ -7,6 +7,8 @@ import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
+import com.opus.opus.modules.member.application.StatisticsQueryService;
+import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -16,8 +18,6 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
-import com.opus.opus.global.security.annotation.LoginMember;
-import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
@@ -48,6 +48,7 @@ public class MemberController {
 
     private final MemberCommandService memberCommandService;
     private final MemberQueryService memberQueryService;
+    private final StatisticsQueryService statisticsQueryService;
 
     @PostMapping("/sign-up")
     public ResponseEntity<Void> signUp(@Valid @RequestBody final SignUpRequest signUpRequest) {
@@ -110,6 +111,12 @@ public class MemberController {
                                                 @Valid @RequestBody final StudentIdUpdateRequest studentIdUpdateRequest) {
         memberCommandService.updateStudentId(member.getId(), studentIdUpdateRequest);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/statistics/summary")
+    public ResponseEntity<StatisticsSummaryResponse> getStatisticsSummary() {
+        final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/members/me/images/profile")

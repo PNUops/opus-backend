@@ -11,6 +11,8 @@ public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
 
     Optional<TeamLike> findByMemberIdAndTeam(Long memberId, Team team);
 
+    long countByIsLikedTrueAndTeamIsDeletedFalse();
+
     @Query("""
                 SELECT tl
                 FROM TeamLike tl
