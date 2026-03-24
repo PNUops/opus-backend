@@ -6,6 +6,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,9 +33,11 @@ public class ContestCategoryQueryService {
     public List<SidebarResponse> getSidebar() {
         final List<ContestCategory> categories = contestCategoryRepository.findAll();
         final Map<Long, List<Contest>> contestsByCategory = contestRepository.findAll().stream()
+                .sorted(Comparator.comparing(Contest::getCreatedAt))
                 .collect(Collectors.groupingBy(Contest::getCategoryId));
 
         return categories.stream()
+                .sorted(Comparator.comparing(ContestCategory::getCreatedAt))
                 .map(category -> SidebarResponse.of(category, contestsByCategory.getOrDefault(category.getId(), List.of())))
                 .toList();
     }
