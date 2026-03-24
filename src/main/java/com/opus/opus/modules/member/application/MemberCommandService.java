@@ -264,6 +264,20 @@ public class MemberCommandService {
         member.updateStudentId(request.studentId());
     }
 
+    public void withdraw(final Member member) {
+        deleteMember(member);
+    }
+
+    public void withdrawByAdmin(final Long memberId) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        deleteMember(member);
+    }
+
+    private void deleteMember(final Member member) {
+        unlinkGoogleAccount(member.getId());
+        memberRepository.delete(member);
+    }
+
     private void unlinkGoogleAccount(final Long memberId) {
         googleTokenManager.get(memberId).ifPresent(token -> {
             try {
