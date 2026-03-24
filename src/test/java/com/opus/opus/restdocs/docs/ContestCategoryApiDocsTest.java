@@ -23,6 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestCategoryRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCategoryResponse;
+import com.opus.opus.modules.contest.application.dto.response.SidebarResponse;
+import com.opus.opus.modules.contest.application.dto.response.SidebarResponse.ContestItem;
 import com.opus.opus.modules.contest.exception.ContestCategoryException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -144,6 +146,34 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].categoryId", "카테고리 ID"),
                                 stringFieldWithPath("[].categoryName", "카테고리 이름"),
                                 dateTimeFieldWithPath("[].updatedAt", "수정 일시")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 사이드바 조회는 카테고리별 대회 목록을 반환한다.")
+    void 사이드바_조회는_카테고리별_대회_목록을_반환한다() throws Exception {
+        final List<SidebarResponse> responses = List.of(
+                new SidebarResponse(1L, "창의융합 SW해커톤", List.of(
+                        new ContestItem(4L, "제6회 PNU 창의융합 SW해커톤", true),
+                        new ContestItem(3L, "제5회 PNU 창의융합 SW해커톤", false)
+                )),
+                new SidebarResponse(2L, "졸업과제", List.of())
+        );
+
+        when(contestCategoryQueryService.getSidebar()).thenReturn(responses);
+
+        mockMvc.perform(get("/categories/sidebar"))
+                .andExpect(status().isOk())
+                .andDo(document("get-sidebar",
+                        responseFields(
+                                arrayFieldWithPath("[]", "카테고리 목록"),
+                                numberFieldWithPath("[].categoryId", "카테고리 ID"),
+                                stringFieldWithPath("[].categoryName", "카테고리 이름"),
+                                arrayFieldWithPath("[].contests[]", "해당 카테고리의 대회 목록 (대회가 없으면 빈 배열)"),
+                                numberFieldWithPath("[].contests[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contests[].contestName", "대회 이름"),
+                                booleanFieldWithPath("[].contests[].isCurrent", "현재 진행 중인 대회 여부")
                         )
                 ));
     }

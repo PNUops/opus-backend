@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
 import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCategoryRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCategoryResponse;
+import com.opus.opus.modules.contest.application.dto.response.SidebarResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,12 @@ public class ContestCategoryController {
     @GetMapping
     public ResponseEntity<List<ContestCategoryResponse>> getAllContestCategories() {
         List<ContestCategoryResponse> response = contestCategoryQueryService.getAllContestCategories();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/sidebar")
+    public ResponseEntity<List<SidebarResponse>> getSidebar() {
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
         return ResponseEntity.ok(response);
     }
 }
