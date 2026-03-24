@@ -274,7 +274,9 @@ public class MemberCommandService {
     }
 
     private void deleteMember(final Member member) {
-        unlinkGoogleAccount(member.getId());
+        if (member.isSocialMember()) {
+            unlinkGoogleAccount(member.getId());
+        }
         memberRepository.delete(member);
     }
 
