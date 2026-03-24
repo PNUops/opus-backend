@@ -1,5 +1,7 @@
 package com.opus.opus.modules.member.application;
 
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
@@ -15,6 +17,8 @@ import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -37,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
@@ -45,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberCommandService {
 
     private final MemberRepository memberRepository;
+    private final FileRepository fileRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -282,5 +288,17 @@ public class MemberCommandService {
         if (count > MAX_AUTH_ATTEMPTS) {
             throw new MemberException(EMAIL_AUTH_LIMIT_EXCEEDED);
         }
+    }
+
+    public void modifyProfileImage(final Member member, final MultipartFile image) {
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
+                member.getId(), MEMBER, PROFILE);
+        fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+    }
+
+    public void deleteProfileImage(final Member member) {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
+                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 }
