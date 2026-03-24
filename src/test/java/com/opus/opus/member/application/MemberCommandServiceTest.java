@@ -1,6 +1,8 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
