@@ -21,7 +21,9 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
@@ -48,6 +50,7 @@ public class TeamCommandService {
     private final FileStorageUtil fileStorageUtil;
 
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final ContestConvenience contestConvenience;
 
     private final TeamVoteRepository teamVoteRepository;
@@ -55,40 +58,46 @@ public class TeamCommandService {
     private final FileRepository fileRepository;
 
 
-    public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
+    public void savePreviewImages(final Long teamId, final List<MultipartFile> images, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
             fileStorageUtil.storeFile(image, teamId, TEAM, PREVIEW);
         }
     }
 
-    public void deletePreviewImages(final Long teamId, final List<Long> ids) {
+    public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         ids.forEach(fileStorageUtil::deleteFile);
     }
 
-    public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
+    public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
-    public void deleteThumbnailImage(final Long teamId) {
+    public void deleteThumbnailImage(final Long teamId, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         deleteIfExists(teamId, THUMBNAIL);
     }
 
-    public void savePosterImage(final Long teamId, final MultipartFile image) {
+    public void savePosterImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
-    public void deletePosterImage(final Long teamId) {
+    public void deletePosterImage(final Long teamId, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        validateTeamMemberUnlessAdmin(teamId, member);
         deleteIfExists(teamId, POSTER);
     }
 
@@ -209,6 +218,12 @@ public class TeamCommandService {
         long savedCount = fileRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
+        }
+    }
+
+    private void validateTeamMemberUnlessAdmin(final Long teamId, final Member member) {
+        if (!member.isAdmin()) {
+            teamMemberConvenience.getValidateExistTeamMember(teamId, member.getId());
         }
     }
 }
