@@ -115,7 +115,7 @@ public class TeamQueryService {
                 .distinct()
                 .toList();
 
-        final Map<Long, Member> memberMap = memberConvenience.findAllById(memberIds)
+        final Map<Long, Member> memberMap = memberConvenience.findAllByIdIncludingDeleted(memberIds)
                 .stream()
                 .collect(Collectors.toMap(Member::getId, member -> member));
 
