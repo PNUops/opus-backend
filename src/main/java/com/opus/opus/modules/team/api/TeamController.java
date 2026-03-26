@@ -50,7 +50,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @PatchMapping("/{teamId}")
     public ResponseEntity<Void> updateTeam(@PathVariable final Long teamId,
                                            @RequestBody @Valid final TeamUpdateRequest request,
