@@ -30,16 +30,12 @@ public class JwtProvider {
     private static final Logger log = LoggerFactory.getLogger(JwtProvider.class);
     private static final String ROLES = "roles";
     private static final String NAME = "name";
-
+    private final MemberDetailsService memberDetailsService;
     @Value("${spring.jwt.secret}")
     private String secretKey;
-
     @Value("${spring.jwt.expire-length}")
     private long expireTimeMilliSecond;
-
     private Key key;
-
-    private final MemberDetailsService memberDetailsService;
 
     @PostConstruct
     protected void init() {
@@ -63,6 +59,7 @@ public class JwtProvider {
 
     public Authentication getAuthentication(final String token) {
         final String memberId = extractSubject(token);
+        // NOTE: 팀장/팀원 권한이 필요한 API는 @Secured에서 ROLE_회원만 검증하고, 서비스 레이어에서 해당 팀의 팀장/팀원인지 검증한다.
         final UserDetails userDetails = memberDetailsService.loadUserByUsername(memberId);
         return new UsernamePasswordAuthenticationToken(
                 userDetails,
@@ -116,4 +113,3 @@ public class JwtProvider {
         return getClaim(token).getSubject();
     }
 }
-
