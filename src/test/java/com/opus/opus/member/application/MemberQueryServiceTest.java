@@ -210,8 +210,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 투표 기간이 지난 대회의 투표도 조회할 수 있다.")
-    void 투표_기간이_지난_대회의_투표도_조회할_수_있다() {
+    @DisplayName("[성공] 투표 기간이 아닌 대회의 투표는 조회되지 않는다.")
+    void 투표_기간이_아닌_대회의_투표는_조회되지_않는다() {
         final Contest contest = contestRepository.save(ContestFixture.createContest());
         contest.updateVotePeriod(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1));
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), null));
@@ -219,8 +219,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).contestId()).isEqualTo(contest.getId());
+        assertThat(responses).isEmpty();
     }
 
     private void saveTeamMember(final Team team) {

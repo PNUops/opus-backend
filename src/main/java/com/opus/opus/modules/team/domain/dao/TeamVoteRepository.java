@@ -36,6 +36,7 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             JOIN tv.team t
             JOIN Contest c ON c.id = t.contestId
             WHERE tv.memberId = :memberId AND tv.isVoted = true
+              AND CURRENT_TIMESTAMP BETWEEN c.voteStartAt AND c.voteEndAt
             ORDER BY tv.createdAt DESC
             """)
     List<MyVoteResponse> findMyVotes(Long memberId);
