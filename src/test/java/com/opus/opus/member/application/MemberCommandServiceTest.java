@@ -4,6 +4,7 @@ import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
@@ -404,6 +405,76 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         // then
         verify(fileStorageUtil, never()).deleteFile(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 일반 회원 탈퇴 시 DB에서 조회되지 않는다.")
+    void 일반_회원_탈퇴_시_DB에서_조회되지_않는다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 소셜 회원 탈퇴 시 DB에서 조회되지 않는다.")
+    void 소셜_회원_탈퇴_시_DB에서_조회되지_않는다() {
+        // given
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social@pusan.ac.kr", "google-abc123"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
+
+        // when
+        memberCommandService.withdraw(socialMember);
+
+        // then
+        assertThat(memberRepository.findById(socialMember.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 일반 회원 탈퇴 시 Google 토큰 해제를 시도하지 않는다.")
+    void 일반_회원_탈퇴_시_Google_토큰_해제를_시도하지_않는다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        verify(googleTokenManager, never()).get(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 소셜 회원 탈퇴 시 Google 토큰 해제를 시도한다.")
+    void 소셜_회원_탈퇴_시_Google_토큰_해제를_시도한다() {
+        // given
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social2@pusan.ac.kr", "google-def456"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
+
+        // when
+        memberCommandService.withdraw(socialMember);
+
+        // then
+        verify(googleTokenManager, times(1)).get(socialMember.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 해당 회원은 DB에서 조회되지 않는다.")
+    void 관리자_강제_탈퇴_시_해당_회원은_DB에서_조회되지_않는다() {
+        // when
+        memberCommandService.withdrawByAdmin(teamLeader.getId());
+
+        // then
+        assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 예외가 발생한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_예외가_발생한다() {
+        // given
+        final Long nonExistentId = 999999L;
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(nonExistentId))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }
 
     @Test

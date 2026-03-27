@@ -1,10 +1,11 @@
 package com.opus.opus.helper;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.CacheRedisUtil;
 import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
-import com.opus.opus.global.util.AuthRedisUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +33,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     private MailUtil mailUtil;
+
+    @MockitoBean
+    protected GoogleTokenManager googleTokenManager;
 
     @MockitoBean
     protected FileStorageUtil fileStorageUtil;

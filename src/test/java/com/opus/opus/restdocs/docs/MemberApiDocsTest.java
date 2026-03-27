@@ -3,6 +3,7 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,7 +24,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -41,13 +41,17 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -449,6 +453,125 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 탈퇴가 정상적으로 이루어진다.")
+    void 회원_탈퇴가_정상적으로_이루어진다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
+    void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 404를 반환한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-withdraw-member-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 프로젝트 목록을 조회할 수 있다.")
+    void 나의_프로젝트_목록을_조회할_수_있다() throws Exception {
+        final List<MyProjectResponse> responses = List.of(
+                new MyProjectResponse(
+                        1L, "제6회창의융합해커톤대회", 10L, "PNUops", "SW성과관리시스템", "AI/빅데이터",
+                        List.of(new AwardInfo("대상", "#FF0000"))
+                ),
+                new MyProjectResponse(
+                        2L, "제5회창의융합해커톤대회", 22L, "해커톤의신", "PNUDataKing", null,
+                        List.of()
+                )
+        );
+
+        when(memberQueryService.getMyProjects(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/projects")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-projects",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙(분과)명").optional(),
+                                arrayFieldWithPath("[].awards", "수상 내역 리스트"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 투표 기록을 조회할 수 있다.")
+    void 나의_투표_기록을_조회할_수_있다() throws Exception {
+        final List<MyVoteResponse> responses = List.of(
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 5L, "Team Alpha", "알파 프로젝트"),
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 12L, "Team Beta", "베타 프로젝트")
+        );
+
+        when(memberQueryService.getMyVotes(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/votes")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-votes",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명")
                         )
                 ));
     }

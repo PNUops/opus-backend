@@ -3,6 +3,7 @@ package com.opus.opus.modules.team.application.convenience;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
@@ -26,5 +27,12 @@ public class TeamMemberConvenience {
     public TeamMember getValidateExistTeamMember(final Long teamId, final Long memberId) {
         return teamMemberRepository.findByTeamIdAndMemberId(teamId, memberId)
                 .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
+    }
+
+
+    public void validateTeamMemberUnlessAdmin(final Long teamId, final Member member) {
+        if (!member.isAdmin()) {
+            getValidateExistTeamMember(teamId, member.getId());
+        }
     }
 }

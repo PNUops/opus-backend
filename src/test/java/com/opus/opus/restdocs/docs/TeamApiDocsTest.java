@@ -138,7 +138,7 @@ public class TeamApiDocsTest extends RestDocsTest {
                 testImage
         );
 
-        doNothing().when(teamCommandService).savePosterImage(any(), any());
+        doNothing().when(teamCommandService).savePosterImage(any(), any(), any());
 
         // When & Then
         mockMvc.perform(multipart("/teams/{teamId}/image/posters", teamId)
@@ -165,7 +165,7 @@ public class TeamApiDocsTest extends RestDocsTest {
     void 팀의_포스터_이미지를_삭제한다() throws Exception {
         // Given
         final Long teamId = 1L;
-        doNothing().when(teamCommandService).deletePosterImage(any());
+        doNothing().when(teamCommandService).deletePosterImage(any(), any());
 
         // When & Then
         mockMvc.perform(delete("/teams/{teamId}/image/posters", teamId)
@@ -252,7 +252,7 @@ public class TeamApiDocsTest extends RestDocsTest {
                 testImage
         );
 
-        doNothing().when(teamCommandService).saveThumbnailImage(any(), any());
+        doNothing().when(teamCommandService).saveThumbnailImage(any(), any(), any());
 
         // When & Then
         mockMvc.perform(multipart("/teams/{teamId}/image/thumbnail", teamId)
@@ -279,7 +279,7 @@ public class TeamApiDocsTest extends RestDocsTest {
     void 팀의_썸네일_이미지를_삭제한다() throws Exception {
         // Given
         final Long teamId = 1L;
-        doNothing().when(teamCommandService).deleteThumbnailImage(any());
+        doNothing().when(teamCommandService).deleteThumbnailImage(any(), any());
 
         // When & Then
         mockMvc.perform(delete("/teams/{teamId}/image/thumbnail", teamId)
@@ -336,7 +336,7 @@ public class TeamApiDocsTest extends RestDocsTest {
                 testImage
         );
 
-        doNothing().when(teamCommandService).savePreviewImages(any(), any());
+        doNothing().when(teamCommandService).savePreviewImages(any(), any(), any());
 
         // When & Then
         mockMvc.perform(multipart("/teams/{teamId}/image", teamId)
@@ -366,7 +366,7 @@ public class TeamApiDocsTest extends RestDocsTest {
         final Long teamId = 1L;
         final PreviewDeleteRequest request = new PreviewDeleteRequest(List.of(100L, 101L));
 
-        doNothing().when(teamCommandService).deletePreviewImages(any(), any());
+        doNothing().when(teamCommandService).deletePreviewImages(any(), any(), any());
 
         // When & Then
         mockMvc.perform(delete("/teams/{teamId}/image", teamId)
@@ -401,7 +401,7 @@ public class TeamApiDocsTest extends RestDocsTest {
         );
 
         doThrow(new FileException(FileExceptionType.EXCEED_PREVIEW_LIMIT))
-                .when(teamCommandService).savePreviewImages(any(), any());
+                .when(teamCommandService).savePreviewImages(any(), any(), any());
 
         // When & Then
         mockMvc.perform(multipart("/teams/{teamId}/image", teamId)

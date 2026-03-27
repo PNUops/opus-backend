@@ -266,6 +266,22 @@ public class MemberCommandService {
         member.updateStudentId(request.studentId());
     }
 
+    public void withdraw(final Member member) {
+        deleteMember(member);
+    }
+
+    public void withdrawByAdmin(final Long memberId) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        deleteMember(member);
+    }
+
+    private void deleteMember(final Member member) {
+        if (member.isSocialMember()) {
+            unlinkGoogleAccount(member.getId());
+        }
+        memberRepository.delete(member);
+    }
+
     public void updateGithubUrl(final Long memberId, final GithubUrlUpdateRequest request) {
         final Member member = memberConvenience.getValidateExistMember(memberId);
         member.updateGithubUrl(request.githubUrl());
