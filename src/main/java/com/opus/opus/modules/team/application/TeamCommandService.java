@@ -21,15 +21,17 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
-import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
-import com.opus.opus.modules.team.exception.TeamLikeException;
-import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.TeamVote;
+import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +50,7 @@ public class TeamCommandService {
     private final FileStorageUtil fileStorageUtil;
 
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final ContestConvenience contestConvenience;
 
     private final TeamVoteRepository teamVoteRepository;
@@ -55,40 +58,48 @@ public class TeamCommandService {
     private final FileRepository fileRepository;
 
 
-    public void savePreviewImages(final Long teamId, final List<MultipartFile> images) {
+    public void savePreviewImages(final Long teamId, final List<MultipartFile> images, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
             fileStorageUtil.storeFile(image, teamId, TEAM, PREVIEW);
         }
     }
 
-    public void deletePreviewImages(final Long teamId, final List<Long> ids) {
+    public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         ids.forEach(fileStorageUtil::deleteFile);
     }
 
-    public void saveThumbnailImage(final Long teamId, final MultipartFile image) {
+    public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
+                THUMBNAIL);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
-    public void deleteThumbnailImage(final Long teamId) {
+    public void deleteThumbnailImage(final Long teamId, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         deleteIfExists(teamId, THUMBNAIL);
     }
 
-    public void savePosterImage(final Long teamId, final MultipartFile image) {
+    public void savePosterImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, POSTER);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
+                POSTER);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 
-    public void deletePosterImage(final Long teamId) {
+    public void deletePosterImage(final Long teamId, final Member member) {
         teamConvenience.validateExistTeam(teamId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         deleteIfExists(teamId, POSTER);
     }
 
@@ -133,7 +144,8 @@ public class TeamCommandService {
 
         teamLike.updateIsLiked(isLiked);
 
-        return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked, isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
+        return TeamLikeToggleResponse.of(teamLike.getTeam().getId(), isLiked,
+                isLiked ? "좋아요가 등록되었습니다." : "좋아요가 취소되었습니다.");
     }
 
     private void saveTeamLike(final Long memberId, final Team team) {
@@ -158,7 +170,8 @@ public class TeamCommandService {
         return TeamVoteToggleResponse.of(team.getId(), true, "투표가 등록되었습니다.", currentVoteCount + 1, maxVotesLimit);
     }
 
-    private TeamVoteToggleResponse handleExistingVote(final TeamVote teamVote, final Boolean isVoted, final Long memberId, final Contest contest) {
+    private TeamVoteToggleResponse handleExistingVote(final TeamVote teamVote, final Boolean isVoted,
+                                                      final Long memberId, final Contest contest) {
         if (Objects.equals(teamVote.getIsVoted(), isVoted)) {
             throw new TeamVoteException(isVoted ? ALREADY_VOTED : ALREADY_UNVOTED);
         }
@@ -173,7 +186,8 @@ public class TeamCommandService {
         final long updatedVoteCount = currentVoteCount + (isVoted ? 1 : -1);
         teamVote.updateIsVoted(isVoted);
 
-        return TeamVoteToggleResponse.of(teamVote.getTeam().getId(), isVoted, isVoted ? "투표가 등록되었습니다." : "투표가 취소되었습니다.", updatedVoteCount, maxVotesLimit);
+        return TeamVoteToggleResponse.of(teamVote.getTeam().getId(), isVoted, isVoted ? "투표가 등록되었습니다." : "투표가 취소되었습니다.",
+                updatedVoteCount, maxVotesLimit);
     }
 
     private long countCurrentMemberVotes(Long memberId, Long contestId) {

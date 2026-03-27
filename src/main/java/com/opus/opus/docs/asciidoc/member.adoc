@@ -352,3 +352,46 @@ include::{snippets}/delete-member-profile-image/http-response.adoc[]
 
 .Request Headers
 include::{snippets}/delete-member-profile-image/request-headers.adoc[]
+
+== `DELETE`: 회원 탈퇴
+
+.HTTP Request
+include::{snippets}/withdraw-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/withdraw-member/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/withdraw-member/request-headers.adoc[]
+
+== `DELETE`: 관리자 강제 회원 탈퇴
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다.
+
+.HTTP Request
+include::{snippets}/admin-withdraw-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-withdraw-member/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-withdraw-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-withdraw-member/path-parameters.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 회원 ID
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-not-found/http-response.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-not-found/path-parameters.adoc[]
+
+====

@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.global.security.annotation.LoginMember;
+import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.StatisticsQueryService;
@@ -137,6 +138,19 @@ public class MemberController {
     public ResponseEntity<Void> deleteProfileImage(@LoginMember final Member member) {
         memberCommandService.deleteProfileImage(member);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/members/me")
+    public ResponseEntity<Void> deleteMember(@LoginMember final Member member) {
+        memberCommandService.withdraw(member);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/admin/members/{memberId}")
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
+        memberCommandService.withdrawByAdmin(memberId);
         return ResponseEntity.noContent().build();
     }
 

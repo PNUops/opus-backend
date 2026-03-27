@@ -3,6 +3,7 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
@@ -450,6 +451,67 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 탈퇴가 정상적으로 이루어진다.")
+    void 회원_탈퇴가_정상적으로_이루어진다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
+    void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 404를 반환한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-withdraw-member-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         )
                 ));
     }

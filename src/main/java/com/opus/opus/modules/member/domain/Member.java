@@ -102,4 +102,8 @@ public class Member extends BaseEntity {
     public void updateStudentId(final String studentId) {
         this.studentId = studentId;
     }
+
+    public boolean isAdmin() {
+        return roles.contains(MemberRoleType.ROLE_관리자);
+    }
 }
