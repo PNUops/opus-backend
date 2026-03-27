@@ -25,6 +25,9 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             "WHERE team.contestId = :contestId " +
             "GROUP BY team.id, team.teamName, team.projectName, track.trackName " +
             "ORDER BY COUNT(vote.id) DESC, team.id ASC")
+    List<TeamRankingResult> findTeamRankingByContestId(Long contestId); // 특정 대회에 속한 모든 팀을, 투표 수 기준 내림차순으로 조회 (투표 수 0인 팀도 포함)
+
+    long countByIsSubmittedTrue();
     List<TeamRankingResult> findTeamRankingByContestId(
             Long contestId); // 특정 대회에 속한 모든 팀을, 투표 수 기준 내림차순으로 조회 (투표 수 0인 팀도 포함)
 

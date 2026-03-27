@@ -1,26 +1,37 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -28,23 +39,44 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 
 public class MemberApiDocsTest extends RestDocsTest {
 
     private Member member;
+    private String memberAccessToken;
+    private String authorizationHeaderDescription;
+    private byte[] testImage;
 
     @BeforeEach
     void setUp() {
         this.member = MemberFixture.createMember();
         setField(member, "id", 1L);
+        this.memberAccessToken = "Bearer member.access.token";
+        this.authorizationHeaderDescription = "Bearer %s.access.token";
+        this.testImage = "test-image-content".getBytes();
+
+        when(memberArgumentResolver.supportsParameter(
+                argThat(param -> param != null && param.hasParameterAnnotation(LoginMember.class))))
+                .thenReturn(true);
+        when(memberArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(member);
     }
 
     @Test
@@ -309,6 +341,235 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andDo(document("update-student-id-fail",
                         requestFields(
                                 stringFieldWithPath("studentId", "변경할 학번")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 메인 페이지 통계 요약을 정상적으로 조회할 수 있다.")
+    void 메인_페이지_통계_요약을_정상적으로_조회할_수_있다() throws Exception {
+        final StatisticsSummaryResponse response = new StatisticsSummaryResponse(42L, 128L, 5L);
+
+        when(statisticsQueryService.getStatisticsSummary()).thenReturn(response);
+
+        mockMvc.perform(get("/statistics/summary"))
+                .andExpect(status().isOk())
+                .andDo(document("statistics-summary",
+                        responseFields(
+                                numberFieldWithPath("totalProjects", "등록된 프로젝트 수"),
+                                numberFieldWithPath("totalLikes", "총 좋아요 수"),
+                                numberFieldWithPath("totalContests", "진행된 대회 수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지를 조회한다.")
+    void 프로필_이미지를_조회한다() throws Exception {
+        // Given
+        final ImageResponse response = new ImageResponse(new ByteArrayResource(testImage), "image/png");
+
+        when(memberQueryService.getProfileImage(any())).thenReturn(response);
+
+        // When & Then
+        mockMvc.perform(get("/members/me/images/profile")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG))
+                .andDo(document("get-member-profile-image",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 프로필 이미지가 없으면 404를 반환한다.")
+    void 프로필_이미지가_없으면_404를_반환한다() throws Exception {
+        // Given
+        when(memberQueryService.getProfileImage(any()))
+                .thenThrow(new FileException(NOT_EXISTS_MATCHING_IMAGE_ID));
+
+        // When & Then
+        mockMvc.perform(get("/members/me/images/profile")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-member-profile-image-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지를 변경한다.")
+    void 프로필_이미지를_변경한다() throws Exception {
+        // Given
+        final MockMultipartFile image = new MockMultipartFile(
+                "image",
+                "profile.png",
+                MediaType.IMAGE_PNG_VALUE,
+                testImage
+        );
+
+        doNothing().when(memberCommandService).modifyProfileImage(any(), any());
+
+        // When & Then
+        mockMvc.perform(multipart("/members/me/images/profile")
+                        .file(image)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        })
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isNoContent())
+                .andDo(document("modify-member-profile-image",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        ),
+                        requestParts(
+                                partWithName("image").description("변경할 프로필 이미지 (모든 이미지 형식 지원)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지를 삭제한다.")
+    void 프로필_이미지를_삭제한다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).deleteProfileImage(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me/images/profile")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-member-profile-image",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 탈퇴가 정상적으로 이루어진다.")
+    void 회원_탈퇴가_정상적으로_이루어진다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
+    void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 404를 반환한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-withdraw-member-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 프로젝트 목록을 조회할 수 있다.")
+    void 나의_프로젝트_목록을_조회할_수_있다() throws Exception {
+        final List<MyProjectResponse> responses = List.of(
+                new MyProjectResponse(
+                        1L, "제6회창의융합해커톤대회", 10L, "PNUops", "SW성과관리시스템", "AI/빅데이터",
+                        List.of(new AwardInfo("대상", "#FF0000"))
+                ),
+                new MyProjectResponse(
+                        2L, "제5회창의융합해커톤대회", 22L, "해커톤의신", "PNUDataKing", null,
+                        List.of()
+                )
+        );
+
+        when(memberQueryService.getMyProjects(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/projects")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-projects",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙(분과)명").optional(),
+                                arrayFieldWithPath("[].awards", "수상 내역 리스트"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 투표 기록을 조회할 수 있다.")
+    void 나의_투표_기록을_조회할_수_있다() throws Exception {
+        final List<MyVoteResponse> responses = List.of(
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 5L, "Team Alpha", "알파 프로젝트"),
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 12L, "Team Beta", "베타 프로젝트")
+        );
+
+        when(memberQueryService.getMyVotes(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/votes")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-votes",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명")
                         )
                 ));
     }

@@ -1,10 +1,13 @@
-package com.opus.opus.team;
+package com.opus.opus.file;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
 
 import com.opus.opus.modules.file.domain.File;
@@ -42,6 +45,16 @@ public class FileFixture {
                 .referenceId(teamId)
                 .referenceType(TEAM)
                 .imageType(THUMBNAIL)
+                .build();
+    }
+
+    public static File createMemberProfileFile(final Long memberId) {
+        return File.builder()
+                .name("profile.jpg")
+                .filePath("path/to/profile.webp")
+                .referenceId(memberId)
+                .referenceType(MEMBER)
+                .imageType(PROFILE)
                 .build();
     }
 

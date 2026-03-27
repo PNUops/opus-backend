@@ -46,6 +46,9 @@ import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
+import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
@@ -57,6 +60,7 @@ import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.modules.team.exception.TeamLikeException;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.modules.team.exception.TeamVoteException;
@@ -65,6 +69,8 @@ import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
+import java.util.Set;
+import com.opus.opus.team.TeamLikeFixture;
 import java.util.ArrayList;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +101,8 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Autowired
     private TeamMemberRepository teamMemberRepository;
     @Autowired
+    private TeamMemberRepository teamMemberRepository;
+    @Autowired
     private ContestTemplateRepository contestTemplateRepository;
 
     private Contest notVotingContest;
@@ -108,6 +116,11 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void setUp() {
         generalTeam = teamRepository.save(TeamFixture.createTeam());
         member = memberRepository.save(MemberFixture.createMember());
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(member.getId())
+                .team(generalTeam)
+                .roles(Set.of(TeamMemberRoleType.ROLE_팀원))
+                .build());
 
         final Contest newNotVotingContest = ContestFixture.createContest();
         newNotVotingContest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
@@ -231,7 +244,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
                 "content".getBytes());
 
         // when
-        teamCommandService.savePosterImage(generalTeam.getId(), image);
+        teamCommandService.savePosterImage(generalTeam.getId(), image, member);
 
         // then
         verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
@@ -246,7 +259,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         final long notExistTeamId = 999L;
 
         // when & then
-        assertThatThrownBy(() -> teamCommandService.savePosterImage(notExistTeamId, image))
+        assertThatThrownBy(() -> teamCommandService.savePosterImage(notExistTeamId, image, member))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
@@ -262,7 +275,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(savedFile);
 
         // when
-        teamCommandService.deletePosterImage(generalTeam.getId());
+        teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
         verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
@@ -272,7 +285,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지가 없어도 삭제 요청 시 예외가 발생하지 않는다.")
     void 팀_포스터_이미지가_없어도_삭제_요청_시_예외가_발생하지_않는다() {
         // when
-        teamCommandService.deletePosterImage(generalTeam.getId());
+        teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
         verify(fileStorageUtil, never()).deleteFile(any());
@@ -290,7 +303,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
                 "new_content".getBytes());
 
         // when
-        teamCommandService.savePosterImage(generalTeam.getId(), newImage);
+        teamCommandService.savePosterImage(generalTeam.getId(), newImage, member);
 
         // then
         verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());

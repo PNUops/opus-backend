@@ -89,19 +89,21 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @PostMapping("/{teamId}/image")
     public ResponseEntity<Void> savePreviewImage(@PathVariable final Long teamId,
-                                                 @RequestPart("images") final List<MultipartFile> images) {
-        teamCommandService.savePreviewImages(teamId, images);
+                                                 @RequestPart("images") final List<MultipartFile> images,
+                                                 @LoginMember final Member member) {
+        teamCommandService.savePreviewImages(teamId, images, member);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image")
     public ResponseEntity<Void> deletePreviewImage(@PathVariable final Long teamId,
-                                                   @RequestBody @Valid final PreviewDeleteRequest previewDeleteRequest) {
-        teamCommandService.deletePreviewImages(teamId, previewDeleteRequest.imageIds());
+                                                   @RequestBody @Valid final PreviewDeleteRequest previewDeleteRequest,
+                                                   @LoginMember final Member member) {
+        teamCommandService.deletePreviewImages(teamId, previewDeleteRequest.imageIds(), member);
         return ResponseEntity.noContent().build();
     }
 
@@ -114,18 +116,20 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @PostMapping("/{teamId}/image/thumbnail")
     public ResponseEntity<Void> saveThumbnailImage(@PathVariable final Long teamId,
-                                                   @RequestPart("image") final MultipartFile image) {
-        teamCommandService.saveThumbnailImage(teamId, image);
+                                                   @RequestPart("image") final MultipartFile image,
+                                                   @LoginMember final Member member) {
+        teamCommandService.saveThumbnailImage(teamId, image, member);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image/thumbnail")
-    public ResponseEntity<Void> deleteThumbnailImage(@PathVariable final Long teamId) {
-        teamCommandService.deleteThumbnailImage(teamId);
+    public ResponseEntity<Void> deleteThumbnailImage(@PathVariable final Long teamId,
+                                                     @LoginMember final Member member) {
+        teamCommandService.deleteThumbnailImage(teamId, member);
         return ResponseEntity.noContent().build();
     }
 
@@ -138,18 +142,20 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @PostMapping("/{teamId}/image/posters")
     public ResponseEntity<Void> savePosterImage(@PathVariable final Long teamId,
-                                                @RequestPart("image") final MultipartFile image) {
-        teamCommandService.savePosterImage(teamId, image);
+                                                @RequestPart("image") final MultipartFile image,
+                                                @LoginMember final Member member) {
+        teamCommandService.savePosterImage(teamId, image, member);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_팀장", "ROLE_관리자", "ROLE_팀원"})
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image/posters")
-    public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId) {
-        teamCommandService.deletePosterImage(teamId);
+    public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId,
+                                                  @LoginMember final Member member) {
+        teamCommandService.deletePosterImage(teamId, member);
         return ResponseEntity.noContent().build();
     }
 

@@ -34,7 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileStorageUtil {
 
     private static final Path ROOT_PATH = Paths.get(System.getProperty("user.dir"));
-    private static final Path RESOURCE_PATH = ROOT_PATH.resolve("ops_files");
+    private static final Path RESOURCE_PATH = ROOT_PATH.resolve("src/main/resources/opus_files");
     private static final Path DEFAULT_FILE_PATH = RESOURCE_PATH.resolve("files");
     private static final String DEFAULT_THUMBNAIL_FILENAME = "default_thumbnail.jpg";
     private static final Path DEFAULT_THUMBNAIL_PATH = RESOURCE_PATH.resolve(DEFAULT_THUMBNAIL_FILENAME);

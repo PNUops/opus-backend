@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.domain.dao;
 
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
@@ -27,6 +28,18 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             "JOIN vote.team team " +
             "WHERE team.contestId = :contestId AND vote.isVoted = true")
     VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
+
+    @Query("""
+            SELECT new com.opus.opus.modules.member.domain.dao.MyVoteResponse(
+                   c.id, c.contestName, t.id, t.teamName, t.projectName)
+            FROM TeamVote tv
+            JOIN tv.team t
+            JOIN Contest c ON c.id = t.contestId
+            WHERE tv.memberId = :memberId AND tv.isVoted = true
+              AND CURRENT_TIMESTAMP BETWEEN c.voteStartAt AND c.voteEndAt
+            ORDER BY tv.createdAt DESC
+            """)
+    List<MyVoteResponse> findMyVotes(Long memberId);
 
     @Query("""
                 SELECT tv

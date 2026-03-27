@@ -27,6 +27,8 @@ import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.file.FileFixture;
+import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.FileFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
