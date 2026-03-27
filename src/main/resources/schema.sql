@@ -118,6 +118,8 @@ CREATE TABLE `member` (
   `student_id` varchar(255) NULL,
   `social_type` varchar(20) NULL,
   `social_id` varchar(255) NULL,
+  `github_url` varchar(255),
+  `is_profile_public` bit(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_member_email` (`email`),
   UNIQUE KEY `uk_member_student_id` (`student_id`),

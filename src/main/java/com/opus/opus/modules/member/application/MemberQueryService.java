@@ -10,6 +10,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -47,6 +48,11 @@ public class MemberQueryService {
         final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(profileFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
+    }
+
+    public AccountInfoResponse getAccountInfo(final Long memberId) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        return AccountInfoResponse.from(member);
     }
 
     public List<MyProjectResponse> getMyProjects(final Long memberId) {

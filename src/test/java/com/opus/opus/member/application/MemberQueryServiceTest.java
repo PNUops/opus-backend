@@ -21,6 +21,7 @@ import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.member.application.MemberQueryService;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -228,5 +229,24 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 .team(team)
                 .roles(Set.of(TeamMemberRoleType.ROLE_팀원))
                 .build());
+    }
+
+    @Test
+    @DisplayName("[성공] 로그인한 회원은 계정 정보를 조회할 수 있다.")
+    void 로그인한_회원은_계정_정보를_조회할_수_있다() {
+        final AccountInfoResponse response = memberQueryService.getAccountInfo(member.getId());
+
+        assertThat(response.name()).isEqualTo(member.getName());
+        assertThat(response.email()).isEqualTo(member.getEmail());
+        assertThat(response.githubUrl()).isNull();
+        assertThat(response.isProfilePublic()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 계정 정보는 조회할 수 없다.")
+    void 존재하지_않는_회원의_계정_정보는_조회할_수_없다() {
+        assertThatThrownBy(() -> {
+            memberQueryService.getAccountInfo(999L);
+        }).isInstanceOf(MemberException.class).hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }
 }

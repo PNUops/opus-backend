@@ -395,3 +395,36 @@ include::{snippets}/admin-withdraw-member-fail-not-found/http-response.adoc[]
 include::{snippets}/admin-withdraw-member-fail-not-found/path-parameters.adoc[]
 
 ====
+
+== `GET`: 계정 정보 조회
+
+.HTTP Request
+include::{snippets}/get-account-info/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-account-info/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-account-info/response-fields.adoc[]
+
+== `PATCH`: GitHub 링크 수정
+
+.HTTP Request
+include::{snippets}/update-github-url/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-github-url/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-github-url/request-fields.adoc[]
+
+== `PATCH`: 프로필 공개 여부 변경
+
+.HTTP Request
+include::{snippets}/update-profile-visibility/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-profile-visibility/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-profile-visibility/request-fields.adoc[]

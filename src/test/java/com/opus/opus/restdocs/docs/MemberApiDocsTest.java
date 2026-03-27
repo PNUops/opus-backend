@@ -24,7 +24,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -34,10 +33,13 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -570,6 +572,64 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].teamId", "팀 ID"),
                                 stringFieldWithPath("[].teamName", "팀명"),
                                 stringFieldWithPath("[].projectName", "프로젝트명")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 로그인한 사용자의 계정 정보를 조회할 수 있다.")
+    void 로그인한_사용자의_계정_정보를_조회할_수_있다() throws Exception {
+        final AccountInfoResponse response = new AccountInfoResponse(member.getName(), member.getEmail(), null, true);
+
+        when(memberQueryService.getAccountInfo(any())).thenReturn(response);
+
+        mockMvc.perform(get("/members/me")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-account-info",
+                        responseFields(
+                                stringFieldWithPath("name", "이름"),
+                                stringFieldWithPath("email", "이메일"),
+                                stringFieldWithPath("githubUrl", "GitHub 링크").optional(),
+                                booleanFieldWithPath("isProfilePublic", "프로필 공개 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크를 정상적으로 수정할 수 있다.")
+    void GitHub_링크를_정상적으로_수정할_수_있다() throws Exception {
+        final GithubUrlUpdateRequest request = new GithubUrlUpdateRequest("https://github.com/hongjiyeon");
+
+        doNothing().when(memberCommandService).updateGithubUrl(any(), any());
+
+        mockMvc.perform(patch("/members/me/github-url")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-github-url",
+                        requestFields(
+                                stringFieldWithPath("githubUrl", "GitHub URL").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 공개 여부를 정상적으로 변경할 수 있다.")
+    void 프로필_공개_여부를_정상적으로_변경할_수_있다() throws Exception {
+        final ProfileVisibilityUpdateRequest request = new ProfileVisibilityUpdateRequest(true);
+
+        doNothing().when(memberCommandService).updateProfileVisibility(any(), any());
+
+        mockMvc.perform(patch("/members/me/profile-visibility")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-profile-visibility",
+                        requestFields(
+                                booleanFieldWithPath("isProfilePublic", "프로필 공개 여부")
                         )
                 ));
     }
