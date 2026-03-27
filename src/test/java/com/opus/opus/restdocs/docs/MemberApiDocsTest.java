@@ -608,7 +608,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
-                .andDo(document("update-github-path",
+                .andDo(document("update-github-url",
                         requestFields(
                                 stringFieldWithPath("githubUrl", "GitHub URL").optional()
                         )

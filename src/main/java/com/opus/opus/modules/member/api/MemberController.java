@@ -151,8 +151,8 @@ public class MemberController {
     }
 
     @PatchMapping("/members/me/github-url")
-    public ResponseEntity<Void> updateGithubPath(@LoginMember final Member member,
-                                                 @RequestBody final GithubUrlUpdateRequest githubUrlUpdateRequest) {
+    public ResponseEntity<Void> updateGithubUrl(@LoginMember final Member member,
+                                                @Valid @RequestBody final GithubUrlUpdateRequest githubUrlUpdateRequest) {
         memberCommandService.updateGithubUrl(member.getId(), githubUrlUpdateRequest);
         return ResponseEntity.noContent().build();
     }
