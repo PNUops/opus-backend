@@ -27,7 +27,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -147,7 +146,7 @@ public class MemberController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/memb ers/me/votes")
+    @GetMapping("/members/me/votes")
     public ResponseEntity<List<MyVoteResponse>> getMyVotes(@LoginMember final Member member) {
         final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
         return ResponseEntity.ok(responses);
