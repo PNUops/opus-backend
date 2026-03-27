@@ -71,6 +71,10 @@ public class MemberConvenience {
         return memberRepository.findAllById(memberIds);
     }
 
+    public List<Member> findAllByIdIncludingDeleted(final List<Long> memberIds) {
+        return memberRepository.findAllByIdIncludingDeleted(memberIds);
+    }
+
     private void validateNameMatchesStudentId(final String studentId, final String name) {
         memberRepository.findByStudentId(studentId)
                 .ifPresent(member -> {

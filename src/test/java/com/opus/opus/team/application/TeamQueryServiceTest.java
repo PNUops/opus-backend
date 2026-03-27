@@ -17,13 +17,20 @@ import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamDetailResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.file.FileFixture;
-import com.opus.opus.team.TeamFixture;
+import com.opus.opus.team.TeamLikeFixture;
+import com.opus.opus.team.TeamVoteFixture;
+import java.time.LocalDateTime;
 import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,15 +53,86 @@ public class TeamQueryServiceTest extends IntegrationTest {
     private FileRepository fileRepository;
     @Autowired
     private ContestTrackRepository contestTrackRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private TeamVoteRepository teamVoteRepository;
+    @Autowired
+    private TeamLikeRepository teamLikeRepository;
 
     @Autowired
     private FileStorageUtil fileStorageUtil;
 
     private Team team;
+    private Contest contest;
+    private ContestTrack track;
 
     @BeforeEach
     void setUp() {
-        team = teamRepository.save(TeamFixture.createTeam());
+        contest = contestRepository.save(ContestFixture.createContest());
+        track = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
+        team = teamRepository.save(Team.builder()
+                .contestId(contest.getId())
+                .trackId(track.getId())
+                .teamName("팀명")
+                .projectName("프로젝트명")
+                .itemOrder(1)
+                .teamAwards(new java.util.ArrayList<>())
+                .teamMembers(new java.util.ArrayList<>())
+                .build());
+    }
+
+    @Test
+    @DisplayName("[성공] 비회원이 팀 상세 정보를 조회하면 isVoted와 isLiked는 항상 false를 반환한다.")
+    void 비회원_팀_상세_정보_조회() {
+        // given
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+        contestRepository.saveAndFlush(contest);
+
+        // when
+        final TeamDetailResponse response = teamQueryService.getTeamDetailPublic(team.getId());
+
+        // then
+        assertThat(response.isVoted()).isFalse();
+        assertThat(response.isLiked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 기간일 때 팀 상세 정보를 조회하면 isVoted는 실제 투표 여부, isLiked는 false를 반환한다.")
+    void 투표_기간일_때_팀_상세_정보_조회() {
+        // given
+        final Member member = memberRepository.save(com.opus.opus.member.MemberFixture.createMember());
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+        contestRepository.saveAndFlush(contest);
+
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+
+        // when
+        final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
+
+        // then
+        assertThat(response.isVoted()).isTrue();
+        assertThat(response.isLiked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 기간이 아닐 때 팀 상세 정보를 조회하면 isVoted는 false, isLiked는 실제 좋아요 여부를 반환한다.")
+    void 투표_기간이_아닐_때_팀_상세_정보_조회() {
+        // given
+        final Member member = memberRepository.save(com.opus.opus.member.MemberFixture.createMember());
+        contest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
+        contestRepository.saveAndFlush(contest);
+
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+
+        // when
+        final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
+
+        // then
+        assertThat(response.isVoted()).isFalse();
+        assertThat(response.isLiked()).isTrue();
     }
 
     @Test
