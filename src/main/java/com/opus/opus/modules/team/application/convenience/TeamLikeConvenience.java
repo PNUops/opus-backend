@@ -27,9 +27,6 @@ public class TeamLikeConvenience {
                 .collect(toMap(tl -> tl.getTeam().getId(), TeamLike::getIsLiked));
     }
 
-    public Map<Long, Boolean> getLikeMapIfNotVotingPeriod(final Long contestId, final Member member,
-                                                          final boolean isVotingPeriod) {
-        return (member != null && !isVotingPeriod) ? getLikeMap(contestId, member) : Map.of();
     // 1. 대회 내 모든 팀 맵 조회
     public Map<Long, Boolean> getLikeMapIfInPeriod(final Long contestId, final Member member,
                                                    final boolean isVotingPeriod) {

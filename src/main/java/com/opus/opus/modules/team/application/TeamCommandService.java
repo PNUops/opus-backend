@@ -30,7 +30,6 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
-import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
@@ -40,10 +39,8 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
-import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
-import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
@@ -73,7 +70,6 @@ public class TeamCommandService {
     private final TeamLikeRepository teamLikeRepository;
     private final FileRepository fileRepository;
     private final ContestTemplateConvenience contestTemplateConvenience;
-    private final TeamMemberConvenience teamMemberConvenience;
     private final FileConvenience fileConvenience;
 
 
@@ -93,8 +89,8 @@ public class TeamCommandService {
     public void deleteTeam(final Long teamId) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         deleteTeamImages(teamId);
-        teamRepository.delete(team);
         reorderAfterTeamDeletion(team);
+        teamRepository.delete(team);
     }
 
     private void reorderAfterTeamDeletion(final Team team) {
@@ -105,10 +101,10 @@ public class TeamCommandService {
     }
 
     private void deleteTeamImages(final Long teamId) {
-        deletePosterImage(teamId);
-        deleteThumbnailImage(teamId);
+        deleteIfExists(teamId, POSTER);
+        deleteIfExists(teamId, THUMBNAIL);
         final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
-        deletePreviewImages(teamId, previewIds);
+        previewIds.forEach(fileStorageUtil::deleteFile);
     }
 
     public void updateTeam(final Member member, final Long teamId, final TeamUpdateRequest request) {
@@ -200,8 +196,6 @@ public class TeamCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
                 THUMBNAIL);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
-                THUMBNAIL);
         fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
@@ -215,8 +209,6 @@ public class TeamCommandService {
     public void savePosterImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
-                POSTER);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
                 POSTER);
         fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);

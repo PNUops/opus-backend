@@ -46,9 +46,6 @@ import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamMember;
-import com.opus.opus.modules.team.domain.TeamMemberRoleType;
-import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
@@ -64,13 +61,10 @@ import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.modules.team.exception.TeamVoteException;
-import com.opus.opus.team.FileFixture;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import java.util.Set;
-import com.opus.opus.team.TeamLikeFixture;
 import java.util.ArrayList;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,8 +92,6 @@ public class TeamCommandServiceTest extends IntegrationTest {
     private TeamLikeRepository teamLikeRepository;
     @Autowired
     private FileRepository fileRepository;
-    @Autowired
-    private TeamMemberRepository teamMemberRepository;
     @Autowired
     private TeamMemberRepository teamMemberRepository;
     @Autowired

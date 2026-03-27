@@ -88,7 +88,7 @@ public class TeamQueryService {
         return TeamDetailResponse.of(
                 team,
                 contest.getContestName(),
-                track.getTrackName(),
+                track != null ? track.getTrackName() : null,
                 teamMemberResponses,
                 previewIds,
                 awards,
