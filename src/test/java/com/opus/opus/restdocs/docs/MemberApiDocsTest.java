@@ -39,13 +39,17 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -508,6 +512,64 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         pathParameters(
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 프로젝트 목록을 조회할 수 있다.")
+    void 나의_프로젝트_목록을_조회할_수_있다() throws Exception {
+        final List<MyProjectResponse> responses = List.of(
+                new MyProjectResponse(
+                        1L, "제6회창의융합해커톤대회", 10L, "PNUops", "SW성과관리시스템", "AI/빅데이터",
+                        List.of(new AwardInfo("대상", "#FF0000"))
+                ),
+                new MyProjectResponse(
+                        2L, "제5회창의융합해커톤대회", 22L, "해커톤의신", "PNUDataKing", null,
+                        List.of()
+                )
+        );
+
+        when(memberQueryService.getMyProjects(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/projects")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-projects",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙(분과)명").optional(),
+                                arrayFieldWithPath("[].awards", "수상 내역 리스트"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 투표 기록을 조회할 수 있다.")
+    void 나의_투표_기록을_조회할_수_있다() throws Exception {
+        final List<MyVoteResponse> responses = List.of(
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 5L, "Team Alpha", "알파 프로젝트"),
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 12L, "Team Beta", "베타 프로젝트")
+        );
+
+        when(memberQueryService.getMyVotes(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/votes")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-votes",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명")
                         )
                 ));
     }

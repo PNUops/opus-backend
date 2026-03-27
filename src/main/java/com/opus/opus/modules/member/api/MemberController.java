@@ -17,11 +17,14 @@ import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -149,5 +152,17 @@ public class MemberController {
     public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
         memberCommandService.withdrawByAdmin(memberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/members/me/projects")
+    public ResponseEntity<List<MyProjectResponse>> getMyProjects(@LoginMember final Member member) {
+        final List<MyProjectResponse> responses = memberQueryService.getMyProjects(member.getId());
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/members/me/votes")
+    public ResponseEntity<List<MyVoteResponse>> getMyVotes(@LoginMember final Member member) {
+        final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
+        return ResponseEntity.ok(responses);
     }
 }
