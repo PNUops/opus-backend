@@ -22,7 +22,7 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamException;
-import com.opus.opus.team.FileFixture;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.team.TeamFixture;
 import org.antlr.v4.runtime.misc.Pair;
 import org.junit.jupiter.api.BeforeEach;
