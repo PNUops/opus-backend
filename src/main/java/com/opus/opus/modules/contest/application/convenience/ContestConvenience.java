@@ -68,4 +68,8 @@ public class ContestConvenience {
             throw new ContestException(NOT_VOTE_PERIOD_NOW);
         }
     }
+
+    public long countAllContests() {
+        return contestRepository.count();
+    }
 }

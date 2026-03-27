@@ -18,10 +18,10 @@ public class FileConvenience {
 
     private final FileRepository fileRepository;
 
-    public File findByReferenceIdAndReferenceTypeAndImageType(final Long teamId,
+    public File findByReferenceIdAndReferenceTypeAndImageType(final Long referenceId,
                                                               final ReferenceDomainType referenceType,
                                                               final FileImageType imageType) {
-        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, referenceType, imageType)
+        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType)
                 .orElseThrow(() -> new FileException(NOT_EXISTS_MATCHING_IMAGE_ID));
     }
 }

@@ -1,18 +1,24 @@
 package com.opus.opus.modules.member.application;
 
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
+import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -22,6 +28,7 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
@@ -37,6 +44,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 
 @Service
 @Transactional
@@ -44,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberCommandService {
 
     private final MemberRepository memberRepository;
+    private final FileRepository fileRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -52,6 +62,8 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleTokenManager googleTokenManager;
+    private final FileStorageUtil fileStorageUtil;
+
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int AUTH_CODE_LENGTH = 10;
@@ -66,6 +78,10 @@ public class MemberCommandService {
     private static final long SIGNIN_VERIFIED_TTL = 10L;
     private static final String SIGNIN_EMAIL_AUTH_KEY_PREFIX = "signin:email:auth:";
     private static final String SIGNIN_EMAIL_VERIFIED_KEY_PREFIX = "signin:email:verified:";
+
+    private static final int MAX_AUTH_ATTEMPTS = 5;
+    private static final long AUTH_ATTEMPT_TTL = 1L;
+    private static final String EMAIL_AUTH_COUNT_KEY_PREFIX = "email:auth:count:";
 
     private static final String VERIFIED_VALUE = "true";
 
@@ -88,6 +104,7 @@ public class MemberCommandService {
     public void signUpEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
         memberConvenience.validatePusanDomain(email);
+        checkEmailAuthLimit(email);
 
         final String code = generateRandomAuthCode();
 
@@ -118,6 +135,9 @@ public class MemberCommandService {
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
+        memberConvenience.validateExistMemberByEmail(email);
+        checkEmailAuthLimit(email);
+
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
         checkGeneralMember(member);
 
@@ -272,5 +292,26 @@ public class MemberCommandService {
         if (!member.isSocialMember() || !member.isPusanEmail() || member.getStudentId() != null) {
             throw new MemberException(CANNOT_UPDATE_STUDENT_ID);
         }
+    }
+
+    private void checkEmailAuthLimit(final String email) {
+        final String key = EMAIL_AUTH_COUNT_KEY_PREFIX + email;
+        final Long count = authRedisUtil.incrementWithTtl(key, AUTH_ATTEMPT_TTL, TimeUnit.DAYS);
+
+        if (count > MAX_AUTH_ATTEMPTS) {
+            throw new MemberException(EMAIL_AUTH_LIMIT_EXCEEDED);
+        }
+    }
+
+    public void modifyProfileImage(final Member member, final MultipartFile image) {
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
+                member.getId(), MEMBER, PROFILE);
+        fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
+        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+    }
+
+    public void deleteProfileImage(final Member member) {
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
+                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }
 }
