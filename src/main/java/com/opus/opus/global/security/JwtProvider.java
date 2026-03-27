@@ -30,12 +30,16 @@ public class JwtProvider {
     private static final Logger log = LoggerFactory.getLogger(JwtProvider.class);
     private static final String ROLES = "roles";
     private static final String NAME = "name";
-    private final MemberDetailsService memberDetailsService;
+
     @Value("${spring.jwt.secret}")
     private String secretKey;
+
     @Value("${spring.jwt.expire-length}")
     private long expireTimeMilliSecond;
+
     private Key key;
+
+    private final MemberDetailsService memberDetailsService;
 
     @PostConstruct
     protected void init() {
