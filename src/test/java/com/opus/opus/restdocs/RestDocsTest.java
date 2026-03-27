@@ -20,6 +20,7 @@ import com.opus.opus.modules.contest.application.ContestTrackQueryService;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
+import com.opus.opus.modules.member.application.StatisticsQueryService;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
@@ -68,6 +69,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected MemberQueryService memberQueryService;
+
+    @MockitoBean
+    protected StatisticsQueryService statisticsQueryService;
 
     @MockitoBean
     protected TeamCommentCommandService teamCommentCommandService;

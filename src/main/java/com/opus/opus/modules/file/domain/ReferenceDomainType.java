@@ -4,5 +4,6 @@ public enum ReferenceDomainType {
     TEAM,
     CONTEST,
     TRACK,
+    MEMBER,
     ;
 }

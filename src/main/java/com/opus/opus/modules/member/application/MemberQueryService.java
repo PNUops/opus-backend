@@ -1,5 +1,11 @@
 package com.opus.opus.modules.member.application;
 
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+
+import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.convenience.FileConvenience;
+import com.opus.opus.modules.file.domain.File;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
@@ -19,7 +25,10 @@ import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import lombok.RequiredArgsConstructor;
+import org.antlr.v4.runtime.misc.Pair;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,12 +44,20 @@ public class MemberQueryService {
     private static final int LIKE_PREVIEW_SIZE = 3;
 
     private final MemberConvenience memberConvenience;
+    private final FileConvenience fileConvenience;
+    private final FileStorageUtil fileStorageUtil;
     private final TeamCommentRepository teamCommentRepository;
     private final TeamLikeRepository teamLikeRepository;
 
     public EmailFindResponse getMyEmail(final String studentId) {
         final Member member = memberConvenience.getValidateExistMemberByStudentId(studentId);
         return new EmailFindResponse(member.getEmail());
+    }
+
+    public ImageResponse getProfileImage(final Member member) {
+        final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
+        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(profileFile.getId());
+        return new ImageResponse(storageResult.a, storageResult.b);
     }
 
     public Page<MyCommentResponse> getMyComments(final Long memberId, final String sort,

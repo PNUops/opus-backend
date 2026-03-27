@@ -1,6 +1,7 @@
 package com.opus.opus.helper;
 
 import com.opus.opus.global.security.JwtProvider;
+import com.opus.opus.global.util.CacheRedisUtil;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.global.util.AuthRedisUtil;
@@ -34,6 +35,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     protected FileStorageUtil fileStorageUtil;
+
+    @MockitoBean
+    protected CacheRedisUtil cacheRedisUtil;
 
     @BeforeEach
     void setUp(final WebApplicationContext context) {
