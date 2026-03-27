@@ -33,10 +33,10 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
-import com.opus.opus.modules.member.application.dto.request.GithubPathUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
@@ -476,18 +476,18 @@ public class MemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] GitHub 링크를 정상적으로 수정할 수 있다.")
     void GitHub_링크를_정상적으로_수정할_수_있다() throws Exception {
-        final GithubPathUpdateRequest request = new GithubPathUpdateRequest("https://github.com/hongjiyeon");
+        final GithubUrlUpdateRequest request = new GithubUrlUpdateRequest("https://github.com/hongjiyeon");
 
-        doNothing().when(memberCommandService).updateGithubPath(any(), any());
+        doNothing().when(memberCommandService).updateGithubUrl(any(), any());
 
-        mockMvc.perform(patch("/members/me/github-path")
+        mockMvc.perform(patch("/members/me/github-url")
                         .header("Authorization", "Bearer exampleToken")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
                 .andDo(document("update-github-path",
                         requestFields(
-                                stringFieldWithPath("githubPath", "GitHub URL").optional()
+                                stringFieldWithPath("githubUrl", "GitHub URL").optional()
                         )
                 ));
     }

@@ -13,12 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
@@ -29,9 +27,9 @@ import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
-import com.opus.opus.modules.member.application.dto.request.GithubPathUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -411,9 +409,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] GitHub 링크가 정상적으로 수정된다.")
     void GitHub_링크가_정상적으로_수정된다() {
-        final GithubPathUpdateRequest request = new GithubPathUpdateRequest("https://github.com/hongjiyeon");
+        final GithubUrlUpdateRequest request = new GithubUrlUpdateRequest("https://github.com/hongjiyeon");
 
-        memberCommandService.updateGithubPath(teamLeader.getId(), request);
+        memberCommandService.updateGithubUrl(teamLeader.getId(), request);
 
         final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
         assertThat(updatedMember.getGithubUrl()).isEqualTo("https://github.com/hongjiyeon");
@@ -422,8 +420,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] GitHub 링크를 null로 수정할 수 있다.")
     void GitHub_링크를_null로_수정할_수_있다() {
-        memberCommandService.updateGithubPath(teamLeader.getId(), new GithubPathUpdateRequest("https://github.com/test"));
-        memberCommandService.updateGithubPath(teamLeader.getId(), new GithubPathUpdateRequest(null));
+        memberCommandService.updateGithubUrl(teamLeader.getId(), new GithubUrlUpdateRequest("https://github.com/test"));
+        memberCommandService.updateGithubUrl(teamLeader.getId(), new GithubUrlUpdateRequest(null));
 
         final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
         assertThat(updatedMember.getGithubUrl()).isNull();

@@ -1,7 +1,7 @@
 package com.opus.opus.modules.member.application.dto.request;
 
-public record GithubPathUpdateRequest(
+public record GithubUrlUpdateRequest(
 
-        String githubPath
+        String githubUrl
 ) {
 }
