@@ -21,13 +21,9 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,11 +32,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Validated
 @RestController
@@ -145,14 +139,14 @@ public class MemberController {
     }
 
     @DeleteMapping("/members/me")
-    public ResponseEntity<Void> withdraw(@LoginMember final Member member) {
+    public ResponseEntity<Void> deleteMember(@LoginMember final Member member) {
         memberCommandService.withdraw(member);
         return ResponseEntity.noContent().build();
     }
 
     @Secured("ROLE_관리자")
     @DeleteMapping("/admin/members/{memberId}")
-    public ResponseEntity<Void> withdrawMember(@PathVariable final Long memberId) {
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
         memberCommandService.withdrawByAdmin(memberId);
         return ResponseEntity.noContent().build();
     }
