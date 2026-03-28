@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/sign-up/**", "/sign-in/**", "/oauth2/set-redirect").permitAll()
                         .requestMatchers(HttpMethod.GET, "/teams/**", "/contests/**", "/notices/**", "/statistics/**"
-                                , "/categories/**").permitAll()
+                                , "/categories/**", "/sidebar").permitAll()
                         .anyRequest().hasAnyRole("회원", "관리자", "팀장", "팀원")
                 )
                 .oauth2Login(oauth2 -> oauth2
