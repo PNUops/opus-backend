@@ -66,7 +66,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured("ROLE_회원")
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDetailResponse> getTeamDetail(@PathVariable final Long teamId,
                                                             @LoginMember final Member member) {
