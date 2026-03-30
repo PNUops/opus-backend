@@ -112,9 +112,13 @@ public class ContestCommandService {
     }
 
     public void updateContest(final Long contestId, final ContestRequest request) {
-        contestConvenience.validateDuplicateContestName(request.contestName());
-        contestCategoryConvenience.getValidateExistCategory(request.categoryId());
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        contestCategoryConvenience.getValidateExistCategory(request.categoryId());
+
+        if (!contest.getContestName().equals(request.contestName())) {
+            contestConvenience.validateDuplicateContestName(request.contestName());
+        }
+
         contest.updateContest(request.categoryId(), request.contestName());
     }
 
