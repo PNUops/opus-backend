@@ -42,9 +42,9 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
+import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -248,7 +248,7 @@ public class ContestQueryService {
         final List<Team> teams = getSortedTeams(contestId, member);
 
         final VoteLikeResult voteLikeResult = getVoteLikeResult(contestId, member, contest.isVotingPeriod());
-        final Map<Long, List<TeamAwardResult>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardResultMap(
+        final Map<Long, List<TeamAwardProjection>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardProjectionMap(
                 teams);
 
         return buildTeamSummaryResponses(teams, teamAwardResultMap, voteLikeResult);
@@ -270,7 +270,7 @@ public class ContestQueryService {
     }
 
     private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
-                                                                final Map<Long, List<TeamAwardResult>> teamAwardResultMap,
+                                                                final Map<Long, List<TeamAwardProjection>> teamAwardResultMap,
                                                                 final VoteLikeResult voteLikeResult
     ) {
         return teams.stream()
