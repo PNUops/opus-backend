@@ -1,6 +1,11 @@
 package com.opus.opus.member.application;
 
+import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
+import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -8,20 +13,32 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VER
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import org.springframework.mock.web.MockMultipartFile;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -42,6 +59,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private FileRepository fileRepository;
+
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
 
@@ -49,6 +69,12 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void setUp() {
         teamLeader = memberRepository.save(MemberFixture.createMember());
         emailAuthRequest = new EmailAuthRequest("qwer1234@pusan.ac.kr");
+
+        authRedisUtil.delete("email:auth:count:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signup:email:verified:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:auth:" + emailAuthRequest.email());
+        authRedisUtil.delete("signin:email:verified:" + emailAuthRequest.email());
     }
 
     @Test
@@ -67,6 +93,40 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> {
             memberCommandService.signUpEmailAuth(notPusanEmailRequest);
         }).isInstanceOf(MemberException.class).hasMessage(NOT_PUSAN_UNIVERSITY_EMAIL.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입 이메일 인증 코드 발송을 5회 이상 요청하면 24시간 동안 인증 불가하다.")
+    void 회원가입_이메일_인증_코드_발송을_5회_이상_요청하면_24시간_동안_인증_불가하다() {
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signUpEmailAuth(emailAuthRequest);
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 회원가입과 비밀번호 변경 이메일 인증 코드 발송 제한 count는 합계 계산된다.")
+    void 회원가입과_비밀번호_변경_이메일_인증_코드_발송_제한_count는_합계_계산된다() {
+        final String newMemberEmail = "example100@pusan.ac.kr";
+        authRedisUtil.delete("email:auth:count:" + newMemberEmail);
+
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signUpEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        memberRepository.save(createMemberWithUniqueNum(100));
+
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+        memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+
+        assertThatThrownBy(() -> {
+            memberCommandService.signInEmailAuth(new EmailAuthRequest(newMemberEmail));
+        }).isInstanceOf(MemberException.class).hasMessage(EMAIL_AUTH_LIMIT_EXCEEDED.errorMessage());
     }
 
     @Test
@@ -282,5 +342,181 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() ->
                 memberCommandService.updateStudentId(socialMember.getId(), request)
         ).isInstanceOf(MemberException.class);
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없어도 새 이미지 저장이 호출된다.")
+    void 기존_프로필_이미지가_없어도_새_이미지_저장이_호출된다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 있으면 새 이미지 저장 후 기존 이미지 삭제가 호출된다.")
+    void 기존_프로필_이미지가_있으면_새_이미지_저장_후_기존_이미지_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+        final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 프로필 이미지가 없으면 이미지 변경 시 삭제가 호출되지 않는다.")
+    void 기존_프로필_이미지가_없으면_이미지_변경_시_삭제가_호출되지_않는다() {
+        // given
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+
+        // when
+        memberCommandService.modifyProfileImage(teamLeader, image);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 있으면 삭제가 호출된다.")
+    void 프로필_이미지가_있으면_삭제가_호출된다() {
+        // given
+        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 이미지가 없으면 삭제가 호출되지 않는다.")
+    void 프로필_이미지가_없으면_삭제가_호출되지_않는다() {
+        // when
+        memberCommandService.deleteProfileImage(teamLeader);
+
+        // then
+        verify(fileStorageUtil, never()).deleteFile(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 일반 회원 탈퇴 시 DB에서 조회되지 않는다.")
+    void 일반_회원_탈퇴_시_DB에서_조회되지_않는다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 소셜 회원 탈퇴 시 DB에서 조회되지 않는다.")
+    void 소셜_회원_탈퇴_시_DB에서_조회되지_않는다() {
+        // given
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social@pusan.ac.kr", "google-abc123"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
+
+        // when
+        memberCommandService.withdraw(socialMember);
+
+        // then
+        assertThat(memberRepository.findById(socialMember.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 일반 회원 탈퇴 시 Google 토큰 해제를 시도하지 않는다.")
+    void 일반_회원_탈퇴_시_Google_토큰_해제를_시도하지_않는다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        verify(googleTokenManager, never()).get(any());
+    }
+
+    @Test
+    @DisplayName("[성공] 소셜 회원 탈퇴 시 Google 토큰 해제를 시도한다.")
+    void 소셜_회원_탈퇴_시_Google_토큰_해제를_시도한다() {
+        // given
+        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social2@pusan.ac.kr", "google-def456"));
+        when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
+
+        // when
+        memberCommandService.withdraw(socialMember);
+
+        // then
+        verify(googleTokenManager, times(1)).get(socialMember.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 해당 회원은 DB에서 조회되지 않는다.")
+    void 관리자_강제_탈퇴_시_해당_회원은_DB에서_조회되지_않는다() {
+        // when
+        memberCommandService.withdrawByAdmin(teamLeader.getId());
+
+        // then
+        assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 예외가 발생한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_예외가_발생한다() {
+        // given
+        final Long nonExistentId = 999999L;
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(nonExistentId))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크가 정상적으로 수정된다.")
+    void GitHub_링크가_정상적으로_수정된다() {
+        final GithubUrlUpdateRequest request = new GithubUrlUpdateRequest("https://github.com/hongjiyeon");
+
+        memberCommandService.updateGithubUrl(teamLeader.getId(), request);
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getGithubUrl()).isEqualTo("https://github.com/hongjiyeon");
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크를 null로 수정할 수 있다.")
+    void GitHub_링크를_null로_수정할_수_있다() {
+        memberCommandService.updateGithubUrl(teamLeader.getId(), new GithubUrlUpdateRequest("https://github.com/test"));
+        memberCommandService.updateGithubUrl(teamLeader.getId(), new GithubUrlUpdateRequest(null));
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getGithubUrl()).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 공개 여부가 정상적으로 변경된다.")
+    void 프로필_공개_여부가_정상적으로_변경된다() {
+        final ProfileVisibilityUpdateRequest request = new ProfileVisibilityUpdateRequest(false);
+
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), request);
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getIsProfilePublic()).isFalse();
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 비공개에서 공개로 변경할 수 있다.")
+    void 프로필_비공개에서_공개로_변경할_수_있다() {
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), new ProfileVisibilityUpdateRequest(false));
+        memberCommandService.updateProfileVisibility(teamLeader.getId(), new ProfileVisibilityUpdateRequest(true));
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getIsProfilePublic()).isTrue();
     }
 }

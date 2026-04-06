@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.application.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.INVALID_TRACK_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.NOT_FOUND_TRACK;
 import static com.opus.opus.modules.contest.exception.ContestTrackExceptionType.TRACKNAME_DUPLICATED;
 
@@ -25,8 +26,13 @@ public class ContestTrackConvenience {
     }
 
     public ContestTrack getValidateExistTrack(final Long contestId, final Long trackId) {
-        return contestTrackRepository.findByIdAndContestId(trackId, contestId)
+        final ContestTrack contestTrack = contestTrackRepository.findById(trackId)
                 .orElseThrow(() -> new ContestTrackException(NOT_FOUND_TRACK));
+
+        if (!contestTrack.getContest().getId().equals(contestId)) {
+            throw new ContestTrackException(INVALID_TRACK_FOR_CONTEST);
+        }
+        return contestTrack;
     }
 
     public List<ContestTrack> getValidateExistTracks(final Long contestId) {

@@ -3,6 +3,7 @@ package com.opus.opus.modules.team.application.convenience;
 import static java.util.stream.Collectors.toMap;
 
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
@@ -33,13 +34,31 @@ public class TeamVoteConvenience {
         return teamVoteRepository.countMemberVotesInContest(memberId, contestId);
     }
 
-    public Map<Long, Boolean> getVoteMap(final Long contestId, final Member member) {
-        return teamVoteRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
-                .collect(toMap(tv -> tv.getTeam().getId(), TeamVote::getIsVoted));
+
+    // 1. 대회 내 모든 팀 맵 조회
+    public Map<Long, Boolean> getVoteMapIfInPeriod(final Long contestId, final Member member,
+                                                   final boolean isVotingPeriod) {
+        return (member != null && isVotingPeriod)
+                ? getVoteMapByContestId(contestId, member)
+                : Map.of();
     }
 
-    public Map<Long, Boolean> getVoteMapIfVotingPeriod(final Long contestId, final Member member,
-                                                       final boolean isVotingPeriod) {
-        return (member != null && isVotingPeriod) ? getVoteMap(contestId, member) : Map.of();
+    private Map<Long, Boolean> getVoteMapByContestId(final Long contestId, final Member member) {
+        return teamVoteRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
+                .collect(toMap(
+                        tv -> tv.getTeam().getId(),
+                        TeamVote::getIsVoted
+                ));
+    }
+
+    // 2. 단일 팀 투표 여부 조회
+    public boolean getIsVotedIfInPeriod(final Team team, final Member member, final boolean isVotingPeriod) {
+        return member != null && isVotingPeriod && getIsVotedByTeamAndMember(team, member);
+    }
+
+    private boolean getIsVotedByTeamAndMember(final Team team, final Member member) {
+        return teamVoteRepository.findByMemberIdAndTeam(member.getId(), team)
+                .map(TeamVote::getIsVoted)
+                .orElse(false);
     }
 }

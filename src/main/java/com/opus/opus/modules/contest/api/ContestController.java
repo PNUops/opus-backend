@@ -225,7 +225,7 @@ public class ContestController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured("ROLE_회원")
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @GetMapping("/{contestId}/teams")
     public ResponseEntity<List<TeamSummaryResponse>> getAllContestTeamSummaries(@PathVariable final Long contestId,
                                                                                 @LoginMember final Member member) {

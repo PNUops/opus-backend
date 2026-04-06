@@ -57,6 +57,11 @@ public class Member extends BaseEntity {
     @Column(name = "role", nullable = false, length = MAX_ROLE_NAME_LENGTH)
     private Set<MemberRoleType> roles = new HashSet<>();
 
+    private String githubUrl;
+
+    @Column(nullable = false)
+    private Boolean isProfilePublic;
+
     @Column(nullable = false)
     private Boolean isDeleted;
 
@@ -71,6 +76,7 @@ public class Member extends BaseEntity {
         this.password = password;
         this.studentId = studentId;
         this.roles = roles;
+        this.isProfilePublic = true;
         this.isDeleted = false;
         this.isFake = false;
     }
@@ -83,6 +89,7 @@ public class Member extends BaseEntity {
         this.socialType = socialType;
         this.socialId = socialId;
         this.roles = roles;
+        this.isProfilePublic = true;
         this.isDeleted = false;
         this.isFake = false;
     }
@@ -106,6 +113,18 @@ public class Member extends BaseEntity {
 
     public void updateStudentId(final String studentId) {
         this.studentId = studentId;
+    }
+
+    public boolean isAdmin() {
+        return roles.contains(MemberRoleType.ROLE_관리자);
+    }
+
+    public void updateGithubUrl(final String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public void updateProfileVisibility(final boolean isProfilePublic) {
+        this.isProfilePublic = isProfilePublic;
     }
 
     public boolean isFakeMember() {

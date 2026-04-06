@@ -60,6 +60,10 @@ public class TeamConvenience {
         return teamRepository.findTeamRankingByContestId(contestId);
     }
 
+    public long countSubmittedTeams() {
+        return teamRepository.countByIsSubmittedTrue();
+    }
+
     public void sortTeams(final List<Team> teams, final SortType mode, final Member member) {
         if (teams == null || teams.isEmpty()) {
             return;
