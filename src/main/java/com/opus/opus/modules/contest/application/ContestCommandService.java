@@ -333,12 +333,17 @@ public class ContestCommandService {
         final List<TeamBulkRowDto> rows = excelTeamParser.parse(file);
 
         excelTeamValidator.validateNotEmpty(rows);
-        final List<TeamBulkError> errors = excelTeamValidator.validateRows(rows, contestId);
+        final Set<Integer> skippedRowNums = new HashSet<>();
+        final List<TeamBulkError> errors = excelTeamValidator.validateRows(rows, contestId, skippedRowNums);
         if (!errors.isEmpty()) {
             throw new ContestException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
         }
 
-        return saveTeams(rows, contestId);
+        final List<TeamBulkRowDto> rowsToSave = rows.stream()
+                .filter(row -> !skippedRowNums.contains(row.rowNumber()))
+                .toList();
+
+        return saveTeams(rowsToSave, contestId);
     }
 
     private TeamBulkUploadResponse saveTeams(final List<TeamBulkRowDto> rows, final Long contestId) {

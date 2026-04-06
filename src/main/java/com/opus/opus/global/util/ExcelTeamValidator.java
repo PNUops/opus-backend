@@ -4,16 +4,19 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import com.opus.opus.modules.contest.application.dto.request.TeamBulkRowDto;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse.TeamBulkError;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
-import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -52,13 +55,13 @@ public class ExcelTeamValidator {
         }
     }
 
-    public List<TeamBulkError> validateRows(final List<TeamBulkRowDto> rows, final Long contestId) {
+    public List<TeamBulkError> validateRows(final List<TeamBulkRowDto> rows, final Long contestId, final Set<Integer> skippedRowNumbers) {
         final List<TeamBulkError> errors = new ArrayList<>();
 
         validateRowFormat(rows, errors);
 
         if (errors.isEmpty()) {
-            validateDuplicate(rows, contestId, errors);
+            validateDuplicate(rows, contestId, errors, skippedRowNumbers);
         }
 
         return errors;
@@ -137,11 +140,76 @@ public class ExcelTeamValidator {
     }
 
     private void validateDuplicate(final List<TeamBulkRowDto> rows, final Long contestId,
-                                          final List<TeamBulkError> errors) {
+                                    final List<TeamBulkError> errors, final Set<Integer> skippedRowNumbers) {
         final List<Team> existingTeams = teamConvenience.getTeamsOfContest(contestId);
+        final Map<String, Team> existingTeamsByName = existingTeams.stream()
+                .collect(toMap(Team::getTeamName, t -> t, (a, b) -> a));
 
-        validateTeamNameDuplicate(rows, existingTeams, errors);
-        validateMemberDuplicate(rows, contestId, errors);
+        for (final TeamBulkRowDto row : rows) {
+            final Team existingTeam = existingTeamsByName.get(row.teamName());
+            if (existingTeam != null && isExactMatch(row, existingTeam)) {
+                skippedRowNumbers.add(row.rowNumber());
+            }
+        }
+
+        final List<TeamBulkRowDto> rowsToValidate = rows.stream()
+                .filter(row -> !skippedRowNumbers.contains(row.rowNumber()))
+                .toList();
+
+        validateTeamNameDuplicate(rowsToValidate, existingTeams, errors);
+        validateMemberDuplicate(rowsToValidate, contestId, errors);
+    }
+
+    private boolean isExactMatch(final TeamBulkRowDto row, final Team existingTeam) {
+        if (!row.projectName().equals(existingTeam.getProjectName())) {
+            return false;
+        }
+
+        final List<TeamMember> teamMembers = existingTeam.getTeamMembers();
+        final List<Long> memberIds = teamMembers.stream().map(TeamMember::getMemberId).toList();
+        final Map<Long, Member> membersById = memberConvenience.getMembersByIds(memberIds);
+
+        return isLeaderMatch(row, teamMembers, membersById) && isMembersMatch(row, teamMembers, membersById);
+    }
+
+    private boolean isLeaderMatch(final TeamBulkRowDto row, final List<TeamMember> teamMembers, final Map<Long, Member> membersById) {
+        for (final TeamMember tm : teamMembers) {
+            if (!tm.getRoles().contains(TeamMemberRoleType.ROLE_팀장)) {
+                continue;
+            }
+            final Member leader = membersById.get(tm.getMemberId());
+            if (leader == null) {
+                return false;
+            }
+            return row.leaderName().equals(leader.getName())
+                    && row.leaderStudentId().equals(leader.getStudentId())
+                    && row.leaderEmail().equals(leader.getEmail());
+        }
+        return false;
+    }
+
+    private boolean isMembersMatch(final TeamBulkRowDto row, final List<TeamMember> teamMembers, final Map<Long, Member> membersById) {
+        final List<Member> members = teamMembers.stream()
+                .filter(tm -> !tm.getRoles().contains(TeamMemberRoleType.ROLE_팀장))
+                .map(tm -> membersById.get(tm.getMemberId()))
+                .toList();
+
+        if (members.size() != row.memberNames().size()) {
+            return false;
+        }
+
+        final Set<String> existingKeys = members.stream()
+                .map(m -> m.getName() + "|" + m.getStudentId() + "|" + m.getEmail())
+                .collect(toSet());
+
+        for (int i = 0; i < row.memberNames().size(); i++) {
+            final String key = row.memberNames().get(i) + "|" + row.memberStudentIds().get(i) + "|" + row.memberEmails().get(i);
+            if (!existingKeys.contains(key)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void validateTeamNameDuplicate(final List<TeamBulkRowDto> rows, final List<Team> existingTeams,
