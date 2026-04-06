@@ -1,6 +1,6 @@
 package com.opus.opus.modules.member.application.dto.response;
 
-import com.opus.opus.modules.team.domain.dao.MyCommentResult;
+import com.opus.opus.modules.team.domain.dao.projection.MyCommentProjection;
 import java.time.LocalDateTime;
 
 public record MyCommentResponse(
@@ -8,23 +8,23 @@ public record MyCommentResponse(
         ProjectInfo project
 ) {
 
-    public static MyCommentResponse from(final MyCommentResult result) {
+    public static MyCommentResponse from(final MyCommentProjection result) {
         return new MyCommentResponse(
                 new CommentInfo(
-                        result.commentId(),
-                        result.content(),
-                        result.createdAt(),
-                        result.memberName()
+                        result.getCommentId(),
+                        result.getContent(),
+                        result.getCreatedAt(),
+                        result.getMemberName()
                 ),
                 new ProjectInfo(
-                        result.contestId(),
-                        result.contestName(),
-                        result.categoryName(),
-                        result.trackName(),
-                        result.teamId(),
-                        result.teamName(),
-                        result.projectName(),
-                        result.overview()
+                        result.getContestId(),
+                        result.getContestName(),
+                        result.getCategoryName(),
+                        result.getTrackName(),
+                        result.getTeamId(),
+                        result.getTeamName(),
+                        result.getProjectName(),
+                        result.getOverview()
                 )
         );
     }
