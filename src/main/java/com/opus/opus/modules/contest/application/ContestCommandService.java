@@ -16,7 +16,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -55,7 +55,6 @@ import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
-import com.opus.opus.modules.team.exception.TeamException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -336,7 +335,7 @@ public class ContestCommandService {
         excelTeamValidator.validateNotEmpty(rows);
         final List<TeamBulkError> errors = excelTeamValidator.validateRows(rows, contestId);
         if (!errors.isEmpty()) {
-            throw new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
+            throw new ContestException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
         }
 
         return saveTeams(rows, contestId);

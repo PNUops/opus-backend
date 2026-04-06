@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
@@ -64,7 +64,7 @@ import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -1285,7 +1285,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new TeamBulkError(7, "7번째 행: 팀원 이름, 학번, 이메일의 개수가 일치하지 않습니다.")
         );
 
-        willThrow(new TeamException(FAILED_TO_VALIDATE_BULK_TEAMS, errors))
+        willThrow(new ContestException(FAILED_TO_VALIDATE_BULK_TEAMS, errors))
                 .given(contestCommandService).bulkUploadTeams(anyLong(), any());
 
         mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)

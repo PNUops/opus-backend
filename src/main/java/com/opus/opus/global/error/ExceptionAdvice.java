@@ -2,7 +2,7 @@ package com.opus.opus.global.error;
 
 import com.opus.opus.global.base.BaseException;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse;
-import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.contest.exception.ContestException;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -20,8 +20,8 @@ public class ExceptionAdvice {
         return ResponseEntity.badRequest().body(new ExceptionResponse(errorMessage));
     }
 
-    @ExceptionHandler(TeamException.class)
-    public ResponseEntity<?> teamException(final TeamException e) {
+    @ExceptionHandler(ContestException.class)
+    public ResponseEntity<?> contestException(final ContestException e) {
         if (e.getBulkErrors() != null) {
             return ResponseEntity.status(e.exceptionType().httpStatus())
                     .body(new TeamBulkErrorResponse(e.getBulkErrors()));

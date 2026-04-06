@@ -16,7 +16,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_END_PRECEDE_VOTE_START;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestIdAndItemOrder;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -39,7 +39,7 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestTemplateException;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.contest.exception.ContestException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.http.MediaType;
@@ -403,14 +403,14 @@ public class ContestCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 유효성 검사 실패 시 TeamException이 발생한다.")
-    void 유효성_검사_실패_시_TeamException이_발생한다() throws Exception {
+    @DisplayName("[실패] 유효성 검사 실패 시 ContestException이 발생한다.")
+    void 유효성_검사_실패_시_ContestException이_발생한다() throws Exception {
         final MockMultipartFile file = ContestExcelFixture.createExcelFile(
                 new String[]{"", "프로젝트", "김리더", "", "2021020", "", "test@pusan.ac.kr", ""} // 팀 이름 누락
         );
 
         assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
-                .isInstanceOf(TeamException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
     }
 
@@ -422,7 +422,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         );
 
         assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
-                .isInstanceOf(TeamException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
     }
 
@@ -435,7 +435,7 @@ public class ContestCommandServiceTest extends IntegrationTest {
         );
 
         assertThatThrownBy(() -> contestCommandService.bulkUploadTeams(contest.getId(), file))
-                .isInstanceOf(TeamException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(FAILED_TO_VALIDATE_BULK_TEAMS.errorMessage());
     }
 
