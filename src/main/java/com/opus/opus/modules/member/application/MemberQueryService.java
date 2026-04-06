@@ -35,7 +35,6 @@ import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;

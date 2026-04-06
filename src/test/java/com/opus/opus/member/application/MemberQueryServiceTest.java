@@ -12,8 +12,6 @@ import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.contest.ContestCategoryFixture;
-import com.opus.opus.contest.ContestFixture;
-import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.domain.File;
@@ -25,12 +23,8 @@ import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
-import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
@@ -96,30 +90,17 @@ public class MemberQueryServiceTest extends IntegrationTest {
     private TeamContestAwardRepository teamContestAwardRepository;
     @Autowired
     private TeamVoteRepository teamVoteRepository;
-
     @Autowired
     private FileRepository fileRepository;
+    @Autowired
+    private ContestCategoryRepository contestCategoryRepository;
+    @Autowired
+    private TeamCommentRepository teamCommentRepository;
+    @Autowired
+    private TeamLikeRepository teamLikeRepository;
 
     @Autowired
     private FileStorageUtil fileStorageUtil;
-
-    @Autowired
-    private ContestCategoryRepository contestCategoryRepository;
-
-    @Autowired
-    private ContestRepository contestRepository;
-
-    @Autowired
-    private ContestTrackRepository contestTrackRepository;
-
-    @Autowired
-    private TeamRepository teamRepository;
-
-    @Autowired
-    private TeamCommentRepository teamCommentRepository;
-
-    @Autowired
-    private TeamLikeRepository teamLikeRepository;
 
     private Member member;
     private Team team;
