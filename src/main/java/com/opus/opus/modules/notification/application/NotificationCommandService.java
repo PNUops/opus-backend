@@ -7,6 +7,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
 import com.opus.opus.modules.notification.exception.NotificationException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,5 +28,14 @@ public class NotificationCommandService {
                 .orElseThrow(() -> new NotificationException(NOT_FOUND_NOTIFICATION));
 
         notification.updateNotification();
+    }
+
+    public void updateNotificationAll(final Member member) {
+        memberConvenience.validateExistMember(member.getId());
+
+        final List<Notification> unreadNotifications = notificationRepository.findAllByMemberIdAndIsReadFalse(
+                member.getId());
+
+        unreadNotifications.forEach(Notification::updateNotification);
     }
 }

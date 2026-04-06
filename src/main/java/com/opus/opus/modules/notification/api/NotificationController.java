@@ -27,4 +27,10 @@ public class NotificationController {
         notificationCommandService.updateSingleNotification(notificationId, member);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping
+    public ResponseEntity<Void> updateNotificationAll(@LoginMember final Member member) {
+        notificationCommandService.updateNotificationAll(member);
+        return ResponseEntity.noContent().build();
+    }
 }
