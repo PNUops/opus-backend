@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 
 public enum NotificationExceptionType implements BaseExceptionType {
 
+    NOT_FOUND_NOTIFICATION(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

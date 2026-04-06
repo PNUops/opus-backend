@@ -54,4 +54,8 @@ public class Notification extends BaseEntity {
         this.isRead = false;
         this.isDeleted = false;
     }
+
+    public void updateNotification() {
+        this.isRead = true;
+    }
 }
