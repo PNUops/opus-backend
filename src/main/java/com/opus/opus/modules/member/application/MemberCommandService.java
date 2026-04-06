@@ -142,7 +142,6 @@ public class MemberCommandService {
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
-        memberConvenience.validateExistMemberByEmail(email);
         checkEmailAuthLimit(email);
 
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
