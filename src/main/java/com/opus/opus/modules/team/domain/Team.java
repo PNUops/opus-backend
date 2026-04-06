@@ -2,6 +2,7 @@ package com.opus.opus.modules.team.domain;
 
 import com.opus.opus.global.base.BaseEntity;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
+import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,41 +26,59 @@ import org.hibernate.annotations.SQLRestriction;
 public class Team extends BaseEntity {
 
     private static final int MAX_OVERVIEW_LENGTH = 3000;
+
     @OneToMany(mappedBy = "team")
     private final List<TeamComment> teamComments = new ArrayList<>();
+
     @OneToMany(mappedBy = "team")
     private final List<TeamContestAward> teamAwards = new ArrayList<>();
+
     @OneToMany(mappedBy = "team")
     private final List<TeamLike> teamLikes = new ArrayList<>();
+
     @OneToMany(mappedBy = "team")
     private final List<TeamVote> teamVotes = new ArrayList<>();
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column
     private String teamName;
+
     @Column
     private String projectName;
+
     @Column
     private String professorName;
+
     @Column(length = MAX_OVERVIEW_LENGTH)
     private String overview;
+
     @Column
     private String githubPath;
+
     @Column
     private String productionPath;
+
     @Column
     private String youTubePath;
+
     @Column(nullable = false)
     private Long contestId;
+
     @Column
     private Long trackId;
+
     @Column(nullable = false)
     private Integer itemOrder;
+
     @Column(nullable = false)
     private Boolean isDeleted;
+
     @Column(nullable = false)
     private Boolean isSubmitted;
+
     @OneToMany(mappedBy = "team")
     private List<TeamMember> teamMembers = new ArrayList<>();
 

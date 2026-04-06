@@ -142,6 +142,18 @@ public class MemberConvenience {
         return passwordEncoder.encode(password.toString());
     }
 
+    public Map<String, Member> findAllByEmailIn(final List<String> emails) {
+        return memberRepository.findAllByEmailIn(emails)
+                .stream()
+                .collect(toMap(Member::getEmail, Function.identity()));
+    }
+
+    public Map<String, Member> findAllByStudentIdIn(final List<String> studentIds) {
+        return memberRepository.findAllByStudentIdIn(studentIds)
+                .stream()
+                .collect(toMap(Member::getStudentId, Function.identity()));
+    }
+
     public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {
         return memberRepository.findAllById(memberIds)
                 .stream()

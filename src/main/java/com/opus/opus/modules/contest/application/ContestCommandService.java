@@ -57,9 +57,11 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -342,18 +344,29 @@ public class ContestCommandService {
 
     private TeamBulkUploadResponse saveTeams(final List<TeamBulkRowDto> rows, final Long contestId) {
         final int existingTeamCount = teamConvenience.getTeamsOfContest(contestId).size();
+
+        final Map<String, Member> membersByEmail = prefetchMembersByEmail(rows);
         final List<TeamBulkResult> results = new ArrayList<>();
 
         for (int i = 0; i < rows.size(); i++) {
             final TeamBulkRowDto row = rows.get(i);
 
             final Team team = createTeam(row, contestId, existingTeamCount + i + 1);
-            registerTeamMembers(row, team);
+            registerTeamMembers(row, team, membersByEmail);
 
             results.add(new TeamBulkResult(row.rowNumber(), row.teamName(), team.getId()));
         }
 
         return new TeamBulkUploadResponse(results.size(), results);
+    }
+
+    private Map<String, Member> prefetchMembersByEmail(final List<TeamBulkRowDto> rows) {
+        final Set<String> allEmails = new HashSet<>();
+        for (final TeamBulkRowDto row : rows) {
+            allEmails.add(row.leaderEmail());
+            allEmails.addAll(row.memberEmails());
+        }
+        return memberConvenience.findAllByEmailIn(new ArrayList<>(allEmails));
     }
 
     private Team createTeam(final TeamBulkRowDto row, final Long contestId, final int itemOrder) {
@@ -367,28 +380,33 @@ public class ContestCommandService {
         return team;
     }
 
-    private void registerTeamMembers(final TeamBulkRowDto row, final Team team) {
-        final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName());
+    private void registerTeamMembers(final TeamBulkRowDto row, final Team team, final Map<String, Member> membersByEmail) {
+        final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName(), membersByEmail);
         teamMemberConvenience.saveTeamMember(leader.getId(), team, TeamMemberRoleType.ROLE_팀장);
 
         for (int j = 0; j < row.memberNames().size(); j++) {
             final Member member = getOrCreateMember(
                     row.memberEmails().get(j),
                     row.memberStudentIds().get(j),
-                    row.memberNames().get(j));
+                    row.memberNames().get(j),
+                    membersByEmail);
             teamMemberConvenience.saveTeamMember(member.getId(), team, TeamMemberRoleType.ROLE_팀원);
         }
     }
 
-    private Member getOrCreateMember(final String email, final String studentId, final String name) {
-        return memberConvenience.findByEmail(email)
-                .map(member -> {
-                    if (member.getStudentId() == null && studentId != null) {
-                        member.updateStudentId(studentId);
-                    }
-                    return member;
-                })
-                .orElseGet(() -> memberConvenience.getOrCreateFakeMember(email, studentId, name));
+    private Member getOrCreateMember(final String email, final String studentId, final String name,
+                                      final Map<String, Member> membersByEmail) {
+        final Member existing = membersByEmail.get(email);
+        if (existing != null) {
+            if (existing.getStudentId() == null && studentId != null) {
+                existing.updateStudentId(studentId);
+            }
+            return existing;
+        }
+
+        final Member created = memberConvenience.getOrCreateFakeMember(email, studentId, name);
+        membersByEmail.put(email, created);
+        return created;
     }
 
 }

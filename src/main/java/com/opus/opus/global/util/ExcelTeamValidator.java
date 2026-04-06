@@ -12,10 +12,12 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -158,39 +160,52 @@ public class ExcelTeamValidator {
     private void validateMemberDuplicate(final List<TeamBulkRowDto> rows, final Long contestId, final List<TeamBulkError> errors) {
         final Set<Long> existingMemberIds = teamMemberConvenience.findMemberIdsByContestId(contestId);
 
+        final Set<String> allEmails = new HashSet<>();
+        final Set<String> allStudentIds = new HashSet<>();
         for (final TeamBulkRowDto row : rows) {
-            final List<String> allEmails = new ArrayList<>();
-            final List<String> allStudentIds = new ArrayList<>();
+            if (!checkBlank(row.leaderEmail())) allEmails.add(row.leaderEmail());
+            if (!checkBlank(row.leaderStudentId())) allStudentIds.add(row.leaderStudentId());
+            row.memberEmails().stream().filter(e -> !checkBlank(e)).forEach(allEmails::add);
+            row.memberStudentIds().stream().filter(s -> !checkBlank(s)).forEach(allStudentIds::add);
+        }
 
-            allEmails.add(row.leaderEmail());
-            allStudentIds.add(row.leaderStudentId());
-            allEmails.addAll(row.memberEmails());
-            allStudentIds.addAll(row.memberStudentIds());
+        final Map<String, Member> membersByEmail = memberConvenience.findAllByEmailIn(new ArrayList<>(allEmails));
+        final Map<String, Member> membersByStudentId = memberConvenience.findAllByStudentIdIn(new ArrayList<>(allStudentIds));
 
-            for (int i = 0; i < allEmails.size(); i++) {
-                checkDuplicateMemberInContest(allEmails.get(i), row.rowNumber(), allStudentIds.get(i), existingMemberIds, errors);
-                checkStudentIdConflict(allEmails.get(i), row.rowNumber(), allStudentIds.get(i), errors);
+        for (final TeamBulkRowDto row : rows) {
+            final List<String> emailList = new ArrayList<>();
+            final List<String> studentIdList = new ArrayList<>();
+
+            emailList.add(row.leaderEmail());
+            studentIdList.add(row.leaderStudentId());
+            emailList.addAll(row.memberEmails());
+            studentIdList.addAll(row.memberStudentIds());
+
+            for (int i = 0; i < emailList.size(); i++) {
+                checkDuplicateMemberInContest(emailList.get(i), row.rowNumber(), studentIdList.get(i), existingMemberIds, membersByEmail, errors);
+                checkStudentIdConflict(emailList.get(i), row.rowNumber(), studentIdList.get(i), membersByStudentId, errors);
             }
         }
     }
 
-    private void checkDuplicateMemberInContest(final String email, final int rowNum, final String studentId, final Set<Long> existingMemberIds, final List<TeamBulkError> errors) {
-        memberConvenience.findByEmail(email).ifPresent(member -> {
-            if (existingMemberIds.contains(member.getId())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: " + studentId + " 학생이 해당 대회의 다른 팀에 이미 소속되어 있습니다."));
-            }
-        });
+    private void checkDuplicateMemberInContest(final String email, final int rowNum, final String studentId,
+                                                final Set<Long> existingMemberIds, final Map<String, Member> membersByEmail,
+                                                final List<TeamBulkError> errors) {
+        final Member member = membersByEmail.get(email);
+        if (member != null && existingMemberIds.contains(member.getId())) {
+            errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: " + studentId + " 학생이 해당 대회의 다른 팀에 이미 소속되어 있습니다."));
+        }
     }
 
-    private void checkStudentIdConflict(final String email, final int rowNum, final String studentId, final List<TeamBulkError> errors) {
+    private void checkStudentIdConflict(final String email, final int rowNum, final String studentId,
+                                         final Map<String, Member> membersByStudentId, final List<TeamBulkError> errors) {
         if (checkBlank(studentId)) {
             return;
         }
-        memberConvenience.findByStudentId(studentId).ifPresent(member -> {
-            if (!email.equals(member.getEmail())) {
-                errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
-            }
-        });
+        final Member member = membersByStudentId.get(studentId);
+        if (member != null && !email.equals(member.getEmail())) {
+            errors.add(new TeamBulkError(rowNum, rowNum + "번째 행: 학번 " + studentId + "이 다른 이메일로 이미 등록되어 있습니다."));
+        }
     }
 
     private boolean checkBlank(final String value) {
