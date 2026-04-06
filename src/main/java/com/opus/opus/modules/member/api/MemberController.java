@@ -5,17 +5,23 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.global.security.annotation.LoginMember;
+import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.StatisticsQueryService;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
@@ -23,7 +29,6 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -43,11 +48,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Validated
 @RestController
@@ -149,6 +152,51 @@ public class MemberController {
         memberCommandService.deleteProfileImage(member);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/members/me")
+    public ResponseEntity<AccountInfoResponse> getAccountInfo(@LoginMember final Member member) {
+        final AccountInfoResponse response = memberQueryService.getAccountInfo(member.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/members/me/github-url")
+    public ResponseEntity<Void> updateGithubUrl(@LoginMember final Member member,
+                                                @Valid @RequestBody final GithubUrlUpdateRequest githubUrlUpdateRequest) {
+        memberCommandService.updateGithubUrl(member.getId(), githubUrlUpdateRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/members/me/profile-visibility")
+    public ResponseEntity<Void> updateProfileVisibility(@LoginMember final Member member,
+                                                        @Valid @RequestBody final ProfileVisibilityUpdateRequest profileVisibilityUpdateRequest) {
+        memberCommandService.updateProfileVisibility(member.getId(), profileVisibilityUpdateRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/members/me")
+    public ResponseEntity<Void> deleteMember(@LoginMember final Member member) {
+        memberCommandService.withdraw(member);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @DeleteMapping("/admin/members/{memberId}")
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
+        memberCommandService.withdrawByAdmin(memberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/members/me/projects")
+    public ResponseEntity<List<MyProjectResponse>> getMyProjects(@LoginMember final Member member) {
+        final List<MyProjectResponse> responses = memberQueryService.getMyProjects(member.getId());
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/members/me/votes")
+    public ResponseEntity<List<MyVoteResponse>> getMyVotes(@LoginMember final Member member) {
+        final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/members/me/comments")

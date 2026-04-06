@@ -243,9 +243,9 @@ public class ContestQueryService {
     }
 
     private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfVotingPeriod(contestId, member,
+        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfInPeriod(contestId, member,
                 isVotingPeriod);
-        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfNotVotingPeriod(contestId, member,
+        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfInPeriod(contestId, member,
                 isVotingPeriod);
         return new VoteLikeResult(voteMap, likeMap);
     }

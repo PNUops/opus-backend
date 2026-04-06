@@ -251,6 +251,32 @@ include::{snippets}/statistics-summary/http-response.adoc[]
 .Response Body's Fields
 include::{snippets}/statistics-summary/response-fields.adoc[]
 
+== `GET`: 나의 프로젝트 조회
+
+NOTE: 로그인한 사용자가 팀원으로 참여한 모든 대회의 프로젝트 목록을 조회합니다. 수상 정보를 포함하며, 페이지네이션 없이 전체 반환됩니다.
+
+.HTTP Request
+include::{snippets}/get-my-projects/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-my-projects/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-my-projects/response-fields.adoc[]
+
+== `GET`: 나의 투표 기록 조회
+
+NOTE: 현재 투표 기간에 해당하는 대회에서 투표한 프로젝트 목록을 조회합니다. 투표 기간이 아닌 경우 빈 배열을 반환하며, 최신순으로 정렬됩니다.
+
+.HTTP Request
+include::{snippets}/get-my-votes/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-my-votes/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-my-votes/response-fields.adoc[]
+
 == `PATCH`: 학번 수정
 
 NOTE: 부산대 메일로 구글 소셜 로그인한 사용자에 한해 1회만 수정 가능합니다.
@@ -326,6 +352,82 @@ include::{snippets}/delete-member-profile-image/http-response.adoc[]
 
 .Request Headers
 include::{snippets}/delete-member-profile-image/request-headers.adoc[]
+
+== `DELETE`: 회원 탈퇴
+
+.HTTP Request
+include::{snippets}/withdraw-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/withdraw-member/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/withdraw-member/request-headers.adoc[]
+
+== `DELETE`: 관리자 강제 회원 탈퇴
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다.
+
+.HTTP Request
+include::{snippets}/admin-withdraw-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-withdraw-member/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-withdraw-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-withdraw-member/path-parameters.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 회원 ID
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-not-found/http-response.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-not-found/path-parameters.adoc[]
+
+====
+
+== `GET`: 계정 정보 조회
+
+.HTTP Request
+include::{snippets}/get-account-info/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-account-info/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-account-info/response-fields.adoc[]
+
+== `PATCH`: GitHub 링크 수정
+
+.HTTP Request
+include::{snippets}/update-github-url/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-github-url/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-github-url/request-fields.adoc[]
+
+== `PATCH`: 프로필 공개 여부 변경
+
+.HTTP Request
+include::{snippets}/update-profile-visibility/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-profile-visibility/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-profile-visibility/request-fields.adoc[]
 
 == `GET`: 나의 댓글 조회
 

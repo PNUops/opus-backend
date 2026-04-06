@@ -22,10 +22,12 @@ import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
-import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
@@ -262,6 +264,32 @@ public class MemberCommandService {
         memberConvenience.checkIsDuplicateStudentId(request.studentId());
 
         member.updateStudentId(request.studentId());
+    }
+
+    public void withdraw(final Member member) {
+        deleteMember(member);
+    }
+
+    public void withdrawByAdmin(final Long memberId) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        deleteMember(member);
+    }
+
+    private void deleteMember(final Member member) {
+        if (member.isSocialMember()) {
+            unlinkGoogleAccount(member.getId());
+        }
+        memberRepository.delete(member);
+    }
+
+    public void updateGithubUrl(final Long memberId, final GithubUrlUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        member.updateGithubUrl(request.githubUrl());
+    }
+
+    public void updateProfileVisibility(final Long memberId, final ProfileVisibilityUpdateRequest request) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        member.updateProfileVisibility(request.isProfilePublic());
     }
 
     private void unlinkGoogleAccount(final Long memberId) {

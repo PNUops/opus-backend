@@ -3,6 +3,7 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -29,7 +30,6 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -39,20 +39,26 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.ProjectInfo;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -465,6 +471,183 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 탈퇴가 정상적으로 이루어진다.")
+    void 회원_탈퇴가_정상적으로_이루어진다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, memberAccessToken))
+                .andExpect(status().isNoContent())
+                .andDo(document("withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(회원)"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
+    void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
+        // Given
+        doNothing().when(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-withdraw-member",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 404를 반환한다.")
+    void 존재하지_않는_회원을_강제_탈퇴하면_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-withdraw-member-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 프로젝트 목록을 조회할 수 있다.")
+    void 나의_프로젝트_목록을_조회할_수_있다() throws Exception {
+        final List<MyProjectResponse> responses = List.of(
+                new MyProjectResponse(
+                        1L, "제6회창의융합해커톤대회", 10L, "PNUops", "SW성과관리시스템", "AI/빅데이터",
+                        List.of(new AwardInfo("대상", "#FF0000"))
+                ),
+                new MyProjectResponse(
+                        2L, "제5회창의융합해커톤대회", 22L, "해커톤의신", "PNUDataKing", null,
+                        List.of()
+                )
+        );
+
+        when(memberQueryService.getMyProjects(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/projects")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-projects",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "트랙(분과)명").optional(),
+                                arrayFieldWithPath("[].awards", "수상 내역 리스트"),
+                                stringFieldWithPath("[].awards[].awardName", "수상명"),
+                                stringFieldWithPath("[].awards[].awardColor", "수상 색상")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 투표 기록을 조회할 수 있다.")
+    void 나의_투표_기록을_조회할_수_있다() throws Exception {
+        final List<MyVoteResponse> responses = List.of(
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 5L, "Team Alpha", "알파 프로젝트"),
+                new MyVoteResponse(1L, "제6회창의융합해커톤대회", 12L, "Team Beta", "베타 프로젝트")
+        );
+
+        when(memberQueryService.getMyVotes(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/votes")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-votes",
+                        responseFields(
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 로그인한 사용자의 계정 정보를 조회할 수 있다.")
+    void 로그인한_사용자의_계정_정보를_조회할_수_있다() throws Exception {
+        final AccountInfoResponse response = new AccountInfoResponse(member.getName(), member.getEmail(), null, true);
+
+        when(memberQueryService.getAccountInfo(any())).thenReturn(response);
+
+        mockMvc.perform(get("/members/me")
+                        .header("Authorization", "Bearer exampleToken"))
+                .andExpect(status().isOk())
+                .andDo(document("get-account-info",
+                        responseFields(
+                                stringFieldWithPath("name", "이름"),
+                                stringFieldWithPath("email", "이메일"),
+                                stringFieldWithPath("githubUrl", "GitHub 링크").optional(),
+                                booleanFieldWithPath("isProfilePublic", "프로필 공개 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] GitHub 링크를 정상적으로 수정할 수 있다.")
+    void GitHub_링크를_정상적으로_수정할_수_있다() throws Exception {
+        final GithubUrlUpdateRequest request = new GithubUrlUpdateRequest("https://github.com/hongjiyeon");
+
+        doNothing().when(memberCommandService).updateGithubUrl(any(), any());
+
+        mockMvc.perform(patch("/members/me/github-url")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-github-url",
+                        requestFields(
+                                stringFieldWithPath("githubUrl", "GitHub URL").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 프로필 공개 여부를 정상적으로 변경할 수 있다.")
+    void 프로필_공개_여부를_정상적으로_변경할_수_있다() throws Exception {
+        final ProfileVisibilityUpdateRequest request = new ProfileVisibilityUpdateRequest(true);
+
+        doNothing().when(memberCommandService).updateProfileVisibility(any(), any());
+
+        mockMvc.perform(patch("/members/me/profile-visibility")
+                        .header("Authorization", "Bearer exampleToken")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-profile-visibility",
+                        requestFields(
+                                booleanFieldWithPath("isProfilePublic", "프로필 공개 여부")
                         )
                 ));
     }

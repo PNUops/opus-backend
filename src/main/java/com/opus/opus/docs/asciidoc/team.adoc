@@ -30,7 +30,6 @@ include::{snippets}/get-team-poster/path-parameters.adoc[]
 ==== ⚠️ 실패 케이스
 
 .❌ Case 1: 등록되지 않은 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-poster-fail-image-not-found/http-request.adoc[]
@@ -38,7 +37,6 @@ include::{snippets}/get-team-poster-fail-image-not-found/http-response.adoc[]
 ====
 
 .❌ Case 2: 변환 중인 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-poster-fail-converting/http-request.adoc[]
@@ -78,7 +76,8 @@ include::{snippets}/delete-team-poster/request-headers.adoc[]
 
 === `GET`: 팀 썸네일 이미지 조회
 
-NOTE: 팀 썸네일 조회 시 우선순위: [팀 전용 썸네일] > [분과 기본 썸네일] > [시스템 기본 썸네일] 순으로 조회됩니다. 따라서 별도로 등록한 팀 썸네일이 없더라도 기본 이미지가 반환됩니다.
+NOTE: 팀 썸네일 조회 시 우선순위: [팀 전용 썸네일] > [분과 기본 썸네일] > [시스템 기본 썸네일] 순으로 조회됩니다.
+따라서 별도로 등록한 팀 썸네일이 없더라도 기본 이미지가 반환됩니다.
 
 .HTTP Request
 include::{snippets}/get-team-thumbnail/http-request.adoc[]
@@ -92,7 +91,6 @@ include::{snippets}/get-team-thumbnail/path-parameters.adoc[]
 ==== ⚠️ 실패 케이스
 
 .❌ Case 1: 등록되지 않은 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-thumbnail-fail-image-not-found/http-request.adoc[]
@@ -100,7 +98,6 @@ include::{snippets}/get-team-thumbnail-fail-image-not-found/http-response.adoc[]
 ====
 
 .❌ Case 2: 변환 중인 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-thumbnail-fail-converting/http-request.adoc[]
@@ -152,7 +149,6 @@ include::{snippets}/get-team-preview/path-parameters.adoc[]
 ==== ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-preview-fail-not-found/http-request.adoc[]
@@ -160,7 +156,6 @@ include::{snippets}/get-team-preview-fail-not-found/http-response.adoc[]
 ====
 
 .❌ Case 2: 변환 중인 이미지
-
 [%collapsible]
 ====
 include::{snippets}/get-team-preview-fail-converting/http-request.adoc[]
@@ -168,7 +163,6 @@ include::{snippets}/get-team-preview-fail-converting/http-response.adoc[]
 ====
 
 .❌ Case 3: 물리적 파일이 존재하지 않음
-
 [%collapsible]
 ====
 include::{snippets}/get-team-preview-fail-physical-not-found/http-request.adoc[]
@@ -195,7 +189,6 @@ include::{snippets}/save-team-preview/request-parts.adoc[]
 ==== ⚠️ 실패 케이스
 
 .❌ Case 1: 이미지 개수 초과 (5개 초과)
-
 [%collapsible]
 ====
 include::{snippets}/save-team-preview-fail-limit-exceeded/http-request.adoc[]
@@ -218,3 +211,192 @@ include::{snippets}/delete-team-preview/request-headers.adoc[]
 
 .Request Fields
 include::{snippets}/delete-team-preview/request-fields.adoc[]
+
+== 팀 정보 관리
+
+=== `POST`: 팀 등록
+
+.HTTP Request
+include::{snippets}/create-team/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/create-team/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/create-team/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/create-team/request-fields.adoc[]
+
+.Response Fields
+include::{snippets}/create-team/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 요청 바디 오류
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-bad-request/http-request.adoc[]
+include::{snippets}/create-team-fail-bad-request/http-response.adoc[]
+====
+
+.❌ Case 2: 존재하지 않는 대회 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-contest-not-found/http-request.adoc[]
+include::{snippets}/create-team-fail-contest-not-found/http-response.adoc[]
+====
+
+.❌ Case 3: 존재하지 않는 분과 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-track-not-found/http-request.adoc[]
+include::{snippets}/create-team-fail-track-not-found/http-response.adoc[]
+====
+
+.❌ Case 4: 해당 대회에 속하지 않은 분과 ID
+
+[%collapsible]
+====
+include::{snippets}/create-team-fail-invalid-track-for-contest/http-request.adoc[]
+include::{snippets}/create-team-fail-invalid-track-for-contest/http-response.adoc[]
+====
+
+=== `PATCH`: 팀 수정
+
+팀의 상세 정보를 수정합니다.
+관리자, 팀장, 팀원이 수정할 수 있습니다.
+입력 필드의 필수 여부는 대회의 팀 상세 템플릿 설정(boolean) 에 따라 결정됩니다.
+
+📌 권한별 수정 규칙
+
+1. 관리자
+* 일부 필드만 수정하는 부분 수정 가능
+* 템플릿에서 Required=true 인 필드를 모두 입력하지 않아도 저장 가능
+* contestId, trackId 변경 가능
+2. 해당 팀의 팀장 / 팀원
+* 템플릿에서 Required=true 인 모든 필드를 반드시 포함해야 저장 가능
+* contestId, trackId 변경 불가
+
+.HTTP Request
+include::{snippets}/update-team/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-team/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/update-team/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/update-team/request-headers.adoc[]
+
+.Request Fields
+include::{snippets}/update-team/request-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 팀장/팀원 권한으로 필수 필드 누락
+[%collapsible]
+====
+include::{snippets}/update-team-fail-required-field-missing/http-request.adoc[]
+include::{snippets}/update-team-fail-required-field-missing/http-response.adoc[]
+====
+
+.❌ Case 2: 팀장/팀원 권한으로 contestId/trackId 변경 시도
+[%collapsible]
+====
+include::{snippets}/update-team-fail-forbidden-contest-track-update/http-request.adoc[]
+include::{snippets}/update-team-fail-forbidden-contest-track-update/http-response.adoc[]
+====
+
+.❌ Case 3: 해당 팀에 대한 수정 권한 없음 (관리자 또는 해당 팀의 팀장/팀원만 수정 가능)
+[%collapsible]
+====
+include::{snippets}/update-team-fail-no-permission/http-request.adoc[]
+include::{snippets}/update-team-fail-no-permission/http-response.adoc[]
+====
+
+=== `DELETE`: 팀 삭제
+
+.HTTP Request
+include::{snippets}/delete-team/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-team/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-team/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-team/request-headers.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 팀
+[%collapsible]
+====
+include::{snippets}/delete-team-fail-not-found/http-request.adoc[]
+include::{snippets}/delete-team-fail-not-found/http-response.adoc[]
+====
+
+=== `GET`: 팀 상세 조회 (비회원용)
+
+해당 팀의 상세 정보를 조회합니다.
+**비회원 전용 상세 조회 API**입니다.
+비회원은 좋아요 및 투표 정보를 확인할 수 없기 때문에:
+
+- `isLiked`: 항상 `false`
+- `isVoted`: 항상 `false`
+
+또한, 상세 이미지 조회를 위한 previewIds 배열을 함께 반환합니다.
+
+- 반환된 previewIds로 `/teams/{teamId}/image/{imageId}` 호출
+- posters 조회는 `/teams/{teamId}/image/posters`
+
+.HTTP Request
+include::{snippets}/get-team-detail-public/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-detail-public/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-detail-public/path-parameters.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-detail-public/response-fields.adoc[]
+
+=== `GET`: 팀 상세 조회 (회원용)
+
+해당 팀의 상세 정보를 조회합니다.
+**회원 전용 상세 조회 API**입니다.
+현재 시간(투표 기간 여부)에 따라 `isLiked`, `isVoted` 값이 달라집니다.
+
+- 현재가 **투표 기간인 경우**
+    - `isVoted`: 로그인한 사용자의 투표 여부
+    - `isLiked`: `false`
+- 현재가 **투표 기간이 아닌 경우**
+    - `isVoted`: `false`
+    - `isLiked`: 로그인한 사용자의 좋아요 여부
+
+또한, 상세 이미지 조회를 위한 previewIds 배열을 함께 반환합니다.
+
+- 반환된 previewIds로 `/teams/{teamId}/image/{imageId}` 호출
+- posters 조회는 `/teams/{teamId}/image/posters`
+
+.HTTP Request
+include::{snippets}/get-team-detail/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-detail/http-response.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-detail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-detail/request-headers.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-detail/response-fields.adoc[]

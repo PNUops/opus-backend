@@ -12,13 +12,24 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import java.util.LinkedHashMap;
+import java.util.List;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
@@ -49,6 +60,9 @@ public class MemberQueryService {
     private final TeamCommentRepository teamCommentRepository;
     private final TeamLikeRepository teamLikeRepository;
 
+    private final TeamMemberRepository teamMemberRepository;
+    private final TeamVoteRepository teamVoteRepository;
+
     public EmailFindResponse getMyEmail(final String studentId) {
         final Member member = memberConvenience.getValidateExistMemberByStudentId(studentId);
         return new EmailFindResponse(member.getEmail());
@@ -58,6 +72,23 @@ public class MemberQueryService {
         final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
         final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(profileFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
+    }
+
+    public AccountInfoResponse getAccountInfo(final Long memberId) {
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        return AccountInfoResponse.from(member);
+    }
+
+    public List<MyProjectResponse> getMyProjects(final Long memberId) {
+        return teamMemberRepository.findMyProjectsWithAwards(memberId).stream()
+                .collect(groupingBy(MyProjectFlatResult::teamId, LinkedHashMap::new, toList()))
+                .values().stream()
+                .map(MyProjectResponse::from)
+                .toList();
+    }
+
+    public List<MyVoteResponse> getMyVotes(final Long memberId) {
+        return teamVoteRepository.findMyVotes(memberId);
     }
 
     public Page<MyCommentResponse> getMyComments(final Long memberId, final String sort,
