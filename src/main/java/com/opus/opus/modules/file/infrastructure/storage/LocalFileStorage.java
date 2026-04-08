@@ -27,7 +27,7 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public void store(final byte[] content, final String relativePath) {
-        final Path fullPath = basePath.resolve(relativePath).normalize();
+        final Path fullPath = resolveSafely(relativePath);
         try {
             Files.createDirectories(fullPath.getParent());
             Files.write(fullPath, content);
@@ -38,7 +38,7 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public byte[] load(final String relativePath) {
-        final Path fullPath = basePath.resolve(relativePath).normalize();
+        final Path fullPath = resolveSafely(relativePath);
         if (!Files.exists(fullPath)) {
             throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE);
         }
@@ -51,7 +51,7 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public void delete(final String relativePath) {
-        final Path fullPath = basePath.resolve(relativePath).normalize();
+        final Path fullPath = resolveSafely(relativePath);
         if (Files.exists(fullPath)) {
             try {
                 Files.delete(fullPath);
@@ -65,6 +65,14 @@ public class LocalFileStorage implements FileStorage {
 
     @Override
     public boolean exists(final String relativePath) {
-        return Files.exists(basePath.resolve(relativePath).normalize());
+        return Files.exists(resolveSafely(relativePath));
+    }
+
+    private Path resolveSafely(final String relativePath) {
+        final Path fullPath = basePath.resolve(relativePath).normalize();
+        if (!fullPath.startsWith(basePath)) {
+            throw new FileException(FileExceptionType.SAVE_FAILED, "잘못된 파일 경로입니다: " + relativePath);
+        }
+        return fullPath;
     }
 }
