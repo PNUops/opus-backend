@@ -37,7 +37,11 @@ public class AsyncImageProcessingService {
             fileStorage.delete(relativePath);
         } catch (Exception ignored) {
         }
-        fileRepository.deleteById(fileId);
+        try {
+            fileRepository.deleteById(fileId);
+        } catch (Exception e) {
+            log.error("이미지 처리 실패 후 DB 레코드 정리 실패 [fileId={}]: {}", fileId, e.getMessage(), e);
+        }
     }
 
     public void deletePhysicalFile(final String relativePath) {
