@@ -3,6 +3,7 @@ package com.opus.opus.modules.file.infrastructure.storage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +22,7 @@ public class LocalFileStorage implements FileStorage {
         try {
             Files.createDirectories(this.basePath);
         } catch (IOException e) {
-            log.error("파일 저장소 기본 경로 생성 실패: {}", this.basePath, e);
+            throw new UncheckedIOException("파일 저장소 기본 경로 초기화 실패: " + this.basePath, e);
         }
     }
 
