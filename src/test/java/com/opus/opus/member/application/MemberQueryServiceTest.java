@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Set;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.file.FileFixture;
-import org.antlr.v4.runtime.misc.Pair;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,7 +114,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         final Resource resource = new ByteArrayResource("content".getBytes());
         given(fileQueryService.findFileAndType(savedFile.getId()))
-                .willReturn(new Pair<>(resource, "image/webp"));
+                .willReturn(new FileResource(resource, "image/webp"));
 
         // when
         final ImageResponse response = memberQueryService.getProfileImage(member);

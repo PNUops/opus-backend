@@ -31,7 +31,7 @@ import com.opus.opus.file.FileFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import org.antlr.v4.runtime.misc.Pair;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,7 +147,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
 
         Resource resource = new ByteArrayResource("content".getBytes());
         given(fileQueryService.findFileAndType(savedFile.getId()))
-                .willReturn(new Pair<>(resource, "image/webp"));
+                .willReturn(new FileResource(resource, "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getPosterImage(team.getId());
@@ -187,7 +187,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(teamFile);
 
         given(fileQueryService.findFileAndType(teamFile.getId()))
-                .willReturn(new Pair<>(new ByteArrayResource("team".getBytes()), "image/webp"));
+                .willReturn(new FileResource(new ByteArrayResource("team".getBytes()), "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
@@ -212,7 +212,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(trackFile);
 
         given(fileQueryService.findFileAndType(trackFile.getId()))
-                .willReturn(new Pair<>(new ByteArrayResource("track".getBytes()), "image/webp"));
+                .willReturn(new FileResource(new ByteArrayResource("track".getBytes()), "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
@@ -227,7 +227,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     void 시스템_기본_썸네일_조회_성공() {
         // given
         given(fileQueryService.findDefaultThumbnail())
-                .willReturn(new Pair<>(new ByteArrayResource("default".getBytes()), "image/jpeg"));
+                .willReturn(new FileResource(new ByteArrayResource("default".getBytes()), "image/jpeg"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());

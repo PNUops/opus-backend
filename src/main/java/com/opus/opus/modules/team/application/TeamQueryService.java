@@ -36,8 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.Pair;
-import org.springframework.core.io.Resource;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,8 +62,8 @@ public class TeamQueryService {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileRepository.findById(imageId).orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
         checkImageConverted(findFile);
-        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findFile.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(findFile.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     public TeamDetailResponse getTeamDetailPublic(final Long teamId) {
@@ -146,8 +145,8 @@ public class TeamQueryService {
     }
 
     private ImageResponse getDefaultThumbnailResponse() {
-        final Pair<Resource, String> defaultResult = fileQueryService.findDefaultThumbnail();
-        return new ImageResponse(defaultResult.a, defaultResult.b);
+        final FileResource defaultResult = fileQueryService.findDefaultThumbnail();
+        return new ImageResponse(defaultResult.resource(), defaultResult.mimeType());
     }
 
     public ImageResponse getPosterImage(final Long teamId) {
@@ -163,8 +162,8 @@ public class TeamQueryService {
 
     private ImageResponse getImageResponse(final File findFile) {
         checkImageConverted(findFile);
-        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findFile.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(findFile.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     private void checkImageConverted(final File findFile) {

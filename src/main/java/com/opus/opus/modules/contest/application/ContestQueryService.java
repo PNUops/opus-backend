@@ -52,8 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.Pair;
-import org.springframework.core.io.Resource;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -126,8 +125,8 @@ public class ContestQueryService {
 
         checkImageConverted(findBanner);
 
-        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findBanner.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(findBanner.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     public List<ContestCurrentResponse> getCurrentContests() {

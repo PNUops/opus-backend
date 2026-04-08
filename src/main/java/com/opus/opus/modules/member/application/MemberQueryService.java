@@ -22,8 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.Pair;
-import org.springframework.core.io.Resource;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +45,8 @@ public class MemberQueryService {
 
     public ImageResponse getProfileImage(final Member member) {
         final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
-        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(profileFile.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(profileFile.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     public AccountInfoResponse getAccountInfo(final Long memberId) {
