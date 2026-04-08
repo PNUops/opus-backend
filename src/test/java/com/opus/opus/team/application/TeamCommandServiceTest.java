@@ -239,7 +239,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), image, member);
 
         // then
-        verify(fileCommandService, times(1)).storeImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
@@ -298,8 +298,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), newImage, member);
 
         // then
-        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
-        verify(fileCommandService, times(1)).storeImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test

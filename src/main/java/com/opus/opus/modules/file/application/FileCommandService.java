@@ -4,6 +4,7 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
+import java.util.Optional;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.file.infrastructure.FilePathGenerator;
@@ -47,6 +48,15 @@ public class FileCommandService {
         } catch (IOException e) {
             throw new FileException(FileExceptionType.SAVE_FAILED, "파일을 읽는 중 오류가 발생했습니다.");
         }
+    }
+
+    public File replaceImageFile(final MultipartFile multipartFile, final Long referenceId,
+                                final ReferenceDomainType referenceType, final FileImageType imageType) {
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
+                referenceId, referenceType, imageType);
+        final File savedFile = storeImageFile(multipartFile, referenceId, referenceType, imageType);
+        existingFile.ifPresent(file -> deleteFile(file.getId()));
+        return savedFile;
     }
 
     public void deleteFile(final Long fileId) {

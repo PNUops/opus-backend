@@ -194,10 +194,7 @@ public class TeamCommandService {
     public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
-                THUMBNAIL);
-        fileCommandService.storeImageFile(image, teamId, TEAM, THUMBNAIL);
-        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(final Long teamId, final Member member) {
@@ -209,10 +206,7 @@ public class TeamCommandService {
     public void savePosterImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
-                POSTER);
-        fileCommandService.storeImageFile(image, teamId, TEAM, POSTER);
-        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, teamId, TEAM, POSTER);
     }
 
     public void deletePosterImage(final Long teamId, final Member member) {

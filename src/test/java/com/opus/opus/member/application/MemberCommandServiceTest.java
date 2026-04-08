@@ -354,7 +354,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileCommandService, times(1)).storeImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test
@@ -368,8 +368,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileCommandService, times(1)).storeImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
-        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test

@@ -14,7 +14,6 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,9 +58,7 @@ public class ContestTrackCommandService {
 
     public void saveContestTrackDefaultThumbnail(final Long contestId, final Long trackId, final MultipartFile image) {
         contestTrackConvenience.getValidateExistTrack(contestId, trackId);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL);
-        fileCommandService.storeImageFile(image, trackId, TRACK, THUMBNAIL);
-        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, trackId, TRACK, THUMBNAIL);
     }
 
     public void deleteContestTrackDefaultThumbnail(final Long contestId, final Long trackId) {

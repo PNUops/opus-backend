@@ -319,10 +319,7 @@ public class MemberCommandService {
     }
 
     public void modifyProfileImage(final Member member, final MultipartFile image) {
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
-                member.getId(), MEMBER, PROFILE);
-        fileCommandService.storeImageFile(image, member.getId(), MEMBER, PROFILE);
-        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, member.getId(), MEMBER, PROFILE);
     }
 
     public void deleteProfileImage(final Member member) {
