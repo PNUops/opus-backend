@@ -22,6 +22,7 @@ public class FileCommandService {
 
     private final FileRepository fileRepository;
     private final FilePathGenerator filePathGenerator;
+    private final ImageProcessor imageProcessor;
     private final AsyncImageProcessingService asyncImageProcessingService;
 
     public File storeImageFile(final MultipartFile multipartFile, final Long referenceId,
@@ -31,7 +32,7 @@ public class FileCommandService {
         }
 
         try {
-            final String relativePath = filePathGenerator.generate("webp");
+            final String relativePath = filePathGenerator.generate(imageProcessor.getOutputExtension());
 
             final File savedFile = fileRepository.save(File.builder()
                     .name(multipartFile.getOriginalFilename())
