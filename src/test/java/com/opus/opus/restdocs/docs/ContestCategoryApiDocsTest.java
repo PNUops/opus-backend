@@ -163,7 +163,7 @@ public class ContestCategoryApiDocsTest extends RestDocsTest {
 
         when(contestCategoryQueryService.getSidebar()).thenReturn(responses);
 
-        mockMvc.perform(get("/categories/sidebar"))
+        mockMvc.perform(get("/sidebar"))
                 .andExpect(status().isOk())
                 .andDo(document("get-sidebar",
                         responseFields(
