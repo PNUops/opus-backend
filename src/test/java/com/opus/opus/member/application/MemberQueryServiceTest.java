@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
@@ -77,7 +77,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     private FileRepository fileRepository;
 
     @Autowired
-    private FileStorageUtil fileStorageUtil;
+    private FileQueryService fileQueryService;
 
     private Member member;
 
@@ -113,7 +113,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(savedFile);
 
         final Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileStorageUtil.findFileAndType(savedFile.getId()))
+        given(fileQueryService.findFileAndType(savedFile.getId()))
                 .willReturn(new Pair<>(resource, "image/webp"));
 
         // when

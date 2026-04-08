@@ -3,7 +3,7 @@ package com.opus.opus.modules.member.application;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.file.application.convenience.FileConvenience;
 import com.opus.opus.modules.file.domain.File;
 import static java.util.stream.Collectors.groupingBy;
@@ -34,7 +34,7 @@ public class MemberQueryService {
 
     private final MemberConvenience memberConvenience;
     private final FileConvenience fileConvenience;
-    private final FileStorageUtil fileStorageUtil;
+    private final FileQueryService fileQueryService;
 
     private final TeamMemberRepository teamMemberRepository;
     private final TeamVoteRepository teamVoteRepository;
@@ -46,7 +46,7 @@ public class MemberQueryService {
 
     public ImageResponse getProfileImage(final Member member) {
         final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(profileFile.getId());
+        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(profileFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 

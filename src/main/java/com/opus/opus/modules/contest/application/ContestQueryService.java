@@ -6,7 +6,7 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -66,7 +66,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ContestQueryService {
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileQueryService fileQueryService;
 
     private final ContestRepository contestRepository;
 
@@ -126,7 +126,7 @@ public class ContestQueryService {
 
         checkImageConverted(findBanner);
 
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findBanner.getId());
+        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findBanner.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 

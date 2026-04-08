@@ -16,7 +16,7 @@ import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICA
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
@@ -58,7 +58,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class TeamCommandService {
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
 
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
@@ -104,7 +104,7 @@ public class TeamCommandService {
         deleteIfExists(teamId, POSTER);
         deleteIfExists(teamId, THUMBNAIL);
         final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
-        previewIds.forEach(fileStorageUtil::deleteFile);
+        previewIds.forEach(fileCommandService::deleteFile);
     }
 
     public void updateTeam(final Member member, final Long teamId, final TeamUpdateRequest request) {
@@ -181,14 +181,14 @@ public class TeamCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
-            fileStorageUtil.storeFile(image, teamId, TEAM, PREVIEW);
+            fileCommandService.storeImageFile(image, teamId, TEAM, PREVIEW);
         }
     }
 
     public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        ids.forEach(fileStorageUtil::deleteFile);
+        ids.forEach(fileCommandService::deleteFile);
     }
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
@@ -196,8 +196,8 @@ public class TeamCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
                 THUMBNAIL);
-        fileStorageUtil.storeFile(image, teamId, TEAM, THUMBNAIL);
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        fileCommandService.storeImageFile(image, teamId, TEAM, THUMBNAIL);
+        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 
     public void deleteThumbnailImage(final Long teamId, final Member member) {
@@ -211,8 +211,8 @@ public class TeamCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
                 POSTER);
-        fileStorageUtil.storeFile(image, teamId, TEAM, POSTER);
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        fileCommandService.storeImageFile(image, teamId, TEAM, POSTER);
+        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 
     public void deletePosterImage(final Long teamId, final Member member) {
@@ -334,7 +334,7 @@ public class TeamCommandService {
 
     private void deleteIfExists(final Long teamId, final FileImageType imageType) {
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, imageType)
-                .ifPresent(existingFile -> fileStorageUtil.deleteFile(existingFile.getId()));
+                .ifPresent(existingFile -> fileCommandService.deleteFile(existingFile.getId()));
     }
 
     private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {

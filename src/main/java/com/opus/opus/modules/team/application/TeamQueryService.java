@@ -7,7 +7,7 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
@@ -57,13 +57,13 @@ public class TeamQueryService {
 
     private final FileRepository fileRepository;
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileQueryService fileQueryService;
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
         final File findFile = fileRepository.findById(imageId).orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
         checkImageConverted(findFile);
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
+        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 
@@ -146,7 +146,7 @@ public class TeamQueryService {
     }
 
     private ImageResponse getDefaultThumbnailResponse() {
-        final Pair<Resource, String> defaultResult = fileStorageUtil.findDefaultThumbnail();
+        final Pair<Resource, String> defaultResult = fileQueryService.findDefaultThumbnail();
         return new ImageResponse(defaultResult.a, defaultResult.b);
     }
 
@@ -163,7 +163,7 @@ public class TeamQueryService {
 
     private ImageResponse getImageResponse(final File findFile) {
         checkImageConverted(findFile);
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findFile.getId());
+        final Pair<Resource, String> storageResult = fileQueryService.findFileAndType(findFile.getId());
         return new ImageResponse(storageResult.a, storageResult.b);
     }
 

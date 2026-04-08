@@ -14,7 +14,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.domain.File;
@@ -61,7 +61,7 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleTokenManager googleTokenManager;
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
 
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -321,12 +321,12 @@ public class MemberCommandService {
     public void modifyProfileImage(final Member member, final MultipartFile image) {
         final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
                 member.getId(), MEMBER, PROFILE);
-        fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        fileCommandService.storeImageFile(image, member.getId(), MEMBER, PROFILE);
+        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 
     public void deleteProfileImage(final Member member) {
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
-                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 }

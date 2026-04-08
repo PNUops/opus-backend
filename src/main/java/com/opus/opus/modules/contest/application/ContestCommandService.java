@@ -19,7 +19,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -70,7 +70,7 @@ public class ContestCommandService {
     private final TeamConvenience teamConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
@@ -79,16 +79,16 @@ public class ContestCommandService {
                 CONTEST, BANNER);
         existingFile.ifPresent(this::checkWebpConverted);
 
-        fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
+        fileCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
 
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 
     public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file ->
-                fileStorageUtil.deleteFile(file.getId())
+                fileCommandService.deleteFile(file.getId())
         );
     }
 

@@ -55,8 +55,8 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
         contestTrackCommandService.saveContestTrackDefaultThumbnail(contest.getId(), track.getId(), image);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(oldFile.getId());
-        verify(fileStorageUtil, times(1)).storeFile(image, track.getId(), TRACK, THUMBNAIL);
+        verify(fileCommandService, times(1)).deleteFile(oldFile.getId());
+        verify(fileCommandService, times(1)).storeImageFile(image, track.getId(), TRACK, THUMBNAIL);
     }
 
     @Test
@@ -69,6 +69,6 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
         contestTrackCommandService.deleteContestTrackDefaultThumbnail(contest.getId(), track.getId());
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(file.getId());
+        verify(fileCommandService, times(1)).deleteFile(file.getId());
     }
 }

@@ -8,7 +8,7 @@ import static org.mockito.BDDMockito.given;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
@@ -61,7 +61,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     private TeamLikeRepository teamLikeRepository;
 
     @Autowired
-    private FileStorageUtil fileStorageUtil;
+    private FileQueryService fileQueryService;
 
     private Team team;
     private Contest contest;
@@ -146,7 +146,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(savedFile);
 
         Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileStorageUtil.findFileAndType(savedFile.getId()))
+        given(fileQueryService.findFileAndType(savedFile.getId()))
                 .willReturn(new Pair<>(resource, "image/webp"));
 
         // when
@@ -186,7 +186,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         teamFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(teamFile);
 
-        given(fileStorageUtil.findFileAndType(teamFile.getId()))
+        given(fileQueryService.findFileAndType(teamFile.getId()))
                 .willReturn(new Pair<>(new ByteArrayResource("team".getBytes()), "image/webp"));
 
         // when
@@ -211,7 +211,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
         trackFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(trackFile);
 
-        given(fileStorageUtil.findFileAndType(trackFile.getId()))
+        given(fileQueryService.findFileAndType(trackFile.getId()))
                 .willReturn(new Pair<>(new ByteArrayResource("track".getBytes()), "image/webp"));
 
         // when
@@ -226,7 +226,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀/분과 썸네일이 모두 없으면 시스템 기본 썸네일을 반환한다.")
     void 시스템_기본_썸네일_조회_성공() {
         // given
-        given(fileStorageUtil.findDefaultThumbnail())
+        given(fileQueryService.findDefaultThumbnail())
                 .willReturn(new Pair<>(new ByteArrayResource("default".getBytes()), "image/jpeg"));
 
         // when
