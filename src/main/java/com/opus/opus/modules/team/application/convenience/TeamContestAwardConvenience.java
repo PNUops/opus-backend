@@ -1,7 +1,7 @@
 package com.opus.opus.modules.team.application.convenience;
 
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
+import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +18,7 @@ public class TeamContestAwardConvenience {
 
     private final TeamContestAwardRepository teamContestAwardRepository;
 
-    public List<TeamAwardResult> findTeamAwardsByTeams(final List<Team> teams) {
+    public List<TeamAwardProjection> findTeamAwardsByTeams(final List<Team> teams) {
         final List<Long> teamIds = teams.stream().map(Team::getId).toList();
 
         if (teamIds.isEmpty()) {
@@ -28,10 +28,10 @@ public class TeamContestAwardConvenience {
         return teamContestAwardRepository.findTeamAwardsByTeamIds(teamIds);
     }
 
-    public Map<Long, List<TeamAwardResult>> getTeamAwardResultMap(final List<Team> teams) {
-        final List<TeamAwardResult> teamAwardResults = findTeamAwardsByTeams(teams);
+    public Map<Long, List<TeamAwardProjection>> getTeamAwardProjectionMap(final List<Team> teams) {
+        final List<TeamAwardProjection> teamAwardResults = findTeamAwardsByTeams(teams);
 
         return teamAwardResults.stream()
-                .collect(Collectors.groupingBy(TeamAwardResult::teamId));
+                .collect(Collectors.groupingBy(TeamAwardProjection::getTeamId));
     }
 }
