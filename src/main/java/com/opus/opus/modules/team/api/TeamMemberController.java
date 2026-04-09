@@ -1,5 +1,7 @@
 package com.opus.opus.modules.team.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.TeamMemberCommandService;
 import com.opus.opus.modules.team.application.dto.request.TeamMemberCreateRequest;
 import jakarta.validation.Valid;
@@ -19,23 +21,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/teams/{teamId}/members")
-@Secured("ROLE_관리자")
+@Secured({"ROLE_회원", "ROLE_관리자"})
 public class TeamMemberController {
 
     private final TeamMemberCommandService teamMemberCommandService;
 
     @PostMapping
     public ResponseEntity<Void> createTeamMember(@PathVariable final Long teamId,
-                                                 @Valid @RequestBody final TeamMemberCreateRequest request) {
-        teamMemberCommandService.createTeamMember(teamId, request.memberStudentId(), request.memberName(),
+                                                 @Valid @RequestBody final TeamMemberCreateRequest request,
+                                                 @LoginMember final Member member) {
+        teamMemberCommandService.createTeamMember(member, teamId, request.memberStudentId(), request.memberName(),
                 request.roleType());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/{memberId}")
     public ResponseEntity<Void> deleteTeamMember(@PathVariable final Long teamId,
-                                                 @PathVariable final Long memberId) {
-        teamMemberCommandService.deleteTeamMember(teamId, memberId);
+                                                 @PathVariable final Long memberId,
+                                                 @LoginMember final Member member) {
+        teamMemberCommandService.deleteTeamMember(member, teamId, memberId);
         return ResponseEntity.noContent().build();
     }
 }

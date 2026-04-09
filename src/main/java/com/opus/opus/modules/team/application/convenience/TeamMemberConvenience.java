@@ -1,10 +1,12 @@
 package com.opus.opus.modules.team.application.convenience;
 
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.NOT_TEAM_LEADER;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,15 @@ public class TeamMemberConvenience {
     public void validateTeamMemberUnlessAdmin(final Long teamId, final Member member) {
         if (!member.isAdmin()) {
             getValidateExistTeamMember(teamId, member.getId());
+        }
+    }
+
+    public void validateTeamLeaderUnlessAdmin(final Long teamId, final Member member) {
+        if (!member.isAdmin()) {
+            final TeamMember teamMember = getValidateExistTeamMember(teamId, member.getId());
+            if (!teamMember.getRoles().contains(TeamMemberRoleType.ROLE_팀장)) {
+                throw new TeamMemberException(NOT_TEAM_LEADER);
+            }
         }
     }
 }
