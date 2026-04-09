@@ -14,6 +14,7 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class ContestTrackCommandService {
 
     private final ContestTrackRepository contestTrackRepository;
     private final FileRepository fileRepository;
+    private final TeamRepository teamRepository;
 
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestConvenience contestConvenience;
@@ -54,12 +56,15 @@ public class ContestTrackCommandService {
     public void deleteTrack(final Long contestId, final Long trackId) {
         final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
         teamConvenience.validateAllTeamsDeletedInTrack(trackId);
+        deleteIfExists(trackId, THUMBNAIL);
+        teamRepository.clearTrackIdByTrackId(trackId);
         contestTrackRepository.delete(contestTrack);
     }
 
     public void saveContestTrackDefaultThumbnail(final Long contestId, final Long trackId, final MultipartFile image) {
         contestTrackConvenience.getValidateExistTrack(contestId, trackId);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL);
+        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK,
+                THUMBNAIL);
         fileStorageUtil.storeFile(image, trackId, TRACK, THUMBNAIL);
         existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
     }

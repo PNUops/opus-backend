@@ -1,7 +1,7 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
+import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
 import java.util.List;
 
 public record TeamSummaryResponse(
@@ -14,7 +14,7 @@ public record TeamSummaryResponse(
 ) {
     public static TeamSummaryResponse of(
             final Team team,
-            final List<TeamAwardResult> teamAwardResults,
+            final List<TeamAwardProjection> teamAwardResults,
             final Boolean isLiked,
             final Boolean isVoted
     ) {
@@ -25,7 +25,7 @@ public record TeamSummaryResponse(
                 isLiked,
                 isVoted,
                 teamAwardResults.stream()
-                        .map(result -> new AwardInfo(result.awardName(), result.awardColor()))
+                        .map(result -> new AwardInfo(result.getAwardName(), result.getAwardColor()))
                         .toList()
         );
     }
