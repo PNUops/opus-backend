@@ -35,13 +35,16 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
+import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.notice.domain.dao.NoticeRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import java.util.List;
@@ -61,8 +64,11 @@ public class ContestCommandService {
 
     private final ContestRepository contestRepository;
     private final ContestSortRepository contestSortRepository;
+    private final ContestAwardRepository contestAwardRepository;
+    private final ContestTrackRepository contestTrackRepository;
     private final FileRepository fileRepository;
     private final ContestTemplateRepository contestTemplateRepository;
+    private final NoticeRepository noticeRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestCategoryConvenience contestCategoryConvenience;
@@ -121,6 +127,17 @@ public class ContestCommandService {
     public void deleteContest(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         teamConvenience.validateAllTeamsDeletedInContest(contestId);
+
+        // 연관 데이터 삭제
+        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
+                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+
+        noticeRepository.deleteAll(noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId));
+        contestAwardRepository.deleteAll(contestAwardRepository.findByContestId(contestId));
+        contestTrackRepository.deleteAll(contestTrackRepository.findAllByContestId(contestId));
+        contestSortRepository.findByContestId(contestId).ifPresent(contestSortRepository::delete);
+        contestTemplateRepository.findByContestId(contestId).ifPresent(contestTemplateRepository::delete);
+
         contestRepository.delete(contest);
     }
 

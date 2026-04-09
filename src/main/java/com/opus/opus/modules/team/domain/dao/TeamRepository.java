@@ -46,4 +46,8 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
                AND t.isDeleted = false
             """)
     void updateItemOrderAfterDeletion(@Param("contestId") Long contestId, @Param("deletedOrder") int deletedOrder);
+
+    @Modifying
+    @Query("UPDATE Team t SET t.trackId = null WHERE t.trackId = :trackId")
+    void clearTrackIdByTrackId(@Param("trackId") Long trackId);
 }
