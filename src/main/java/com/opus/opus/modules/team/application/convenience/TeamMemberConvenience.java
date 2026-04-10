@@ -5,10 +5,12 @@ import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,19 @@ public class TeamMemberConvenience {
         if (teamMemberRepository.existsByTeamIdAndMemberId(teamId, memberId)) {
             throw new TeamMemberException(TEAM_MEMBER_ALREADY_EXISTS);
         }
+    }
+
+    public TeamMember save(final TeamMember teamMember) {
+        return teamMemberRepository.save(teamMember);
+    }
+
+    public void saveTeamMember(final Long memberId, final Team team, final TeamMemberRoleType roleType) {
+        final TeamMember teamMember = TeamMember.builder()
+                .memberId(memberId)
+                .team(team)
+                .roles(Set.of(roleType))
+                .build();
+        teamMemberRepository.save(teamMember);
     }
 
     public TeamMember getValidateExistTeamMember(final Long teamId, final Long memberId) {
@@ -45,5 +60,9 @@ public class TeamMemberConvenience {
                 throw new TeamMemberException(NOT_TEAM_LEADER);
             }
         }
+    }
+
+    public Set<Long> findMemberIdsByContestId(final Long contestId) {
+        return teamMemberRepository.findMemberIdsByContestId(contestId);
     }
 }

@@ -1,12 +1,14 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.domain.SortType.ASC;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.EMPTY_TEAM_DATA;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.CONTEST_NAME_ALREADY_EXIST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.DUPLICATE_TEAM_ID_IN_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_CONTEST_SORT_CUSTOM_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
 import static java.time.LocalDateTime.now;
@@ -38,6 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
+
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
@@ -46,6 +50,9 @@ import com.opus.opus.modules.contest.application.dto.request.ContestVotesLimitRe
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse.TeamBulkError;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse.TeamBulkResult;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
@@ -55,7 +62,9 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitR
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -1152,6 +1161,180 @@ public class ContestApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 엑셀 파일로 팀을 일괄 등록한다.")
+    void 엑셀_파일로_팀을_일괄_등록한다() throws Exception {
+        final Long contestId = 1L;
+        final MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "teams.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "test-excel-content".getBytes()
+        );
+
+        final TeamBulkUploadResponse response = new TeamBulkUploadResponse(2, List.of(
+                new TeamBulkResult(5, "알파팀", 1L),
+                new TeamBulkResult(6, "베타팀", 2L)
+        ));
+
+        given(contestCommandService.bulkUploadTeams(anyLong(), any())).willReturn(response);
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andDo(document("bulk-upload-teams",
+                        pathParameters(
+                                parameterWithName("contestId").description("팀을 등록할 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        requestParts(
+                                partWithName("file").description("팀 정보가 담긴 엑셀 파일 (.xlsx)")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("teamCount", "등록된 팀 수"),
+                                arrayFieldWithPath("teams", "등록된 팀 목록"),
+                                numberFieldWithPath("teams[].rowNumber", "엑셀 행 번호"),
+                                stringFieldWithPath("teams[].teamName", "팀 이름"),
+                                numberFieldWithPath("teams[].teamId", "생성된 팀 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 잘못된 파일 형식으로 팀 일괄 등록 시 실패한다.")
+    void 잘못된_파일_형식으로_팀_일괄_등록_실패() throws Exception {
+        final Long contestId = 1L;
+        final MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "teams.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "test-content".getBytes()
+        );
+
+        willThrow(new ContestException(INVALID_FILE_FORMAT))
+                .given(contestCommandService).bulkUploadTeams(anyLong(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("bulk-upload-teams-fail-invalid-format",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 빈 엑셀 파일로 팀 일괄 등록 시 실패한다.")
+    void 빈_엑셀_파일로_팀_일괄_등록_실패() throws Exception {
+        final Long contestId = 1L;
+        final MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "teams.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "empty-excel".getBytes()
+        );
+
+        willThrow(new ContestException(EMPTY_TEAM_DATA))
+                .given(contestCommandService).bulkUploadTeams(anyLong(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("bulk-upload-teams-fail-empty",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효성 검사 실패 시 에러 목록을 반환한다.")
+    void 유효성_검사_실패_시_에러_목록을_반환한다() throws Exception {
+        final Long contestId = 1L;
+        final MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "teams.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "test-excel".getBytes()
+        );
+
+        final List<TeamBulkError> errors = List.of(
+                new TeamBulkError(5, "5번째 행: 팀 이름은 필수입니다."),
+                new TeamBulkError(7, "7번째 행: 팀원 이름, 학번, 이메일의 개수가 일치하지 않습니다.")
+        );
+
+        willThrow(new ContestException(FAILED_TO_VALIDATE_BULK_TEAMS, errors))
+                .given(contestCommandService).bulkUploadTeams(anyLong(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("bulk-upload-teams-fail-validation",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("errors", "유효성 검사 에러 목록"),
+                                numberFieldWithPath("errors[].rowNumber", "에러가 발생한 엑셀 행 번호"),
+                                stringFieldWithPath("errors[].message", "에러 메시지")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회에 팀 일괄 등록 시 실패한다.")
+    void 존재하지_않는_대회에_팀_일괄_등록_실패() throws Exception {
+        final Long contestId = 999L;
+        final MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "teams.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "test-excel".getBytes()
+        );
+
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestCommandService).bulkUploadTeams(anyLong(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/bulk", contestId)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isNotFound())
+                .andDo(document("bulk-upload-teams-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
                         )
                 ));
     }

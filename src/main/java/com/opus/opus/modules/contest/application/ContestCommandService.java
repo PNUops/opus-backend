@@ -16,9 +16,12 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILED_TO_VALIDATE_BULK_TEAMS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
+import com.opus.opus.global.util.ExcelTeamParser;
+import com.opus.opus.global.util.ExcelTeamValidator;
 import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -28,9 +31,13 @@ import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestTemplateRequest;
+import com.opus.opus.modules.contest.application.dto.request.TeamBulkRowDto;
 import com.opus.opus.modules.contest.application.dto.request.VoteUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentToggleResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorResponse.TeamBulkError;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse.TeamBulkResult;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
@@ -44,12 +51,19 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notice.domain.dao.NoticeRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,9 +88,13 @@ public class ContestCommandService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestSortConvenience contestSortConvenience;
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
+    private final MemberConvenience memberConvenience;
 
     private final FileStorageUtil fileStorageUtil;
+    private final ExcelTeamParser excelTeamParser;
+    private final ExcelTeamValidator excelTeamValidator;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
@@ -329,4 +347,92 @@ public class ContestCommandService {
                 false, false, false, false, false, false, false, false, false, false, false, false
         );
     }
+
+    public TeamBulkUploadResponse bulkUploadTeams(final Long contestId, final MultipartFile file) {
+        contestConvenience.validateExistContest(contestId);
+        excelTeamValidator.validateFile(file);
+
+        final List<TeamBulkRowDto> rows = excelTeamParser.parse(file);
+
+        excelTeamValidator.validateNotEmpty(rows);
+        final Set<Integer> skippedRowNums = new HashSet<>();
+        final List<TeamBulkError> errors = excelTeamValidator.validateRows(rows, contestId, skippedRowNums);
+        if (!errors.isEmpty()) {
+            throw new ContestException(FAILED_TO_VALIDATE_BULK_TEAMS, errors);
+        }
+
+        final List<TeamBulkRowDto> rowsToSave = rows.stream()
+                .filter(row -> !skippedRowNums.contains(row.rowNumber()))
+                .toList();
+
+        return saveTeams(rowsToSave, contestId);
+    }
+
+    private TeamBulkUploadResponse saveTeams(final List<TeamBulkRowDto> rows, final Long contestId) {
+        final int existingTeamCount = teamConvenience.getTeamsOfContest(contestId).size();
+
+        final Map<String, Member> membersByEmail = prefetchMembersByEmail(rows);
+        final List<TeamBulkResult> results = new ArrayList<>();
+
+        for (int i = 0; i < rows.size(); i++) {
+            final TeamBulkRowDto row = rows.get(i);
+
+            final Team team = createTeam(row, contestId, existingTeamCount + i + 1);
+            registerTeamMembers(row, team, membersByEmail);
+
+            results.add(new TeamBulkResult(row.rowNumber(), row.teamName(), team.getId()));
+        }
+
+        return new TeamBulkUploadResponse(results.size(), results);
+    }
+
+    private Map<String, Member> prefetchMembersByEmail(final List<TeamBulkRowDto> rows) {
+        final Set<String> allEmails = new HashSet<>();
+        for (final TeamBulkRowDto row : rows) {
+            allEmails.add(row.leaderEmail());
+            allEmails.addAll(row.memberEmails());
+        }
+        return memberConvenience.findAllByEmailIn(new ArrayList<>(allEmails));
+    }
+
+    private Team createTeam(final TeamBulkRowDto row, final Long contestId, final int itemOrder) {
+        final Team team = Team.builder()
+                .teamName(row.teamName())
+                .projectName(row.projectName())
+                .contestId(contestId)
+                .itemOrder(itemOrder)
+                .build();
+        teamConvenience.save(team);
+        return team;
+    }
+
+    private void registerTeamMembers(final TeamBulkRowDto row, final Team team, final Map<String, Member> membersByEmail) {
+        final Member leader = getOrCreateMember(row.leaderEmail(), row.leaderStudentId(), row.leaderName(), membersByEmail);
+        teamMemberConvenience.saveTeamMember(leader.getId(), team, TeamMemberRoleType.ROLE_팀장);
+
+        for (int j = 0; j < row.memberNames().size(); j++) {
+            final Member member = getOrCreateMember(
+                    row.memberEmails().get(j),
+                    row.memberStudentIds().get(j),
+                    row.memberNames().get(j),
+                    membersByEmail);
+            teamMemberConvenience.saveTeamMember(member.getId(), team, TeamMemberRoleType.ROLE_팀원);
+        }
+    }
+
+    private Member getOrCreateMember(final String email, final String studentId, final String name,
+                                      final Map<String, Member> membersByEmail) {
+        final Member existing = membersByEmail.get(email);
+        if (existing != null) {
+            if (existing.getStudentId() == null && studentId != null) {
+                existing.updateStudentId(studentId);
+            }
+            return existing;
+        }
+
+        final Member created = memberConvenience.getOrCreateFakeMember(email, studentId, name);
+        membersByEmail.put(email, created);
+        return created;
+    }
+
 }

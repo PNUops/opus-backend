@@ -10,6 +10,7 @@ public enum TeamExceptionType implements BaseExceptionType {
     TRACK_HAS_TEAM(HttpStatus.CONFLICT, "해당 분과에 속한 팀이 존재합니다."),
     REQUIRED_FIELD_MISSING(HttpStatus.BAD_REQUEST, "팀 상세보기의 필수 항목이 누락되었습니다."),
     FORBIDDEN_CONTEST_OR_TRACK_UPDATE(HttpStatus.FORBIDDEN, "대회 또는 분과는 변경할 수 없습니다."),
+    CANT_READ_EXCEL_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "엑셀 파일을 읽는 데 실패했습니다.")
     ;
 
     private final HttpStatus httpStatus;
