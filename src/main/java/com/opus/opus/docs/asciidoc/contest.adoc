@@ -617,3 +617,62 @@ include::{snippets}/get-contest-team-summaries-fail-contest-not-found/http-respo
 .Path Parameters
 include::{snippets}/get-contest-team-summaries-fail-contest-not-found/path-parameters.adoc[]
 ====
+
+== 팀 일괄 등록 (엑셀)
+
+=== `POST`: 엑셀 파일로 팀 일괄 등록
+
+NOTE: 관리자 권한이 필요합니다. 모든 팀이 유효성 검사를 통과해야만 등록되며, 하나라도 실패하면 전체가 등록되지 않습니다.
+
+.Path Parameters
+include::{snippets}/bulk-upload-teams/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/bulk-upload-teams/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/bulk-upload-teams/request-parts.adoc[]
+
+.HTTP Request
+include::{snippets}/bulk-upload-teams/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/bulk-upload-teams/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/bulk-upload-teams/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 잘못된 파일 형식
+
+[%collapsible]
+====
+include::{snippets}/bulk-upload-teams-fail-invalid-format/http-request.adoc[]
+include::{snippets}/bulk-upload-teams-fail-invalid-format/http-response.adoc[]
+====
+
+.❌ Case 2: 빈 엑셀 파일 (데이터 없음)
+
+[%collapsible]
+====
+include::{snippets}/bulk-upload-teams-fail-empty/http-request.adoc[]
+include::{snippets}/bulk-upload-teams-fail-empty/http-response.adoc[]
+====
+
+.❌ Case 3: 유효성 검사 실패
+
+[%collapsible]
+====
+include::{snippets}/bulk-upload-teams-fail-validation/http-request.adoc[]
+include::{snippets}/bulk-upload-teams-fail-validation/http-response.adoc[]
+include::{snippets}/bulk-upload-teams-fail-validation/response-fields.adoc[]
+====
+
+.❌ Case 4: 존재하지 않는 대회
+
+[%collapsible]
+====
+include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-request.adoc[]
+include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-response.adoc[]
+====

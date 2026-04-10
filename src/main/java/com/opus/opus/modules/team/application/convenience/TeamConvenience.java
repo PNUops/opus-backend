@@ -52,6 +52,10 @@ public class TeamConvenience {
         return teamRepository.findAllByContestId(contestId);
     }
 
+    public Team save(final Team team) {
+        return teamRepository.save(team);
+    }
+
     public List<TeamRankingResult> getTeamRankingResults(final Long contestId) {
         return teamRepository.findTeamRankingByContestId(contestId);
     }
