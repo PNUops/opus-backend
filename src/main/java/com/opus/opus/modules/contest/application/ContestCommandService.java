@@ -152,7 +152,7 @@ public class ContestCommandService {
 
         // 연관 데이터 삭제
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
-                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
 
         noticeRepository.deleteAll(noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId));
         contestAwardRepository.deleteAll(contestAwardRepository.findByContestId(contestId));
