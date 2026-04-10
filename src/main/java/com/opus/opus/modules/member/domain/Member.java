@@ -65,6 +65,9 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
+    @Column(nullable = false)
+    private Boolean isFake;
+
     @Builder(builderMethodName = "generalMember", builderClassName = "GeneralMemberBuilder")
     private Member(final String name, final String email, final String password, final String studentId,
                    final Set<MemberRoleType> roles) {
@@ -75,6 +78,7 @@ public class Member extends BaseEntity {
         this.roles = roles;
         this.isProfilePublic = true;
         this.isDeleted = false;
+        this.isFake = false;
     }
 
     @Builder(builderMethodName = "socialMember", builderClassName = "SocialMemberBuilder")
@@ -87,6 +91,7 @@ public class Member extends BaseEntity {
         this.roles = roles;
         this.isProfilePublic = true;
         this.isDeleted = false;
+        this.isFake = false;
     }
 
     public void updateTeamLeaderInfo(final String email, final String password) {
@@ -120,5 +125,27 @@ public class Member extends BaseEntity {
 
     public void updateProfileVisibility(final boolean isProfilePublic) {
         this.isProfilePublic = isProfilePublic;
+    }
+
+    public boolean isFakeMember() {
+        return Boolean.TRUE.equals(isFake);
+    }
+
+    public void markAsFakeMember() {
+        this.isFake = true;
+    }
+
+    public void convertFakeToGeneral(final String email, final String password, final String studentId) {
+        this.email = email;
+        this.password = password;
+        this.studentId = studentId;
+        this.isFake = false;
+    }
+
+    public void convertFakeToSocial(final SocialType socialType, final String socialId) {
+        this.socialType = socialType;
+        this.socialId = socialId;
+        this.password = null;
+        this.isFake = false;
     }
 }

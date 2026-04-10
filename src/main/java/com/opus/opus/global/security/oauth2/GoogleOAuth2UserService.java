@@ -42,8 +42,17 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
 
     private Member findOrRegisterSocialMember(final String name, final String email, final String socialId) {
         return memberRepository.findByEmail(email)
-                .map(member -> validateSocialMember(member, socialId))
+                .map(member -> handleExistingMember(member, socialId))
                 .orElseGet(() -> registerNewSocialMember(name, email, socialId));
+    }
+
+    private Member handleExistingMember(final Member member, final String socialId) {
+        // 가짜 회원이 등록되어있는 경우 소셜 회원으로 전환
+        if (member.isFakeMember()) {
+            member.convertFakeToSocial(SocialType.GOOGLE, socialId);
+            return member;
+        }
+        return validateSocialMember(member, socialId);
     }
 
     private Member validateSocialMember(final Member member, final String socialId) {

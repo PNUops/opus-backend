@@ -14,6 +14,8 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImageType;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class ContestTrackCommandService {
 
     private final ContestTrackRepository contestTrackRepository;
     private final FileRepository fileRepository;
+    private final TeamRepository teamRepository;
 
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestConvenience contestConvenience;
@@ -53,6 +56,8 @@ public class ContestTrackCommandService {
     public void deleteTrack(final Long contestId, final Long trackId) {
         final ContestTrack contestTrack = contestTrackConvenience.getValidateExistTrack(contestId, trackId);
         teamConvenience.validateAllTeamsDeletedInTrack(trackId);
+        deleteIfExists(trackId, THUMBNAIL);
+        teamRepository.clearTrackIdByTrackId(trackId);
         contestTrackRepository.delete(contestTrack);
     }
 

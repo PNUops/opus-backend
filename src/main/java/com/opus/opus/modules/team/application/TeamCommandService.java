@@ -38,7 +38,9 @@ import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleRespons
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamVote;
+import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
@@ -60,15 +62,17 @@ public class TeamCommandService {
 
     private final FileCommandService fileCommandService;
 
+    private final TeamRepository teamRepository;
+    private final TeamVoteRepository teamVoteRepository;
+    private final TeamLikeRepository teamLikeRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final TeamContestAwardRepository teamContestAwardRepository;
+    private final FileRepository fileRepository;
+
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
-
-    private final TeamRepository teamRepository;
-    private final TeamVoteRepository teamVoteRepository;
-    private final TeamLikeRepository teamLikeRepository;
-    private final FileRepository fileRepository;
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final FileConvenience fileConvenience;
 
@@ -90,6 +94,10 @@ public class TeamCommandService {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
         deleteTeamImages(teamId);
         reorderAfterTeamDeletion(team);
+        teamMemberRepository.deleteAll(team.getTeamMembers());
+        teamVoteRepository.deleteAll(team.getTeamVotes());
+        teamLikeRepository.deleteAll(team.getTeamLikes());
+        teamContestAwardRepository.deleteAll(team.getTeamAwards());
         teamRepository.delete(team);
     }
 

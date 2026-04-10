@@ -3,6 +3,7 @@ package com.opus.opus.modules.team.domain.dao;
 import com.opus.opus.modules.team.domain.TeamMember;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -26,4 +27,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             ORDER BY c.id DESC
             """)
     List<MyProjectFlatResult> findMyProjectsWithAwards(Long memberId);
+
+    @Query("SELECT tm.memberId FROM TeamMember tm JOIN Team t ON tm.team.id = t.id WHERE t.contestId = :contestId")
+    Set<Long> findMemberIdsByContestId(Long contestId);
 }
