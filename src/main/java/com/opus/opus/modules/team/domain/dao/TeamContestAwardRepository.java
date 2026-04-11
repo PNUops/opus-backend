@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface TeamContestAwardRepository extends JpaRepository<TeamContestAward, Long> {
     List<TeamContestAward> findByTeamId(final Long teamId);
 
+    void deleteAllByContestAwardId(final Long contestAwardId);
+
     @Query("""
             SELECT tca.team.id AS teamId, ca.awardName AS awardName, ca.awardColor AS awardColor
             FROM TeamContestAward tca
