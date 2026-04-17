@@ -1,4 +1,4 @@
-package com.opus.opus.modules.file.infrastructure.processor;
+package com.opus.opus.modules.file.application.processor;
 
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;

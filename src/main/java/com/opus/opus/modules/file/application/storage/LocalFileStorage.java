@@ -1,4 +1,4 @@
-package com.opus.opus.modules.file.infrastructure.storage;
+package com.opus.opus.modules.file.application.storage;
 
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;

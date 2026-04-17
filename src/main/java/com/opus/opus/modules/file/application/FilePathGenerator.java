@@ -1,4 +1,4 @@
-package com.opus.opus.modules.file.infrastructure;
+package com.opus.opus.modules.file.application;
 
 import java.time.LocalDate;
 import java.util.UUID;

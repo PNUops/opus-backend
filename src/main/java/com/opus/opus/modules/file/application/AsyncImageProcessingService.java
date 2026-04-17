@@ -1,8 +1,8 @@
 package com.opus.opus.modules.file.application;
 
 import com.opus.opus.modules.file.domain.dao.FileRepository;
-import com.opus.opus.modules.file.infrastructure.processor.ImageProcessor;
-import com.opus.opus.modules.file.infrastructure.storage.FileStorage;
+import com.opus.opus.modules.file.application.processor.ImageProcessor;
+import com.opus.opus.modules.file.application.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
