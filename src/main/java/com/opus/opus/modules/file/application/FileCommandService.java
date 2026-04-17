@@ -32,6 +32,7 @@ public class FileCommandService {
         }
 
         try {
+            final byte[] imageBytes = multipartFile.getBytes();
             final String relativePath = filePathGenerator.generate(imageProcessor.getOutputExtension());
 
             final File savedFile = fileRepository.save(File.builder()
@@ -43,7 +44,7 @@ public class FileCommandService {
                     .build());
             fileRepository.flush();
 
-            asyncImageProcessingService.processAndStore(multipartFile.getBytes(), relativePath, savedFile.getId());
+            asyncImageProcessingService.processAndStore(imageBytes, relativePath, savedFile.getId());
 
             return savedFile;
         } catch (IOException e) {
