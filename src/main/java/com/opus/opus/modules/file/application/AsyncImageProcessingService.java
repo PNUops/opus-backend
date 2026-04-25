@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -19,7 +20,7 @@ public class AsyncImageProcessingService {
     private final FileRepository fileRepository;
 
     @Async("imageTaskExecutor")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processAndStore(final byte[] imageBytes, final String relativePath, final Long fileId) {
         try {
             final byte[] processed = imageProcessor.process(imageBytes);
