@@ -33,7 +33,7 @@ public class LocalFileStorage implements FileStorage {
             Files.createDirectories(fullPath.getParent());
             Files.write(fullPath, content);
         } catch (IOException e) {
-            throw new FileException(FileExceptionType.SAVE_FAILED, "로컬 디스크에 파일을 저장하는 중 오류가 발생했습니다.");
+            throw new FileException(FileExceptionType.SAVE_FAILED, "로컬 디스크에 파일을 저장하는 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -46,7 +46,7 @@ public class LocalFileStorage implements FileStorage {
         try {
             return Files.readAllBytes(fullPath);
         } catch (IOException e) {
-            throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE);
+            throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE, FileExceptionType.NOT_EXISTS_PHYSICAL_FILE.errorMessage(), e);
         }
     }
 
@@ -57,7 +57,7 @@ public class LocalFileStorage implements FileStorage {
             try {
                 Files.delete(fullPath);
             } catch (IOException | SecurityException e) {
-                throw new FileException(FileExceptionType.DELETE_FAILED, "물리 파일 삭제에 실패했습니다. 경로=" + fullPath);
+                throw new FileException(FileExceptionType.DELETE_FAILED, "물리 파일 삭제에 실패했습니다. 경로=" + fullPath, e);
             }
         } else {
             log.error("삭제하려는 물리 파일이 존재하지 않습니다: {}", fullPath);

@@ -17,6 +17,11 @@ public class FileException extends BaseException {
         this.exceptionType = exceptionType;
     }
 
+    public FileException(final FileExceptionType exceptionType, final String message, final Throwable cause) {
+        super(message, cause);
+        this.exceptionType = exceptionType;
+    }
+
     @Override
     public BaseExceptionType exceptionType() {
         return exceptionType;

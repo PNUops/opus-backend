@@ -46,7 +46,7 @@ public class FileCommandService {
 
             return savedFile;
         } catch (IOException e) {
-            throw new FileException(FileExceptionType.SAVE_FAILED, "파일을 읽는 중 오류가 발생했습니다.");
+            throw new FileException(FileExceptionType.SAVE_FAILED, "파일을 읽는 중 오류가 발생했습니다.", e);
         }
     }
 
