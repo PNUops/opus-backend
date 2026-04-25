@@ -41,7 +41,6 @@ public class FileCommandService {
                     .referenceType(referenceType)
                     .imageType(imageType)
                     .build());
-            fileRepository.flush();
 
             asyncImageProcessingService.processAndStore(imageBytes, relativePath, savedFile.getId());
 

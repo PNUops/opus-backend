@@ -35,7 +35,8 @@ public class AsyncImageProcessingService {
     private void cleanupFailedFile(final String relativePath, final Long fileId) {
         try {
             fileStorage.delete(relativePath);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("이미지 처리 실패 후 물리 파일 정리 실패 [path={}]: {}", relativePath, e.getMessage());
         }
         try {
             fileRepository.deleteById(fileId);
