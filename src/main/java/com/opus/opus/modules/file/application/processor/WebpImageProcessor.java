@@ -1,12 +1,12 @@
 package com.opus.opus.modules.file.application.processor;
 
+import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
 public class WebpImageProcessor implements ImageProcessor {
 
     private static final int WEBP_QUALITY = 80;
@@ -18,8 +18,7 @@ public class WebpImageProcessor implements ImageProcessor {
             final WebpWriter writer = WebpWriter.DEFAULT.withQ(WEBP_QUALITY);
             return image.bytes(writer);
         } catch (Exception e) {
-            log.error("WebP 이미지 변환 실패", e);
-            return imageBytes;
+            throw new FileException(FileExceptionType.SAVE_FAILED, "WebP 이미지 변환 실패", e);
         }
     }
 
