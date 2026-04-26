@@ -1,5 +1,6 @@
 package com.opus.opus.modules.team.application.convenience;
 
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.NOT_TEAM_LEADER;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
@@ -53,10 +54,16 @@ public class TeamMemberConvenience {
         }
     }
 
+    /*
+        [팀장/팀원 권한 검증 위치 변경]
+        ROLE_팀장, ROLE_팀원을 JwtProvider roles에 추가해 @Secured로 검증하는 방식은
+        매 요청마다 불필요한 TeamMember DB 조회가 발생하고, 해당 권한이 필요한 API도 많지 않아
+        @Secured는 ROLE_회원만 검증하고, 팀장/팀원 여부는 Service 레이어에서 검증하는 방식으로 결정
+     */
     public void validateTeamLeaderUnlessAdmin(final Long teamId, final Member member) {
         if (!member.isAdmin()) {
             final TeamMember teamMember = getValidateExistTeamMember(teamId, member.getId());
-            if (!teamMember.getRoles().contains(TeamMemberRoleType.ROLE_팀장)) {
+            if (!teamMember.getRoles().contains(ROLE_팀장)) {
                 throw new TeamMemberException(NOT_TEAM_LEADER);
             }
         }
