@@ -57,7 +57,7 @@ public class ContestCategoryController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/categories/sidebar")
+    @GetMapping("/sidebar")
     public ResponseEntity<List<SidebarResponse>> getSidebar() {
         final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
         return ResponseEntity.ok(response);
