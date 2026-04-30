@@ -1,8 +1,5 @@
 package com.opus.opus.file.application;
 
-import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.FileModuleIntegrationTest;
 import com.opus.opus.modules.file.application.AsyncImageProcessingService;
+import com.opus.opus.modules.file.application.convenience.FileTransactionHandler;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.AopTestUtils;
 
 public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
@@ -30,6 +29,9 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
     @Autowired
     private FileRepository fileRepository;
+
+    @MockitoBean
+    private FileTransactionHandler fileTransactionHandler;
 
     private AsyncImageProcessingService target;
 
@@ -46,8 +48,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
         target.processAndStore("original".getBytes(), saved.getFilePath(), saved.getId());
 
-        final File updated = fileRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updated.getIsWebpConverted()).isTrue();
+        verify(fileTransactionHandler).markWebpConverted(saved.getId());
     }
 
     @Test
@@ -72,7 +73,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
         target.processAndStore("original".getBytes(), saved.getFilePath(), saved.getId());
 
-        assertThat(fileRepository.findById(saved.getId())).isEmpty();
+        verify(fileTransactionHandler).deleteFileRecord(saved.getId());
     }
 
     @Test
@@ -107,7 +108,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
         target.processAndStore("original".getBytes(), saved.getFilePath(), saved.getId());
 
-        assertThat(fileRepository.findById(saved.getId())).isEmpty();
+        verify(fileTransactionHandler).deleteFileRecord(saved.getId());
     }
 
     @Test
