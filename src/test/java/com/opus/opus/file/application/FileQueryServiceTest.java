@@ -1,4 +1,4 @@
-package com.opus.opus.modules.file.application;
+package com.opus.opus.file.application;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static org.assertj.core.api.Assertions.assertThat;

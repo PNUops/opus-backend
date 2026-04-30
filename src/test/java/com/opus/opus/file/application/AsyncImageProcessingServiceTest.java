@@ -1,4 +1,4 @@
-package com.opus.opus.modules.file.application;
+package com.opus.opus.file.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
