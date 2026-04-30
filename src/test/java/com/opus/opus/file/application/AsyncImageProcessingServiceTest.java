@@ -61,7 +61,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
     }
 
     @Test
-    @DisplayName("[엣지] 변환 실패 시 좀비 레코드가 남지 않는다.")
+    @DisplayName("[실패] 변환 실패 시 좀비 레코드가 남지 않는다.")
     void 변환_실패_시_좀비_레코드가_남지_않는다() {
         when(imageProcessor.process(any())).thenThrow(new RuntimeException("변환 실패"));
         final File saved = fileRepository.save(FileFixture.createTeamPosterFile(1L));
@@ -72,7 +72,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
     }
 
     @Test
-    @DisplayName("[엣지] 변환 실패 시 물리 파일 정리가 시도된다.")
+    @DisplayName("[실패] 변환 실패 시 물리 파일 정리가 시도된다.")
     void 변환_실패_시_물리_파일_정리가_시도된다() {
         when(imageProcessor.process(any())).thenThrow(new RuntimeException("변환 실패"));
         final File saved = fileRepository.save(FileFixture.createTeamPosterFile(1L));
@@ -83,7 +83,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
     }
 
     @Test
-    @DisplayName("[엣지] 변환 실패 + 물리 파일 정리 실패 시 예외가 전파되지 않는다.")
+    @DisplayName("[실패] 변환 실패 + 물리 파일 정리 실패 시 예외가 전파되지 않는다.")
     void 변환_실패_후_물리_파일_정리_실패_시_예외가_전파되지_않는다() {
         when(imageProcessor.process(any())).thenThrow(new RuntimeException("변환 실패"));
         doThrow(new RuntimeException("삭제 실패")).when(fileStorage).delete(any());
@@ -95,7 +95,7 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
     }
 
     @Test
-    @DisplayName("[엣지] 변환 실패 + 물리 파일 정리 실패 시에도 DB 레코드 정리는 시도된다.")
+    @DisplayName("[실패] 변환 실패 + 물리 파일 정리 실패 시에도 DB 레코드 정리는 시도된다.")
     void 변환_실패_후_물리_파일_정리_실패_시에도_DB_레코드는_정리된다() {
         when(imageProcessor.process(any())).thenThrow(new RuntimeException("변환 실패"));
         doThrow(new RuntimeException("삭제 실패")).when(fileStorage).delete(any());
