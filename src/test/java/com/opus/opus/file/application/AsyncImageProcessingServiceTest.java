@@ -7,16 +7,19 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.FileModuleIntegrationTest;
+import com.opus.opus.modules.file.application.AsyncImageProcessingService;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
-import com.opus.opus.file.FileFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.AopTestUtils;
 
@@ -56,8 +59,9 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
         target.processAndStore("original".getBytes(), saved.getFilePath(), saved.getId());
 
-        verify(imageProcessor).process(any());
-        verify(fileStorage).store(eq(processed), eq(saved.getFilePath()));
+        final InOrder inOrder = inOrder(imageProcessor, fileStorage);
+        inOrder.verify(imageProcessor).process(any());
+        inOrder.verify(fileStorage).store(eq(processed), eq(saved.getFilePath()));
     }
 
     @Test
