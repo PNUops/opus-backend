@@ -136,9 +136,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final Team team = teamRepository.save(createTeamWithContestId(contest.getId()));
         final Team otherTeam = teamRepository.save(createTeamWithContestId(contest.getId()));
 
-        teamVoteRepository.save(createTeamVote(team, member.getId(), true));
-        teamVoteRepository.save(createTeamVote(otherTeam, member.getId(), true));
-        teamVoteRepository.save(createTeamVote(team, otherMember.getId(), true));
+        teamVoteRepository.save(createTeamVote(team, member.getId()));
+        teamVoteRepository.save(createTeamVote(otherTeam, member.getId()));
+        teamVoteRepository.save(createTeamVote(team, otherMember.getId()));
 
         final Page<ContestVoteLogResponse> page = contestQueryService.getContestVoteLog(contest.getId(), 0, 20);
 
@@ -152,7 +152,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 사용자의 남은 투표 개수를 조회할 수 있다.")
     void 사용자의_남은_투표_개수를_조회할_수_있다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
         MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
@@ -170,11 +170,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 취소한 투표는 카운트에서 제외된다.")
-    void 취소한_투표는_카운트에서_제외된다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), false));
+    @DisplayName("[성공] 한 표만 사용한 사용자는 한 표가 남는다.")
+    void 한_표만_사용한_사용자는_한_표가_남는다() {
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
         MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
@@ -187,10 +185,10 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L, true)); // team1: 2표
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L, true)); // team2: 1표
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L, true)); // team3: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 102L)); // team1: 2표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 103L)); // team2: 1표
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 104L)); // team3: 1표
 
         final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contest.getId());
 
@@ -221,9 +219,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId(), true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId(), true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 999L, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, member.getId()));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, member.getId()));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 999L));
 
         final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contest.getId());
 
@@ -248,9 +246,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L, true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 102L, true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 103L, true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team1, 101L));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team2, 102L));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 103L));
 
         final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contest.getId());
         List<ContestRankingResponse> sameVoteResponses = responses.stream()

@@ -227,7 +227,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
         final Contest contest = contestRepository.save(ContestFixture.createContest());
         contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), null));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
         final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
 
@@ -245,7 +245,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
         final Contest contest = contestRepository.save(ContestFixture.createContest());
         contest.updateVotePeriod(LocalDateTime.now().minusDays(7), LocalDateTime.now().minusDays(1));
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), null));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
         final List<MyVoteResponse> responses = memberQueryService.getMyVotes(member.getId());
 
@@ -337,7 +337,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 최근 좋아요한 프로젝트 미리보기를 조회할 수 있다.")
     void 최근_좋아요한_프로젝트_미리보기를_조회할_수_있다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         final List<MyLikePreviewResponse> result = memberQueryService.getMyLikePreview(member.getId());
 
@@ -350,7 +350,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     void 좋아요_미리보기는_최대_3개까지_반환된다() {
         for (int i = 0; i < 5; i++) {
             final Team newTeam = teamRepository.save(TeamFixture.createTeamWithContestId(team.getContestId()));
-            teamLikeRepository.save(TeamLikeFixture.createTeamLike(newTeam, member.getId(), true));
+            teamLikeRepository.save(TeamLikeFixture.createTeamLike(newTeam, member.getId()));
         }
 
         final List<MyLikePreviewResponse> result = memberQueryService.getMyLikePreview(member.getId());
@@ -359,10 +359,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 좋아요 취소한 프로젝트는 미리보기에 포함되지 않는다.")
-    void 좋아요_취소한_프로젝트는_미리보기에_포함되지_않는다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), false));
-
+    @DisplayName("[성공] 좋아요한 적 없는 회원은 빈 미리보기를 받는다.")
+    void 좋아요한_적_없는_회원은_빈_미리보기를_받는다() {
         final List<MyLikePreviewResponse> result = memberQueryService.getMyLikePreview(member.getId());
 
         assertThat(result).isEmpty();
@@ -371,7 +369,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 나의 좋아요 전체 목록을 조회할 수 있다.")
     void 나의_좋아요_전체_목록을_조회할_수_있다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         final Page<MyLikedProjectResponse> result = memberQueryService.getMyLikedProjects(member.getId(),
                 "latest", null, null, null, null, 0, 12);
@@ -383,7 +381,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 나의 좋아요 목록을 대회 필터로 조회할 수 있다.")
     void 나의_좋아요_목록을_대회_필터로_조회할_수_있다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         final Page<MyLikedProjectResponse> result = memberQueryService.getMyLikedProjects(member.getId(),
                 "latest", null, null, null, team.getContestId(), 0, 12);

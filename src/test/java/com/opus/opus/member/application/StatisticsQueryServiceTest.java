@@ -49,8 +49,8 @@ public class StatisticsQueryServiceTest extends IntegrationTest {
         final Team team1 = teamRepository.save(TeamFixture.createSubmittedTeamWithContestId(contest1.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createSubmittedTeamWithContestId(contest2.getId()));
         final Member member = memberRepository.save(MemberFixture.createMember());
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team1, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team2, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team1, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team2, member.getId()));
 
         final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
 
@@ -82,29 +82,14 @@ public class StatisticsQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 취소된 좋아요는 좋아요 수에 포함되지 않는다.")
-    void 취소된_좋아요는_좋아요_수에_포함되지_않는다() {
-        final Contest contest = contestRepository.save(ContestFixture.createContest());
-        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
-        final Member member1 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
-        final Member member2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member1.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member2.getId(), false));
-
-        final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
-
-        assertThat(response.totalLikes()).isEqualTo(1);
-    }
-
-    @Test
     @DisplayName("[성공] 삭제된 팀의 좋아요는 좋아요 수에 포함되지 않는다.")
     void 삭제된_팀의_좋아요는_좋아요_수에_포함되지_않는다() {
         final Contest contest = contestRepository.save(ContestFixture.createContest());
         final Team activeTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team deletedTeam = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Member member = memberRepository.save(MemberFixture.createMember());
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(activeTeam, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(deletedTeam, member.getId(), true));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(activeTeam, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(deletedTeam, member.getId()));
 
         entityManager.createQuery("UPDATE Team t SET t.isDeleted = true WHERE t.id = :id")
                 .setParameter("id", deletedTeam.getId())
