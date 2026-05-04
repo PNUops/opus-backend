@@ -295,7 +295,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 처음 투표하면 TeamVote가 생성되고 카운트가 반환된다.")
     void 처음_투표하면_TeamVote가_생성되고_카운트가_반환된다() {
-        final TeamVoteResponse response = teamCommandService.addVote(member.getId(), votingTeam.getId());
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -307,7 +307,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 이미_투표한_팀에_다시_투표하면_NO_OP이다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
 
-        final TeamVoteResponse response = teamCommandService.addVote(member.getId(), votingTeam.getId());
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -318,7 +318,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 기존_투표를_취소하면_TeamVote가_삭제된다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
 
-        final TeamVoteResponse response = teamCommandService.removeVote(member.getId(), votingTeam.getId());
+        final TeamVoteResponse response = teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(2L);
         assertThat(teamVoteRepository.existsByMemberIdAndTeam(member.getId(), votingTeam)).isFalse();
@@ -327,7 +327,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표하지 않은 팀에 취소 요청하면 NO-OP이며 현재 카운트가 반환된다.")
     void 투표하지_않은_팀에_취소_요청하면_NO_OP이다() {
-        final TeamVoteResponse response = teamCommandService.removeVote(member.getId(), votingTeam.getId());
+        final TeamVoteResponse response = teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(2L);
         assertThat(teamVoteRepository.existsByMemberIdAndTeam(member.getId(), votingTeam)).isFalse();
@@ -336,10 +336,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표 취소 후 다시 투표할 수 있다.")
     void 투표_취소_후_다시_투표할_수_있다() {
-        teamCommandService.addVote(member.getId(), votingTeam.getId());
-        teamCommandService.removeVote(member.getId(), votingTeam.getId());
+        teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
+        teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
 
-        final TeamVoteResponse response = teamCommandService.addVote(member.getId(), votingTeam.getId());
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
     }
@@ -349,7 +349,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_팀에는_투표할_수_없다() {
         final Long invalidTeamId = 999L;
 
-        assertThatThrownBy(() -> teamCommandService.addVote(member.getId(), invalidTeamId))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), invalidTeamId))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
@@ -364,7 +364,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
 
         final Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.addVote(member.getId(), notVotingTeam.getId()))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), notVotingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_VOTE_PERIOD_NOW.errorMessage());
     }
@@ -379,7 +379,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
 
         final Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.removeVote(member.getId(), notVotingTeam.getId()))
+        assertThatThrownBy(() -> teamCommandService.removeTeamVote(member.getId(), notVotingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_VOTE_PERIOD_NOW.errorMessage());
     }
@@ -393,7 +393,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.addVote(member.getId(), thirdTeam.getId()))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), thirdTeam.getId()))
                 .isInstanceOf(TeamVoteException.class)
                 .hasMessageContaining("최대 2개 팀만 투표할 수 있습니다.");
     }
@@ -401,7 +401,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 처음 좋아요하면 TeamLike가 생성된다.")
     void 처음_좋아요하면_TeamLike가_생성된다() {
-        teamCommandService.addLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
         assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
@@ -411,7 +411,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 이미_좋아요한_팀에_다시_좋아요하면_NO_OP이다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId()));
 
-        teamCommandService.addLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
         assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
@@ -421,7 +421,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 기존_좋아요를_취소하면_TeamLike가_삭제된다() {
         teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId()));
 
-        teamCommandService.removeLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
 
         assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isFalse();
     }
@@ -429,7 +429,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 좋아요하지 않은 팀에 취소 요청하면 NO-OP이다.")
     void 좋아요하지_않은_팀에_취소_요청하면_NO_OP이다() {
-        teamCommandService.removeLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
 
         assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isFalse();
     }
@@ -437,10 +437,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 좋아요 취소 후 다시 좋아요할 수 있다.")
     void 좋아요_취소_후_다시_좋아요할_수_있다() {
-        teamCommandService.addLike(member.getId(), notVotingTeam.getId());
-        teamCommandService.removeLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
 
-        teamCommandService.addLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
         assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
@@ -450,7 +450,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_팀에는_좋아요할_수_없다() {
         final Long invalidTeamId = 999L;
 
-        assertThatThrownBy(() -> teamCommandService.addLike(member.getId(), invalidTeamId))
+        assertThatThrownBy(() -> teamCommandService.addTeamLike(member.getId(), invalidTeamId))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
@@ -464,7 +464,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
 
         final Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(savedVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.addLike(member.getId(), votingTeam.getId()))
+        assertThatThrownBy(() -> teamCommandService.addTeamLike(member.getId(), votingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
     }
@@ -478,7 +478,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
 
         final Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(savedVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.removeLike(member.getId(), votingTeam.getId()))
+        assertThatThrownBy(() -> teamCommandService.removeTeamLike(member.getId(), votingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
     }

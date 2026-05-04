@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
@@ -243,11 +244,11 @@ public class ContestQueryService {
     }
 
     private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfInPeriod(contestId, member,
+        final Set<Long> votedTeamIds = teamVoteConvenience.getVotedTeamIdsIfInPeriod(contestId, member,
                 isVotingPeriod);
-        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfInPeriod(contestId, member,
+        final Set<Long> likedTeamIds = teamLikeConvenience.getLikedTeamIdsIfInPeriod(contestId, member,
                 isVotingPeriod);
-        return new VoteLikeResult(voteMap, likeMap);
+        return new VoteLikeResult(votedTeamIds, likedTeamIds);
     }
 
     private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
@@ -258,8 +259,8 @@ public class ContestQueryService {
                 .map(team -> TeamSummaryResponse.of(
                         team,
                         teamAwardResultMap.getOrDefault(team.getId(), Collections.emptyList()),
-                        voteLikeResult.likeMap().getOrDefault(team.getId(), false),
-                        voteLikeResult.voteMap().getOrDefault(team.getId(), false)
+                        voteLikeResult.likedTeamIds().contains(team.getId()),
+                        voteLikeResult.votedTeamIds().contains(team.getId())
                 ))
                 .toList();
     }
@@ -280,6 +281,6 @@ public class ContestQueryService {
         return ContestTemplateResponse.from(template);
     }
 
-    private record VoteLikeResult(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
+    private record VoteLikeResult(Set<Long> votedTeamIds, Set<Long> likedTeamIds) {
     }
 }

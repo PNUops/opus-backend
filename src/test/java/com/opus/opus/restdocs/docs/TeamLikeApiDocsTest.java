@@ -42,7 +42,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 팀에 좋아요를 등록한다.")
     void 팀에_좋아요를_등록한다() throws Exception {
-        willDoNothing().given(teamCommandService).addLike(any(), any());
+        willDoNothing().given(teamCommandService).addTeamLike(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -60,7 +60,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 팀 좋아요를 취소한다.")
     void 팀_좋아요를_취소한다() throws Exception {
-        willDoNothing().given(teamCommandService).removeLike(any(), any());
+        willDoNothing().given(teamCommandService).removeTeamLike(any(), any());
 
         mockMvc.perform(delete("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -80,7 +80,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     void 존재하지_않는_팀에_좋아요_시_에러를_반환한다() throws Exception {
         willThrow(new TeamException(NOT_FOUND_TEAM))
                 .given(teamCommandService)
-                .addLike(any(), any());
+                .addTeamLike(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 999)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -100,7 +100,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     void 투표_기간에_좋아요_등록_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD))
                 .given(teamCommandService)
-                .addLike(any(), any());
+                .addTeamLike(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -120,7 +120,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     void 투표_기간에_좋아요_취소_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_ALLOWED_DURING_VOTING_PERIOD))
                 .given(teamCommandService)
-                .removeLike(any(), any());
+                .removeTeamLike(any(), any());
 
         mockMvc.perform(delete("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -140,7 +140,7 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
     void 동시_중복_요청_시_에러를_반환한다() throws Exception {
         willThrow(new TeamLikeException(DUPLICATE_LIKE_REQUEST))
                 .given(teamCommandService)
-                .addLike(any(), any());
+                .addTeamLike(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/likes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))

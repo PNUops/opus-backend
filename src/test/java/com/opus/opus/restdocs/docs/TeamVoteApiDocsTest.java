@@ -50,7 +50,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 팀에_투표를_등록한다() throws Exception {
         final TeamVoteResponse response = new TeamVoteResponse(1L, 2L);
 
-        given(teamCommandService.addVote(any(), any())).willReturn(response);
+        given(teamCommandService.addTeamVote(any(), any())).willReturn(response);
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -74,7 +74,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 팀_투표를_취소한다() throws Exception {
         final TeamVoteResponse response = new TeamVoteResponse(2L, 2L);
 
-        given(teamCommandService.removeVote(any(), any())).willReturn(response);
+        given(teamCommandService.removeTeamVote(any(), any())).willReturn(response);
 
         mockMvc.perform(delete("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -98,7 +98,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 존재하지_않는_팀에_투표_시_에러를_반환한다() throws Exception {
         willThrow(new TeamException(NOT_FOUND_TEAM))
                 .given(teamCommandService)
-                .addVote(any(), any());
+                .addTeamVote(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 999)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -118,7 +118,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 최대_투표_수_초과_시_에러를_반환한다() throws Exception {
         willThrow(new TeamVoteException(VOTE_LIMIT_EXCEEDED, "대회당 최대 2개 팀만 투표할 수 있습니다."))
                 .given(teamCommandService)
-                .addVote(any(), any());
+                .addTeamVote(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 3)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -138,7 +138,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 투표_기간이_아닐_때_투표_등록_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_VOTE_PERIOD_NOW))
                 .given(teamCommandService)
-                .addVote(any(), any());
+                .addTeamVote(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -158,7 +158,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 투표_기간이_아닐_때_투표_취소_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_VOTE_PERIOD_NOW))
                 .given(teamCommandService)
-                .removeVote(any(), any());
+                .removeTeamVote(any(), any());
 
         mockMvc.perform(delete("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -178,7 +178,7 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
     void 동시_중복_요청_시_에러를_반환한다() throws Exception {
         willThrow(new TeamVoteException(DUPLICATE_VOTE_REQUEST))
                 .given(teamCommandService)
-                .addVote(any(), any());
+                .addTeamVote(any(), any());
 
         mockMvc.perform(put("/teams/{teamId}/votes", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))

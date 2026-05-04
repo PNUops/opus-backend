@@ -1,12 +1,11 @@
 package com.opus.opus.modules.team.application.convenience;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
-import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,38 +18,29 @@ public class TeamLikeConvenience {
     private final TeamLikeRepository teamLikeRepository;
 
     public long countAllLikes() {
-        return teamLikeRepository.countByIsLikedTrueAndTeamIsDeletedFalse();
+        return teamLikeRepository.countByTeamIsDeletedFalse();
     }
 
-    public Map<Long, Boolean> getLikeMap(final Long contestId, final Member member) {
-        return teamLikeRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
-                .collect(toMap(tl -> tl.getTeam().getId(), TeamLike::getIsLiked));
-    }
-
-    // 1. 대회 내 모든 팀 맵 조회
-    public Map<Long, Boolean> getLikeMapIfInPeriod(final Long contestId, final Member member,
-                                                   final boolean isVotingPeriod) {
+    // 1. 대회 내 좋아요한 팀 ID 집합 조회
+    public Set<Long> getLikedTeamIdsIfInPeriod(final Long contestId, final Member member,
+                                               final boolean isVotingPeriod) {
         return (member != null && !isVotingPeriod)
-                ? getLikeMapByContestId(contestId, member)
-                : Map.of();
+                ? getLikedTeamIdsByContestId(contestId, member)
+                : Set.of();
     }
 
-    private Map<Long, Boolean> getLikeMapByContestId(final Long contestId, final Member member) {
+    private Set<Long> getLikedTeamIdsByContestId(final Long contestId, final Member member) {
         return teamLikeRepository.findAllByMemberIdAndContestId(member.getId(), contestId).stream()
-                .collect(toMap(
-                        tv -> tv.getTeam().getId(),
-                        TeamLike::getIsLiked
-                ));
+                .map(tl -> tl.getTeam().getId())
+                .collect(toUnmodifiableSet());
     }
 
-    // 2. 단일 팀 투표 여부 조회
+    // 2. 단일 팀 좋아요 여부 조회
     public boolean getIsLikedIfInPeriod(final Team team, final Member member, final boolean isVotingPeriod) {
         return member != null && !isVotingPeriod && getIsLikedByTeamAndMember(team, member);
     }
 
     private boolean getIsLikedByTeamAndMember(final Team team, final Member member) {
-        return teamLikeRepository.findByMemberIdAndTeam(member.getId(), team)
-                .map(TeamLike::getIsLiked)
-                .orElse(false);
+        return teamLikeRepository.existsByMemberIdAndTeam(member.getId(), team);
     }
 }

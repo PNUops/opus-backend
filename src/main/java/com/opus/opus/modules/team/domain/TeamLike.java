@@ -36,17 +36,9 @@ public class TeamLike extends BaseEntity {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false)
-    private Boolean isLiked;
-
     @Builder
-    public TeamLike(final Long memberId, final Team team, final Boolean isLiked) {
+    public TeamLike(final Long memberId, final Team team) {
         this.memberId = memberId;
         this.team = team;
-        this.isLiked = isLiked;
-    }
-
-    public void updateIsLiked(final Boolean isLiked) {
-        this.isLiked = isLiked;
     }
 }
