@@ -105,8 +105,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         contestRepository.saveAndFlush(contest);
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         // when
         final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
@@ -124,8 +124,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         contest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
         contestRepository.saveAndFlush(contest);
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         // when
         final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
