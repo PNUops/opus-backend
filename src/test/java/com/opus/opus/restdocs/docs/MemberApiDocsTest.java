@@ -366,7 +366,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 메인 페이지 통계 요약을 정상적으로 조회할 수 있다.")
     void 메인_페이지_통계_요약을_정상적으로_조회할_수_있다() throws Exception {
-        final StatisticsSummaryResponse response = new StatisticsSummaryResponse(42L, 128L, 5L);
+        final StatisticsSummaryResponse response = new StatisticsSummaryResponse(100L, 42L, 128L, 5L);
 
         when(statisticsQueryService.getStatisticsSummary()).thenReturn(response);
 
@@ -374,6 +374,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andExpect(status().isOk())
                 .andDo(document("statistics-summary",
                         responseFields(
+                                numberFieldWithPath("totalMembers", "총 가입자 수"),
                                 numberFieldWithPath("totalProjects", "등록된 프로젝트 수"),
                                 numberFieldWithPath("totalLikes", "총 좋아요 수"),
                                 numberFieldWithPath("totalContests", "진행된 대회 수")
