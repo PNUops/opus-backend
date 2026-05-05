@@ -154,6 +154,10 @@ public class MemberConvenience {
                 .collect(toMap(Member::getStudentId, Function.identity()));
     }
 
+    public long countActiveMembers() {
+        return memberRepository.countByIsFakeFalse();
+    }
+
     public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {
         return memberRepository.findAllById(memberIds)
                 .stream()

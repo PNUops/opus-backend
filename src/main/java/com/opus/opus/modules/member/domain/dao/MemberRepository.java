@@ -28,4 +28,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findAllByEmailIn(final List<String> emails);
 
     List<Member> findAllByStudentIdIn(final List<String> studentIds);
+
+    long countByIsFakeFalse();
 }
