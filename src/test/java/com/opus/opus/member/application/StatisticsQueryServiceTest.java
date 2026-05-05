@@ -64,6 +64,7 @@ public class StatisticsQueryServiceTest extends IntegrationTest {
     void 데이터가_없으면_모두_0을_반환한다() {
         final StatisticsSummaryResponse response = statisticsQueryService.getStatisticsSummary();
 
+        assertThat(response.totalMembers()).isZero();
         assertThat(response.totalContests()).isZero();
         assertThat(response.totalProjects()).isZero();
         assertThat(response.totalLikes()).isZero();
