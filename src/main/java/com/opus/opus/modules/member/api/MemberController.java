@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.modules.member.application.dto.request.PasswordChangeRequest;
 import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
@@ -204,7 +205,8 @@ public class MemberController {
                                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate endDate,
                                                                  @RequestParam(defaultValue = "0") final int page,
                                                                  @RequestParam(defaultValue = "10") final int size) {
-        final Page<MyCommentResponse> response = memberQueryService.getMyComments(member.getId(), sort, startDate, endDate, page, size);
+        final Page<MyCommentResponse> response = memberQueryService.getMyComments(member.getId(), sort, startDate,
+                endDate, page, size);
         return ResponseEntity.ok(response);
     }
 
@@ -225,7 +227,16 @@ public class MemberController {
                                                                            @RequestParam(required = false) final Long contestId,
                                                                            @RequestParam(defaultValue = "0") final int page,
                                                                            @RequestParam(defaultValue = "12") final int size) {
-        final Page<MyLikedProjectResponse> response = memberQueryService.getMyLikedProjects(member.getId(), sort, startDate, endDate, categoryId, contestId, page, size);
+        final Page<MyLikedProjectResponse> response = memberQueryService.getMyLikedProjects(member.getId(), sort,
+                startDate, endDate, categoryId, contestId, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @PatchMapping("/members/me/password-change")
+    public ResponseEntity<Void> changeNewPassword(@LoginMember final Member member,
+                                                  @Valid @RequestBody final PasswordChangeRequest request) {
+        memberCommandService.changeNewPassword(member, request);
+        return ResponseEntity.noContent().build();
     }
 }

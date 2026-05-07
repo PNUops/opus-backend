@@ -23,6 +23,7 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
@@ -175,6 +176,12 @@ public class MemberCommandService {
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
         authRedisUtil.delete(signInVerifiedKey(email));
+    }
+
+    public void changeNewPassword(final Member member, final PasswordChangeRequest request) {
+        checkCorrectPassword(member.getPassword(), request.password());
+        checkEqualPassword(request.newPassword(), member);
+        member.updatePassword(request.newPassword());
     }
 
     private void verifyVerifiedKey(final String verifiedKey) {
