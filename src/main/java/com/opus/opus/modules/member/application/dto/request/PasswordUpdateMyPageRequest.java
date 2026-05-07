@@ -3,7 +3,7 @@ package com.opus.opus.modules.member.application.dto.request;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-public record PasswordChangeRequest(
+public record PasswordUpdateMyPageRequest(
 
         @NotNull(message = "기존 비밀번호를 입력해주세요.")
         String password,

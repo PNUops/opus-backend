@@ -5,7 +5,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import com.opus.opus.global.util.CookieUtil;
 import com.opus.opus.global.security.annotation.LoginMember;
-import com.opus.opus.modules.member.application.dto.request.PasswordChangeRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
@@ -233,10 +233,10 @@ public class MemberController {
     }
 
     @Secured({"ROLE_회원", "ROLE_관리자"})
-    @PatchMapping("/members/me/password-change")
-    public ResponseEntity<Void> changeNewPassword(@LoginMember final Member member,
-                                                  @Valid @RequestBody final PasswordChangeRequest request) {
-        memberCommandService.changeNewPassword(member, request);
+    @PatchMapping("/members/me/password-reset")
+    public ResponseEntity<Void> updatePasswordInMyPage(@LoginMember final Member member,
+                                                  @Valid @RequestBody final PasswordUpdateMyPageRequest request) {
+        memberCommandService.updatePasswordInMyPage(member, request);
         return ResponseEntity.noContent().build();
     }
 }
