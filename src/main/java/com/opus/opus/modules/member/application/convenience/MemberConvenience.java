@@ -158,6 +158,10 @@ public class MemberConvenience {
         return memberRepository.countByIsFakeFalse();
     }
 
+    public long countAllMembers() {
+        return memberRepository.countAllIncludingDeletedAndFake();
+    }
+
     public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {
         return memberRepository.findAllById(memberIds)
                 .stream()

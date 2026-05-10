@@ -30,4 +30,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findAllByStudentIdIn(final List<String> studentIds);
 
     long countByIsFakeFalse();
+
+    @Query(value = "SELECT COUNT(*) FROM member", nativeQuery = true)
+    long countAllIncludingDeletedAndFake();
 }

@@ -49,7 +49,7 @@ public class StatisticsQueryService {
     }
 
     private StatisticsSummaryResponse queryStatisticsFromDb() {
-        final long totalMembers = memberConvenience.countActiveMembers();
+        final long totalMembers = memberConvenience.countAllMembers();
         final long totalProjects = teamConvenience.countSubmittedTeams();
         final long totalLikes = teamLikeConvenience.countAllLikes();
         final long totalContests = contestConvenience.countAllContests();
