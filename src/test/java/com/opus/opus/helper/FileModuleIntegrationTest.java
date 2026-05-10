@@ -1,8 +1,5 @@
 package com.opus.opus.helper;
 
-import com.opus.opus.global.util.CacheRedisUtil;
-import com.opus.opus.global.util.GoogleTokenManager;
-import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.application.processor.ImageProcessor;
 import com.opus.opus.modules.file.application.storage.FileStorage;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,15 +23,6 @@ public abstract class FileModuleIntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     protected ImageProcessor imageProcessor;
-
-    @MockitoBean
-    private MailUtil mailUtil;
-
-    @MockitoBean
-    protected GoogleTokenManager googleTokenManager;
-
-    @MockitoBean
-    protected CacheRedisUtil cacheRedisUtil;
 
     @BeforeEach
     void setUpFileModule(final WebApplicationContext context) {

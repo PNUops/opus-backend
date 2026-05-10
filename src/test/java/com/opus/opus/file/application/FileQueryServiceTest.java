@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.opus.opus.helper.FileModuleIntegrationTest;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
