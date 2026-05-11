@@ -14,9 +14,6 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
-import com.opus.opus.global.util.FileStorageUtil;
-import com.opus.opus.modules.file.application.convenience.FileConvenience;
-import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
