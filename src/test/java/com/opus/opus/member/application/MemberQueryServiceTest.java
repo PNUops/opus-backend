@@ -120,7 +120,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     void 가입된_회원은_이메일_찾기를_할_수_있다() {
         final EmailFindResponse response = memberQueryService.getMyEmail(member.getStudentId());
 
-        assertThat(response.email()).isEqualTo(member.getEmail());
+        assertThat(response.email()).isEqualTo("exa****@pusan.ac.kr");
     }
 
     @Test
