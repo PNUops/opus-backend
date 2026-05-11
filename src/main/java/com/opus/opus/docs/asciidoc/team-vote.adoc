@@ -126,3 +126,14 @@ include::{snippets}/get-member-vote-count/http-response.adoc[]
 
 .Response Fields
 include::{snippets}/get-member-vote-count/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회 ID
+
+[%collapsible]
+====
+include::{snippets}/get-member-vote-count-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-member-vote-count-fail-not-found/http-response.adoc[]
+====
