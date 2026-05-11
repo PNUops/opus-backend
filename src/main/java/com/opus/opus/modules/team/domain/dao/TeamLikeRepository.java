@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
@@ -16,6 +17,14 @@ public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
     void deleteByMemberIdAndTeam(Long memberId, Team team);
 
     long countByTeamIsDeletedFalse();
+
+    @Modifying
+    @Query(value = """
+                INSERT INTO team_like (member_id, team_id, created_at, updated_at)
+                VALUES (:memberId, :teamId, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE id = id
+            """, nativeQuery = true)
+    void upsertLike(Long memberId, Long teamId);
 
     @Query("""
                 SELECT tl

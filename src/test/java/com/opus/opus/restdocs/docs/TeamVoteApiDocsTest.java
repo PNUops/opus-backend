@@ -3,7 +3,6 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_VOTE_PERIOD_NOW;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -166,26 +165,6 @@ public class TeamVoteApiDocsTest extends RestDocsTest {
                 .andDo(document("remove-team-vote-fail-not-vote-period",
                         pathParameters(
                                 parameterWithName("teamId").description("투표를 취소하려는 팀 ID")
-                        ),
-                        requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
-                        )
-                ));
-    }
-
-    @Test
-    @DisplayName("[실패] 동시 중복 요청 시 409 에러를 반환한다.")
-    void 동시_중복_요청_시_에러를_반환한다() throws Exception {
-        willThrow(new TeamVoteException(DUPLICATE_VOTE_REQUEST))
-                .given(teamCommandService)
-                .addTeamVote(any(), any());
-
-        mockMvc.perform(put("/teams/{teamId}/votes", 1)
-                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
-                .andExpect(status().isConflict())
-                .andDo(document("add-team-vote-fail-duplicate",
-                        pathParameters(
-                                parameterWithName("teamId").description("투표하려는 팀 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")

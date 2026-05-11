@@ -2,7 +2,6 @@ package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_DURING_VOTING_PERIOD;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.DUPLICATE_LIKE_REQUEST;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
@@ -20,7 +19,6 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.exception.TeamException;
-import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.restdocs.RestDocsTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -135,23 +133,4 @@ public class TeamLikeApiDocsTest extends RestDocsTest {
                 ));
     }
 
-    @Test
-    @DisplayName("[실패] 동시 중복 요청 시 409 에러를 반환한다.")
-    void 동시_중복_요청_시_에러를_반환한다() throws Exception {
-        willThrow(new TeamLikeException(DUPLICATE_LIKE_REQUEST))
-                .given(teamCommandService)
-                .addTeamLike(any(), any());
-
-        mockMvc.perform(put("/teams/{teamId}/likes", 1)
-                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
-                .andExpect(status().isConflict())
-                .andDo(document("add-team-like-fail-duplicate",
-                        pathParameters(
-                                parameterWithName("teamId").description("좋아요하려는 팀 ID")
-                        ),
-                        requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
-                        )
-                ));
-    }
 }

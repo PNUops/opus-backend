@@ -88,11 +88,3 @@ include::{snippets}/remove-team-like-fail-voting-period/http-request.adoc[]
 include::{snippets}/remove-team-like-fail-voting-period/http-response.adoc[]
 ====
 
-.❌ Case 4: 동시 중복 요청
-
-[%collapsible]
-====
-include::{snippets}/add-team-like-fail-duplicate/http-request.adoc[]
-
-include::{snippets}/add-team-like-fail-duplicate/http-response.adoc[]
-====

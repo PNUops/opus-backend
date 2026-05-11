@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
@@ -15,6 +16,14 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     boolean existsByMemberIdAndTeam(Long memberId, Team team);
 
     void deleteByMemberIdAndTeam(Long memberId, Team team);
+
+    @Modifying
+    @Query(value = """
+                INSERT INTO team_vote (member_id, team_id, created_at, updated_at)
+                VALUES (:memberId, :teamId, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE id = id
+            """, nativeQuery = true)
+    void upsertVote(Long memberId, Long teamId);
 
     @Query("SELECT COUNT(tv) FROM TeamVote tv JOIN tv.team t " +
             "WHERE tv.memberId = :memberId AND t.contestId = :contestId")

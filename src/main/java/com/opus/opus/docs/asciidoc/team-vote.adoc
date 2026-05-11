@@ -101,15 +101,6 @@ include::{snippets}/remove-team-vote-fail-not-vote-period/http-request.adoc[]
 include::{snippets}/remove-team-vote-fail-not-vote-period/http-response.adoc[]
 ====
 
-.❌ Case 5: 동시 중복 요청
-
-[%collapsible]
-====
-include::{snippets}/add-team-vote-fail-duplicate/http-request.adoc[]
-
-include::{snippets}/add-team-vote-fail-duplicate/http-response.adoc[]
-====
-
 == `GET`: 사용자 남은 투표 개수 조회
 
 .Path Parameters

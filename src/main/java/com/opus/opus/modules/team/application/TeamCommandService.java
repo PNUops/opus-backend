@@ -7,8 +7,6 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.FORBIDDEN_CONTEST_OR_TRACK_UPDATE;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.REQUIRED_FIELD_MISSING;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.DUPLICATE_LIKE_REQUEST;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.DUPLICATE_VOTE_REQUEST;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
 
 import com.opus.opus.global.util.FileStorageUtil;
@@ -30,20 +28,16 @@ import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamLike;
-import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
-import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -227,11 +221,7 @@ public class TeamCommandService {
         final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
 
         contestConvenience.validateNotInVotingPeriod(contest);
-        if (teamLikeRepository.existsByMemberIdAndTeam(memberId, team)) {
-            return;
-        }
-
-        saveTeamLike(memberId, team);
+        teamLikeRepository.upsertLike(memberId, team.getId());
     }
 
     public void removeTeamLike(final Long memberId, final Long teamId) {
@@ -255,9 +245,9 @@ public class TeamCommandService {
         final long currentVoteCount = countCurrentMemberVotes(memberId, contest.getId());
         validateVoteLimit(currentVoteCount, maxVotesLimit);
 
-        saveTeamVote(memberId, team);
+        teamVoteRepository.upsertVote(memberId, team.getId());
 
-        return TeamVoteResponse.of(currentVoteCount + 1, maxVotesLimit);
+        return TeamVoteResponse.of(countCurrentMemberVotes(memberId, contest.getId()), maxVotesLimit);
     }
 
     public TeamVoteResponse removeTeamVote(final Long memberId, final Long teamId) {
@@ -271,30 +261,6 @@ public class TeamCommandService {
 
         final long currentVoteCount = countCurrentMemberVotes(memberId, contest.getId());
         return TeamVoteResponse.of(currentVoteCount, contest.getMaxVotesLimit());
-    }
-
-    private void saveTeamLike(final Long memberId, final Team team) {
-        try {
-            teamLikeRepository.save(TeamLike.builder()
-                    .memberId(memberId)
-                    .team(team)
-                    .build());
-            teamLikeRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            throw new TeamLikeException(DUPLICATE_LIKE_REQUEST);
-        }
-    }
-
-    private void saveTeamVote(final Long memberId, final Team team) {
-        try {
-            teamVoteRepository.save(TeamVote.builder()
-                    .memberId(memberId)
-                    .team(team)
-                    .build());
-            teamVoteRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            throw new TeamVoteException(DUPLICATE_VOTE_REQUEST);
-        }
     }
 
     private long countCurrentMemberVotes(final Long memberId, final Long contestId) {
