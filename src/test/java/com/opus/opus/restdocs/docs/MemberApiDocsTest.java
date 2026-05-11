@@ -1,7 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
@@ -39,6 +41,7 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
@@ -293,6 +296,67 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일"),
                                 stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 마이페이지에서 비밀번호는 변경된다.")
+    void 유효한_요청이면_정상적으로_마이페이지에서_비밀번호는_변경된다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest(member.getPassword(),
+                "newPassword1!");
+
+        doNothing().when(memberCommandService).updatePasswordInMyPage(member, request);
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-password-mypage",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호"),
+                                stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 입력한 기존 비밀번호가 저장된 비밀번호와 일치하지 않으면 비밀번호는 변경되지 않는다.")
+    void 입력한_기존_비밀번호가_저장된_비밀번호와_일치하지_않으면_비밀번호는_변경되지_않는다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest("wrongPassword!", "newPassword1!");
+
+        willThrow(new MemberException(CANNOT_MATCH_PASSWORD)).given(memberCommandService)
+                .updatePasswordInMyPage(any(), any());
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-password-mypage-fail",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호와 일치하지 않는 비밀번호"),
+                                stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 변경하려는 비밀번호가 기존 비밀번호와 일치하면 비밀번호는 변경되지 않는다.")
+    void 변경하려는_비밀번호가_기존_비밀번호와_일치하면_비밀번호는_변경되지_않는다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest(member.getPassword(),
+                member.getPassword());
+
+        willThrow(new MemberException(CANNOT_CHANGE_SAME_PASSWORD)).given(memberCommandService)
+                .updatePasswordInMyPage(any(), any());
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-password-mypage-fail2",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호"),
+                                stringFieldWithPath("newPassword", "기존 비밀번호와 동일한 비밀번호")
                         )
                 ));
     }
@@ -656,7 +720,8 @@ public class MemberApiDocsTest extends RestDocsTest {
         final List<MyCommentResponse> content = List.of(
                 new MyCommentResponse(
                         new CommentInfo(1L, "인정합니다.", of(2026, 1, 1, 0, 0), "홍지연"),
-                        new ProjectInfo(1L, "제6회창의융합해커톤대회", "해커톤", "창업트랙", 5L, "TeamName", "Project Name", "Artify는 일상 속 모든 순간을 예술로 재해석하는 크리에이티브 플랫폼입니다.")
+                        new ProjectInfo(1L, "제6회창의융합해커톤대회", "해커톤", "창업트랙", 5L, "TeamName", "Project Name",
+                                "Artify는 일상 속 모든 순간을 예술로 재해석하는 크리에이티브 플랫폼입니다.")
                 )
         );
         final Page<MyCommentResponse> page = new PageImpl<>(content,

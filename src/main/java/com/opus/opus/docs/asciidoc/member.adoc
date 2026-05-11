@@ -147,6 +147,47 @@ include::{snippets}/update-password/http-response.adoc[]
 .Request Fields
 include::{snippets}/update-password/request-fields.adoc[]
 
+== `PATCH`: 마이페이지에서 비밀번호 변경
+
+.HTTP Request
+include::{snippets}/update-password-mypage/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-password-mypage/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-password-mypage/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 저장된 비밀번호와 입력한 기존 비밀번호 불일치
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-password-mypage-fail/http-request.adoc[]
+
+include::{snippets}/update-password-mypage-fail/http-response.adoc[]
+
+include::{snippets}/update-password-mypage-fail/request-fields.adoc[]
+
+====
+
+.❌ Case 2: 변경하려는 비밀번호가 기존 비밀번호와 동일
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-password-mypage-fail2/http-request.adoc[]
+
+include::{snippets}/update-password-mypage-fail2/http-response.adoc[]
+
+include::{snippets}/update-password-mypage-fail2/request-fields.adoc[]
+
+====
+
 == `GET` : 가입 이메일 찾기
 
 .HTTP Request
