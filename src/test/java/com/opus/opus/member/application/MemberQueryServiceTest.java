@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.contest.ContestCategoryFixture;
@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Set;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.file.FileFixture;
-import org.antlr.v4.runtime.misc.Pair;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
@@ -100,7 +100,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     private TeamLikeRepository teamLikeRepository;
 
     @Autowired
-    private FileStorageUtil fileStorageUtil;
+    private FileQueryService fileQueryService;
 
     private Member member;
     private Team team;
@@ -142,8 +142,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(savedFile);
 
         final Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileStorageUtil.findFileAndType(savedFile.getId()))
-                .willReturn(new Pair<>(resource, "image/webp"));
+        given(fileQueryService.findFileAndType(savedFile.getId()))
+                .willReturn(new FileResource(resource, "image/webp"));
 
         // when
         final ImageResponse response = memberQueryService.getProfileImage(member);

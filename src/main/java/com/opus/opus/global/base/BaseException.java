@@ -6,5 +6,9 @@ public abstract class BaseException extends RuntimeException {
         super(message);
     }
 
+    protected BaseException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
     public abstract BaseExceptionType exceptionType();
 }

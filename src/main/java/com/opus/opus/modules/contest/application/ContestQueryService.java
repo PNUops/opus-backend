@@ -6,7 +6,7 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -52,8 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.Pair;
-import org.springframework.core.io.Resource;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -66,7 +65,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ContestQueryService {
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileQueryService fileQueryService;
 
     private final ContestRepository contestRepository;
 
@@ -107,8 +106,8 @@ public class ContestQueryService {
 
         checkImageConverted(findBanner);
 
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findBanner.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(findBanner.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     public List<ContestCurrentResponse> getCurrentContests() {

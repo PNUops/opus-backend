@@ -20,9 +20,9 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILE
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.global.util.ExcelTeamParser;
 import com.opus.opus.global.util.ExcelTeamValidator;
-import com.opus.opus.global.util.FileStorageUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -92,7 +92,7 @@ public class ContestCommandService {
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final MemberConvenience memberConvenience;
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
     private final ExcelTeamParser excelTeamParser;
     private final ExcelTeamValidator excelTeamValidator;
 
@@ -103,16 +103,16 @@ public class ContestCommandService {
                 CONTEST, BANNER);
         existingFile.ifPresent(this::checkWebpConverted);
 
-        fileStorageUtil.storeFile(image, contestId, CONTEST, BANNER);
+        fileCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
 
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 
     public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file ->
-                fileStorageUtil.deleteFile(file.getId())
+                fileCommandService.deleteFile(file.getId())
         );
     }
 
@@ -152,7 +152,7 @@ public class ContestCommandService {
 
         // 연관 데이터 삭제
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
-                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
 
         noticeRepository.deleteAll(noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId));
         contestAwardRepository.deleteAll(contestAwardRepository.findByContestId(contestId));

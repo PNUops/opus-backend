@@ -20,6 +20,11 @@ spring:
       max-file-size: 5MB
       max-request-size: 30MB
 
+file:
+  storage:
+    local:
+      base-path: src/main/resources/opus_files
+
 cors:
   allow:
     origins: https://test.url

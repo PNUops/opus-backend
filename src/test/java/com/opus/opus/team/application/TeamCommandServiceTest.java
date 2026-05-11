@@ -222,10 +222,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
         assertThat(teamRepository.findById(teamId)).isEmpty();
 
         // storage 삭제 검증
-        verify(fileStorageUtil).deleteFile(poster.getId());
-        verify(fileStorageUtil).deleteFile(thumbnail.getId());
-        verify(fileStorageUtil).deleteFile(preview1.getId());
-        verify(fileStorageUtil).deleteFile(preview2.getId());
+        verify(fileCommandService).deleteFile(poster.getId());
+        verify(fileCommandService).deleteFile(thumbnail.getId());
+        verify(fileCommandService).deleteFile(preview1.getId());
+        verify(fileCommandService).deleteFile(preview2.getId());
     }
 
     @Test
@@ -239,7 +239,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), image, member);
 
         // then
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
@@ -270,7 +270,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
     }
 
     @Test
@@ -280,7 +280,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileStorageUtil, never()).deleteFile(any());
+        verify(fileCommandService, never()).deleteFile(any());
     }
 
     @Test
@@ -298,8 +298,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), newImage, member);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test

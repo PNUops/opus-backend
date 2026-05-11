@@ -3,7 +3,7 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestTrackRequest;
@@ -34,7 +34,7 @@ public class ContestTrackCommandService {
     private final ContestConvenience contestConvenience;
     private final TeamConvenience teamConvenience;
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
 
     public void createTrack(final Long contestId, final ContestTrackRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
@@ -63,10 +63,7 @@ public class ContestTrackCommandService {
 
     public void saveContestTrackDefaultThumbnail(final Long contestId, final Long trackId, final MultipartFile image) {
         contestTrackConvenience.getValidateExistTrack(contestId, trackId);
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK,
-                THUMBNAIL);
-        fileStorageUtil.storeFile(image, trackId, TRACK, THUMBNAIL);
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, trackId, TRACK, THUMBNAIL);
     }
 
     public void deleteContestTrackDefaultThumbnail(final Long contestId, final Long trackId) {
@@ -76,6 +73,6 @@ public class ContestTrackCommandService {
 
     private void deleteIfExists(final Long trackId, final FileImageType imageType) {
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, imageType)
-                .ifPresent(existingFile -> fileStorageUtil.deleteFile(existingFile.getId()));
+                .ifPresent(existingFile -> fileCommandService.deleteFile(existingFile.getId()));
     }
 }
