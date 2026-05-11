@@ -14,167 +14,97 @@ endif::[]
 
 link:./opus.html[API 목록으로 돌아가기]
 
-== `PUT`: 팀 투표 토글
+투표는 `PUT`/`DELETE` 두 엔드포인트로 분리되어 있으며, 두 메서드 모두 멱등합니다.
 
-해당 팀에 대해 투표 상태를 토글합니다.
+* `PUT /teams/{teamId}/votes` → 투표 등록 (이미 등록된 경우 NO-OP, 200 OK)
+* `DELETE /teams/{teamId}/votes` → 투표 취소 (이미 취소된 경우 NO-OP, 200 OK)
 
-* `isVoted: true` → 투표 등록
-* `isVoted: false` → 투표 취소
+NOTE: 두 메서드 모두 응답 본문에 사용자의 남은 투표 가능 횟수와 대회 최대 투표 허용 개수를 포함합니다.
 
-NOTE: 대회 기간 중에는 투표만 보이고, 대회 기간이 아니라면 좋아요가 보입니다.
+NOTE: 투표 등록 시 대회 최대 투표 수 초과 시 400 에러가 발생합니다.
 
-NOTE: 해당 대회의 최대 투표 개수 이상으로 투표를 등록할 수 없습니다.
+NOTE: 투표 기간 중에만 호출 가능하며, 투표 기간이 아닐 때 호출하면 400 에러가 발생합니다.
+
+== `PUT`: 팀 투표 등록
+
+해당 팀에 대해 투표를 등록합니다. 이미 투표한 상태에서 호출해도 동일하게 200 OK와 현재 카운트를 반환합니다 (멱등).
 
 .Path Parameters
-include::{snippets}/toggle-team-vote/path-parameters.adoc[]
+include::{snippets}/add-team-vote/path-parameters.adoc[]
 
 .HTTP Request Headers
-include::{snippets}/toggle-team-vote/request-headers.adoc[]
+include::{snippets}/add-team-vote/request-headers.adoc[]
 
-.Request Fields
-include::{snippets}/toggle-team-vote/request-fields.adoc[]
+.HTTP Request
+include::{snippets}/add-team-vote/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/add-team-vote/http-response.adoc[]
 
 .Response Fields
-include::{snippets}/toggle-team-vote/response-fields.adoc[]
+include::{snippets}/add-team-vote/response-fields.adoc[]
 
-=== 시나리오 1: TeamVote 데이터가 없는 경우
+== `DELETE`: 팀 투표 취소
 
-특정 멤버가 특정 팀에 대해 투표 API를 처음 호출하면, TeamVote 테이블에 데이터가 새로 생성됩니다.
+해당 팀에 대한 투표를 취소합니다. 투표한 적 없는 팀에 호출해도 동일하게 200 OK와 현재 카운트를 반환합니다 (멱등).
 
-[cols="1,2,1"]
-|===
-|Request isVoted |응답 메시지 |HTTP 상태 코드
+.Path Parameters
+include::{snippets}/remove-team-vote/path-parameters.adoc[]
 
-|true
-|투표가 등록되었습니다.
-|200 OK
+.HTTP Request Headers
+include::{snippets}/remove-team-vote/request-headers.adoc[]
 
-|false
-|아직 투표하지 않은 팀입니다.
-|400 Bad Request
-|===
+.HTTP Request
+include::{snippets}/remove-team-vote/http-request.adoc[]
 
-isVoted: true → 투표 등록
+.HTTP Response
+include::{snippets}/remove-team-vote/http-response.adoc[]
 
-include::{snippets}/toggle-team-vote/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote/http-response.adoc[]
-
-=== 시나리오 2: TeamVote 데이터가 있는 경우
-
-이미 해당 팀에 대한 투표 기록이 있는 경우, 상태에 따라 토글됩니다.
-
-[cols="1,1,2,1"]
-|===
-|현재 isVoted |Request isVoted |응답 메시지 |HTTP 상태 코드
-
-|true
-|true
-|이미 투표한 팀입니다.
-|400 Bad Request
-
-|true
-|false
-|투표가 취소되었습니다.
-|200 OK
-
-|false
-|true
-|투표가 등록되었습니다.
-|200 OK
-
-|false
-|false
-|이미 투표를 취소한 팀입니다.
-|400 Bad Request
-|===
-
-투표 취소 (isVoted: true → false)
-
-include::{snippets}/cancel-team-vote/http-request.adoc[]
-
-include::{snippets}/cancel-team-vote/http-response.adoc[]
+.Response Fields
+include::{snippets}/remove-team-vote/response-fields.adoc[]
 
 === ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 팀
 
 [%collapsible]
+====
+include::{snippets}/add-team-vote-fail-not-found/http-request.adoc[]
 
+include::{snippets}/add-team-vote-fail-not-found/http-response.adoc[]
 ====
 
-include::{snippets}/toggle-team-vote-fail-not-found/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote-fail-not-found/http-response.adoc[]
-
-====
-
-.❌ Case 2: 이미 투표한 팀
+.❌ Case 2: 최대 투표 수 초과
 
 [%collapsible]
+====
+include::{snippets}/add-team-vote-fail-limit-exceeded/http-request.adoc[]
 
+include::{snippets}/add-team-vote-fail-limit-exceeded/http-response.adoc[]
 ====
 
-include::{snippets}/toggle-team-vote-fail-already-voted/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote-fail-already-voted/http-response.adoc[]
-
-====
-
-.❌ Case 3: 이미 투표 취소한 팀
+.❌ Case 3: 투표 기간이 아닐 때 투표 등록
 
 [%collapsible]
+====
+include::{snippets}/add-team-vote-fail-not-vote-period/http-request.adoc[]
 
+include::{snippets}/add-team-vote-fail-not-vote-period/http-response.adoc[]
 ====
 
-include::{snippets}/toggle-team-vote-fail-already-unvoted/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote-fail-already-unvoted/http-response.adoc[]
-
-====
-
-.❌ Case 4: 투표한 적 없는 팀에 취소 요청
+.❌ Case 4: 투표 기간이 아닐 때 투표 취소
 
 [%collapsible]
+====
+include::{snippets}/remove-team-vote-fail-not-vote-period/http-request.adoc[]
 
+include::{snippets}/remove-team-vote-fail-not-vote-period/http-response.adoc[]
 ====
 
-include::{snippets}/toggle-team-vote-fail-not-voted-yet/http-request.adoc[]
+== `GET`: 사용자 남은 투표 개수 조회
 
-include::{snippets}/toggle-team-vote-fail-not-voted-yet/http-response.adoc[]
-
-====
-
-.❌ Case 5: 최대 투표 수 초과
-
-[%collapsible]
-
-====
-
-include::{snippets}/toggle-team-vote-fail-limit-exceeded/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote-fail-limit-exceeded/http-response.adoc[]
-
-====
-
-.❌ Case 6: 투표 기간이 아님
-
-[%collapsible]
-
-====
-
-include::{snippets}/toggle-team-vote-fail-not-vote-period/http-request.adoc[]
-
-include::{snippets}/toggle-team-vote-fail-not-vote-period/http-response.adoc[]
-
-====
-
-== `GET`: 사용자 투표 개수 조회
-
-현재 사용자가 특정 대회에서 남은 투표 가능 횟수와 최대 투표 허용 개수를 조회합니다.
-
-.Query Parameters
-include::{snippets}/get-member-vote-count/query-parameters.adoc[]
+.Path Parameters
+include::{snippets}/get-member-vote-count/path-parameters.adoc[]
 
 .HTTP Request Headers
 include::{snippets}/get-member-vote-count/request-headers.adoc[]
@@ -190,14 +120,11 @@ include::{snippets}/get-member-vote-count/response-fields.adoc[]
 
 === ⚠️ 실패 케이스
 
-.❌ Case 1: 존재하지 않는 대회
+.❌ Case 1: 존재하지 않는 대회 ID
 
 [%collapsible]
-
 ====
-
 include::{snippets}/get-member-vote-count-fail-not-found/http-request.adoc[]
 
 include::{snippets}/get-member-vote-count-fail-not-found/http-response.adoc[]
-
 ====

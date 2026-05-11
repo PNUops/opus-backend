@@ -14,83 +14,50 @@ endif::[]
 
 link:./opus.html[API 목록으로 돌아가기]
 
-== `PUT`: 팀 좋아요 토글
+좋아요는 `PUT`/`DELETE` 두 엔드포인트로 분리되어 있으며, 두 메서드 모두 멱등합니다.
 
-해당 팀에 대해 좋아요(찜) 상태를 토글합니다.
-
-* `isLiked: true` → 좋아요 등록
-* `isLiked: false` → 좋아요 취소
+* `PUT /teams/{teamId}/likes` → 좋아요 등록 (이미 등록된 경우 NO-OP, 200 OK)
+* `DELETE /teams/{teamId}/likes` → 좋아요 취소 (이미 취소된 경우 NO-OP, 204 No Content)
 
 NOTE: 좋아요를 통해 팀을 찜할 수 있습니다.
 
-NOTE: 투표 기간에는 투표만 가능하고, 투표 기간이 아닐 때만 좋아요가 가능합니다.
+NOTE: 투표 기간에는 좋아요 등록/취소가 불가능하며, 투표 기간이 아닐 때만 가능합니다.
+
+== `PUT`: 팀 좋아요 등록
+
+해당 팀에 대해 좋아요를 등록합니다. 이미 좋아요한 상태에서 호출해도 동일하게 200 OK를 반환합니다 (멱등).
+
+응답 본문은 없습니다.
 
 .Path Parameters
-include::{snippets}/toggle-team-like/path-parameters.adoc[]
+include::{snippets}/add-team-like/path-parameters.adoc[]
 
 .HTTP Request Headers
-include::{snippets}/toggle-team-like/request-headers.adoc[]
+include::{snippets}/add-team-like/request-headers.adoc[]
 
 .HTTP Request
-include::{snippets}/toggle-team-like/http-request.adoc[]
+include::{snippets}/add-team-like/http-request.adoc[]
 
 .HTTP Response
-include::{snippets}/toggle-team-like/http-response.adoc[]
+include::{snippets}/add-team-like/http-response.adoc[]
 
-.Request Fields
-include::{snippets}/toggle-team-like/request-fields.adoc[]
+== `DELETE`: 팀 좋아요 취소
 
-.Response Fields
-include::{snippets}/toggle-team-like/response-fields.adoc[]
+해당 팀에 대한 좋아요를 취소합니다. 좋아요한 적이 없는 팀에 호출해도 동일하게 204 No Content를 반환합니다 (멱등).
 
-=== 시나리오별 응답
+응답 본문은 없습니다.
 
-==== 시나리오 1: TeamLike 데이터가 없는 경우
+.Path Parameters
+include::{snippets}/remove-team-like/path-parameters.adoc[]
 
-특정 멤버가 특정 팀에 대해 좋아요 API를 처음 호출하면, TeamLike 테이블에 데이터가 새로 생성됩니다.
+.HTTP Request Headers
+include::{snippets}/remove-team-like/request-headers.adoc[]
 
-[cols="1,2,1"]
-|===
-|Request isLiked |응답 메시지 |HTTP 상태 코드
+.HTTP Request
+include::{snippets}/remove-team-like/http-request.adoc[]
 
-|true
-|좋아요가 등록되었습니다.
-|200 OK
-
-|false
-|아직 좋아요하지 않은 팀입니다.
-|400 Bad Request
-|===
-
-==== 시나리오 2: TeamLike 데이터가 있는 경우
-
-이미 해당 팀에 대한 좋아요 기록이 있는 경우, 상태에 따라 토글됩니다.
-
-[cols="1,1,2,1"]
-|===
-|현재 isLiked |Request isLiked |응답 메시지 |HTTP 상태 코드
-
-|true
-|true
-|이미 좋아요한 팀입니다.
-|400 Bad Request
-
-|true
-|false
-|좋아요가 취소되었습니다.
-|200 OK
-
-|false
-|true
-|좋아요가 등록되었습니다.
-|200 OK
-
-|false
-|false
-|이미 좋아요를 취소한 팀입니다.
-|400 Bad Request
-|===
-
+.HTTP Response
+include::{snippets}/remove-team-like/http-response.adoc[]
 
 === ⚠️ 실패 케이스
 
@@ -98,43 +65,26 @@ include::{snippets}/toggle-team-like/response-fields.adoc[]
 
 [%collapsible]
 ====
-include::{snippets}/toggle-team-like-fail-not-found/http-request.adoc[]
+include::{snippets}/add-team-like-fail-not-found/http-request.adoc[]
 
-include::{snippets}/toggle-team-like-fail-not-found/http-response.adoc[]
+include::{snippets}/add-team-like-fail-not-found/http-response.adoc[]
 ====
 
-.❌ Case 2: 이미 좋아요한 팀
+.❌ Case 2: 투표 기간 중 좋아요 등록 요청
 
 [%collapsible]
 ====
-include::{snippets}/toggle-team-like-fail-already-liked/http-request.adoc[]
+include::{snippets}/add-team-like-fail-voting-period/http-request.adoc[]
 
-include::{snippets}/toggle-team-like-fail-already-liked/http-response.adoc[]
+include::{snippets}/add-team-like-fail-voting-period/http-response.adoc[]
 ====
 
-.❌ Case 3: 이미 좋아요 취소한 팀
+.❌ Case 3: 투표 기간 중 좋아요 취소 요청
 
 [%collapsible]
 ====
-include::{snippets}/toggle-team-like-fail-already-unliked/http-request.adoc[]
+include::{snippets}/remove-team-like-fail-voting-period/http-request.adoc[]
 
-include::{snippets}/toggle-team-like-fail-already-unliked/http-response.adoc[]
+include::{snippets}/remove-team-like-fail-voting-period/http-response.adoc[]
 ====
 
-.❌ Case 4: 좋아요한 적 없는 팀에 취소 요청
-
-[%collapsible]
-====
-include::{snippets}/toggle-team-like-fail-not-liked-yet/http-request.adoc[]
-
-include::{snippets}/toggle-team-like-fail-not-liked-yet/http-response.adoc[]
-====
-
-.❌ Case 5: 투표 기간 중 좋아요 요청
-
-[%collapsible]
-====
-include::{snippets}/toggle-team-like-fail-voting-period/http-request.adoc[]
-
-include::{snippets}/toggle-team-like-fail-voting-period/http-response.adoc[]
-====

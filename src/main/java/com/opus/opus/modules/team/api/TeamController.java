@@ -7,13 +7,10 @@ import com.opus.opus.modules.team.application.TeamQueryService;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.request.PreviewDeleteRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
-import com.opus.opus.modules.team.application.dto.request.TeamLikeToggleRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
-import com.opus.opus.modules.team.application.dto.request.TeamVoteToggleRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
 import com.opus.opus.modules.team.application.dto.response.TeamDetailResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -160,21 +157,34 @@ public class TeamController {
     }
 
     @Secured({"ROLE_회원", "ROLE_관리자"})
+    @PutMapping("/{teamId}/likes")
+    public ResponseEntity<Void> addLike(@PathVariable final Long teamId,
+                                        @LoginMember final Member member) {
+        teamCommandService.addTeamLike(member.getId(), teamId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @DeleteMapping("/{teamId}/likes")
+    public ResponseEntity<Void> removeLike(@PathVariable final Long teamId,
+                                           @LoginMember final Member member) {
+        teamCommandService.removeTeamLike(member.getId(), teamId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_회원", "ROLE_관리자"})
     @PutMapping("/{teamId}/votes")
-    public ResponseEntity<TeamVoteToggleResponse> toggleVote(@PathVariable Long teamId,
-                                                             @RequestBody @Valid TeamVoteToggleRequest request,
-                                                             @LoginMember Member member) {
-        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), teamId, request.isVoted());
+    public ResponseEntity<TeamVoteResponse> addVote(@PathVariable final Long teamId,
+                                                    @LoginMember final Member member) {
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), teamId);
         return ResponseEntity.ok(response);
     }
 
     @Secured({"ROLE_회원", "ROLE_관리자"})
-    @PutMapping("/{teamId}/likes")
-    public ResponseEntity<TeamLikeToggleResponse> toggleLike(@PathVariable final Long teamId,
-                                                             @RequestBody @Valid final TeamLikeToggleRequest request,
-                                                             @LoginMember final Member member) {
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), teamId,
-                request.isLiked());
+    @DeleteMapping("/{teamId}/votes")
+    public ResponseEntity<TeamVoteResponse> removeVote(@PathVariable final Long teamId,
+                                                       @LoginMember final Member member) {
+        final TeamVoteResponse response = teamCommandService.removeTeamVote(member.getId(), teamId);
         return ResponseEntity.ok(response);
     }
 }

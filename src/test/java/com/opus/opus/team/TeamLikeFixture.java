@@ -5,11 +5,10 @@ import com.opus.opus.modules.team.domain.TeamLike;
 
 public class TeamLikeFixture {
 
-    public static TeamLike createTeamLike(final Team team, final Long memberId, final Boolean isLiked) {
+    public static TeamLike createTeamLike(final Team team, final Long memberId) {
         return TeamLike.builder()
                 .team(team)
                 .memberId(memberId)
-                .isLiked(isLiked)
                 .build();
     }
 }

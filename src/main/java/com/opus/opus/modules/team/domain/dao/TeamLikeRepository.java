@@ -4,17 +4,27 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamLike;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
 
-    Optional<TeamLike> findByMemberIdAndTeam(Long memberId, Team team);
+    boolean existsByMemberIdAndTeam(Long memberId, Team team);
 
-    long countByIsLikedTrueAndTeamIsDeletedFalse();
+    void deleteByMemberIdAndTeam(Long memberId, Team team);
+
+    long countByTeamIsDeletedFalse();
+
+    @Modifying
+    @Query(value = """
+                INSERT INTO team_like (member_id, team_id, created_at, updated_at)
+                VALUES (:memberId, :teamId, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE id = id
+            """, nativeQuery = true)
+    void upsertLike(Long memberId, Long teamId);
 
     @Query("""
                 SELECT tl
@@ -32,7 +42,7 @@ public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
                 FROM TeamLike tl
                 JOIN tl.team t
                 JOIN Contest c ON c.id = t.contestId
-                WHERE tl.memberId = :memberId AND tl.isLiked = true
+                WHERE tl.memberId = :memberId
                 ORDER BY tl.createdAt DESC
             """)
     List<MyLikedProjectResult> findMyRecentLikedProjects(Long memberId, Pageable pageable);
@@ -45,7 +55,7 @@ public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
                 FROM TeamLike tl
                 JOIN tl.team t
                 JOIN Contest c ON c.id = t.contestId
-                WHERE tl.memberId = :memberId AND tl.isLiked = true
+                WHERE tl.memberId = :memberId
                 AND (:startDate IS NULL OR tl.createdAt >= :startDate)
                 AND (:endDate IS NULL OR tl.createdAt < :endDate)
                 AND (:categoryId IS NULL OR c.categoryId = :categoryId)
