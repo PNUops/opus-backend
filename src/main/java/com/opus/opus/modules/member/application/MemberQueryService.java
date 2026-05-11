@@ -9,33 +9,35 @@ import com.opus.opus.modules.file.domain.File;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-
+import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.convenience.FileConvenience;
+import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
-import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
+import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
-import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
-import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
-import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
-import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
-import java.util.LinkedHashMap;
-import java.util.List;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import com.opus.opus.modules.team.application.dto.ImageResponse;
+import java.util.LinkedHashMap;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
@@ -63,7 +65,29 @@ public class MemberQueryService {
 
     public EmailFindResponse getMyEmail(final String studentId) {
         final Member member = memberConvenience.getValidateExistMemberByStudentId(studentId);
-        return new EmailFindResponse(member.getEmail());
+        return new EmailFindResponse(maskEmail(member.getEmail()));
+    }
+
+    private String maskEmail(final String email) {
+        final int atIndex = email.indexOf('@');
+        final String local = email.substring(0, atIndex);
+        final String domain = email.substring(atIndex);
+        return maskLocal(local) + domain;
+    }
+
+    private String maskLocal(final String local) {
+        final int length = local.length();
+        // 이메일 로컬 파트 마스킹
+        if (length == 1) {
+            // 1자: * (ex. a → *)
+            return "*";
+        }
+        if (length <= 3) {
+            // 2~3자: 첫 1자리 노출 (ex. ab → a*, abc → a**)
+            return local.charAt(0) + "*".repeat(length - 1);
+        }
+        // 4자 이상: 첫 3자리 노출, 나머지 문자는 * 처리 (ex. abcde → abd**)
+        return local.substring(0, 3) + "*".repeat(length - 3);
     }
 
     public ImageResponse getProfileImage(final Member member) {
@@ -94,7 +118,8 @@ public class MemberQueryService {
                                                  final int page, final int size) {
         validateDateRange(startDate, endDate);
         final SearchConditionRequest condition = createSearchCondition(sort, startDate, endDate, page, size);
-        return teamCommentRepository.findMyComments(memberId, condition.startDateTime(), condition.endDateTime(), condition.pageable())
+        return teamCommentRepository.findMyComments(memberId, condition.startDateTime(), condition.endDateTime(),
+                        condition.pageable())
                 .map(MyCommentResponse::from);
     }
 
@@ -111,11 +136,13 @@ public class MemberQueryService {
                                                            final int page, final int size) {
         validateDateRange(startDate, endDate);
         final SearchConditionRequest searchCondition = createSearchCondition(sort, startDate, endDate, page, size);
-        return teamLikeRepository.findMyLikedProjects(memberId, searchCondition.startDateTime(), searchCondition.endDateTime(), categoryId, contestId, searchCondition.pageable())
+        return teamLikeRepository.findMyLikedProjects(memberId, searchCondition.startDateTime(),
+                        searchCondition.endDateTime(), categoryId, contestId, searchCondition.pageable())
                 .map(MyLikedProjectResponse::from);
     }
 
-    private SearchConditionRequest createSearchCondition(final String sort, final LocalDate startDate, final LocalDate endDate, final int page, final int size) {
+    private SearchConditionRequest createSearchCondition(final String sort, final LocalDate startDate,
+                                                         final LocalDate endDate, final int page, final int size) {
         final Sort.Direction direction = parseSortDirection(sort);
         final Pageable pageable = PageRequest.of(page, size, Sort.by(direction, "createdAt"));
         final LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;

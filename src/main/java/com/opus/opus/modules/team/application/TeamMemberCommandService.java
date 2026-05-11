@@ -24,9 +24,10 @@ public class TeamMemberCommandService {
     private final TeamMemberConvenience teamMemberConvenience;
     private final MemberConvenience memberConvenience;
 
-    public void createTeamMember(final Long teamId, final String studentId, final String name,
-                                 final TeamMemberRoleType roleType) {
+    public void createTeamMember(final Member loginMember, final Long teamId, final String studentId,
+                                 final String name, final TeamMemberRoleType roleType) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
+        teamMemberConvenience.validateTeamLeaderUnlessAdmin(teamId, loginMember);
         final Member member = memberConvenience.getOrCreateFakeMember(studentId, name);
         teamMemberConvenience.checkIsDuplicateTeamMember(teamId, member.getId());
         teamMemberRepository.save(
@@ -38,8 +39,9 @@ public class TeamMemberCommandService {
         );
     }
 
-    public void deleteTeamMember(final Long teamId, final Long memberId) {
+    public void deleteTeamMember(final Member loginMember, final Long teamId, final Long memberId) {
         teamConvenience.getValidateExistTeam(teamId);
+        teamMemberConvenience.validateTeamLeaderUnlessAdmin(teamId, loginMember);
         final TeamMember teamMember = teamMemberConvenience.getValidateExistTeamMember(teamId, memberId);
         teamMemberRepository.delete(teamMember);
     }
