@@ -1,5 +1,9 @@
 package com.opus.opus.modules.notification.application.convenience;
 
+import static com.opus.opus.modules.notification.domain.NotificationType.TEAM;
+import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_AWARDS;
+import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_COMMENT;
+
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
@@ -17,19 +21,19 @@ public class NotificationConvenience {
 
     public void sendTeamMemberJoinNotifications(final List<Long> memberIds, final Long teamId,
                                                 final String teamDisplayName) {
-        save(memberIds, NotificationType.TEAM, "팀 합류 알림",
+        save(memberIds, TEAM, "팀 합류 알림",
                 teamDisplayName + " 팀의 팀원이 되었습니다.", teamId, "/teams/" + teamId);
     }
 
     public void sendTeamAwardNotifications(final List<Long> memberIds, final Long teamId,
                                            final String teamDisplayName) {
-        save(memberIds, NotificationType.TEAM_AWARDS, "수상 알림",
+        save(memberIds, TEAM_AWARDS, "수상 알림",
                 teamDisplayName + " 팀이 수상했습니다.", teamId, "/teams/" + teamId);
     }
 
     public void sendTeamCommentNotifications(final List<Long> memberIds, final Long teamId,
                                              final String teamDisplayName) {
-        save(memberIds, NotificationType.TEAM_COMMENT, "새 댓글 알림",
+        save(memberIds, TEAM_COMMENT, "새 댓글 알림",
                 teamDisplayName + " 팀에 새 댓글이 달렸습니다.", teamId, "/teams/" + teamId);
     }
 
