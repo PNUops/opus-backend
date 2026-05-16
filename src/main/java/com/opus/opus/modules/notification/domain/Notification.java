@@ -40,6 +40,11 @@ public class Notification extends BaseEntity {
     private NotificationType type;
 
     @Column(nullable = false)
+    private Long targetId;
+
+    private String redirectUrl;
+
+    @Column(nullable = false)
     private Boolean isRead;
 
     @Column(nullable = false)
