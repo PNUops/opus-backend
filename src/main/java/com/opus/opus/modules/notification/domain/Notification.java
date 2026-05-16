@@ -51,11 +51,14 @@ public class Notification extends BaseEntity {
     private Boolean isDeleted;
 
     @Builder
-    private Notification(final Long memberId, final String title, final String content, final NotificationType type) {
+    private Notification(final Long memberId, final String title, final String content, final NotificationType type,
+                         final Long targetId, final String redirectUrl) {
         this.memberId = memberId;
         this.title = title;
         this.content = content;
         this.type = type;
+        this.targetId = targetId;
+        this.redirectUrl = redirectUrl;
         this.isRead = false;
         this.isDeleted = false;
     }
