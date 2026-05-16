@@ -4,5 +4,5 @@ public enum NotificationType {
 
     TEAM,
     TEAM_COMMENT,
-    TEAN_AWARDS
+    TEAM_AWARDS
 }
