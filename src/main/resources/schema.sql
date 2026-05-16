@@ -147,7 +147,7 @@ CREATE TABLE `notification` (
   `member_id` bigint NOT NULL,
   `title` varchar(255) NOT NULL,
   `content` varchar(255) NOT NULL,
-  `type` enum('TEAM','TEAM_COMMENT','TEAN_AWARDS') NOT NULL,
+  `type` enum('TEAM','TEAM_COMMENT','TEAM_AWARDS') NOT NULL,
   `target_id` bigint NOT NULL,
   `redirect_url` varchar(255) DEFAULT NULL,
   `is_read` bit(1) NOT NULL,
