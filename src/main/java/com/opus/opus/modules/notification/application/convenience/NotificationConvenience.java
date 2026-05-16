@@ -15,9 +15,27 @@ public class NotificationConvenience {
 
     private final NotificationRepository notificationRepository;
 
-    public void sendNotificationsToMembers(final List<Long> memberIds, final NotificationType type,
-                                           final String title, final String content,
-                                           final Long targetId, final String redirectUrl) {
+    public void sendTeamMemberJoinNotifications(final List<Long> memberIds, final Long teamId,
+                                                final String teamDisplayName) {
+        save(memberIds, NotificationType.TEAM, "팀 합류 알림",
+                teamDisplayName + " 팀의 팀원이 되었습니다.", teamId, "/teams/" + teamId);
+    }
+
+    public void sendTeamAwardNotifications(final List<Long> memberIds, final Long teamId,
+                                           final String teamDisplayName) {
+        save(memberIds, NotificationType.TEAM_AWARDS, "수상 알림",
+                teamDisplayName + " 팀이 수상했습니다.", teamId, "/teams/" + teamId);
+    }
+
+    public void sendTeamCommentNotifications(final List<Long> memberIds, final Long teamId,
+                                             final String teamDisplayName) {
+        save(memberIds, NotificationType.TEAM_COMMENT, "새 댓글 알림",
+                teamDisplayName + " 팀에 새 댓글이 달렸습니다.", teamId, "/teams/" + teamId);
+    }
+
+    private void save(final List<Long> memberIds, final NotificationType type,
+                      final String title, final String content,
+                      final Long targetId, final String redirectUrl) {
         if (memberIds.isEmpty()) {
             return;
         }
