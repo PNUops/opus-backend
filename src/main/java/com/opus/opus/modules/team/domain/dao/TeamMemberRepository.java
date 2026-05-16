@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
@@ -30,4 +31,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     @Query("SELECT tm.memberId FROM TeamMember tm JOIN Team t ON tm.team.id = t.id WHERE t.contestId = :contestId")
     Set<Long> findMemberIdsByContestId(Long contestId);
+
+    @Query("SELECT tm.memberId FROM TeamMember tm JOIN Member m ON m.id = tm.memberId WHERE tm.team.id = :teamId AND m.isFake = false AND m.isDeleted = false")
+    List<Long> findRealMemberIdsByTeamId(@Param("teamId") Long teamId);
 }

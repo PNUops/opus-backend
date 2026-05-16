@@ -11,6 +11,7 @@ import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -71,5 +72,9 @@ public class TeamMemberConvenience {
 
     public Set<Long> findMemberIdsByContestId(final Long contestId) {
         return teamMemberRepository.findMemberIdsByContestId(contestId);
+    }
+
+    public List<Long> findRealMemberIdsByTeamId(final Long teamId) {
+        return teamMemberRepository.findRealMemberIdsByTeamId(teamId);
     }
 }

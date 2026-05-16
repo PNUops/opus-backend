@@ -5,7 +5,9 @@ import static com.opus.opus.modules.team.exception.TeamAwardExceptionType.DUPLIC
 
 import com.opus.opus.modules.contest.application.convenience.ContestAwardConvenience;
 import com.opus.opus.modules.contest.domain.ContestAward;
+import com.opus.opus.modules.notification.application.convenience.NotificationConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.request.TeamContestAwardUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamContestAwardResponse;
 import com.opus.opus.modules.team.domain.Team;
@@ -27,6 +29,8 @@ public class TeamContestAwardCommandService {
     private final TeamConvenience teamConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
     private final TeamContestAwardRepository teamContestAwardRepository;
+    private final TeamMemberConvenience teamMemberConvenience;
+    private final NotificationConvenience notificationConvenience;
 
     public TeamContestAwardResponse updateTeamContestAwards(final Long teamId,
                                                             final TeamContestAwardUpdateRequest request) {
@@ -44,6 +48,11 @@ public class TeamContestAwardCommandService {
         validateTeamContestAwardsBelonging(contestAwards, team.getContestId());
 
         saveTeamContestAwards(team, contestAwards);
+
+        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId);
+        final String teamDisplayName = team.getTeamName() != null ? team.getTeamName() : team.getProjectName();
+        notificationConvenience.sendTeamAwardNotifications(memberIds, teamId, teamDisplayName);
+
         return TeamContestAwardResponse.from(contestAwards);
     }
 
