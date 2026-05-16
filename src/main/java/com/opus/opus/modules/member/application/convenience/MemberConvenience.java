@@ -14,6 +14,7 @@ import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +46,16 @@ public class MemberConvenience {
         return memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }
 
-    public void validateExistMemberByEmail(final String email) {
-        memberRepository.findByEmail(email).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
-    }
-
     public Member getValidateExistMemberByEmail(final String email) {
         return memberRepository.findByEmail(email).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+    }
+
+    public Optional<Member> findByEmail(final String email) {
+        return memberRepository.findByEmail(email);
+    }
+
+    public Optional<Member> findByStudentId(final String studentId) {
+        return memberRepository.findByStudentId(studentId);
     }
 
     public void validatePusanDomain(final String email) {
@@ -110,6 +115,26 @@ public class MemberConvenience {
         );
     }
 
+    public Member getOrCreateFakeMember(final String email, final String studentId, final String name) {
+        return memberRepository.findByEmail(email)
+                .orElseGet(() -> registerFakeMemberWithEmailAndStudentId(email, studentId, name));
+    }
+
+    private Member registerFakeMemberWithEmailAndStudentId(final String email, final String studentId, final String name) {
+        final String randomPassword = generateRandomPassword();
+
+        final Member member = Member.generalMember()
+                .name(name)
+                .studentId(studentId)
+                .email(email)
+                .password(randomPassword)
+                .roles(Set.of(ROLE_회원))
+                .build();
+        member.markAsFakeMember();
+
+        return memberRepository.save(member);
+    }
+
     private String generateRandomPassword() {
         final int passwordLength = 32;
 
@@ -119,6 +144,26 @@ public class MemberConvenience {
         }
 
         return passwordEncoder.encode(password.toString());
+    }
+
+    public Map<String, Member> findAllByEmailIn(final List<String> emails) {
+        return memberRepository.findAllByEmailIn(emails)
+                .stream()
+                .collect(toMap(Member::getEmail, Function.identity()));
+    }
+
+    public Map<String, Member> findAllByStudentIdIn(final List<String> studentIds) {
+        return memberRepository.findAllByStudentIdIn(studentIds)
+                .stream()
+                .collect(toMap(Member::getStudentId, Function.identity()));
+    }
+
+    public long countActiveMembers() {
+        return memberRepository.countByIsFakeFalse();
+    }
+
+    public long countAllMembers() {
+        return memberRepository.countAllIncludingDeletedAndFake();
     }
 
     public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {

@@ -5,12 +5,6 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_V
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_LIKED;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.ALREADY_UNLIKED;
-import static com.opus.opus.modules.team.exception.TeamLikeExceptionType.NOT_LIKED_YET;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_UNVOTED;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.ALREADY_VOTED;
-import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.NOT_VOTED_YET;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,20 +37,16 @@ import com.opus.opus.modules.team.application.TeamCommandService;
 import com.opus.opus.modules.team.application.dto.request.TeamCreateRequest;
 import com.opus.opus.modules.team.application.dto.request.TeamUpdateRequest;
 import com.opus.opus.modules.team.application.dto.response.TeamCreateResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamLikeToggleResponse;
-import com.opus.opus.modules.team.application.dto.response.TeamVoteToggleResponse;
+import com.opus.opus.modules.team.application.dto.response.TeamVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.TeamLike;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
-import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamExceptionType;
-import com.opus.opus.modules.team.exception.TeamLikeException;
 import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
@@ -222,10 +212,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
         assertThat(teamRepository.findById(teamId)).isEmpty();
 
         // storage 삭제 검증
-        verify(fileStorageUtil).deleteFile(poster.getId());
-        verify(fileStorageUtil).deleteFile(thumbnail.getId());
-        verify(fileStorageUtil).deleteFile(preview1.getId());
-        verify(fileStorageUtil).deleteFile(preview2.getId());
+        verify(fileCommandService).deleteFile(poster.getId());
+        verify(fileCommandService).deleteFile(thumbnail.getId());
+        verify(fileCommandService).deleteFile(preview1.getId());
+        verify(fileCommandService).deleteFile(preview2.getId());
     }
 
     @Test
@@ -239,7 +229,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), image, member);
 
         // then
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
@@ -270,7 +260,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
     }
 
     @Test
@@ -280,7 +270,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileStorageUtil, never()).deleteFile(any());
+        verify(fileCommandService, never()).deleteFile(any());
     }
 
     @Test
@@ -298,75 +288,59 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), newImage, member);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
-    @DisplayName("[성공] 처음 투표하면 TeamVote가 생성되고 투표가 등록된다.")
-    void 처음_투표하면_TeamVote가_생성되고_투표가_등록된다() {
-        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), votingTeam.getId(), true);
+    @DisplayName("[성공] 처음 투표하면 TeamVote가 생성되고 카운트가 반환된다.")
+    void 처음_투표하면_TeamVote가_생성되고_카운트가_반환된다() {
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
 
-        assertThat(response.teamId()).isEqualTo(votingTeam.getId());
-        assertThat(response.isVoted()).isTrue();
-        assertThat(response.message()).isEqualTo("투표가 등록되었습니다.");
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
-
-        TeamVote savedVote = teamVoteRepository.findByMemberIdAndTeam(member.getId(), votingTeam).orElseThrow();
-        assertThat(savedVote.getIsVoted()).isTrue();
+        assertThat(teamVoteRepository.existsByMemberIdAndTeam(member.getId(), votingTeam)).isTrue();
     }
 
     @Test
-    @DisplayName("[성공] 기존 투표를 취소할 수 있다.")
-    void 기존_투표를_취소할_수_있다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId(), true));
+    @DisplayName("[성공] 이미 투표한 팀에 다시 투표하면 NO-OP이며 같은 카운트가 반환된다.")
+    void 이미_투표한_팀에_다시_투표하면_NO_OP이다() {
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
 
-        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), votingTeam.getId(), false);
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
 
-        assertThat(response.isVoted()).isFalse();
-        assertThat(response.message()).isEqualTo("투표가 취소되었습니다.");
-        assertThat(response.remainingVotesCount()).isEqualTo(2L);
-    }
-
-    @Test
-    @DisplayName("[성공] 취소한 투표를 다시 등록할 수 있다.")
-    void 취소한_투표를_다시_등록할_수_있다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId(), false));
-
-        TeamVoteToggleResponse response = teamCommandService.toggleVote(member.getId(), votingTeam.getId(), true);
-
-        assertThat(response.isVoted()).isTrue();
-        assertThat(response.message()).isEqualTo("투표가 등록되었습니다.");
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
+        assertThat(response.maxVotesLimit()).isEqualTo(2L);
     }
 
     @Test
-    @DisplayName("[실패] 투표한 적 없는 팀에 취소 요청하면 예외가 발생한다.")
-    void 투표한_적_없는_팀에_취소_요청하면_예외가_발생한다() {
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), votingTeam.getId(), false))
-                .isInstanceOf(TeamVoteException.class)
-                .hasMessage(NOT_VOTED_YET.errorMessage());
+    @DisplayName("[성공] 기존 투표를 취소하면 TeamVote가 삭제된다.")
+    void 기존_투표를_취소하면_TeamVote가_삭제된다() {
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
+
+        final TeamVoteResponse response = teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
+
+        assertThat(response.remainingVotesCount()).isEqualTo(2L);
+        assertThat(teamVoteRepository.existsByMemberIdAndTeam(member.getId(), votingTeam)).isFalse();
     }
 
     @Test
-    @DisplayName("[실패] 이미 투표한 팀에 다시 투표하면 예외가 발생한다.")
-    void 이미_투표한_팀에_다시_투표하면_예외가_발생한다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId(), true));
+    @DisplayName("[성공] 투표하지 않은 팀에 취소 요청하면 NO-OP이며 현재 카운트가 반환된다.")
+    void 투표하지_않은_팀에_취소_요청하면_NO_OP이다() {
+        final TeamVoteResponse response = teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
 
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), votingTeam.getId(), true))
-                .isInstanceOf(TeamVoteException.class)
-                .hasMessage(ALREADY_VOTED.errorMessage());
+        assertThat(response.remainingVotesCount()).isEqualTo(2L);
+        assertThat(teamVoteRepository.existsByMemberIdAndTeam(member.getId(), votingTeam)).isFalse();
     }
 
     @Test
-    @DisplayName("[실패] 이미 투표 취소한 팀에 다시 취소하면 예외가 발생한다.")
-    void 이미_투표_취소한_팀에_다시_취소하면_예외가_발생한다() {
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId(), false));
+    @DisplayName("[성공] 투표 취소 후 다시 투표할 수 있다.")
+    void 투표_취소_후_다시_투표할_수_있다() {
+        teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
+        teamCommandService.removeTeamVote(member.getId(), votingTeam.getId());
 
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), votingTeam.getId(), false))
-                .isInstanceOf(TeamVoteException.class)
-                .hasMessage(ALREADY_UNVOTED.errorMessage());
+        final TeamVoteResponse response = teamCommandService.addTeamVote(member.getId(), votingTeam.getId());
+
+        assertThat(response.remainingVotesCount()).isEqualTo(1L);
     }
 
     @Test
@@ -374,22 +348,37 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_팀에는_투표할_수_없다() {
         final Long invalidTeamId = 999L;
 
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), invalidTeamId, true))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), invalidTeamId))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
 
     @Test
-    @DisplayName("[실패] 투표 기간이 아니면 투표할 수 없다.")
-    void 투표_기간이_아니면_투표할_수_없다() {
+    @DisplayName("[실패] 투표 기간이 아니면 투표를 등록할 수 없다.")
+    void 투표_기간이_아니면_투표를_등록할_수_없다() {
         Contest notVotingContest = ContestFixture.createContest();
         notVotingContest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
         notVotingContest.updateMaxVotesLimit(2);
         notVotingContest = contestRepository.save(notVotingContest);
 
-        Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
+        final Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), notVotingTeam.getId(), true))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), notVotingTeam.getId()))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_VOTE_PERIOD_NOW.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 투표 기간이 아니면 투표를 취소할 수 없다.")
+    void 투표_기간이_아니면_투표를_취소할_수_없다() {
+        Contest notVotingContest = ContestFixture.createContest();
+        notVotingContest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
+        notVotingContest.updateMaxVotesLimit(2);
+        notVotingContest = contestRepository.save(notVotingContest);
+
+        final Team notVotingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(notVotingContest.getId()));
+
+        assertThatThrownBy(() -> teamCommandService.removeTeamVote(member.getId(), notVotingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_VOTE_PERIOD_NOW.errorMessage());
     }
@@ -397,82 +386,62 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 최대 투표 수를 초과하면 예외가 발생한다.")
     void 최대_투표_수를_초과하면_예외가_발생한다() {
-        Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId()));
-        Team thirdTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId()));
+        final Team secondTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId()));
+        final Team thirdTeam = teamRepository.save(TeamFixture.createTeamWithContestId(votingContest.getId()));
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId(), true));
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(votingTeam, member.getId()));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(secondTeam, member.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.toggleVote(member.getId(), thirdTeam.getId(), true))
+        assertThatThrownBy(() -> teamCommandService.addTeamVote(member.getId(), thirdTeam.getId()))
                 .isInstanceOf(TeamVoteException.class)
                 .hasMessageContaining("최대 2개 팀만 투표할 수 있습니다.");
     }
 
     @Test
-    @DisplayName("[성공] 처음 좋아요하면 TeamLike가 생성되고 좋아요가 등록된다.")
-    void 처음_좋아요하면_TeamLike가_생성되고_좋아요가_등록된다() {
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
-                true);
+    @DisplayName("[성공] 처음 좋아요하면 TeamLike가 생성된다.")
+    void 처음_좋아요하면_TeamLike가_생성된다() {
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
-        assertThat(response.teamId()).isEqualTo(notVotingTeam.getId());
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");
-
-        final TeamLike savedLike = teamLikeRepository.findByMemberIdAndTeam(member.getId(), notVotingTeam)
-                .orElseThrow();
-        assertThat(savedLike.getIsLiked()).isTrue();
+        assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
 
     @Test
-    @DisplayName("[성공] 기존 좋아요를 취소할 수 있다.")
-    void 기존_좋아요를_취소할_수_있다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), true));
+    @DisplayName("[성공] 이미 좋아요한 팀에 다시 좋아요하면 NO-OP이다.")
+    void 이미_좋아요한_팀에_다시_좋아요하면_NO_OP이다() {
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId()));
 
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
-                false);
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
-        assertThat(response.isLiked()).isFalse();
-        assertThat(response.message()).isEqualTo("좋아요가 취소되었습니다.");
+        assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
 
     @Test
-    @DisplayName("[성공] 취소한 좋아요를 다시 등록할 수 있다.")
-    void 취소한_좋아요를_다시_등록할_수_있다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), false));
+    @DisplayName("[성공] 기존 좋아요를 취소하면 TeamLike가 삭제된다.")
+    void 기존_좋아요를_취소하면_TeamLike가_삭제된다() {
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId()));
 
-        final TeamLikeToggleResponse response = teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(),
-                true);
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
 
-        assertThat(response.isLiked()).isTrue();
-        assertThat(response.message()).isEqualTo("좋아요가 등록되었습니다.");
+        assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isFalse();
     }
 
     @Test
-    @DisplayName("[실패] 좋아요한 적 없는 팀에 취소 요청하면 예외가 발생한다.")
-    void 좋아요한_적_없는_팀에_취소_요청하면_예외가_발생한다() {
-        assertThatThrownBy(() -> teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), false))
-                .isInstanceOf(TeamLikeException.class)
-                .hasMessage(NOT_LIKED_YET.errorMessage());
+    @DisplayName("[성공] 좋아요하지 않은 팀에 취소 요청하면 NO-OP이다.")
+    void 좋아요하지_않은_팀에_취소_요청하면_NO_OP이다() {
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
+
+        assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isFalse();
     }
 
     @Test
-    @DisplayName("[실패] 이미 좋아요한 팀에 다시 좋아요하면 예외가 발생한다.")
-    void 이미_좋아요한_팀에_다시_좋아요하면_예외가_발생한다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), true));
+    @DisplayName("[성공] 좋아요 취소 후 다시 좋아요할 수 있다.")
+    void 좋아요_취소_후_다시_좋아요할_수_있다() {
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
+        teamCommandService.removeTeamLike(member.getId(), notVotingTeam.getId());
 
-        assertThatThrownBy(() -> teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), true))
-                .isInstanceOf(TeamLikeException.class)
-                .hasMessage(ALREADY_LIKED.errorMessage());
-    }
+        teamCommandService.addTeamLike(member.getId(), notVotingTeam.getId());
 
-    @Test
-    @DisplayName("[실패] 이미 좋아요 취소한 팀에 다시 취소하면 예외가 발생한다.")
-    void 이미_좋아요_취소한_팀에_다시_취소하면_예외가_발생한다() {
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(notVotingTeam, member.getId(), false));
-
-        assertThatThrownBy(() -> teamCommandService.toggleLike(member.getId(), notVotingTeam.getId(), false))
-                .isInstanceOf(TeamLikeException.class)
-                .hasMessage(ALREADY_UNLIKED.errorMessage());
+        assertThat(teamLikeRepository.existsByMemberIdAndTeam(member.getId(), notVotingTeam)).isTrue();
     }
 
     @Test
@@ -480,21 +449,35 @@ public class TeamCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_팀에는_좋아요할_수_없다() {
         final Long invalidTeamId = 999L;
 
-        assertThatThrownBy(() -> teamCommandService.toggleLike(member.getId(), invalidTeamId, true))
+        assertThatThrownBy(() -> teamCommandService.addTeamLike(member.getId(), invalidTeamId))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
 
     @Test
-    @DisplayName("[실패] 투표 기간에는 좋아요할 수 없다.")
-    void 투표_기간에는_좋아요할_수_없다() {
+    @DisplayName("[실패] 투표 기간에는 좋아요를 등록할 수 없다.")
+    void 투표_기간에는_좋아요를_등록할_수_없다() {
         final Contest votingContest = ContestFixture.createContest();
         votingContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         final Contest savedVotingContest = contestRepository.save(votingContest);
 
         final Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(savedVotingContest.getId()));
 
-        assertThatThrownBy(() -> teamCommandService.toggleLike(member.getId(), votingTeam.getId(), true))
+        assertThatThrownBy(() -> teamCommandService.addTeamLike(member.getId(), votingTeam.getId()))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 투표 기간에는 좋아요를 취소할 수 없다.")
+    void 투표_기간에는_좋아요를_취소할_수_없다() {
+        final Contest votingContest = ContestFixture.createContest();
+        votingContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+        final Contest savedVotingContest = contestRepository.save(votingContest);
+
+        final Team votingTeam = teamRepository.save(TeamFixture.createTeamWithContestId(savedVotingContest.getId()));
+
+        assertThatThrownBy(() -> teamCommandService.removeTeamLike(member.getId(), votingTeam.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_ALLOWED_DURING_VOTING_PERIOD.errorMessage());
     }

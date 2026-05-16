@@ -9,6 +9,7 @@ import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.application.dto.request.ContestAwardRequest;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.exception.ContestAwardException;
+import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestAwardCommandService {
 
     private final ContestConvenience contestConvenience;
-
     private final ContestAwardRepository contestAwardRepository;
+    private final TeamContestAwardRepository teamContestAwardRepository;
 
     public void createContestAward(final Long contestId, final ContestAwardRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
@@ -55,6 +56,7 @@ public class ContestAwardCommandService {
                 .findByIdAndContestId(awardId, contestId)
                 .orElseThrow(() -> new ContestAwardException(NOT_FOUND_CONTEST_AWARD));
 
+        teamContestAwardRepository.deleteAllByContestAwardId(awardId);
         contestAwardRepository.delete(contestAward);
     }
 

@@ -354,7 +354,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test
@@ -368,8 +368,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileStorageUtil, times(1)).storeFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test
@@ -382,7 +381,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileStorageUtil, never()).deleteFile(any());
+        verify(fileCommandService, never()).deleteFile(any());
     }
 
     @Test
@@ -395,7 +394,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.deleteProfileImage(teamLeader);
 
         // then
-        verify(fileStorageUtil, times(1)).deleteFile(savedFile.getId());
+        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
     }
 
     @Test
@@ -405,7 +404,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.deleteProfileImage(teamLeader);
 
         // then
-        verify(fileStorageUtil, never()).deleteFile(any());
+        verify(fileCommandService, never()).deleteFile(any());
     }
 
     @Test

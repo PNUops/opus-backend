@@ -1,18 +1,24 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
+import static java.time.LocalDateTime.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
@@ -24,6 +30,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -34,6 +41,7 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
@@ -41,6 +49,11 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
+import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
+import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
+import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.ProjectInfo;
+import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
+import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -57,10 +70,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 
 public class MemberApiDocsTest extends RestDocsTest {
+
+    private static final String MEMBER_TOKEN = "Bearer member.access.token";
 
     private Member member;
     private String memberAccessToken;
@@ -282,6 +301,67 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[성공] 유효한 요청이면 정상적으로 마이페이지에서 비밀번호는 변경된다.")
+    void 유효한_요청이면_정상적으로_마이페이지에서_비밀번호는_변경된다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest(member.getPassword(),
+                "newPassword1!");
+
+        doNothing().when(memberCommandService).updatePasswordInMyPage(member, request);
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-password-mypage",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호"),
+                                stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 입력한 기존 비밀번호가 저장된 비밀번호와 일치하지 않으면 비밀번호는 변경되지 않는다.")
+    void 입력한_기존_비밀번호가_저장된_비밀번호와_일치하지_않으면_비밀번호는_변경되지_않는다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest("wrongPassword!", "newPassword1!");
+
+        willThrow(new MemberException(CANNOT_MATCH_PASSWORD)).given(memberCommandService)
+                .updatePasswordInMyPage(any(), any());
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-password-mypage-fail",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호와 일치하지 않는 비밀번호"),
+                                stringFieldWithPath("newPassword", "새로운 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 변경하려는 비밀번호가 기존 비밀번호와 일치하면 비밀번호는 변경되지 않는다.")
+    void 변경하려는_비밀번호가_기존_비밀번호와_일치하면_비밀번호는_변경되지_않는다() throws Exception {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest(member.getPassword(),
+                member.getPassword());
+
+        willThrow(new MemberException(CANNOT_CHANGE_SAME_PASSWORD)).given(memberCommandService)
+                .updatePasswordInMyPage(any(), any());
+
+        mockMvc.perform(patch("/members/me/password-reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-password-mypage-fail2",
+                        requestFields(
+                                stringFieldWithPath("password", "기존 비밀번호"),
+                                stringFieldWithPath("newPassword", "기존 비밀번호와 동일한 비밀번호")
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 회원이라면 정상적으로 가입 이메일을 찾을 수 있다.")
     void 회원이라면_정상적으로_가입_이메일을_찾을_수_있다() throws Exception {
         final EmailFindResponse response = new EmailFindResponse(member.getEmail());
@@ -350,7 +430,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 메인 페이지 통계 요약을 정상적으로 조회할 수 있다.")
     void 메인_페이지_통계_요약을_정상적으로_조회할_수_있다() throws Exception {
-        final StatisticsSummaryResponse response = new StatisticsSummaryResponse(42L, 128L, 5L);
+        final StatisticsSummaryResponse response = new StatisticsSummaryResponse(100L, 42L, 128L, 5L);
 
         when(statisticsQueryService.getStatisticsSummary()).thenReturn(response);
 
@@ -358,6 +438,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andExpect(status().isOk())
                 .andDo(document("statistics-summary",
                         responseFields(
+                                numberFieldWithPath("totalMembers", "총 가입자 수"),
                                 numberFieldWithPath("totalProjects", "등록된 프로젝트 수"),
                                 numberFieldWithPath("totalLikes", "총 좋아요 수"),
                                 numberFieldWithPath("totalContests", "진행된 대회 수")
@@ -630,6 +711,162 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andDo(document("update-profile-visibility",
                         requestFields(
                                 booleanFieldWithPath("isProfilePublic", "프로필 공개 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 댓글 목록을 조회할 수 있다.")
+    void 나의_댓글_목록을_조회할_수_있다() throws Exception {
+        final List<MyCommentResponse> content = List.of(
+                new MyCommentResponse(
+                        new CommentInfo(1L, "인정합니다.", of(2026, 1, 1, 0, 0), "홍지연"),
+                        new ProjectInfo(1L, "제6회창의융합해커톤대회", "해커톤", "창업트랙", 5L, "TeamName", "Project Name",
+                                "Artify는 일상 속 모든 순간을 예술로 재해석하는 크리에이티브 플랫폼입니다.")
+                )
+        );
+        final Page<MyCommentResponse> page = new PageImpl<>(content,
+                PageRequest.of(0, 10, Sort.by(DESC, "createdAt")), 1);
+
+        when(memberQueryService.getMyComments(any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/members/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .param("sort", "latest")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-comments",
+                        queryParameters(
+                                parameterWithName("sort").description("정렬 기준 (latest, oldest)").optional(),
+                                parameterWithName("startDate").description("조회 시작일 (yyyy-MM-dd)").optional(),
+                                parameterWithName("endDate").description("조회 종료일 (yyyy-MM-dd)").optional(),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("content[]", "댓글 목록"),
+                                numberFieldWithPath("content[].comment.commentId", "댓글 ID"),
+                                stringFieldWithPath("content[].comment.content", "댓글 내용"),
+                                dateTimeFieldWithPath("content[].comment.createdAt", "작성 일시"),
+                                stringFieldWithPath("content[].comment.memberName", "작성자 이름"),
+                                numberFieldWithPath("content[].project.contestId", "대회 ID"),
+                                stringFieldWithPath("content[].project.contestName", "대회명"),
+                                stringFieldWithPath("content[].project.categoryName", "카테고리명"),
+                                stringFieldWithPath("content[].project.trackName", "트랙명"),
+                                numberFieldWithPath("content[].project.teamId", "팀 ID"),
+                                stringFieldWithPath("content[].project.teamName", "팀명"),
+                                stringFieldWithPath("content[].project.projectName", "프로젝트명"),
+                                stringFieldWithPath("content[].project.overview", "프로젝트 설명 (최대 100자)"),
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 날짜 범위가 불완전하면 나의 댓글 조회 시 400 에러를 반환한다.")
+    void 날짜_범위가_불완전하면_나의_댓글_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_DATE_RANGE))
+                .given(memberQueryService).getMyComments(any(), any(), any(), any(), anyInt(), anyInt());
+
+        mockMvc.perform(get("/members/me/comments")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .param("startDate", "2026-01-01"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("get-my-comments-fail-date-range"));
+    }
+
+    @Test
+    @DisplayName("[성공] 최근 좋아요한 프로젝트 미리보기를 조회할 수 있다.")
+    void 최근_좋아요한_프로젝트_미리보기를_조회할_수_있다() throws Exception {
+        final List<MyLikePreviewResponse> responses = List.of(
+                new MyLikePreviewResponse(3L, "Team Gamma", 1L, "감마 프로젝트", "제6회창의융합해커톤대회"),
+                new MyLikePreviewResponse(7L, "Team Delta", 2L, "델타 프로젝트", "제5회창의융합해커톤대회"),
+                new MyLikePreviewResponse(15L, "Team Epsilon", 2L, "엡실론 프로젝트", "제5회창의융합해커톤대회")
+        );
+
+        when(memberQueryService.getMyLikePreview(any())).thenReturn(responses);
+
+        mockMvc.perform(get("/members/me/likes/preview")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-like-preview",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "좋아요 미리보기 목록 (최대 3개)"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].contestName", "대회명")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 나의 좋아요 전체 목록을 조회할 수 있다.")
+    void 나의_좋아요_전체_목록을_조회할_수_있다() throws Exception {
+        final List<MyLikedProjectResponse> content = List.of(
+                new MyLikedProjectResponse(3L, "Team Gamma", "감마 프로젝트", 1L, "제6회창의융합해커톤대회"),
+                new MyLikedProjectResponse(7L, "Team Delta", "델타 프로젝트", 2L, "제5회창의융합해커톤대회")
+        );
+        final Page<MyLikedProjectResponse> page = new PageImpl<>(content,
+                PageRequest.of(0, 12, Sort.by(DESC, "createdAt")), 2);
+
+        when(memberQueryService.getMyLikedProjects(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/members/me/likes")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .param("sort", "latest")
+                        .param("page", "0")
+                        .param("size", "12"))
+                .andExpect(status().isOk())
+                .andDo(document("get-my-liked-projects",
+                        queryParameters(
+                                parameterWithName("sort").description("정렬 기준 (latest, oldest)").optional(),
+                                parameterWithName("startDate").description("조회 시작일 (yyyy-MM-dd)").optional(),
+                                parameterWithName("endDate").description("조회 종료일 (yyyy-MM-dd)").optional(),
+                                parameterWithName("categoryId").description("대회 카테고리 필터").optional(),
+                                parameterWithName("contestId").description("특정 대회 필터").optional(),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("content[]", "좋아요 프로젝트 목록"),
+                                numberFieldWithPath("content[].teamId", "팀 ID"),
+                                stringFieldWithPath("content[].teamName", "팀명"),
+                                stringFieldWithPath("content[].projectName", "프로젝트명"),
+                                numberFieldWithPath("content[].contestId", "대회 ID"),
+                                stringFieldWithPath("content[].contestName", "대회명"),
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부")
                         )
                 ));
     }

@@ -113,6 +113,7 @@ CREATE TABLE `member` (
   `updated_at` datetime(6) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
+  `is_fake` bit(1) NOT NULL DEFAULT 0,
   `name` varchar(255) NOT NULL,
   `password` varchar(255) NULL,
   `student_id` varchar(255) NULL,
@@ -124,9 +125,11 @@ CREATE TABLE `member` (
   UNIQUE KEY `uk_member_email` (`email`),
   UNIQUE KEY `uk_member_student_id` (`student_id`),
     CONSTRAINT `ck_member_login_type` CHECK (
+        is_fake = 1
+        OR
         (social_type IS NULL AND social_id IS NULL AND student_id IS NOT NULL AND password IS NOT NULL)
         OR
-        (social_type IS NOT NULL AND social_id IS NOT NULL AND student_id IS NULL AND password IS NULL)
+        (social_type IS NOT NULL AND social_id IS NOT NULL AND password IS NULL)
     )
 );
 
@@ -191,7 +194,6 @@ CREATE TABLE `team_like` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `is_liked` bit(1) NOT NULL,
   `member_id` bigint NOT NULL,
   `team_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
@@ -218,7 +220,6 @@ CREATE TABLE `team_vote` (
     `id` bigint NOT NULL AUTO_INCREMENT,
     `created_at` datetime(6) DEFAULT NULL,
     `updated_at` datetime(6) DEFAULT NULL,
-    `is_voted` bit(1) NOT NULL,
     `member_id` bigint NOT NULL,
     `team_id` bigint NOT NULL,
     PRIMARY KEY (`id`),

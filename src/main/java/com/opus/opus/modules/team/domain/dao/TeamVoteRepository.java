@@ -4,29 +4,41 @@ import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
 
-    Optional<TeamVote> findByMemberIdAndTeam(Long memberId, Team team);
+    boolean existsByMemberIdAndTeam(Long memberId, Team team);
+
+    void deleteByMemberIdAndTeam(Long memberId, Team team);
+
+    @Modifying
+    @Query(value = """
+                INSERT INTO team_vote (member_id, team_id, created_at, updated_at)
+                VALUES (:memberId, :teamId, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE id = id
+            """, nativeQuery = true)
+    void upsertVote(Long memberId, Long teamId);
 
     @Query("SELECT COUNT(tv) FROM TeamVote tv JOIN tv.team t " +
-            "WHERE tv.memberId = :memberId AND tv.isVoted = true AND t.contestId = :contestId")
+            "WHERE tv.memberId = :memberId AND t.contestId = :contestId")
     long countMemberVotesInContest(Long memberId, Long contestId);
 
     @EntityGraph(attributePaths = "team")
     Page<TeamVote> findByTeamIdInOrderByCreatedAtDesc(final List<Long> teamIds, final Pageable pageable);
 
-    @Query("SELECT new com.opus.opus.modules.team.domain.dao.VoteStatisticsResult(" +
-            "COUNT(vote), COUNT(DISTINCT vote.memberId)) " +
-            "FROM TeamVote vote " +
-            "JOIN vote.team team " +
-            "WHERE team.contestId = :contestId AND vote.isVoted = true")
+    @Query("""
+            SELECT new com.opus.opus.modules.team.domain.dao.VoteStatisticsResult(
+                   COUNT(vote), COUNT(DISTINCT vote.memberId))
+            FROM TeamVote vote
+            JOIN vote.team team
+            WHERE team.contestId = :contestId
+            """)
     VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
 
     @Query("""
@@ -35,7 +47,7 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             FROM TeamVote tv
             JOIN tv.team t
             JOIN Contest c ON c.id = t.contestId
-            WHERE tv.memberId = :memberId AND tv.isVoted = true
+            WHERE tv.memberId = :memberId
               AND CURRENT_TIMESTAMP BETWEEN c.voteStartAt AND c.voteEndAt
             ORDER BY tv.createdAt DESC
             """)

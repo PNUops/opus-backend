@@ -53,6 +53,9 @@ dependencies {
 
     // OAuth2 Client
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // 엑셀 파싱 라이브러리
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
 }
 
 ext {

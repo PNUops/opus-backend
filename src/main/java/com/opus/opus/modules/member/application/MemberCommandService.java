@@ -14,7 +14,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.domain.File;
@@ -23,6 +23,7 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
@@ -61,7 +62,7 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleTokenManager googleTokenManager;
-    private final FileStorageUtil fileStorageUtil;
+    private final FileCommandService fileCommandService;
 
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -89,13 +90,21 @@ public class MemberCommandService {
         verifyVerifiedKey(signUpVerifiedKey(email));
 
         final String encodingPassword = passwordEncoder.encode(request.password());
-        memberConvenience.checkIsDuplicateEmail(email);
 
-        memberRepository.findByStudentIdAndName(request.studentId(), request.name())
-                .ifPresentOrElse(
-                        member -> member.updateTeamLeaderInfo(email, encodingPassword),
-                        () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
-                );
+        // 가짜 회원 여부 먼저 확인
+        final Optional<Member> fakeMember = memberRepository.findByEmail(email)
+                .filter(Member::isFakeMember);
+
+        if (fakeMember.isPresent()) { // 가짜 회원이 등록되어있는 경우 일반 회원으로 전환
+            fakeMember.get().convertFakeToGeneral(email, encodingPassword, request.studentId());
+        } else {
+            memberConvenience.checkIsDuplicateEmail(email);
+            memberRepository.findByStudentIdAndName(request.studentId(), request.name())
+                    .ifPresentOrElse(
+                            member -> member.updateTeamLeaderInfo(email, encodingPassword),
+                            () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
+                    );
+        }
 
         authRedisUtil.delete(signUpVerifiedKey(email));
     }
@@ -134,7 +143,6 @@ public class MemberCommandService {
 
     public void signInEmailAuth(final EmailAuthRequest request) {
         final String email = request.email();
-        memberConvenience.validateExistMemberByEmail(email);
         checkEmailAuthLimit(email);
 
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
@@ -168,6 +176,12 @@ public class MemberCommandService {
         member.updatePassword(passwordEncoder.encode(request.newPassword()));
 
         authRedisUtil.delete(signInVerifiedKey(email));
+    }
+
+    public void updatePasswordInMyPage(final Member member, final PasswordUpdateMyPageRequest request) {
+        checkCorrectPassword(member.getPassword(), request.password());
+        checkEqualPassword(request.newPassword(), member);
+        member.updatePassword(request.newPassword());
     }
 
     private void verifyVerifiedKey(final String verifiedKey) {
@@ -319,14 +333,11 @@ public class MemberCommandService {
     }
 
     public void modifyProfileImage(final Member member, final MultipartFile image) {
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(
-                member.getId(), MEMBER, PROFILE);
-        fileStorageUtil.storeFile(image, member.getId(), MEMBER, PROFILE);
-        existingFile.ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+        fileCommandService.replaceImageFile(image, member.getId(), MEMBER, PROFILE);
     }
 
     public void deleteProfileImage(final Member member) {
         fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
-                .ifPresent(file -> fileStorageUtil.deleteFile(file.getId()));
+                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
     }
 }

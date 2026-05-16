@@ -36,17 +36,9 @@ public class TeamVote extends BaseEntity {
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
-    @Column(nullable = false)
-    private Boolean isVoted;
-
     @Builder
-    private TeamVote(final Long memberId, final Team team, final Boolean isVoted) {
+    private TeamVote(final Long memberId, final Team team) {
         this.memberId = memberId;
         this.team = team;
-        this.isVoted = isVoted;
-    }
-
-    public void updateIsVoted(final Boolean isVoted) {
-        this.isVoted = isVoted;
     }
 }

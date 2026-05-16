@@ -21,6 +21,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResp
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -237,5 +238,13 @@ public class ContestController {
             @PathVariable final Long contestId) {
         final List<TeamSummaryResponse> responses = contestQueryService.getContestTeamSummariesPublic(contestId);
         return ResponseEntity.ok(responses);
+    }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/{contestId}/teams/bulk")
+    public ResponseEntity<TeamBulkUploadResponse> bulkUploadTeams(@PathVariable final Long contestId,
+                                                                  @RequestPart("file") final MultipartFile file) {
+        final TeamBulkUploadResponse response = contestCommandService.bulkUploadTeams(contestId, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

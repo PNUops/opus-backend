@@ -6,7 +6,7 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
@@ -42,18 +42,18 @@ import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
-import com.opus.opus.modules.team.domain.dao.TeamAwardResult;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
+import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.Pair;
-import org.springframework.core.io.Resource;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -66,7 +66,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ContestQueryService {
 
-    private final FileStorageUtil fileStorageUtil;
+    private final FileQueryService fileQueryService;
 
     private final ContestRepository contestRepository;
 
@@ -81,25 +81,6 @@ public class ContestQueryService {
     private final MemberConvenience memberConvenience;
     private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final FileConvenience fileConvenience;
-
-    private static List<ContestRankingResponse> applyDenseRanking(List<TeamRankingResult> votesPerTeam) {
-        List<ContestRankingResponse> responseList = new ArrayList<>();
-        int curRank = 0;     // 현재 순위
-        long prevCount = -1; // 이전 팀 투표 수
-        for (TeamRankingResult result : votesPerTeam) {
-            // 이전 팀과 투표 수가 다르면 순위 증가, 같으면 순위 유지
-            if (prevCount != result.voteCount()) {
-                curRank++;
-            }
-            prevCount = result.voteCount();
-
-            responseList.add(
-                    new ContestRankingResponse(curRank, result.teamId(), result.teamName(), result.projectName(),
-                            result.trackName(), result.voteCount()));
-        }
-
-        return responseList;
-    }
 
     private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
@@ -126,8 +107,8 @@ public class ContestQueryService {
 
         checkImageConverted(findBanner);
 
-        final Pair<Resource, String> storageResult = fileStorageUtil.findFileAndType(findBanner.getId());
-        return new ImageResponse(storageResult.a, storageResult.b);
+        final FileResource storageResult = fileQueryService.findFileAndType(findBanner.getId());
+        return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
     public List<ContestCurrentResponse> getCurrentContests() {
@@ -248,7 +229,7 @@ public class ContestQueryService {
         final List<Team> teams = getSortedTeams(contestId, member);
 
         final VoteLikeResult voteLikeResult = getVoteLikeResult(contestId, member, contest.isVotingPeriod());
-        final Map<Long, List<TeamAwardResult>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardResultMap(
+        final Map<Long, List<TeamAwardProjection>> teamAwardResultMap = teamContestAwardConvenience.getTeamAwardProjectionMap(
                 teams);
 
         return buildTeamSummaryResponses(teams, teamAwardResultMap, voteLikeResult);
@@ -262,23 +243,23 @@ public class ContestQueryService {
     }
 
     private VoteLikeResult getVoteLikeResult(final Long contestId, final Member member, final boolean isVotingPeriod) {
-        final Map<Long, Boolean> voteMap = teamVoteConvenience.getVoteMapIfInPeriod(contestId, member,
+        final Set<Long> votedTeamIds = teamVoteConvenience.getVotedTeamIdsIfInPeriod(contestId, member,
                 isVotingPeriod);
-        final Map<Long, Boolean> likeMap = teamLikeConvenience.getLikeMapIfInPeriod(contestId, member,
+        final Set<Long> likedTeamIds = teamLikeConvenience.getLikedTeamIdsIfInPeriod(contestId, member,
                 isVotingPeriod);
-        return new VoteLikeResult(voteMap, likeMap);
+        return new VoteLikeResult(votedTeamIds, likedTeamIds);
     }
 
     private List<TeamSummaryResponse> buildTeamSummaryResponses(final List<Team> teams,
-                                                                final Map<Long, List<TeamAwardResult>> teamAwardResultMap,
+                                                                final Map<Long, List<TeamAwardProjection>> teamAwardResultMap,
                                                                 final VoteLikeResult voteLikeResult
     ) {
         return teams.stream()
                 .map(team -> TeamSummaryResponse.of(
                         team,
                         teamAwardResultMap.getOrDefault(team.getId(), Collections.emptyList()),
-                        voteLikeResult.likeMap().getOrDefault(team.getId(), false),
-                        voteLikeResult.voteMap().getOrDefault(team.getId(), false)
+                        voteLikeResult.likedTeamIds().contains(team.getId()),
+                        voteLikeResult.votedTeamIds().contains(team.getId())
                 ))
                 .toList();
     }
@@ -299,6 +280,6 @@ public class ContestQueryService {
         return ContestTemplateResponse.from(template);
     }
 
-    private record VoteLikeResult(Map<Long, Boolean> voteMap, Map<Long, Boolean> likeMap) {
+    private record VoteLikeResult(Set<Long> votedTeamIds, Set<Long> likedTeamIds) {
     }
 }

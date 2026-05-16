@@ -24,4 +24,13 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Boolean existsByStudentId(final String studentId);
 
     Optional<Member> findBySocialTypeAndSocialId(final SocialType socialType, final String socialId);
+
+    List<Member> findAllByEmailIn(final List<String> emails);
+
+    List<Member> findAllByStudentIdIn(final List<String> studentIds);
+
+    long countByIsFakeFalse();
+
+    @Query(value = "SELECT COUNT(*) FROM member", nativeQuery = true)
+    long countAllIncludingDeletedAndFake();
 }

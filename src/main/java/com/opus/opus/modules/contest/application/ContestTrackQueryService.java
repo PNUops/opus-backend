@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.application;
 
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestTrackResponse;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
@@ -14,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestTrackQueryService {
 
     private final ContestTrackRepository contestTrackRepository;
+    private final ContestConvenience contestConvenience;
 
     public List<ContestTrackResponse> getAllContestTracks(final Long contestId) {
+        contestConvenience.getValidateExistContest(contestId);
         final List<ContestTrack> contestTracks = contestTrackRepository.findAllByContestId(contestId);
         return contestTracks.stream()
                 .map(ContestTrackResponse::from)

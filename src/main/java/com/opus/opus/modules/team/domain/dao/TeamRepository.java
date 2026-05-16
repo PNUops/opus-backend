@@ -20,7 +20,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Query("SELECT new com.opus.opus.modules.team.domain.dao.TeamRankingResult(" +
             "team.id, team.teamName, team.projectName, track.trackName, COUNT(vote.id)) " +
             "FROM Team team " +
-            "LEFT JOIN TeamVote vote ON vote.team = team AND vote.isVoted = true " +
+            "LEFT JOIN TeamVote vote ON vote.team = team " +
             "LEFT JOIN ContestTrack track ON team.trackId = track.id " +
             "WHERE team.contestId = :contestId " +
             "GROUP BY team.id, team.teamName, team.projectName, track.trackName " +
@@ -46,4 +46,8 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
                AND t.isDeleted = false
             """)
     void updateItemOrderAfterDeletion(@Param("contestId") Long contestId, @Param("deletedOrder") int deletedOrder);
+
+    @Modifying
+    @Query("UPDATE Team t SET t.trackId = null WHERE t.trackId = :trackId")
+    void clearTrackIdByTrackId(@Param("trackId") Long trackId);
 }

@@ -2,6 +2,7 @@ package com.opus.opus.modules.member.application;
 
 import com.opus.opus.global.util.CacheRedisUtil;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
@@ -20,6 +21,7 @@ public class StatisticsQueryService {
     private static final String STATISTICS_CACHE_KEY = "statistics:summary";
     private static final long STATISTICS_CACHE_TTL = 10L;
 
+    private final MemberConvenience memberConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
     private final ContestConvenience contestConvenience;
@@ -47,9 +49,10 @@ public class StatisticsQueryService {
     }
 
     private StatisticsSummaryResponse queryStatisticsFromDb() {
+        final long totalMembers = memberConvenience.countAllMembers();
         final long totalProjects = teamConvenience.countSubmittedTeams();
         final long totalLikes = teamLikeConvenience.countAllLikes();
         final long totalContests = contestConvenience.countAllContests();
-        return new StatisticsSummaryResponse(totalProjects, totalLikes, totalContests);
+        return new StatisticsSummaryResponse(totalMembers, totalProjects, totalLikes, totalContests);
     }
 }

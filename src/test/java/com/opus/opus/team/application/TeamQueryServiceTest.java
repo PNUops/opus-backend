@@ -8,7 +8,7 @@ import static org.mockito.BDDMockito.given;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
-import com.opus.opus.global.util.FileStorageUtil;
+import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
@@ -31,7 +31,7 @@ import com.opus.opus.file.FileFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
-import org.antlr.v4.runtime.misc.Pair;
+import com.opus.opus.modules.file.application.dto.FileResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     private TeamLikeRepository teamLikeRepository;
 
     @Autowired
-    private FileStorageUtil fileStorageUtil;
+    private FileQueryService fileQueryService;
 
     private Team team;
     private Contest contest;
@@ -105,8 +105,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         contest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         contestRepository.saveAndFlush(contest);
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         // when
         final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
@@ -124,8 +124,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         contest.updateVotePeriod(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5));
         contestRepository.saveAndFlush(contest);
 
-        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId(), true));
-        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId(), true));
+        teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
+        teamLikeRepository.save(TeamLikeFixture.createTeamLike(team, member.getId()));
 
         // when
         final TeamDetailResponse response = teamQueryService.getTeamDetail(team.getId(), member);
@@ -146,8 +146,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         fileRepository.saveAndFlush(savedFile);
 
         Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileStorageUtil.findFileAndType(savedFile.getId()))
-                .willReturn(new Pair<>(resource, "image/webp"));
+        given(fileQueryService.findFileAndType(savedFile.getId()))
+                .willReturn(new FileResource(resource, "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getPosterImage(team.getId());
@@ -186,8 +186,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         teamFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(teamFile);
 
-        given(fileStorageUtil.findFileAndType(teamFile.getId()))
-                .willReturn(new Pair<>(new ByteArrayResource("team".getBytes()), "image/webp"));
+        given(fileQueryService.findFileAndType(teamFile.getId()))
+                .willReturn(new FileResource(new ByteArrayResource("team".getBytes()), "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
@@ -211,8 +211,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
         trackFile.updateIsWebpConverted(true);
         fileRepository.saveAndFlush(trackFile);
 
-        given(fileStorageUtil.findFileAndType(trackFile.getId()))
-                .willReturn(new Pair<>(new ByteArrayResource("track".getBytes()), "image/webp"));
+        given(fileQueryService.findFileAndType(trackFile.getId()))
+                .willReturn(new FileResource(new ByteArrayResource("track".getBytes()), "image/webp"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
@@ -226,8 +226,8 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀/분과 썸네일이 모두 없으면 시스템 기본 썸네일을 반환한다.")
     void 시스템_기본_썸네일_조회_성공() {
         // given
-        given(fileStorageUtil.findDefaultThumbnail())
-                .willReturn(new Pair<>(new ByteArrayResource("default".getBytes()), "image/jpeg"));
+        given(fileQueryService.findDefaultThumbnail())
+                .willReturn(new FileResource(new ByteArrayResource("default".getBytes()), "image/jpeg"));
 
         // when
         ImageResponse response = teamQueryService.getThumbnailImage(team.getId());
