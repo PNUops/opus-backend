@@ -24,7 +24,7 @@ public class NotificationCommandService {
     public void updateSingleNotification(final Long notificationId, final Member member) {
         memberConvenience.validateExistMember(member.getId());
 
-        final Notification notification = notificationRepository.findById(notificationId)
+        final Notification notification = notificationRepository.findByIdAndMemberId(notificationId, member.getId())
                 .orElseThrow(() -> new NotificationException(NOT_FOUND_NOTIFICATION));
 
         notification.updateNotification();

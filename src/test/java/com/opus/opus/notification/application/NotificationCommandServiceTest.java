@@ -1,6 +1,8 @@
 package com.opus.opus.notification.application;
 
+import static com.opus.opus.modules.notification.exception.NotificationExceptionType.NOT_FOUND_NOTIFICATION;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -9,6 +11,7 @@ import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.notification.application.NotificationCommandService;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
+import com.opus.opus.modules.notification.exception.NotificationException;
 import com.opus.opus.notification.NotificationFixture;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +46,18 @@ public class NotificationCommandServiceTest extends IntegrationTest {
 
         final Notification updatedNotification = notificationRepository.findById(notification.getId()).orElseThrow();
         assertThat(updatedNotification.getIsRead()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 타인의 알림을 읽음 처리하면 예외가 발생한다")
+    void 타인의_알림을_읽음_처리하면_예외가_발생한다() {
+        final Member anotherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
+
+        assertThatThrownBy(() ->
+                notificationCommandService.updateSingleNotification(notification.getId(), anotherMember))
+                .isInstanceOf(NotificationException.class)
+                .satisfies(ex -> assertThat(((NotificationException) ex).exceptionType())
+                        .isEqualTo(NOT_FOUND_NOTIFICATION));
     }
 
     @Test
