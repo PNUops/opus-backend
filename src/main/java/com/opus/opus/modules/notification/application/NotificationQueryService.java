@@ -19,8 +19,6 @@ public class NotificationQueryService {
     private final MemberConvenience memberConvenience;
 
     public List<NotificationResponse> getNotifications(final Member member) {
-        memberConvenience.validateExistMember(member.getId());
-
         return notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(member.getId())
                 .stream()
                 .map(NotificationResponse::from)
