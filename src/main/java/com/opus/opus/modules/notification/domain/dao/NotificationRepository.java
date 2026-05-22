@@ -4,6 +4,9 @@ import com.opus.opus.modules.notification.domain.Notification;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
@@ -12,4 +15,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findAllByMemberIdAndIsReadFalse(final Long memberId);
 
     List<Notification> findAllByMemberIdOrderByCreatedAtDesc(final Long memberId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberId = :memberId AND n.isRead = false AND n.isDeleted = false")
+    void updateAllUnreadByMemberId(@Param("memberId") Long memberId);
 }
