@@ -26,7 +26,7 @@ public class NotificationCommandService {
         final Notification notification = notificationRepository.findByIdAndMemberId(notificationId, member.getId())
                 .orElseThrow(() -> new NotificationException(NOT_FOUND_NOTIFICATION));
 
-        notification.updateNotification();
+        notification.updateIsRead();
     }
 
     public void updateNotificationAll(final Member member) {
