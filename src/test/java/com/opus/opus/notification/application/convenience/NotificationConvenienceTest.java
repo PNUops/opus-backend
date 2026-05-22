@@ -45,9 +45,9 @@ public class NotificationConvenienceTest extends IntegrationTest {
 
         notificationConvenience.sendTeamMemberJoinNotifications(memberIds, TEAM_ID, TEAM_DISPLAY_NAME);
 
-        final List<Notification> member1Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member1Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member1.getId());
-        final List<Notification> member2Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member2Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member2.getId());
         assertThat(member1Notifications).hasSize(1);
         assertThat(member2Notifications).hasSize(1);
@@ -65,9 +65,9 @@ public class NotificationConvenienceTest extends IntegrationTest {
 
         notificationConvenience.sendTeamAwardNotifications(memberIds, TEAM_ID, TEAM_DISPLAY_NAME);
 
-        final List<Notification> member1Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member1Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member1.getId());
-        final List<Notification> member2Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member2Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member2.getId());
         assertThat(member1Notifications).hasSize(1);
         assertThat(member2Notifications).hasSize(1);
@@ -85,9 +85,9 @@ public class NotificationConvenienceTest extends IntegrationTest {
 
         notificationConvenience.sendTeamCommentNotifications(memberIds, TEAM_ID, TEAM_DISPLAY_NAME);
 
-        final List<Notification> member1Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member1Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member1.getId());
-        final List<Notification> member2Notifications = notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(
+        final List<Notification> member2Notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
                 member2.getId());
         assertThat(member1Notifications).hasSize(1);
         assertThat(member2Notifications).hasSize(1);

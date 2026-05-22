@@ -14,7 +14,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findAllByMemberIdAndIsReadFalse(final Long memberId);
 
-    List<Notification> findAllByMemberIdOrderByCreatedAtDesc(final Long memberId);
+    List<Notification> findTop20ByMemberIdOrderByCreatedAtDesc(final Long memberId);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberId = :memberId AND n.isRead = false AND n.isDeleted = false")

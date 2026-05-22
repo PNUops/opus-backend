@@ -19,7 +19,7 @@ public class NotificationQueryService {
     private final MemberConvenience memberConvenience;
 
     public List<NotificationResponse> getNotifications(final Member member) {
-        return notificationRepository.findAllByMemberIdOrderByCreatedAtDesc(member.getId())
+        return notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(member.getId())
                 .stream()
                 .map(NotificationResponse::from)
                 .toList();
