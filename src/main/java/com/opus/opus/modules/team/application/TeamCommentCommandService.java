@@ -36,7 +36,10 @@ public class TeamCommentCommandService {
                 .team(team)
                 .build());
 
-        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId);
+        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
+                .stream()
+                .filter(id -> !id.equals(memberId))
+                .toList();
         final String teamDisplayName = team.getTeamName() != null ? team.getTeamName() : team.getProjectName();
         notificationConvenience.sendTeamCommentNotifications(memberIds, teamId, teamDisplayName);
     }
