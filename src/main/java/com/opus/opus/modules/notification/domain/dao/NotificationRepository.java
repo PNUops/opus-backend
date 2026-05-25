@@ -17,6 +17,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findTop20ByMemberIdOrderByCreatedAtDesc(final Long memberId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Notification n SET n.isRead = true WHERE n.memberId = :memberId AND n.isRead = false AND n.isDeleted = false")
+    @Query("UPDATE Notification n SET n.isRead = true, n.updatedAt = CURRENT_TIMESTAMP WHERE n.memberId = :memberId AND n.isRead = false AND n.isDeleted = false")
     void updateAllUnreadByMemberId(@Param("memberId") Long memberId);
 }
