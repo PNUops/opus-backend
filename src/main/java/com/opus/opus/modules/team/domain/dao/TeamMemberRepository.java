@@ -30,4 +30,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     @Query("SELECT tm.memberId FROM TeamMember tm JOIN Team t ON tm.team.id = t.id WHERE t.contestId = :contestId")
     Set<Long> findMemberIdsByContestId(Long contestId);
+
+    @Query("SELECT DISTINCT tm.memberId FROM TeamMember tm JOIN Member m ON m.id = tm.memberId WHERE tm.team.id = :teamId AND m.isFake = false AND m.isDeleted = false")
+    List<Long> findRealMemberIdsByTeamId(final Long teamId);
 }

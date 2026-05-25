@@ -25,6 +25,9 @@ import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.notice.api.NoticeController;
 import com.opus.opus.modules.notice.application.NoticeCommandService;
 import com.opus.opus.modules.notice.application.NoticeQueryService;
+import com.opus.opus.modules.notification.api.NotificationController;
+import com.opus.opus.modules.notification.application.NotificationCommandService;
+import com.opus.opus.modules.notification.application.NotificationQueryService;
 import com.opus.opus.modules.team.api.TeamCommentController;
 import com.opus.opus.modules.team.api.TeamController;
 import com.opus.opus.modules.team.api.TeamMemberController;
@@ -50,14 +53,13 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 @WebMvcTest({
         MemberController.class,
         NoticeController.class,
+        NotificationController.class,
         TeamController.class,
         TeamMemberController.class,
         ContestController.class,
         TeamCommentController.class,
         ContestCategoryController.class,
         ContestTrackController.class,
-        NoticeController.class,
-        ContestController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -87,6 +89,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected NoticeQueryService noticeQueryService;
+
+    @MockitoBean
+    protected NotificationCommandService notificationCommandService;
+
+    @MockitoBean
+    protected NotificationQueryService notificationQueryService;
 
     @MockitoBean
     protected TeamCommandService teamCommandService;

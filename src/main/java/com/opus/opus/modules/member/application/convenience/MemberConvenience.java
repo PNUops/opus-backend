@@ -38,6 +38,10 @@ public class MemberConvenience {
                 .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }
 
+    public void validateExistMember(final Long memberId) {
+        memberRepository.findById(memberId).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+    }
+
     public Member getValidateExistMemberByStudentId(final String studentId) {
         return memberRepository.findByStudentId(studentId).orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }

@@ -25,6 +25,9 @@ link:./team-like.html[팀 좋아요 API]
 == 공지 관련 API
 link:./notice.html[공지 API]
 
+== 알림 관련 API
+link:./notification.html[알림 API]
+
 == 대회 관련 API
 link:./contest.html[대회 API]
 

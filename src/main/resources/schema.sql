@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
+DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest`;
@@ -137,6 +138,21 @@ CREATE TABLE `member_roles` (
   `member_id` bigint NOT NULL,
   `role` enum('ROLE_관리자','ROLE_회원') NOT NULL,
   PRIMARY KEY (`member_id`,`role`)
+);
+
+CREATE TABLE `notification` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `member_id` bigint NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `content` varchar(255) NOT NULL,
+  `type` enum('TEAM','TEAM_COMMENT','TEAM_AWARDS') NOT NULL,
+  `target_id` bigint NOT NULL,
+  `redirect_url` varchar(255) DEFAULT NULL,
+  `is_read` bit(1) NOT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `notice` (
