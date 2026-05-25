@@ -4,7 +4,7 @@ import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMM
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 
-import com.opus.opus.modules.notification.application.convenience.NotificationConvenience;
+import com.opus.opus.modules.notification.application.event.TeamCommentNotificationEvent;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
@@ -13,6 +13,7 @@ import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.exception.TeamCommentException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ public class TeamCommentCommandService {
 
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
-    private final NotificationConvenience notificationConvenience;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void createComment(final Long teamId, final Long memberId, final String description) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
@@ -41,7 +42,7 @@ public class TeamCommentCommandService {
                 .filter(id -> !id.equals(memberId))
                 .toList();
         final String teamDisplayName = team.getTeamName() != null ? team.getTeamName() : team.getProjectName();
-        notificationConvenience.sendTeamCommentNotifications(memberIds, teamId, teamDisplayName);
+        eventPublisher.publishEvent(new TeamCommentNotificationEvent(memberIds, teamId, teamDisplayName));
     }
 
     public void updateComment(final Long teamId, final Long commentId, final Long memberId, final String newDescription) {
