@@ -63,7 +63,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDetailResponse> getTeamDetail(@PathVariable final Long teamId,
                                                             @LoginMember final Member member) {
@@ -156,7 +156,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @PutMapping("/{teamId}/likes")
     public ResponseEntity<Void> addLike(@PathVariable final Long teamId,
                                         @LoginMember final Member member) {
@@ -164,7 +164,7 @@ public class TeamController {
         return ResponseEntity.ok().build();
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @DeleteMapping("/{teamId}/likes")
     public ResponseEntity<Void> removeLike(@PathVariable final Long teamId,
                                            @LoginMember final Member member) {
@@ -172,7 +172,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @PutMapping("/{teamId}/votes")
     public ResponseEntity<TeamVoteResponse> addVote(@PathVariable final Long teamId,
                                                     @LoginMember final Member member) {
@@ -180,7 +180,7 @@ public class TeamController {
         return ResponseEntity.ok(response);
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @DeleteMapping("/{teamId}/votes")
     public ResponseEntity<TeamVoteResponse> removeVote(@PathVariable final Long teamId,
                                                        @LoginMember final Member member) {
