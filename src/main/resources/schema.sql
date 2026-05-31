@@ -136,7 +136,7 @@ CREATE TABLE `member` (
 
 CREATE TABLE `member_roles` (
   `member_id` bigint NOT NULL,
-  `role` enum('ROLE_관리자','ROLE_회원') NOT NULL,
+  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
   PRIMARY KEY (`member_id`,`role`)
 );
 

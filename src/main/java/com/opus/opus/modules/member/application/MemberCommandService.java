@@ -2,7 +2,7 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
@@ -199,7 +199,7 @@ public class MemberCommandService {
                 .studentId(studentId)
                 .email(email)
                 .password(password)
-                .roles(Set.of(ROLE_회원))
+                .roles(Set.of(ROLE_학생))
                 .build());
     }
 

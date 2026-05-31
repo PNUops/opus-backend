@@ -47,7 +47,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PatchMapping("/{teamId}")
     public ResponseEntity<Void> updateTeam(@PathVariable final Long teamId,
                                            @RequestBody @Valid final TeamUpdateRequest request,
@@ -63,7 +63,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDetailResponse> getTeamDetail(@PathVariable final Long teamId,
                                                             @LoginMember final Member member) {
@@ -86,7 +86,7 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PostMapping("/{teamId}/image")
     public ResponseEntity<Void> savePreviewImage(@PathVariable final Long teamId,
                                                  @RequestPart("images") final List<MultipartFile> images,
@@ -95,7 +95,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image")
     public ResponseEntity<Void> deletePreviewImage(@PathVariable final Long teamId,
                                                    @RequestBody @Valid final PreviewDeleteRequest previewDeleteRequest,
@@ -113,7 +113,7 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PostMapping("/{teamId}/image/thumbnail")
     public ResponseEntity<Void> saveThumbnailImage(@PathVariable final Long teamId,
                                                    @RequestPart("image") final MultipartFile image,
@@ -122,7 +122,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image/thumbnail")
     public ResponseEntity<Void> deleteThumbnailImage(@PathVariable final Long teamId,
                                                      @LoginMember final Member member) {
@@ -139,7 +139,7 @@ public class TeamController {
                 .body(imageResponse.resource());
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PostMapping("/{teamId}/image/posters")
     public ResponseEntity<Void> savePosterImage(@PathVariable final Long teamId,
                                                 @RequestPart("image") final MultipartFile image,
@@ -148,7 +148,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/image/posters")
     public ResponseEntity<Void> deletePosterImage(@PathVariable final Long teamId,
                                                   @LoginMember final Member member) {
@@ -156,7 +156,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PutMapping("/{teamId}/likes")
     public ResponseEntity<Void> addLike(@PathVariable final Long teamId,
                                         @LoginMember final Member member) {
@@ -164,7 +164,7 @@ public class TeamController {
         return ResponseEntity.ok().build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/likes")
     public ResponseEntity<Void> removeLike(@PathVariable final Long teamId,
                                            @LoginMember final Member member) {
@@ -172,7 +172,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @PutMapping("/{teamId}/votes")
     public ResponseEntity<TeamVoteResponse> addVote(@PathVariable final Long teamId,
                                                     @LoginMember final Member member) {
@@ -180,7 +180,7 @@ public class TeamController {
         return ResponseEntity.ok(response);
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @DeleteMapping("/{teamId}/votes")
     public ResponseEntity<TeamVoteResponse> removeVote(@PathVariable final Long teamId,
                                                        @LoginMember final Member member) {

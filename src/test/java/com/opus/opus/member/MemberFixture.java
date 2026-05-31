@@ -1,6 +1,6 @@
 package com.opus.opus.member;
 
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.SocialType;
@@ -15,7 +15,7 @@ public class MemberFixture {
                 .email(email)
                 .socialType(SocialType.GOOGLE)
                 .socialId(socialId)
-                .roles(new HashSet<>(Set.of(ROLE_회원)))
+                .roles(new HashSet<>(Set.of(ROLE_학생)))
                 .build();
     }
 
@@ -25,7 +25,7 @@ public class MemberFixture {
                 .email("example" + number + "@pusan.ac.kr")
                 .password("{noop}123456789")
                 .studentId("20211234" + number)
-                .roles(Set.of(ROLE_회원))
+                .roles(Set.of(ROLE_학생))
                 .build();
     }
 
@@ -35,7 +35,7 @@ public class MemberFixture {
                 .email("example@pusan.ac.kr")
                 .password("{noop}123456789")
                 .studentId("202612345")
-                .roles(new HashSet<>(Set.of(ROLE_회원)))
+                .roles(new HashSet<>(Set.of(ROLE_학생)))
                 .build();
     }
 }

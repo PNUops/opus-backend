@@ -77,7 +77,7 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService {
                 .email(email)
                 .socialType(SocialType.GOOGLE)
                 .socialId(socialId)
-                .roles(Set.of(MemberRoleType.ROLE_회원))
+                .roles(Set.of(MemberRoleType.ROLE_학생))
                 .build());
     }
 }
