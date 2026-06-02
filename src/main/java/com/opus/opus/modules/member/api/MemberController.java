@@ -198,7 +198,7 @@ public class MemberController {
     }
 
     @GetMapping("/members/me/comments")
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     public ResponseEntity<Page<MyCommentResponse>> getMyComments(@LoginMember final Member member,
                                                                  @RequestParam(defaultValue = "latest") final String sort,
                                                                  @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate startDate,
@@ -211,14 +211,14 @@ public class MemberController {
     }
 
     @GetMapping("/members/me/likes/preview")
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     public ResponseEntity<List<MyLikePreviewResponse>> getMyLikePreview(@LoginMember final Member member) {
         final List<MyLikePreviewResponse> response = memberQueryService.getMyLikePreview(member.getId());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/members/me/likes")
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     public ResponseEntity<Page<MyLikedProjectResponse>> getMyLikedProjects(@LoginMember final Member member,
                                                                            @RequestParam(defaultValue = "latest") final String sort,
                                                                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") final LocalDate startDate,
@@ -232,7 +232,7 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    @Secured({"ROLE_회원", "ROLE_관리자"})
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
     @PatchMapping("/members/me/password-reset")
     public ResponseEntity<Void> updatePasswordInMyPage(@LoginMember final Member member,
                                                   @Valid @RequestBody final PasswordUpdateMyPageRequest request) {

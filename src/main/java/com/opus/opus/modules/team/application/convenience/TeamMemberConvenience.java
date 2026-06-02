@@ -59,7 +59,7 @@ public class TeamMemberConvenience {
         [팀장/팀원 권한 검증 위치 변경]
         ROLE_팀장, ROLE_팀원을 JwtProvider roles에 추가해 @Secured로 검증하는 방식은
         매 요청마다 불필요한 TeamMember DB 조회가 발생하고, 해당 권한이 필요한 API도 많지 않아
-        @Secured는 ROLE_회원만 검증하고, 팀장/팀원 여부는 Service 레이어에서 검증하는 방식으로 결정
+        @Secured는 ROLE_학생만 검증하고, 팀장/팀원 여부는 Service 레이어에서 검증하는 방식으로 결정
      */
     public void validateTeamLeaderUnlessAdmin(final Long teamId, final Member member) {
         if (!member.isAdmin()) {

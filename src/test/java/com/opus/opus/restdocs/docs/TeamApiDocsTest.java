@@ -918,7 +918,7 @@ public class TeamApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 권한이 없는 사용자(ROLE_회원 중 팀원이 아닌 경우)가 수정을 시도하면 실패한다.")
+    @DisplayName("[실패] 권한이 없는 사용자(ROLE_학생 중 팀원이 아닌 경우)가 수정을 시도하면 실패한다.")
     void 팀_정보_수정_실패_권한없음_시나리오() throws Exception {
         // Given
         final Long teamId = 1L;

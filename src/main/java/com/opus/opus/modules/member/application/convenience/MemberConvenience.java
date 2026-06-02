@@ -1,6 +1,6 @@
 package com.opus.opus.modules.member.application.convenience;
 
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_회원;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_EXIST_EMAIL;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_EXIST_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.MISMATCH_STUDENT_ID_AND_NAME;
@@ -110,7 +110,7 @@ public class MemberConvenience {
                         .studentId(studentId)
                         .email(email)
                         .password(randomPassword)
-                        .roles(Set.of(ROLE_회원))
+                        .roles(Set.of(ROLE_학생))
                         .build()
         );
     }
@@ -128,7 +128,7 @@ public class MemberConvenience {
                 .studentId(studentId)
                 .email(email)
                 .password(randomPassword)
-                .roles(Set.of(ROLE_회원))
+                .roles(Set.of(ROLE_학생))
                 .build();
         member.markAsFakeMember();
 
