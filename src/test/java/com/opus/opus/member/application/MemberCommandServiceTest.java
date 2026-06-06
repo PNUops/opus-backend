@@ -1,10 +1,12 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.when;
 import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.member.StaffInfoFixture;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.file.FileFixture;
@@ -36,7 +39,9 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import org.springframework.mock.web.MockMultipartFile;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +65,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private StaffInfoRepository staffInfoRepository;
+
+    @Autowired
     private FileRepository fileRepository;
 
     private Member teamLeader;
@@ -75,6 +83,13 @@ public class MemberCommandServiceTest extends IntegrationTest {
         authRedisUtil.delete("signup:email:verified:" + emailAuthRequest.email());
         authRedisUtil.delete("signin:email:auth:" + emailAuthRequest.email());
         authRedisUtil.delete("signin:email:verified:" + emailAuthRequest.email());
+    }
+
+    private void verifySignUpEmail() {
+        memberCommandService.signUpEmailAuth(emailAuthRequest);
+        final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
+                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
+        memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
     }
 
     @Test
@@ -167,7 +182,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 인증 코드 TTL은 5분이다.")
-    @Disabled // 테스트에 따라 4와 5가 랜덤. 필요 시 Disable 해제하고 테스트
+    @Disabled
+        // 테스트에 따라 4와 5가 랜덤. 필요 시 Disable 해제하고 테스트
     void 인증_코드_TTL은_5분이다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
 
@@ -177,7 +193,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 인증 완료 코드 TTL은 10분이다.")
-    @Disabled // 테스트에 따라 9와 10이 랜덤. 필요 시 Disable 해제하고 테스트
+    @Disabled
+        // 테스트에 따라 9와 10이 랜덤. 필요 시 Disable 해제하고 테스트
     void 인증_완료_코드_TTL은_10분이다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
@@ -186,29 +203,29 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
 
         // 인증 시간은 테스트 시작부터 줄어들기 때문에(내림 처리됨) 9분으로 설정 (실제는 10분)
-        assertThat(authRedisUtil.ttl("signup:email:verified:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(9);
+        assertThat(authRedisUtil.ttl("signup:email:verified:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(
+                9);
     }
 
     @Test
-    @DisplayName("[성공] 인증 완료 코드가 있다면 회원가입은 정상적으로 이뤄진다.")
-    void 인증_완료_코드가_있다면_회원가입은_정상적으로_이뤄진다() {
-        memberCommandService.signUpEmailAuth(emailAuthRequest);
-        final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
-        memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
-        final SignUpRequest request = new SignUpRequest("이름", "202512345", "qwer1234@pusan.ac.kr", "qwer123!");
+    @DisplayName("[성공] 학생 회원가입 시 인증 완료 코드가 있다면 학생 권한으로 가입된다.")
+    void 학생_회원가입_시_인증_완료_코드가_있다면_학생_권한으로_가입된다() {
+        verifySignUpEmail();
+        final SignUpRequest request = new SignUpRequest("이름", "202512345", emailAuthRequest.email(), "qwer123!",
+                "STUDENT");
 
         memberCommandService.signUp(request);
 
         final Member member = memberRepository.findByStudentId("202512345").orElseThrow();
         assertThat(member.getName()).isEqualTo("이름");
+        assertThat(member.getRoles()).containsExactly(ROLE_학생);
     }
 
     @Test
     @DisplayName("[실패] 인증 완료 코드가 없다면 회원가입은 불가하다.")
     void 인증_완료_코드가_없다면_회원가입은_불가하다() {
         final SignUpRequest notExistAuthCodeRequest = new SignUpRequest("이름", "202512345", "qwer1234@pusan.ac.kr",
-                "qwer123!");
+                "qwer123!", "STUDENT");
 
         assertThatThrownBy(() -> {
             memberCommandService.signUp(notExistAuthCodeRequest);
@@ -218,13 +235,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 관리자가 권한을 등록한 회원은 가입 시 이메일과 비밀번호가 업데이트 된다. ")
     void 관리자가_권한을_등록한_회원은_가입_시_이메일과_비밀번호가_업데이트_된다() {
-        memberCommandService.signUpEmailAuth(emailAuthRequest);
-        final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
-        memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
+        verifySignUpEmail();
         final SignUpRequest teamLeaderRequest = new SignUpRequest(teamLeader.getName(), teamLeader.getStudentId(),
-                "qwer1234@pusan.ac.kr",
-                "changePassword");
+                emailAuthRequest.email(), "qwer123!", "STUDENT");
 
         memberCommandService.signUp(teamLeaderRequest);
 
@@ -236,16 +249,43 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 회원가입이 완료되면 인증 완료 코드는 삭제된다.")
     void 회원가입이_완료되면_인증_완료_코드는_삭제된다() {
-        memberCommandService.signUpEmailAuth(emailAuthRequest);
-        final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
-                authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
-        memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
+        verifySignUpEmail();
         final SignUpRequest teamLeaderRequest = new SignUpRequest(teamLeader.getName(), teamLeader.getStudentId(),
-                "qwer1234@pusan.ac.kr", "changePassword");
+                emailAuthRequest.email(), "qwer123!", "STUDENT");
 
         memberCommandService.signUp(teamLeaderRequest);
 
         assertThat(authRedisUtil.get("signup:email:verified:" + emailAuthRequest.email())).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 교직원 회원가입 시 일치하는 교직원 정보의 권한으로 가입된다.")
+    void 교직원_회원가입_시_일치하는_교직원_정보의_권한으로_가입된다() {
+        staffInfoRepository.save(
+                StaffInfoFixture.createStaffInfo("교수님", emailAuthRequest.email(), MemberRoleType.ROLE_교수));
+        verifySignUpEmail();
+        final SignUpRequest request = new SignUpRequest("교수님", "S202512345", emailAuthRequest.email(), "qwer123!",
+                "STAFF");
+
+        memberCommandService.signUp(request);
+
+        final Member member = memberRepository.findByEmail(emailAuthRequest.email()).orElseThrow();
+        assertThat(member.getName()).isEqualTo("교수님");
+        assertThat(member.getRoles()).containsExactly(MemberRoleType.ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[실패] 교직원 회원가입 시 일치하는 교직원 정보가 없으면 가입이 불가하다.")
+    void 교직원_회원가입_시_일치하는_교직원_정보가_없으면_가입이_불가하다() {
+        staffInfoRepository.save(
+                StaffInfoFixture.createStaffInfo("다른교수", emailAuthRequest.email(), MemberRoleType.ROLE_교수));
+        verifySignUpEmail();
+        final SignUpRequest request = new SignUpRequest("없는교직원", "S202512345", emailAuthRequest.email(), "qwer123!",
+                "STAFF");
+
+        assertThatThrownBy(() -> memberCommandService.signUp(request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_STAFF_INFO.errorMessage());
     }
 
     @Test
@@ -276,7 +316,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 신규 소셜 회원은 자동 가입된다.")
     void 신규_소셜_회원은_자동_가입된다() {
-        ReflectionTestUtils.invokeMethod(googleOAuth2UserService, "registerNewSocialMember", "김태윤", "pykido@gmail.com", "google-sub-999");
+        ReflectionTestUtils.invokeMethod(googleOAuth2UserService, "registerNewSocialMember", "김태윤", "pykido@gmail.com",
+                "google-sub-999");
 
         final Member savedMember = memberRepository.findByEmail("pykido@gmail.com").orElseThrow();
         assertThat(savedMember.isSocialMember()).isTrue();
@@ -286,7 +327,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 학번 수정이 정상적으로 이루어진다.")
     void 학번_수정이_정상적으로_이루어진다() {
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
         final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
         assertThat(socialMember.getStudentId()).isNull();
 
@@ -310,7 +352,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 부산대 메일이 아닌 소셜 회원은 학번 수정이 불가하다.")
     void 부산대_메일이_아닌_소셜_회원은_학번_수정이_불가하다() {
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@gmail.com", "google-999"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("cscs@gmail.com", "google-999"));
         final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
 
         assertThatThrownBy(() ->
@@ -322,7 +365,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 이미 학번이 있는 소셜 회원은 학번 수정이 불가하다.")
     void 이미_학번이_있는_소셜_회원은_학번_수정이_불가하다() {
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("already@pusan.ac.kr", "google-999"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("already@pusan.ac.kr", "google-999"));
         socialMember.updateStudentId("202011111");
         memberRepository.save(socialMember);
         final StudentIdUpdateRequest request = new StudentIdUpdateRequest("202512345");
@@ -336,7 +380,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 중복된 학번으로는 수정이 불가하다.")
     void 중복된_학번으로는_수정이_불가하다() {
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("cscs@pusan.ac.kr", "google-123456789"));
         final StudentIdUpdateRequest request = new StudentIdUpdateRequest(teamLeader.getStudentId());
 
         assertThatThrownBy(() ->
@@ -348,7 +393,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 기존 프로필 이미지가 없어도 새 이미지 저장이 호출된다.")
     void 기존_프로필_이미지가_없어도_새_이미지_저장이_호출된다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg",
+                "content".getBytes());
 
         // when
         memberCommandService.modifyProfileImage(teamLeader, image);
@@ -362,7 +408,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 기존_프로필_이미지가_있으면_새_이미지_저장_후_기존_이미지_삭제가_호출된다() {
         // given
         final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
-        final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg", "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg",
+                "content".getBytes());
 
         // when
         memberCommandService.modifyProfileImage(teamLeader, image);
@@ -375,7 +422,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 기존 프로필 이미지가 없으면 이미지 변경 시 삭제가 호출되지 않는다.")
     void 기존_프로필_이미지가_없으면_이미지_변경_시_삭제가_호출되지_않는다() {
         // given
-        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg", "content".getBytes());
+        final MockMultipartFile image = new MockMultipartFile("image", "profile.jpg", "image/jpeg",
+                "content".getBytes());
 
         // when
         memberCommandService.modifyProfileImage(teamLeader, image);
@@ -421,7 +469,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 소셜 회원 탈퇴 시 DB에서 조회되지 않는다.")
     void 소셜_회원_탈퇴_시_DB에서_조회되지_않는다() {
         // given
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social@pusan.ac.kr", "google-abc123"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("social@pusan.ac.kr", "google-abc123"));
         when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
 
         // when
@@ -445,7 +494,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 소셜 회원 탈퇴 시 Google 토큰 해제를 시도한다.")
     void 소셜_회원_탈퇴_시_Google_토큰_해제를_시도한다() {
         // given
-        final Member socialMember = memberRepository.save(MemberFixture.createSocialMember("social2@pusan.ac.kr", "google-def456"));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("social2@pusan.ac.kr", "google-def456"));
         when(googleTokenManager.get(socialMember.getId())).thenReturn(java.util.Optional.empty());
 
         // when
