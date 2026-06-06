@@ -9,15 +9,15 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
-import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
-import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.application.FileCommandService;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -26,13 +26,15 @@ import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateReque
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
-import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
+import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.StaffInfo;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class MemberCommandService {
 
     private final MemberRepository memberRepository;
+    private final StaffInfoRepository staffInfoRepository;
     private final FileRepository fileRepository;
 
     private final MemberConvenience memberConvenience;
@@ -85,25 +88,18 @@ public class MemberCommandService {
 
     private static final String VERIFIED_VALUE = "true";
 
+    private static final String STAFF_MEMBER_TYPE = "STAFF";
+
     public void signUp(final SignUpRequest request) {
         final String email = request.email();
         verifyVerifiedKey(signUpVerifiedKey(email));
 
         final String encodingPassword = passwordEncoder.encode(request.password());
 
-        // 가짜 회원 여부 먼저 확인
-        final Optional<Member> fakeMember = memberRepository.findByEmail(email)
-                .filter(Member::isFakeMember);
-
-        if (fakeMember.isPresent()) { // 가짜 회원이 등록되어있는 경우 일반 회원으로 전환
-            fakeMember.get().convertFakeToGeneral(email, encodingPassword, request.studentId());
+        if (isStaffSignUp(request.memberType())) {
+            signUpStaff(request, encodingPassword);
         } else {
-            memberConvenience.checkIsDuplicateEmail(email);
-            memberRepository.findByStudentIdAndName(request.studentId(), request.name())
-                    .ifPresentOrElse(
-                            member -> member.updateTeamLeaderInfo(email, encodingPassword),
-                            () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
-                    );
+            signUpStudent(request, encodingPassword);
         }
 
         authRedisUtil.delete(signUpVerifiedKey(email));
@@ -188,6 +184,45 @@ public class MemberCommandService {
         if (authRedisUtil.get(verifiedKey) == null) {
             throw new MemberException(NOT_VERIFIED_EMAIL_AUTH);
         }
+    }
+
+    private boolean isStaffSignUp(final String memberType) {
+        return STAFF_MEMBER_TYPE.equals(memberType);
+    }
+
+    private void signUpStudent(final SignUpRequest request, final String encodingPassword) {
+        final String email = request.email();
+
+        // 가짜 회원 여부 먼저 확인
+        final Optional<Member> fakeMember = memberRepository.findByEmail(email)
+                .filter(Member::isFakeMember);
+
+        if (fakeMember.isPresent()) { // 가짜 회원이 등록되어있는 경우 일반 회원으로 전환
+            fakeMember.get().convertFakeToGeneral(email, encodingPassword, request.studentId());
+        } else {
+            memberConvenience.checkIsDuplicateEmail(email);
+            memberRepository.findByStudentIdAndName(request.studentId(), request.name())
+                    .ifPresentOrElse(
+                            member -> member.updateTeamLeaderInfo(email, encodingPassword),
+                            () -> registerNewMember(request.name(), request.studentId(), email, encodingPassword)
+                    );
+        }
+    }
+
+    private void signUpStaff(final SignUpRequest request, final String encodingPassword) {
+        final StaffInfo staffInfo = staffInfoRepository.findByEmailAndName(request.email(), request.name())
+                .orElseThrow(() -> new MemberException(NOT_FOUND_STAFF_INFO));
+
+        memberConvenience.checkIsDuplicateEmail(request.email());
+        memberConvenience.checkIsDuplicateStudentId(request.studentId());
+
+        memberRepository.save(Member.generalMember()
+                .name(request.name())
+                .studentId(request.studentId())
+                .email(request.email())
+                .password(encodingPassword)
+                .roles(Set.of(staffInfo.getRole()))
+                .build());
     }
 
     private void registerNewMember(final String name, final String studentId, final String email,
