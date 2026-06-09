@@ -213,6 +213,9 @@ public class MemberCommandService {
         final StaffInfo staffInfo = staffInfoRepository.findByEmailAndName(request.email(), request.name())
                 .orElseThrow(() -> new MemberException(NOT_FOUND_STAFF_INFO));
 
+        final MemberRoleType role = staffInfo.getRole();
+        validateStaffRole(role);
+
         memberConvenience.checkIsDuplicateEmail(request.email());
         memberConvenience.checkIsDuplicateStudentId(request.studentId());
 
@@ -221,8 +224,14 @@ public class MemberCommandService {
                 .studentId(request.studentId())
                 .email(request.email())
                 .password(encodingPassword)
-                .roles(Set.of(staffInfo.getRole()))
+                .roles(Set.of(role))
                 .build());
+    }
+
+    private void validateStaffRole(final MemberRoleType role) {
+        if (role != MemberRoleType.ROLE_교수 && role != MemberRoleType.ROLE_직원) {
+            throw new MemberException(NOT_FOUND_STAFF_INFO);
+        }
     }
 
     private void registerNewMember(final String name, final String studentId, final String email,
