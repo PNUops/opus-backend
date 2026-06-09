@@ -145,8 +145,9 @@ CREATE TABLE `staff_info` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
-  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
-  PRIMARY KEY (`id`)
+  `role` enum('ROLE_교수','ROLE_직원') NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_staff_info_email_name` (`email`,`name`)
 );
 
 CREATE TABLE `notification` (
