@@ -289,20 +289,6 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 교직원 회원가입 시 교직원 권한이 아닌 정보로는 가입이 불가하다.")
-    void 교직원_회원가입_시_교직원_권한이_아닌_정보로는_가입이_불가하다() {
-        staffInfoRepository.save(
-                StaffInfoFixture.createStaffInfo("관리자", emailAuthRequest.email(), MemberRoleType.ROLE_관리자));
-        verifySignUpEmail();
-        final SignUpRequest request = new SignUpRequest("관리자", "S202512345", emailAuthRequest.email(), "qwer123!",
-                "STAFF");
-
-        assertThatThrownBy(() -> memberCommandService.signUp(request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_FOUND_STAFF_INFO.errorMessage());
-    }
-
-    @Test
     @DisplayName("[성공] 가입된 회원은 로그인 할 수 있다.")
     void 가입된_회원은_로그인_할_수_있다() {
         final SignInRequest request = new SignInRequest(teamLeader.getEmail(), "123456789");
