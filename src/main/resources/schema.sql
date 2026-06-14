@@ -1,5 +1,7 @@
 USE opus;
 
+DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
+DROP TABLE IF EXISTS `contest_submission_item`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_like`;
@@ -83,6 +85,30 @@ CREATE TABLE `contest_track` (
   `track_name` varchar(255) NOT NULL,
   `contest_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_submission_item` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `allow_late_submission` bit(1) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `end_at` datetime(6) NOT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  `max_file_count` int NOT NULL,
+  `max_file_size_mb` int NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `start_at` datetime(6) NOT NULL,
+  `visibility` enum('PUBLIC','PRIVATE') NOT NULL,
+  `contest_id` bigint NOT NULL,
+  `contest_track_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_submission_item_file_formats` (
+  `contest_submission_item_id` bigint NOT NULL,
+  `file_format` enum('PDF','ZIP','PNG','JPG','JPEG','GIF','MP4','PPT','PPTX','DOC','DOCX','HWP') NOT NULL,
+  PRIMARY KEY (`contest_submission_item_id`,`file_format`)
 );
 
 CREATE TABLE `contest_sort` (
