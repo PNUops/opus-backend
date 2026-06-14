@@ -6,6 +6,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -196,10 +197,10 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 유효한 요청이면 회원가입은 정상적으로 이뤄진다.")
-    void 유효한_요청이면_회원가입은_정상적으로_이뤄진다() throws Exception {
+    @DisplayName("[성공] 학생 회원가입은 정상적으로 이뤄진다.")
+    void 학생_회원가입은_정상적으로_이뤄진다() throws Exception {
         final SignUpRequest request = new SignUpRequest(member.getName(), member.getStudentId(), member.getEmail(),
-                "qwer123!");
+                "qwer123!", "STUDENT");
 
         doNothing().when(memberCommandService).signUp(any());
 
@@ -212,7 +213,75 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("name", "회원 이름"),
                                 stringFieldWithPath("studentId", "회원의 학번"),
                                 stringFieldWithPath("email", "회원의 이메일"),
-                                stringFieldWithPath("password", "회원의 비밀번호")
+                                stringFieldWithPath("password", "회원의 비밀번호"),
+                                stringFieldWithPath("memberType", "회원 유형 (STUDENT, STAFF)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 교직원 회원가입은 정상적으로 이뤄진다.")
+    void 교직원_회원가입은_정상적으로_이뤄진다() throws Exception {
+        final SignUpRequest request = new SignUpRequest(member.getName(), member.getStudentId(), member.getEmail(),
+                "qwer123!", "STAFF");
+
+        doNothing().when(memberCommandService).signUp(any());
+
+        mockMvc.perform(post("/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("signup-staff",
+                        requestFields(
+                                stringFieldWithPath("name", "교직원 이름"),
+                                stringFieldWithPath("studentId", "교직원의 교번"),
+                                stringFieldWithPath("email", "교직원의 이메일"),
+                                stringFieldWithPath("password", "교직원의 비밀번호"),
+                                stringFieldWithPath("memberType", "회원 유형 (STUDENT, STAFF)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 교직원 회원가입 시 일치하는 교직원 정보가 없으면 400 에러를 반환한다.")
+    void 교직원_회원가입_시_일치하는_교직원_정보가_없으면_에러를_반환한다() throws Exception {
+        final SignUpRequest request = new SignUpRequest(member.getName(), member.getStudentId(), member.getEmail(),
+                "qwer123!", "STAFF");
+
+        willThrow(new MemberException(NOT_FOUND_STAFF_INFO)).given(memberCommandService).signUp(any());
+
+        mockMvc.perform(post("/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("signup-staff-fail",
+                        requestFields(
+                                stringFieldWithPath("name", "교직원 이름"),
+                                stringFieldWithPath("studentId", "교직원의 교번"),
+                                stringFieldWithPath("email", "교직원의 이메일"),
+                                stringFieldWithPath("password", "교직원의 비밀번호"),
+                                stringFieldWithPath("memberType", "회원 유형 (STUDENT, STAFF)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 회원 유형이 STUDENT, STAFF가 아니면 400 에러를 반환한다.")
+    void 회원_유형이_STUDENT_STAFF가_아니면_에러를_반환한다() throws Exception {
+        final SignUpRequest request = new SignUpRequest(member.getName(), member.getStudentId(), member.getEmail(),
+                "qwer123!", "TEACHER");
+
+        mockMvc.perform(post("/sign-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("signup-invalid-type",
+                        requestFields(
+                                stringFieldWithPath("name", "회원 이름"),
+                                stringFieldWithPath("studentId", "회원의 학번"),
+                                stringFieldWithPath("email", "회원의 이메일"),
+                                stringFieldWithPath("password", "회원의 비밀번호"),
+                                stringFieldWithPath("memberType", "잘못된 회원 유형 (STUDENT, STAFF 외의 값)")
                         )
                 ));
     }

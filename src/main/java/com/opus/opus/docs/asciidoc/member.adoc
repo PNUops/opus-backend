@@ -84,7 +84,9 @@ include::{snippets}/signup-auth-confirm-fail2/request-fields.adoc[]
 
 ====
 
-== `POST`: 회원가입
+== `POST`: 회원가입 (학생)
+
+NOTE: `memberType`은 `STUDENT` 또는 `STAFF`로 전달합니다. 학생은 `STUDENT`로 가입하며 `ROLE_학생` 권한이 부여됩니다.
 
 .HTTP Request
 include::{snippets}/signup/http-request.adoc[]
@@ -94,6 +96,49 @@ include::{snippets}/signup/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/signup/request-fields.adoc[]
+
+== `POST`: 회원가입 (교직원)
+
+NOTE: `memberType`을 `STAFF`로 전달하면 교직원 정보(`StaffInfo`)와 이메일·이름이 일치하는지 대조한 뒤, 일치하는 교직원 정보에 저장된 권한으로 가입됩니다.
+
+.HTTP Request
+include::{snippets}/signup-staff/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/signup-staff/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/signup-staff/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 일치하는 교직원 정보 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-staff-fail/http-request.adoc[]
+
+include::{snippets}/signup-staff-fail/http-response.adoc[]
+
+include::{snippets}/signup-staff-fail/request-fields.adoc[]
+
+====
+
+.❌ Case 2: 회원 유형이 STUDENT, STAFF가 아님
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-invalid-type/http-request.adoc[]
+
+include::{snippets}/signup-invalid-type/http-response.adoc[]
+
+include::{snippets}/signup-invalid-type/request-fields.adoc[]
+
+====
 
 == `POST`: 로그인
 

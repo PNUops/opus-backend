@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS `team_comment`;
 DROP TABLE IF EXISTS `team_contest_award`;
 DROP TABLE IF EXISTS `team_member`;
 DROP TABLE IF EXISTS `member_roles`;
+DROP TABLE IF EXISTS `staff_info`;
 DROP TABLE IF EXISTS `team`;
 DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `contest_track`;
@@ -138,6 +139,15 @@ CREATE TABLE `member_roles` (
   `member_id` bigint NOT NULL,
   `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
   PRIMARY KEY (`member_id`,`role`)
+);
+
+CREATE TABLE `staff_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `role` enum('ROLE_교수','ROLE_직원') NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_staff_info_email_name` (`email`,`name`)
 );
 
 CREATE TABLE `notification` (
