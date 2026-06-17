@@ -17,8 +17,8 @@ import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
-import com.opus.opus.modules.file.application.FileCommandService;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.application.FileImageCommandService;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -56,7 +56,7 @@ public class MemberCommandService {
 
     private final MemberRepository memberRepository;
     private final StaffInfoRepository staffInfoRepository;
-    private final FileRepository fileRepository;
+    private final FileImageRepository fileImageRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -65,7 +65,7 @@ public class MemberCommandService {
     private final MailUtil mailUtil;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleTokenManager googleTokenManager;
-    private final FileCommandService fileCommandService;
+    private final FileImageCommandService fileImageCommandService;
 
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
@@ -377,11 +377,11 @@ public class MemberCommandService {
     }
 
     public void modifyProfileImage(final Member member, final MultipartFile image) {
-        fileCommandService.replaceImageFile(image, member.getId(), MEMBER, PROFILE);
+        fileImageCommandService.replaceImageFile(image, member.getId(), MEMBER, PROFILE);
     }
 
     public void deleteProfileImage(final Member member) {
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
-                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
+                .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
     }
 }
