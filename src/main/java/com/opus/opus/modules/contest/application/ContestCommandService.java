@@ -20,7 +20,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.FAILE
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
-import com.opus.opus.modules.file.application.FileCommandService;
+import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.global.util.ExcelTeamParser;
 import com.opus.opus.global.util.ExcelTeamValidator;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
@@ -48,8 +48,8 @@ import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
@@ -80,7 +80,7 @@ public class ContestCommandService {
     private final ContestSortRepository contestSortRepository;
     private final ContestAwardRepository contestAwardRepository;
     private final ContestTrackRepository contestTrackRepository;
-    private final FileRepository fileRepository;
+    private final FileImageRepository fileImageRepository;
     private final ContestTemplateRepository contestTemplateRepository;
     private final NoticeRepository noticeRepository;
 
@@ -92,27 +92,27 @@ public class ContestCommandService {
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final MemberConvenience memberConvenience;
 
-    private final FileCommandService fileCommandService;
+    private final FileImageCommandService fileImageCommandService;
     private final ExcelTeamParser excelTeamParser;
     private final ExcelTeamValidator excelTeamValidator;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final Optional<File> existingFile = fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId,
-                CONTEST, BANNER);
-        existingFile.ifPresent(this::checkWebpConverted);
+        final Optional<FileImage> existingFileImage = fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(
+                contestId, CONTEST, BANNER);
+        existingFileImage.ifPresent(this::checkWebpConverted);
 
-        fileCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
+        fileImageCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
 
-        existingFile.ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        existingFileImage.ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
     }
 
     public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
 
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(file ->
-                fileCommandService.deleteFile(file.getId())
+        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(
+                fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId())
         );
     }
 
@@ -151,8 +151,8 @@ public class ContestCommandService {
         teamConvenience.validateAllTeamsDeletedInContest(contestId);
 
         // 연관 데이터 삭제
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
-                .ifPresent(file -> fileCommandService.deleteFile(file.getId()));
+        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
+                .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
 
         noticeRepository.deleteAll(noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId));
         contestAwardRepository.deleteAll(contestAwardRepository.findByContestId(contestId));
@@ -226,8 +226,8 @@ public class ContestCommandService {
         }
     }
 
-    private void checkWebpConverted(File existingFile) {
-        if (!existingFile.getIsWebpConverted()) {
+    private void checkWebpConverted(final FileImage existingFileImage) {
+        if (!existingFileImage.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
     }
