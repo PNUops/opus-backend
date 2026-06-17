@@ -14,10 +14,10 @@ import com.opus.opus.modules.contest.application.convenience.ContestTemplateConv
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
-import com.opus.opus.modules.file.application.FileCommandService;
-import com.opus.opus.modules.file.application.convenience.FileConvenience;
+import com.opus.opus.modules.file.application.FileImageCommandService;
+import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImageType;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -45,21 +45,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class TeamCommandService {
 
-    private final FileCommandService fileCommandService;
+    private final FileImageCommandService fileImageCommandService;
 
     private final TeamRepository teamRepository;
     private final TeamVoteRepository teamVoteRepository;
     private final TeamLikeRepository teamLikeRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final TeamContestAwardRepository teamContestAwardRepository;
-    private final FileRepository fileRepository;
+    private final FileImageRepository fileImageRepository;
 
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
-    private final FileConvenience fileConvenience;
+    private final FileImageConvenience fileImageConvenience;
 
 
     public TeamCreateResponse createTeam(final TeamCreateRequest request) {
@@ -96,8 +96,8 @@ public class TeamCommandService {
     private void deleteTeamImages(final Long teamId) {
         deleteIfExists(teamId, POSTER);
         deleteIfExists(teamId, THUMBNAIL);
-        final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
-        previewIds.forEach(fileCommandService::deleteFile);
+        fileImageRepository.findAllByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW)
+                .forEach(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
     }
 
     public void updateTeam(final Member member, final Long teamId, final TeamUpdateRequest request) {
@@ -174,20 +174,23 @@ public class TeamCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         checkPreviewLimit(teamId, images);
         for (MultipartFile image : images) {
-            fileCommandService.storeImageFile(image, teamId, TEAM, PREVIEW);
+            fileImageCommandService.storeImageFile(image, teamId, TEAM, PREVIEW);
         }
     }
 
     public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        ids.forEach(fileCommandService::deleteFile);
+        ids.forEach(fileId ->
+                fileImageRepository.findByFileId(fileId)
+                        .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()))
+        );
     }
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        fileCommandService.replaceImageFile(image, teamId, TEAM, THUMBNAIL);
+        fileImageCommandService.replaceImageFile(image, teamId, TEAM, THUMBNAIL);
     }
 
     public void deleteThumbnailImage(final Long teamId, final Member member) {
@@ -199,7 +202,7 @@ public class TeamCommandService {
     public void savePosterImage(final Long teamId, final MultipartFile image, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        fileCommandService.replaceImageFile(image, teamId, TEAM, POSTER);
+        fileImageCommandService.replaceImageFile(image, teamId, TEAM, POSTER);
     }
 
     public void deletePosterImage(final Long teamId, final Member member) {
@@ -267,12 +270,12 @@ public class TeamCommandService {
     }
 
     private void deleteIfExists(final Long teamId, final FileImageType imageType) {
-        fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, imageType)
-                .ifPresent(existingFile -> fileCommandService.deleteFile(existingFile.getId()));
+        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, imageType)
+                .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
     }
 
     private void checkPreviewLimit(final Long teamId, final List<MultipartFile> images) {
-        long savedCount = fileRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
+        long savedCount = fileImageRepository.countByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW);
         if (savedCount + images.size() > 5) {
             throw new FileException(EXCEED_PREVIEW_LIMIT);
         }
