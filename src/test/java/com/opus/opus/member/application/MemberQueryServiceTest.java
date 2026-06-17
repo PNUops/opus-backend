@@ -8,59 +8,55 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
-import com.opus.opus.modules.file.application.FileQueryService;
+import com.opus.opus.contest.ContestCategoryFixture;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
-import com.opus.opus.contest.ContestCategoryFixture;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
-import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestTrack;
+import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.modules.contest.domain.ContestAward;
-import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
+import com.opus.opus.modules.file.application.FileQueryService;
+import com.opus.opus.modules.file.application.dto.FileResource;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
+import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
-import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
-import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamContestAward;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamContestAwardRepository;
+import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
+import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
-import com.opus.opus.team.TeamFixture;
-import com.opus.opus.team.TeamVoteFixture;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import com.opus.opus.modules.team.application.dto.ImageResponse;
-import com.opus.opus.file.FileFixture;
-import com.opus.opus.modules.file.application.dto.FileResource;
-import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
-import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
-import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.team.TeamCommentFixture;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamLikeFixture;
+import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -91,7 +87,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @Autowired
     private TeamVoteRepository teamVoteRepository;
     @Autowired
-    private FileRepository fileRepository;
+    private FileImageRepository fileImageRepository;
     @Autowired
     private ContestCategoryRepository contestCategoryRepository;
     @Autowired
@@ -137,12 +133,10 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 프로필 이미지가 있으면 이미지 응답이 반환된다.")
     void 프로필_이미지가_있으면_이미지_응답이_반환된다() {
         // given
-        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(member.getId()));
-        savedFile.updateIsWebpConverted(true);
-        fileRepository.saveAndFlush(savedFile);
+        final FileImage savedFileImage = fileImageRepository.save(FileFixture.createMemberProfileFileImage(member.getId()));
 
         final Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileQueryService.findFileAndType(savedFile.getId()))
+        given(fileQueryService.findFileAndType(savedFileImage.getFile().getId()))
                 .willReturn(new FileResource(resource, "image/webp"));
 
         // when

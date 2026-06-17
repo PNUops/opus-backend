@@ -7,13 +7,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.FileModuleIntegrationTest;
 import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.file.FileFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ public class FileQueryServiceTest extends FileModuleIntegrationTest {
     @DisplayName("[성공] 파일 ID로 조회 시 FileResource가 반환된다.")
     void 파일_ID로_조회_시_FileResource가_반환된다() {
         when(fileStorage.load(any())).thenReturn("content".getBytes());
-        final File saved = fileRepository.save(FileFixture.createTeamPosterFile(1L));
+        final File saved = fileRepository.save(FileFixture.createFile("poster.jpg", "path/to/poster.webp"));
 
         final FileResource result = fileQueryService.findFileAndType(saved.getId());
 
@@ -42,7 +42,7 @@ public class FileQueryServiceTest extends FileModuleIntegrationTest {
     @DisplayName("[성공] .webp 파일 조회 시 MIME 타입이 image/webp이다.")
     void webp_파일_조회_시_MIME_타입이_image_webp이다() {
         when(fileStorage.load(any())).thenReturn("content".getBytes());
-        final File saved = fileRepository.save(FileFixture.createTeamPosterFile(1L));
+        final File saved = fileRepository.save(FileFixture.createFile("poster.jpg", "path/to/poster.webp"));
 
         final FileResource result = fileQueryService.findFileAndType(saved.getId());
 

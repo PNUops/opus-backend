@@ -14,8 +14,8 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -50,7 +50,7 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
-    private FileRepository fileRepository;
+    private FileImageRepository fileImageRepository;
     @Autowired
     private ContestTrackRepository contestTrackRepository;
     @Autowired
@@ -139,14 +139,12 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 포스터 이미지를 조회한다.")
     void 팀_포스터_이미지를_조회한다() {
         // given
-        final File file = FileFixture.createTeamPosterFile();
-        ReflectionTestUtils.setField(file, "referenceId", team.getId());
-        final File savedFile = fileRepository.save(file);
-        savedFile.updateIsWebpConverted(true);
-        fileRepository.saveAndFlush(savedFile);
+        final FileImage savedFileImage = fileImageRepository.save(FileFixture.createTeamPosterFileImage(team.getId()));
+        savedFileImage.markWebpConverted();
+        fileImageRepository.saveAndFlush(savedFileImage);
 
         Resource resource = new ByteArrayResource("content".getBytes());
-        given(fileQueryService.findFileAndType(savedFile.getId()))
+        given(fileQueryService.findFileAndType(savedFileImage.getFile().getId()))
                 .willReturn(new FileResource(resource, "image/webp"));
 
         // when
@@ -182,11 +180,11 @@ public class TeamQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀 썸네일 이미지가 있으면 팀 썸네일을 반환한다.")
     void 팀_썸네일_조회_성공() {
         // given
-        final File teamFile = fileRepository.save(FileFixture.createTeamThumbnailFile(team.getId()));
-        teamFile.updateIsWebpConverted(true);
-        fileRepository.saveAndFlush(teamFile);
+        final FileImage teamFileImage = fileImageRepository.save(FileFixture.createTeamThumbnailFileImage(team.getId()));
+        teamFileImage.markWebpConverted();
+        fileImageRepository.saveAndFlush(teamFileImage);
 
-        given(fileQueryService.findFileAndType(teamFile.getId()))
+        given(fileQueryService.findFileAndType(teamFileImage.getFile().getId()))
                 .willReturn(new FileResource(new ByteArrayResource("team".getBytes()), "image/webp"));
 
         // when
@@ -207,11 +205,11 @@ public class TeamQueryServiceTest extends IntegrationTest {
         ReflectionTestUtils.setField(team, "trackId", track.getId());
         teamRepository.saveAndFlush(team);
 
-        final File trackFile = fileRepository.save(FileFixture.createTrackThumbnailFile(track.getId()));
-        trackFile.updateIsWebpConverted(true);
-        fileRepository.saveAndFlush(trackFile);
+        final FileImage trackFileImage = fileImageRepository.save(FileFixture.createTrackThumbnailFileImage(track.getId()));
+        trackFileImage.markWebpConverted();
+        fileImageRepository.saveAndFlush(trackFileImage);
 
-        given(fileQueryService.findFileAndType(trackFile.getId()))
+        given(fileQueryService.findFileAndType(trackFileImage.getFile().getId()))
                 .willReturn(new FileResource(new ByteArrayResource("track".getBytes()), "image/webp"));
 
         // when
