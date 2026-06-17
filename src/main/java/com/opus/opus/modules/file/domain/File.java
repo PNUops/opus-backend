@@ -28,18 +28,21 @@ public class File extends BaseEntity {
     @Column(nullable = false) // todo: default 경로 고려 필요
     private String filePath;
 
-    @Column(nullable = false)
+    @Column
+    private String mimeType;
+
+    @Column
     private Long referenceId;
 
-    @Column(nullable = false)
+    @Column
     @Enumerated(EnumType.STRING)
     private ReferenceDomainType referenceType;
 
-    @Column(nullable = false)
+    @Column
     @Enumerated(EnumType.STRING)
     private FileImageType imageType;
 
-    @Column(nullable = false)
+    @Column
     private Boolean isWebpConverted;
 
     @Builder
@@ -51,6 +54,14 @@ public class File extends BaseEntity {
         this.referenceType = referenceType;
         this.imageType = imageType;
         this.isWebpConverted = false;
+    }
+
+    public static File create(final String name, final String filePath, final String mimeType) {
+        final File file = new File();
+        file.name = name;
+        file.filePath = filePath;
+        file.mimeType = mimeType;
+        return file;
     }
 
     public void updateIsWebpConverted(boolean isWebpConverted) {
