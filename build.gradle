@@ -65,6 +65,7 @@ ext {
 tasks.named('test') {
 	useJUnitPlatform()
 	outputs.dir project.snippetsDir
+	jvmArgs '-Dfile.encoding=UTF-8'
 }
 
 tasks.named('asciidoctor') {
