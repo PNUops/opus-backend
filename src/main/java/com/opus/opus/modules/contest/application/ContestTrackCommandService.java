@@ -11,7 +11,6 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.domain.FileImageType;
-import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContestTrackCommandService {
 
     private final ContestTrackRepository contestTrackRepository;
-    private final FileImageRepository fileImageRepository;
     private final TeamRepository teamRepository;
 
     private final ContestTrackConvenience contestTrackConvenience;
@@ -70,7 +68,6 @@ public class ContestTrackCommandService {
     }
 
     private void deleteIfExists(final Long trackId, final FileImageType imageType) {
-        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, imageType)
-                .ifPresent(existingFile -> fileImageCommandService.deleteImageFile(existingFile.getId()));
+        fileImageCommandService.deleteIfExists(trackId, TRACK, imageType);
     }
 }
