@@ -21,4 +21,13 @@ public class ImageProcessingEventListener {
         asyncImageProcessingService.processAndStoreForFileImage(
                 event.imageBytes(), event.relativePath(), event.fileImageId());
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handlePhysicalFileDelete(final PhysicalFileDeleteEvent event) {
+        try {
+            asyncImageProcessingService.deletePhysicalFile(event.relativePath());
+        } catch (Exception e) {
+            log.warn("물리 파일 삭제 실패 [path={}]: {}", event.relativePath(), e.getMessage());
+        }
+    }
 }

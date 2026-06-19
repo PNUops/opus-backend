@@ -1,6 +1,7 @@
 package com.opus.opus.modules.file.application;
 
 import com.opus.opus.modules.file.application.event.ImageProcessingEvent;
+import com.opus.opus.modules.file.application.event.PhysicalFileDeleteEvent;
 import com.opus.opus.modules.file.application.processor.ImageProcessor;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImage;
@@ -25,7 +26,6 @@ public class FileImageCommandService {
     private final FileImageRepository fileImageRepository;
     private final FilePathGenerator filePathGenerator;
     private final ImageProcessor imageProcessor;
-    private final AsyncImageProcessingService asyncImageProcessingService;
     private final ApplicationEventPublisher eventPublisher;
 
     public FileImage storeImageFile(final MultipartFile multipartFile, final Long referenceId,
@@ -73,8 +73,9 @@ public class FileImageCommandService {
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND,
                         "삭제할 파일을 찾을 수 없습니다. ID=" + fileImageId));
 
-        asyncImageProcessingService.deletePhysicalFile(fileImage.getFilePath());
+        final String filePath = fileImage.getFilePath();
         fileImageRepository.delete(fileImage);
+        eventPublisher.publishEvent(new PhysicalFileDeleteEvent(filePath));
     }
 
     public void deleteIfExists(final Long referenceId, final ReferenceDomainType referenceType,

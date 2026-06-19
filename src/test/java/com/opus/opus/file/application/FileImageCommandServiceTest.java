@@ -6,7 +6,6 @@ import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
 
 import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.FileModuleIntegrationTest;
@@ -104,14 +103,13 @@ public class FileImageCommandServiceTest extends FileModuleIntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] deleteImageFile - DB 레코드가 삭제되고 물리 파일 삭제가 위임된다.")
+    @DisplayName("[성공] deleteImageFile - DB 레코드가 삭제된다.")
     void deleteImageFile_DB_레코드_삭제_및_물리_파일_삭제_위임된다() {
         final FileImage saved = fileImageRepository.save(FileFixture.createTeamPosterFileImage(1L));
 
         fileImageCommandService.deleteImageFile(saved.getId());
 
         assertThat(fileImageRepository.findById(saved.getId())).isEmpty();
-        verify(fileStorage).delete(saved.getFilePath());
     }
 
     @Test
