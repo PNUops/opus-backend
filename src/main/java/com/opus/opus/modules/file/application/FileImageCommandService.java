@@ -1,5 +1,6 @@
 package com.opus.opus.modules.file.application;
 
+import com.opus.opus.modules.file.application.event.ImageProcessingEvent;
 import com.opus.opus.modules.file.application.processor.ImageProcessor;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileImage;
@@ -11,6 +12,7 @@ import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +26,7 @@ public class FileImageCommandService {
     private final FilePathGenerator filePathGenerator;
     private final ImageProcessor imageProcessor;
     private final AsyncImageProcessingService asyncImageProcessingService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public FileImage storeImageFile(final MultipartFile multipartFile, final Long referenceId,
                                     final ReferenceDomainType referenceType, final FileImageType imageType) {
@@ -48,7 +51,7 @@ public class FileImageCommandService {
 
             final FileImage savedFileImage = fileImageRepository.save(fileImage);
 
-            asyncImageProcessingService.processAndStoreForFileImage(imageBytes, relativePath, savedFileImage.getId());
+            eventPublisher.publishEvent(new ImageProcessingEvent(imageBytes, relativePath, savedFileImage.getId()));
 
             return savedFileImage;
         } catch (IOException e) {

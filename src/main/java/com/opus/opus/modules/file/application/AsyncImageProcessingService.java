@@ -5,7 +5,6 @@ import com.opus.opus.modules.file.application.processor.ImageProcessor;
 import com.opus.opus.modules.file.application.storage.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,7 +16,6 @@ public class AsyncImageProcessingService {
     private final FileStorage fileStorage;
     private final FileImageTransactionHandler fileImageTransactionHandler;
 
-    @Async("imageTaskExecutor")
     public void processAndStoreForFileImage(final byte[] imageBytes, final String relativePath, final Long fileImageId) {
         try {
             final byte[] processed = imageProcessor.process(imageBytes);
