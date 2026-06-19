@@ -48,8 +48,8 @@ import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImage;
-import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
@@ -80,7 +80,6 @@ public class ContestCommandService {
     private final ContestSortRepository contestSortRepository;
     private final ContestAwardRepository contestAwardRepository;
     private final ContestTrackRepository contestTrackRepository;
-    private final FileImageRepository fileImageRepository;
     private final ContestTemplateRepository contestTemplateRepository;
     private final NoticeRepository noticeRepository;
 
@@ -93,14 +92,15 @@ public class ContestCommandService {
     private final MemberConvenience memberConvenience;
 
     private final FileImageCommandService fileImageCommandService;
+    private final FileImageConvenience fileImageConvenience;
     private final ExcelTeamParser excelTeamParser;
     private final ExcelTeamValidator excelTeamValidator;
 
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final Optional<FileImage> existingFileImage = fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(
-                contestId, CONTEST, BANNER);
+        final Optional<FileImage> existingFileImage = fileImageConvenience
+                .findOptionalByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER);
         existingFileImage.ifPresent(this::checkWebpConverted);
 
         fileImageCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
@@ -110,10 +110,7 @@ public class ContestCommandService {
 
     public void deleteBannerImage(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-
-        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER).ifPresent(
-                fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId())
-        );
+        fileImageCommandService.deleteIfExists(contestId, CONTEST, BANNER);
     }
 
     public ContestResponse createContest(final ContestRequest request) {
@@ -151,8 +148,7 @@ public class ContestCommandService {
         teamConvenience.validateAllTeamsDeletedInContest(contestId);
 
         // 연관 데이터 삭제
-        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
-                .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
+        fileImageCommandService.deleteIfExists(contestId, CONTEST, BANNER);
 
         noticeRepository.deleteAll(noticeRepository.findAllByContestIdOrderByCreatedAtDesc(contestId));
         contestAwardRepository.deleteAll(contestAwardRepository.findByContestId(contestId));

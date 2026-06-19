@@ -199,10 +199,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
         final Long teamId = generalTeam.getId();
 
         // 포스터, 썸네일, 프리뷰 파일 생성 및 저장
-        final FileImage poster = fileImageRepository.save(FileFixture.createTeamPosterFileImage(teamId));
-        final FileImage thumbnail = fileImageRepository.save(FileFixture.createTeamThumbnailFileImage(teamId));
-        final FileImage preview1 = fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
-        final FileImage preview2 = fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamPosterFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamThumbnailFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
 
         // when
         teamCommandService.deleteTeam(teamId);
@@ -211,10 +211,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         assertThat(teamRepository.findById(teamId)).isEmpty();
 
         // storage 삭제 검증
-        verify(fileImageCommandService).deleteImageFile(poster.getId());
-        verify(fileImageCommandService).deleteImageFile(thumbnail.getId());
-        verify(fileImageCommandService).deleteImageFile(preview1.getId());
-        verify(fileImageCommandService).deleteImageFile(preview2.getId());
+        verify(fileImageCommandService).deleteAllByReference(teamId, TEAM);
     }
 
     @Test
@@ -248,14 +245,11 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 팀 포스터 이미지를 삭제한다.")
     void 팀_포스터_이미지를_삭제한다() {
-        // given
-        final FileImage savedFileImage = fileImageRepository.save(FileFixture.createTeamPosterFileImage(generalTeam.getId()));
-
         // when
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileImageCommandService, times(1)).deleteImageFile(savedFileImage.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(generalTeam.getId(), TEAM, POSTER);
     }
 
     @Test

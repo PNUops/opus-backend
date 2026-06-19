@@ -435,14 +435,11 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 프로필 이미지가 있으면 삭제가 호출된다.")
     void 프로필_이미지가_있으면_삭제가_호출된다() {
-        // given
-        final FileImage savedFileImage = fileImageRepository.save(FileFixture.createMemberProfileFileImage(teamLeader.getId()));
-
         // when
         memberCommandService.deleteProfileImage(teamLeader);
 
         // then
-        verify(fileImageCommandService, times(1)).deleteImageFile(savedFileImage.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(teamLeader.getId(), MEMBER, PROFILE);
     }
 
     @Test

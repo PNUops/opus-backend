@@ -4,7 +4,6 @@ import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.modules.file.application.FileQueryService;
@@ -17,7 +16,6 @@ import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.FileImageType;
-import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
@@ -54,14 +52,11 @@ public class TeamQueryService {
     private final TeamConvenience teamConvenience;
     private final FileImageConvenience fileImageConvenience;
 
-    private final FileImageRepository fileImageRepository;
-
     private final FileQueryService fileQueryService;
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
-        final FileImage findFileImage = fileImageRepository.findById(imageId)
-                .orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
+        final FileImage findFileImage = fileImageConvenience.findByFileImageId(imageId);
         checkImageConverted(findFileImage);
         final FileResource storageResult = fileQueryService.findFileAndType(findFileImage.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
@@ -133,7 +128,7 @@ public class TeamQueryService {
     }
 
     private Optional<ImageResponse> getTeamThumbnail(final Long teamId) {
-        return fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+        return fileImageConvenience.findOptionalByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .map(this::getImageResponse);
     }
 
@@ -141,7 +136,7 @@ public class TeamQueryService {
         if (trackId == null) {
             return Optional.empty();
         }
-        return fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
+        return fileImageConvenience.findOptionalByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
                 .map(this::getImageResponse);
     }
 

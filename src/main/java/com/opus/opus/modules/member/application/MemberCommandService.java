@@ -18,7 +18,6 @@ import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.application.FileImageCommandService;
-import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -56,7 +55,6 @@ public class MemberCommandService {
 
     private final MemberRepository memberRepository;
     private final StaffInfoRepository staffInfoRepository;
-    private final FileImageRepository fileImageRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -381,7 +379,6 @@ public class MemberCommandService {
     }
 
     public void deleteProfileImage(final Member member) {
-        fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE)
-                .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
+        fileImageCommandService.deleteIfExists(member.getId(), MEMBER, PROFILE);
     }
 }

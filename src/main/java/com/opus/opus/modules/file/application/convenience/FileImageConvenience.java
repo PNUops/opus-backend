@@ -3,6 +3,7 @@ package com.opus.opus.modules.file.application.convenience;
 import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -50,5 +51,10 @@ public class FileImageConvenience {
             final Long referenceId, final ReferenceDomainType referenceType, final FileImageType imageType) {
         return fileImageRepository
                 .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
+    }
+
+    public FileImage findByFileImageId(final Long fileImageId) {
+        return fileImageRepository.findById(fileImageId)
+                .orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
     }
 }
