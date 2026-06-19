@@ -30,6 +30,26 @@ public class FileImageCommandService {
 
     public FileImage storeImageFile(final MultipartFile multipartFile, final Long referenceId,
                                     final ReferenceDomainType referenceType, final FileImageType imageType) {
+        if (imageType.isSinglePerReference()) {
+            fileImageRepository.findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType)
+                    .ifPresent(existing -> {
+                        throw new FileException(FileExceptionType.DUPLICATE_SINGLE_IMAGE);
+                    });
+        }
+        return storeImageFileInternal(multipartFile, referenceId, referenceType, imageType);
+    }
+
+    public FileImage replaceImageFile(final MultipartFile multipartFile, final Long referenceId,
+                                      final ReferenceDomainType referenceType, final FileImageType imageType) {
+        final Optional<FileImage> existingFileImage = fileImageRepository
+                .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
+        final FileImage savedFileImage = storeImageFileInternal(multipartFile, referenceId, referenceType, imageType);
+        existingFileImage.ifPresent(fi -> deleteImageFile(fi.getId()));
+        return savedFileImage;
+    }
+
+    private FileImage storeImageFileInternal(final MultipartFile multipartFile, final Long referenceId,
+                                             final ReferenceDomainType referenceType, final FileImageType imageType) {
         if (multipartFile == null || multipartFile.isEmpty()) {
             throw new FileException(FileExceptionType.EMPTY_FILE);
         }
@@ -57,15 +77,6 @@ public class FileImageCommandService {
         } catch (IOException e) {
             throw new FileException(FileExceptionType.SAVE_FAILED, "파일을 읽는 중 오류가 발생했습니다.", e);
         }
-    }
-
-    public FileImage replaceImageFile(final MultipartFile multipartFile, final Long referenceId,
-                                      final ReferenceDomainType referenceType, final FileImageType imageType) {
-        final Optional<FileImage> existingFileImage = fileImageRepository
-                .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
-        final FileImage savedFileImage = storeImageFile(multipartFile, referenceId, referenceType, imageType);
-        existingFileImage.ifPresent(fi -> deleteImageFile(fi.getId()));
-        return savedFileImage;
     }
 
     public void deleteImageFile(final Long fileImageId) {

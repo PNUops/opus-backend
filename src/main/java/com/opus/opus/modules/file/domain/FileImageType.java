@@ -7,5 +7,10 @@ public enum FileImageType {
     BANNER,
     POSTER,
     PROFILE,
+    ;
+
+    public boolean isSinglePerReference() {
+        return this != PREVIEW;
+    }
 }
 
