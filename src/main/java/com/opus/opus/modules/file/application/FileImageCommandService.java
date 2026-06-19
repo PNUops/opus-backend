@@ -73,4 +73,17 @@ public class FileImageCommandService {
         asyncImageProcessingService.deletePhysicalFile(fileImage.getFilePath());
         fileImageRepository.delete(fileImage);
     }
+
+    public void deleteIfExists(final Long referenceId, final ReferenceDomainType referenceType,
+                               final FileImageType imageType) {
+        fileImageRepository
+                .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType)
+                .ifPresent(fi -> deleteImageFile(fi.getId()));
+    }
+
+    public void deleteAllByReference(final Long referenceId, final ReferenceDomainType referenceType) {
+        fileImageRepository
+                .findAllByReferenceIdAndReferenceType(referenceId, referenceType)
+                .forEach(fi -> deleteImageFile(fi.getId()));
+    }
 }

@@ -20,4 +20,6 @@ public interface FileImageRepository extends JpaRepository<FileImage, Long> {
 
     Optional<FileImage> findByFileId(Long fileId);
 
+    List<FileImage> findAllByReferenceIdAndReferenceType(Long referenceId, ReferenceDomainType referenceType);
+
 }
