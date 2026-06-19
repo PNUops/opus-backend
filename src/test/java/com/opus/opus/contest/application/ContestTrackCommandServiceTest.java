@@ -62,13 +62,10 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 분과 기본 썸네일을 삭제한다.")
     void 분과_기본_썸네일_삭제_성공() {
-        // given
-        FileImage fileImage = fileImageRepository.save(FileFixture.createTrackThumbnailFileImage(track.getId()));
-
         // when
         contestTrackCommandService.deleteContestTrackDefaultThumbnail(contest.getId(), track.getId());
 
         // then
-        verify(fileImageCommandService, times(1)).deleteImageFile(fileImage.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(track.getId(), TRACK, THUMBNAIL);
     }
 }

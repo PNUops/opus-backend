@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
+import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
@@ -75,7 +76,7 @@ public class TeamQueryService {
 
         final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
         final List<TeamContestAwardResponse.AwardInfo> awards = getAwardInfos(team);
-        final List<Long> previewIds = fileImageConvenience.findAllPreviewFileIdsByTeamId(teamId);
+        final List<Long> previewIds = fileImageConvenience.findAllImageIds(teamId, TEAM, PREVIEW);
 
         final Boolean isVoted = teamVoteConvenience.getIsVotedIfInPeriod(team, member, contest.isVotingPeriod());
         final Boolean isLiked = teamLikeConvenience.getIsLikedIfInPeriod(team, member, contest.isVotingPeriod());

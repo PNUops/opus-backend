@@ -1,9 +1,6 @@
 package com.opus.opus.modules.file.application.convenience;
 
-import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
-import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.FileImageType;
@@ -31,9 +28,10 @@ public class FileImageConvenience {
                 .orElseThrow(() -> new FileException(NOT_EXISTS_MATCHING_IMAGE_ID));
     }
 
-    public List<Long> findAllPreviewFileIdsByTeamId(final Long teamId) {
+    public List<Long> findAllImageIds(final Long referenceId, final ReferenceDomainType referenceType,
+                                      final FileImageType imageType) {
         return fileImageRepository
-                .findAllByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW)
+                .findAllByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType)
                 .stream()
                 .map(FileImage::getId)
                 .sorted()
@@ -55,6 +53,6 @@ public class FileImageConvenience {
 
     public FileImage findByFileImageId(final Long fileImageId) {
         return fileImageRepository.findById(fileImageId)
-                .orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
+                .orElseThrow(() -> new FileException(NOT_EXISTS_MATCHING_IMAGE_ID));
     }
 }
