@@ -99,13 +99,11 @@ public class ContestCommandService {
     public void saveBannerImage(final Long contestId, final MultipartFile image) {
         contestConvenience.getValidateExistContest(contestId);
 
-        final Optional<FileImage> existingFileImage = fileImageConvenience
-                .findOptionalByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER);
-        existingFileImage.ifPresent(this::checkWebpConverted);
+        fileImageConvenience
+                .findOptionalByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST, BANNER)
+                .ifPresent(this::checkWebpConverted);
 
-        fileImageCommandService.storeImageFile(image, contestId, CONTEST, BANNER);
-
-        existingFileImage.ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()));
+        fileImageCommandService.replaceImageFile(image, contestId, CONTEST, BANNER);
     }
 
     public void deleteBannerImage(final Long contestId) {
