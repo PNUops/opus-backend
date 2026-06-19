@@ -18,8 +18,6 @@ public interface FileImageRepository extends JpaRepository<FileImage, Long> {
     long countByReferenceIdAndReferenceTypeAndImageType(
             Long referenceId, ReferenceDomainType referenceType, FileImageType imageType);
 
-    Optional<FileImage> findByFileId(Long fileId);
-
     List<FileImage> findAllByReferenceIdAndReferenceType(Long referenceId, ReferenceDomainType referenceType);
 
 }

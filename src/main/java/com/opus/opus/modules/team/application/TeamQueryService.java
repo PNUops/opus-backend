@@ -60,7 +60,7 @@ public class TeamQueryService {
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
-        final FileImage findFileImage = fileImageRepository.findByFileId(imageId)
+        final FileImage findFileImage = fileImageRepository.findById(imageId)
                 .orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
         checkImageConverted(findFileImage);
         final FileResource storageResult = fileQueryService.findFileAndType(findFileImage.getFile().getId());

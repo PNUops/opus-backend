@@ -181,10 +181,7 @@ public class TeamCommandService {
     public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        ids.forEach(fileId ->
-                fileImageRepository.findByFileId(fileId)
-                        .ifPresent(fileImage -> fileImageCommandService.deleteImageFile(fileImage.getId()))
-        );
+        ids.forEach(fileImageCommandService::deleteImageFile);
     }
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {

@@ -10,6 +10,7 @@ import com.opus.opus.modules.file.domain.ReferenceDomainType;
 import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +34,21 @@ public class FileImageConvenience {
         return fileImageRepository
                 .findAllByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, PREVIEW)
                 .stream()
-                .map(fi -> fi.getFile().getId())
+                .map(FileImage::getId)
                 .sorted()
                 .toList();
+    }
+
+    public long countByReferenceIdAndReferenceTypeAndImageType(final Long referenceId,
+                                                               final ReferenceDomainType referenceType,
+                                                               final FileImageType imageType) {
+        return fileImageRepository
+                .countByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
+    }
+
+    public Optional<FileImage> findOptionalByReferenceIdAndReferenceTypeAndImageType(
+            final Long referenceId, final ReferenceDomainType referenceType, final FileImageType imageType) {
+        return fileImageRepository
+                .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
     }
 }
