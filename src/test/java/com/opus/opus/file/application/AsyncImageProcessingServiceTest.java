@@ -120,4 +120,31 @@ public class AsyncImageProcessingServiceTest extends FileModuleIntegrationTest {
 
         verify(fileStorage).delete(path);
     }
+
+    @Test
+    @DisplayName("[실패] 파일 저장 실패 시 DB 레코드가 정리된다.")
+    void 파일_저장_실패_시_DB_레코드가_정리된다() {
+        final byte[] processed = "processed".getBytes();
+        when(imageProcessor.process(any())).thenReturn(processed);
+        doThrow(new RuntimeException("저장 실패")).when(fileStorage).store(any(), any());
+        final FileImage saved = fileImageRepository.save(FileFixture.createTeamPosterFileImage(1L));
+
+        target.processAndStoreForFileImage("original".getBytes(), saved.getFilePath(), saved.getId());
+
+        verify(fileImageTransactionHandler).deleteFileImageRecord(saved.getId());
+    }
+
+    @Test
+    @DisplayName("[실패] markWebpConverted 실패 시 DB 레코드와 물리 파일이 정리된다.")
+    void markWebpConverted_실패_시_DB_레코드와_물리_파일이_정리된다() {
+        final byte[] processed = "processed".getBytes();
+        when(imageProcessor.process(any())).thenReturn(processed);
+        doThrow(new RuntimeException("업데이트 실패")).when(fileImageTransactionHandler).markWebpConverted(any());
+        final FileImage saved = fileImageRepository.save(FileFixture.createTeamPosterFileImage(1L));
+
+        target.processAndStoreForFileImage("original".getBytes(), saved.getFilePath(), saved.getId());
+
+        verify(fileStorage).delete(saved.getFilePath());
+        verify(fileImageTransactionHandler).deleteFileImageRecord(saved.getId());
+    }
 }
