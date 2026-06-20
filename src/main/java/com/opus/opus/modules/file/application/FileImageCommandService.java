@@ -60,7 +60,7 @@ public class FileImageCommandService {
             final String mimeType = multipartFile.getContentType() != null
                     ? multipartFile.getContentType() : "application/octet-stream";
 
-            final File file = File.create(multipartFile.getOriginalFilename(), relativePath, mimeType);
+            final File file = File.create(multipartFile.getOriginalFilename(), relativePath, mimeType, multipartFile.getSize());
 
             final FileImage fileImage = FileImage.builder()
                     .file(file)

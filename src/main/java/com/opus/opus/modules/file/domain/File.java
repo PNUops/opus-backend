@@ -28,11 +28,15 @@ public class File extends BaseEntity {
     @Column(nullable = false)
     private String mimeType;
 
-    public static File create(final String name, final String filePath, final String mimeType) {
+    @Column(nullable = false)
+    private Long fileSize;
+
+    public static File create(final String name, final String filePath, final String mimeType, final Long fileSize) {
         final File file = new File();
-        file.name = name;
+        file.name = (name != null) ? name : "unnamed";
         file.filePath = filePath;
         file.mimeType = mimeType;
+        file.fileSize = fileSize;
         return file;
     }
 

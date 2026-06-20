@@ -35,7 +35,7 @@ public class FileDocumentCommandService {
             final String mimeType = multipartFile.getContentType() != null
                     ? multipartFile.getContentType() : "application/octet-stream";
 
-            final File file = File.create(multipartFile.getOriginalFilename(), relativePath, mimeType);
+            final File file = File.create(multipartFile.getOriginalFilename(), relativePath, mimeType, multipartFile.getSize());
 
             final FileDocument fileDocument = FileDocument.builder()
                     .file(file)

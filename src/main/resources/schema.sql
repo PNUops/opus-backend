@@ -141,6 +141,7 @@ CREATE TABLE `file` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_path` varchar(255) NOT NULL,
+  `file_size` bigint NOT NULL,
   `mime_type` varchar(100) NOT NULL,
   `name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
