@@ -43,9 +43,10 @@ public class FileImageCommandService {
                                       final ReferenceDomainType referenceType, final FileImageType imageType) {
         final Optional<FileImage> existingFileImage = fileImageRepository
                 .findByReferenceIdAndReferenceTypeAndImageType(referenceId, referenceType, imageType);
-        final FileImage savedFileImage = storeImageFileInternal(multipartFile, referenceId, referenceType, imageType);
         existingFileImage.ifPresent(fi -> deleteImageFile(fi.getId()));
-        return savedFileImage;
+        // DELETE가 DB에 반영된 후 INSERT되도록 flush하여 UNIQUE 제약 충돌 방지
+        fileImageRepository.flush();
+        return storeImageFileInternal(multipartFile, referenceId, referenceType, imageType);
     }
 
     private FileImage storeImageFileInternal(final MultipartFile multipartFile, final Long referenceId,
