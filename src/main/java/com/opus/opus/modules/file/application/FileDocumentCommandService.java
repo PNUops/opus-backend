@@ -1,5 +1,6 @@
 package com.opus.opus.modules.file.application;
 
+import com.opus.opus.modules.file.application.event.PhysicalFileDeleteEvent;
 import com.opus.opus.modules.file.application.storage.FileStorage;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileDocument;
@@ -9,6 +10,7 @@ import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +23,7 @@ public class FileDocumentCommandService {
     private final FileDocumentRepository fileDocumentRepository;
     private final FilePathGenerator filePathGenerator;
     private final FileStorage fileStorage;
+    private final ApplicationEventPublisher eventPublisher;
 
     public FileDocument storeDocumentFile(final MultipartFile multipartFile,
                                           final Long submissionId, final Integer fileOrder) {
@@ -58,15 +61,19 @@ public class FileDocumentCommandService {
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND,
                         "삭제할 파일을 찾을 수 없습니다. ID=" + fileDocumentId));
 
-        fileStorage.delete(fileDocument.getFilePath());
+        final String filePath = fileDocument.getFilePath();
         fileDocumentRepository.delete(fileDocument);
+        eventPublisher.publishEvent(new PhysicalFileDeleteEvent(filePath));
     }
 
     public void deleteAllBySubmissionId(final Long submissionId) {
         final List<FileDocument> documents = fileDocumentRepository
                 .findAllBySubmissionIdOrderByFileOrder(submissionId);
-        documents.forEach(doc -> fileStorage.delete(doc.getFilePath()));
-        fileDocumentRepository.deleteAllBySubmissionId(submissionId);
+        documents.forEach(doc -> {
+            final String filePath = doc.getFilePath();
+            fileDocumentRepository.delete(doc);
+            eventPublisher.publishEvent(new PhysicalFileDeleteEvent(filePath));
+        });
     }
 
     private String extractExtension(final String filename) {
