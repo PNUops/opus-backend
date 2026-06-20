@@ -19,6 +19,7 @@ public class OrphanImageCleanupScheduler {
     private final FileImageRepository fileImageRepository;
     private final FileStorage fileStorage;
 
+    // 비동기 WebP 변환이 10분 내 완료되지 않은 레코드를 좀비로 판정하여 정리
     @Scheduled(fixedDelay = 600_000)
     @Transactional
     public void cleanupZombieRecords() {
