@@ -5,6 +5,7 @@ import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
 
 import com.opus.opus.modules.file.application.FileQueryService;
@@ -58,6 +59,9 @@ public class TeamQueryService {
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
         final FileImage findFileImage = fileImageConvenience.findByFileImageId(imageId);
+        if (!findFileImage.getReferenceId().equals(teamId) || findFileImage.getReferenceType() != TEAM) {
+            throw new FileException(NOT_EXISTS_PREVIEW);
+        }
         checkImageConverted(findFileImage);
         final FileResource storageResult = fileQueryService.findFileAndType(findFileImage.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
