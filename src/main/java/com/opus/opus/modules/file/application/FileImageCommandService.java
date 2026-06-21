@@ -58,6 +58,7 @@ public class FileImageCommandService {
         try {
             final byte[] imageBytes = multipartFile.getBytes();
             final String relativePath = filePathGenerator.generate(imageProcessor.getOutputExtension());
+            // 원본 업로드 시점의 mimeType (실제 저장 파일은 webp로 변환됨)
             final String mimeType = multipartFile.getContentType() != null
                     ? multipartFile.getContentType() : "application/octet-stream";
 
