@@ -26,9 +26,9 @@ import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.member.StaffInfoFixture;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.file.FileFixture;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -68,7 +68,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     private StaffInfoRepository staffInfoRepository;
 
     @Autowired
-    private FileRepository fileRepository;
+    private FileImageRepository fileImageRepository;
 
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
@@ -400,14 +400,14 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test
     @DisplayName("[성공] 기존 프로필 이미지가 있으면 새 이미지 저장 후 기존 이미지 삭제가 호출된다.")
     void 기존_프로필_이미지가_있으면_새_이미지_저장_후_기존_이미지_삭제가_호출된다() {
         // given
-        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
+        fileImageRepository.save(FileFixture.createMemberProfileFileImage(teamLeader.getId()));
         final MockMultipartFile image = new MockMultipartFile("image", "new_profile.jpg", "image/jpeg",
                 "content".getBytes());
 
@@ -415,7 +415,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
     }
 
     @Test
@@ -429,20 +429,17 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileCommandService, never()).deleteFile(any());
+        verify(fileImageCommandService, never()).deleteImageFile(any());
     }
 
     @Test
     @DisplayName("[성공] 프로필 이미지가 있으면 삭제가 호출된다.")
     void 프로필_이미지가_있으면_삭제가_호출된다() {
-        // given
-        final File savedFile = fileRepository.save(FileFixture.createMemberProfileFile(teamLeader.getId()));
-
         // when
         memberCommandService.deleteProfileImage(teamLeader);
 
         // then
-        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(teamLeader.getId(), MEMBER, PROFILE);
     }
 
     @Test
@@ -452,7 +449,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.deleteProfileImage(teamLeader);
 
         // then
-        verify(fileCommandService, never()).deleteFile(any());
+        verify(fileImageCommandService, never()).deleteImageFile(any());
     }
 
     @Test

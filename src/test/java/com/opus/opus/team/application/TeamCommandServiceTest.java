@@ -12,7 +12,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTemplateFixture;
@@ -28,8 +27,8 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.contest.exception.ContestTrackException;
 import com.opus.opus.modules.contest.exception.ContestTrackExceptionType;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -81,7 +80,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Autowired
     private TeamLikeRepository teamLikeRepository;
     @Autowired
-    private FileRepository fileRepository;
+    private FileImageRepository fileImageRepository;
     @Autowired
     private TeamMemberRepository teamMemberRepository;
     @Autowired
@@ -200,10 +199,10 @@ public class TeamCommandServiceTest extends IntegrationTest {
         final Long teamId = generalTeam.getId();
 
         // 포스터, 썸네일, 프리뷰 파일 생성 및 저장
-        final File poster = fileRepository.save(FileFixture.createTeamPosterFile(teamId));
-        final File thumbnail = fileRepository.save(FileFixture.createTeamThumbnailFile(teamId));
-        final File preview1 = fileRepository.save(FileFixture.createTeamPreviewFile(teamId));
-        final File preview2 = fileRepository.save(FileFixture.createTeamPreviewFile(teamId));
+        fileImageRepository.save(FileFixture.createTeamPosterFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamThumbnailFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
+        fileImageRepository.save(FileFixture.createTeamPreviewFileImage(teamId));
 
         // when
         teamCommandService.deleteTeam(teamId);
@@ -212,10 +211,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         assertThat(teamRepository.findById(teamId)).isEmpty();
 
         // storage 삭제 검증
-        verify(fileCommandService).deleteFile(poster.getId());
-        verify(fileCommandService).deleteFile(thumbnail.getId());
-        verify(fileCommandService).deleteFile(preview1.getId());
-        verify(fileCommandService).deleteFile(preview2.getId());
+        verify(fileImageCommandService).deleteAllByReference(teamId, TEAM);
     }
 
     @Test
@@ -229,7 +225,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), image, member);
 
         // then
-        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test
@@ -249,18 +245,11 @@ public class TeamCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 팀 포스터 이미지를 삭제한다.")
     void 팀_포스터_이미지를_삭제한다() {
-        // given
-        final File file = FileFixture.createTeamPosterFile();
-        setField(file, "referenceId", generalTeam.getId());
-        final File savedFile = fileRepository.save(file);
-        savedFile.updateIsWebpConverted(true);
-        fileRepository.saveAndFlush(savedFile);
-
         // when
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileCommandService, times(1)).deleteFile(savedFile.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(generalTeam.getId(), TEAM, POSTER);
     }
 
     @Test
@@ -270,16 +259,14 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.deletePosterImage(generalTeam.getId(), member);
 
         // then
-        verify(fileCommandService, never()).deleteFile(any());
+        verify(fileImageCommandService, never()).deleteImageFile(any());
     }
 
     @Test
     @DisplayName("[성공] 팀 포스터 이미지가 이미 존재하면 기존 이미지를 삭제하고 새로 저장한다.")
     void 팀_포스터_이미지가_이미_존재하면_기존_이미지를_삭제하고_새로_저장한다() {
         // given
-        final File existingFile = FileFixture.createTeamPosterFile();
-        setField(existingFile, "referenceId", generalTeam.getId());
-        final File savedFile = fileRepository.save(existingFile);
+        fileImageRepository.save(FileFixture.createTeamPosterFileImage(generalTeam.getId()));
 
         final MockMultipartFile newImage = new MockMultipartFile("image", "new_poster.jpg", "image/jpeg",
                 "new_content".getBytes());
@@ -288,7 +275,7 @@ public class TeamCommandServiceTest extends IntegrationTest {
         teamCommandService.savePosterImage(generalTeam.getId(), newImage, member);
 
         // then
-        verify(fileCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(generalTeam.getId()), eq(TEAM), eq(POSTER));
     }
 
     @Test

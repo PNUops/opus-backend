@@ -1,6 +1,7 @@
 package com.opus.opus.modules.team.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.POSTER;
+import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TRACK;
@@ -14,10 +15,9 @@ import com.opus.opus.modules.contest.application.convenience.ContestTrackConveni
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestAward;
 import com.opus.opus.modules.contest.domain.ContestTrack;
-import com.opus.opus.modules.file.application.convenience.FileConvenience;
-import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
+import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.FileImageType;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
@@ -52,17 +52,20 @@ public class TeamQueryService {
     private final TeamLikeConvenience teamLikeConvenience;
     private final ContestAwardConvenience contestAwardConvenience;
     private final TeamConvenience teamConvenience;
-    private final FileConvenience fileConvenience;
-
-    private final FileRepository fileRepository;
+    private final FileImageConvenience fileImageConvenience;
 
     private final FileQueryService fileQueryService;
 
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileRepository.findById(imageId).orElseThrow(() -> new FileException(NOT_EXISTS_PREVIEW));
-        checkImageConverted(findFile);
-        final FileResource storageResult = fileQueryService.findFileAndType(findFile.getId());
+        final FileImage findFileImage = fileImageConvenience.findByFileImageId(imageId);
+        if (!findFileImage.getReferenceId().equals(teamId)
+                || findFileImage.getReferenceType() != TEAM
+                || findFileImage.getImageType() != PREVIEW) {
+            throw new FileException(NOT_EXISTS_PREVIEW);
+        }
+        checkImageConverted(findFileImage);
+        final FileResource storageResult = fileQueryService.findFileAndType(findFileImage.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
@@ -79,7 +82,7 @@ public class TeamQueryService {
 
         final List<TeamMemberResponse> teamMemberResponses = getTeamMemberResponses(team);
         final List<TeamContestAwardResponse.AwardInfo> awards = getAwardInfos(team);
-        final List<Long> previewIds = fileConvenience.findAllPreviewIdsByTeamId(teamId);
+        final List<Long> previewIds = fileImageConvenience.findAllImageIds(teamId, TEAM, PREVIEW);
 
         final Boolean isVoted = teamVoteConvenience.getIsVotedIfInPeriod(team, member, contest.isVotingPeriod());
         final Boolean isLiked = teamLikeConvenience.getIsLikedIfInPeriod(team, member, contest.isVotingPeriod());
@@ -132,7 +135,7 @@ public class TeamQueryService {
     }
 
     private Optional<ImageResponse> getTeamThumbnail(final Long teamId) {
-        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
+        return fileImageConvenience.findOptionalByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM, THUMBNAIL)
                 .map(this::getImageResponse);
     }
 
@@ -140,7 +143,7 @@ public class TeamQueryService {
         if (trackId == null) {
             return Optional.empty();
         }
-        return fileRepository.findByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
+        return fileImageConvenience.findOptionalByReferenceIdAndReferenceTypeAndImageType(trackId, TRACK, THUMBNAIL)
                 .map(this::getImageResponse);
     }
 
@@ -155,19 +158,19 @@ public class TeamQueryService {
 
     private ImageResponse getImage(final Long teamId, final FileImageType fileImageType) {
         teamConvenience.validateExistTeam(teamId);
-        final File findFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
+        final FileImage findFileImage = fileImageConvenience.findByReferenceIdAndReferenceTypeAndImageType(teamId, TEAM,
                 fileImageType);
-        return getImageResponse(findFile);
+        return getImageResponse(findFileImage);
     }
 
-    private ImageResponse getImageResponse(final File findFile) {
-        checkImageConverted(findFile);
-        final FileResource storageResult = fileQueryService.findFileAndType(findFile.getId());
+    private ImageResponse getImageResponse(final FileImage findFileImage) {
+        checkImageConverted(findFileImage);
+        final FileResource storageResult = fileQueryService.findFileAndType(findFileImage.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
-    private void checkImageConverted(final File findFile) {
-        if (!findFile.getIsWebpConverted()) {
+    private void checkImageConverted(final FileImage findFileImage) {
+        if (!findFileImage.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
     }

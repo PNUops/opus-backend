@@ -29,8 +29,8 @@ import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.file.application.convenience.FileConvenience;
-import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
+import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
@@ -80,7 +80,7 @@ public class ContestQueryService {
     private final TeamLikeConvenience teamLikeConvenience;
     private final MemberConvenience memberConvenience;
     private final TeamContestAwardConvenience teamContestAwardConvenience;
-    private final FileConvenience fileConvenience;
+    private final FileImageConvenience fileImageConvenience;
 
     private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
@@ -102,12 +102,12 @@ public class ContestQueryService {
 
     public ImageResponse getContestBanner(final Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
-        final File findBanner = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(contestId, CONTEST,
-                BANNER);
+        final FileImage findBanner = fileImageConvenience.findByReferenceIdAndReferenceTypeAndImageType(contestId,
+                CONTEST, BANNER);
 
         checkImageConverted(findBanner);
 
-        final FileResource storageResult = fileQueryService.findFileAndType(findBanner.getId());
+        final FileResource storageResult = fileQueryService.findFileAndType(findBanner.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 
@@ -268,8 +268,8 @@ public class ContestQueryService {
         return getContestTeamSummaries(contestId, null);
     }
 
-    private void checkImageConverted(final File findFile) {
-        if (!findFile.getIsWebpConverted()) {
+    private void checkImageConverted(final FileImage findFileImage) {
+        if (!findFileImage.getIsWebpConverted()) {
             throw new FileException(NOT_WEBP_CONVERTED);
         }
     }

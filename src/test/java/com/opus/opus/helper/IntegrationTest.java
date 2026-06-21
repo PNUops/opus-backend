@@ -3,7 +3,8 @@ package com.opus.opus.helper;
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.CacheRedisUtil;
-import com.opus.opus.modules.file.application.FileCommandService;
+import com.opus.opus.modules.file.application.FileDocumentCommandService;
+import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
@@ -39,7 +40,10 @@ public abstract class IntegrationTest extends ApiTestHelper {
     protected GoogleTokenManager googleTokenManager;
 
     @MockitoBean
-    protected FileCommandService fileCommandService;
+    protected FileImageCommandService fileImageCommandService;
+
+    @MockitoBean
+    protected FileDocumentCommandService fileDocumentCommandService;
 
     @MockitoBean
     protected FileQueryService fileQueryService;

@@ -4,8 +4,8 @@ import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 
 import com.opus.opus.modules.file.application.FileQueryService;
-import com.opus.opus.modules.file.application.convenience.FileConvenience;
-import com.opus.opus.modules.file.domain.File;
+import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
+import com.opus.opus.modules.file.domain.FileImage;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
@@ -52,7 +52,7 @@ public class MemberQueryService {
     private static final int LIKE_PREVIEW_SIZE = 3;
 
     private final MemberConvenience memberConvenience;
-    private final FileConvenience fileConvenience;
+    private final FileImageConvenience fileImageConvenience;
     private final FileQueryService fileQueryService;
     private final TeamCommentRepository teamCommentRepository;
     private final TeamLikeRepository teamLikeRepository;
@@ -88,8 +88,8 @@ public class MemberQueryService {
     }
 
     public ImageResponse getProfileImage(final Member member) {
-        final File profileFile = fileConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
-        final FileResource storageResult = fileQueryService.findFileAndType(profileFile.getId());
+        final FileImage profileFile = fileImageConvenience.findByReferenceIdAndReferenceTypeAndImageType(member.getId(), MEMBER, PROFILE);
+        final FileResource storageResult = fileQueryService.findFileAndType(profileFile.getFile().getId());
         return new ImageResponse(storageResult.resource(), storageResult.mimeType());
     }
 

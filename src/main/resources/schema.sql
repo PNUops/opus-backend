@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS `contest_sort`;
 DROP TABLE IF EXISTS `contest_track`;
 DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
+DROP TABLE IF EXISTS `file_document`;
+DROP TABLE IF EXISTS `file_image`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
 DROP TABLE IF EXISTS `notification`;
@@ -139,12 +141,44 @@ CREATE TABLE `file` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_path` varchar(255) NOT NULL,
+  `file_size` bigint NOT NULL,
+  `mime_type` varchar(100) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `file_image` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `file_id` bigint NOT NULL,
   `image_type` enum('BANNER','PREVIEW','THUMBNAIL','POSTER','PROFILE') NOT NULL,
   `is_webp_converted` bit(1) NOT NULL,
-  `name` varchar(255) NOT NULL,
   `reference_id` bigint NOT NULL,
   `reference_type` enum('CONTEST','TEAM','TRACK','MEMBER') NOT NULL,
-  PRIMARY KEY (`id`)
+  `single_image_key` varchar(255) GENERATED ALWAYS AS (
+    CASE WHEN image_type != 'PREVIEW'
+         THEN CONCAT(reference_id, '_', reference_type, '_', image_type)
+         ELSE NULL END
+  ) VIRTUAL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_file_image_file_id` (`file_id`),
+  UNIQUE KEY `uk_file_image_single_per_ref` (`single_image_key`),
+  KEY `idx_file_image_ref` (`reference_id`, `reference_type`, `image_type`),
+  KEY `idx_file_image_zombie` (`is_webp_converted`, `created_at`),
+  CONSTRAINT `fk_file_image_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `file_document` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `file_id` bigint NOT NULL,
+  `submission_id` bigint NOT NULL,
+  `file_order` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_file_document_file_id` (`file_id`),
+  CONSTRAINT `fk_file_document_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `member` (

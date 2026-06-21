@@ -7,15 +7,15 @@ import static org.mockito.Mockito.verify;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
+import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestTrackCommandService;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.modules.file.domain.File;
-import com.opus.opus.modules.file.domain.dao.FileRepository;
-import com.opus.opus.file.FileFixture;
+import com.opus.opus.modules.file.domain.FileImage;
+import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
-    private FileRepository fileRepository;
+    private FileImageRepository fileImageRepository;
 
     private Contest contest;
     private ContestTrack track;
@@ -48,27 +48,24 @@ class ContestTrackCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 분과 기본 썸네일을 저장하면 기존 파일은 삭제되고 새 파일이 저장된다.")
     void 분과_기본_썸네일_저장_성공() {
         // given
-        File oldFile = fileRepository.save(FileFixture.createTrackThumbnailFile(track.getId()));
+        fileImageRepository.save(FileFixture.createTrackThumbnailFileImage(track.getId()));
 
         MultipartFile image = new MockMultipartFile("image", "new.jpg", "image/jpeg", "content".getBytes());
-        
+
         // when
         contestTrackCommandService.saveContestTrackDefaultThumbnail(contest.getId(), track.getId(), image);
 
         // then
-        verify(fileCommandService, times(1)).replaceImageFile(image, track.getId(), TRACK, THUMBNAIL);
+        verify(fileImageCommandService, times(1)).replaceImageFile(image, track.getId(), TRACK, THUMBNAIL);
     }
 
     @Test
     @DisplayName("[성공] 분과 기본 썸네일을 삭제한다.")
     void 분과_기본_썸네일_삭제_성공() {
-        // given
-        File file = fileRepository.save(FileFixture.createTrackThumbnailFile(track.getId()));
-
         // when
         contestTrackCommandService.deleteContestTrackDefaultThumbnail(contest.getId(), track.getId());
 
         // then
-        verify(fileCommandService, times(1)).deleteFile(file.getId());
+        verify(fileImageCommandService, times(1)).deleteIfExists(track.getId(), TRACK, THUMBNAIL);
     }
 }
