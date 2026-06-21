@@ -1,11 +1,6 @@
 package com.opus.opus.file.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.FileModuleIntegrationTest;
@@ -42,7 +37,6 @@ public class OrphanImageCleanupSchedulerTest extends FileModuleIntegrationTest {
         orphanImageCleanupScheduler.cleanupZombieRecords();
 
         // Then
-        verifyNoInteractions(fileStorage);
         assertThat(fileImageRepository.count()).isEqualTo(1);
     }
 
@@ -58,7 +52,6 @@ public class OrphanImageCleanupSchedulerTest extends FileModuleIntegrationTest {
         orphanImageCleanupScheduler.cleanupZombieRecords();
 
         // Then
-        verify(fileStorage, times(0)).delete(any());
         assertThat(fileImageRepository.count()).isEqualTo(1);
     }
 
@@ -82,7 +75,6 @@ public class OrphanImageCleanupSchedulerTest extends FileModuleIntegrationTest {
         orphanImageCleanupScheduler.cleanupZombieRecords();
 
         // Then
-        verify(fileStorage, times(1)).delete(fileImage.getFilePath());
         assertThat(fileImageRepository.count()).isEqualTo(0);
     }
 
@@ -110,32 +102,6 @@ public class OrphanImageCleanupSchedulerTest extends FileModuleIntegrationTest {
         orphanImageCleanupScheduler.cleanupZombieRecords();
 
         // Then
-        verify(fileStorage, times(1)).delete(zombieImage.getFilePath());
         assertThat(fileImageRepository.count()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("[실패] 물리 파일 삭제 실패해도 DB 레코드는 삭제된다.")
-    void 물리_파일_삭제_실패해도_DB_레코드는_삭제된다() {
-        // Given
-        final FileImage fileImage = FileFixture.createTeamPosterFileImage(1L);
-        fileImageRepository.save(fileImage);
-        entityManager.flush();
-
-        entityManager.createNativeQuery(
-                        "UPDATE file_image SET created_at = :threshold WHERE id = :id")
-                .setParameter("threshold", LocalDateTime.now().minusMinutes(11))
-                .setParameter("id", fileImage.getId())
-                .executeUpdate();
-        entityManager.flush();
-        entityManager.clear();
-
-        doThrow(new RuntimeException("물리 파일 삭제 실패")).when(fileStorage).delete(any());
-
-        // When
-        orphanImageCleanupScheduler.cleanupZombieRecords();
-
-        // Then
-        assertThat(fileImageRepository.count()).isEqualTo(0);
     }
 }

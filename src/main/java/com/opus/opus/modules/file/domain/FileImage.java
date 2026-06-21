@@ -60,6 +60,7 @@ public class FileImage extends BaseEntity {
 
     public void markWebpConverted() {
         this.isWebpConverted = true;
+        this.file.updateMimeType("image/webp");
     }
 
     public String getFilePath() {
