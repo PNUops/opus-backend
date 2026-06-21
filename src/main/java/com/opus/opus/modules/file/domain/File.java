@@ -31,6 +31,10 @@ public class File extends BaseEntity {
     @Column(nullable = false)
     private Long fileSize;
 
+    public void updateMimeType(final String mimeType) {
+        this.mimeType = mimeType;
+    }
+
     public static File create(final String name, final String filePath, final String mimeType, final Long fileSize) {
         final File file = new File();
         file.name = (name != null) ? name : "unnamed";
