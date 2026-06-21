@@ -59,7 +59,9 @@ public class TeamQueryService {
     public ImageResponse getPreviewImage(final Long teamId, final Long imageId) {
         teamConvenience.validateExistTeam(teamId);
         final FileImage findFileImage = fileImageConvenience.findByFileImageId(imageId);
-        if (!findFileImage.getReferenceId().equals(teamId) || findFileImage.getReferenceType() != TEAM) {
+        if (!findFileImage.getReferenceId().equals(teamId)
+                || findFileImage.getReferenceType() != TEAM
+                || findFileImage.getImageType() != PREVIEW) {
             throw new FileException(NOT_EXISTS_PREVIEW);
         }
         checkImageConverted(findFileImage);

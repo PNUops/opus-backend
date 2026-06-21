@@ -5,6 +5,7 @@ import static com.opus.opus.modules.file.domain.FileImageType.PREVIEW;
 import static com.opus.opus.modules.file.domain.FileImageType.THUMBNAIL;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EXCEED_PREVIEW_LIMIT;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PREVIEW;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.FORBIDDEN_CONTEST_OR_TRACK_UPDATE;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.REQUIRED_FIELD_MISSING;
 import static com.opus.opus.modules.team.exception.TeamVoteExceptionType.VOTE_LIMIT_EXCEEDED;
@@ -16,6 +17,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
+import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
@@ -175,7 +177,15 @@ public class TeamCommandService {
     public void deletePreviewImages(final Long teamId, final List<Long> ids, final Member member) {
         teamConvenience.validateExistTeam(teamId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        ids.forEach(fileImageCommandService::deleteImageFile);
+        ids.forEach(id -> {
+            final FileImage fileImage = fileImageConvenience.findByFileImageId(id);
+            if (!fileImage.getReferenceId().equals(teamId)
+                    || fileImage.getReferenceType() != TEAM
+                    || fileImage.getImageType() != PREVIEW) {
+                throw new FileException(NOT_EXISTS_PREVIEW);
+            }
+            fileImageCommandService.deleteImageFile(id);
+        });
     }
 
     public void saveThumbnailImage(final Long teamId, final MultipartFile image, final Member member) {
