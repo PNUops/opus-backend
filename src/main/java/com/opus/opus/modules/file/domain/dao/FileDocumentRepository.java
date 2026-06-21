@@ -8,6 +8,4 @@ public interface FileDocumentRepository extends JpaRepository<FileDocument, Long
 
     List<FileDocument> findAllBySubmissionIdOrderByFileOrder(Long submissionId);
 
-    void deleteAllBySubmissionId(Long submissionId);
-
 }
