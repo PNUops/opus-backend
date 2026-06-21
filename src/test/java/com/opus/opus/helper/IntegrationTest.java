@@ -3,6 +3,7 @@ package com.opus.opus.helper;
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.CacheRedisUtil;
+import com.opus.opus.modules.file.application.FileCommentCommandService;
 import com.opus.opus.modules.file.application.FileDocumentCommandService;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.file.application.FileQueryService;
@@ -44,6 +45,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
 
     @MockitoBean
     protected FileDocumentCommandService fileDocumentCommandService;
+
+    @MockitoBean
+    protected FileCommentCommandService fileCommentCommandService;
 
     @MockitoBean
     protected FileQueryService fileQueryService;
