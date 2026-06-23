@@ -59,6 +59,18 @@ include::{snippets}/create-submission-comment-fail-blank/http-response.adoc[]
 
 ====
 
+.❌ Case 3: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-submission-comment-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/create-submission-comment-fail-contest-not-found/http-response.adoc[]
+
+====
+
 == `GET`: 제출물 코멘트 목록 조회
 
 특정 제출물에 달린 코멘트 전체를 스레드 형태로 조회합니다.
@@ -77,6 +89,32 @@ include::{snippets}/get-submission-comments/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-submission-comments/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-submission-comments-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-submission-comments-fail-contest-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-submission-comments-fail-submission-not-found/http-request.adoc[]
+
+include::{snippets}/get-submission-comments-fail-submission-not-found/http-response.adoc[]
+
+====
 
 == `PATCH`: 제출물 코멘트 수정
 
@@ -111,6 +149,54 @@ include::{snippets}/update-submission-comment-fail-not-owner/http-response.adoc[
 
 ====
 
+.❌ Case 2: 수정할 내용이 모두 비어있음
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-submission-comment-fail-nothing-to-update/http-request.adoc[]
+
+include::{snippets}/update-submission-comment-fail-nothing-to-update/http-response.adoc[]
+
+====
+
+.❌ Case 3: 존재하지 않는 코멘트
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-submission-comment-fail-comment-not-found/http-request.adoc[]
+
+include::{snippets}/update-submission-comment-fail-comment-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 4: 코멘트가 해당 제출물에 속하지 않음
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-submission-comment-fail-not-belong/http-request.adoc[]
+
+include::{snippets}/update-submission-comment-fail-not-belong/http-response.adoc[]
+
+====
+
+.❌ Case 5: 삭제할 첨부파일을 찾을 수 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-submission-comment-fail-file-not-found/http-request.adoc[]
+
+include::{snippets}/update-submission-comment-fail-file-not-found/http-response.adoc[]
+
+====
+
 == `DELETE`: 제출물 코멘트 삭제
 
 본인이 작성한 코멘트를 삭제합니다. 해당 코멘트에 달린 첨부파일도 함께 제거됩니다.
@@ -138,5 +224,29 @@ include::{snippets}/delete-submission-comment/http-response.adoc[]
 include::{snippets}/delete-submission-comment-fail-not-owner/http-request.adoc[]
 
 include::{snippets}/delete-submission-comment-fail-not-owner/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 코멘트
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-submission-comment-fail-comment-not-found/http-request.adoc[]
+
+include::{snippets}/delete-submission-comment-fail-comment-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 3: 코멘트가 해당 제출물에 속하지 않음
+
+[%collapsible]
+
+====
+
+include::{snippets}/delete-submission-comment-fail-not-belong/http-request.adoc[]
+
+include::{snippets}/delete-submission-comment-fail-not-belong/http-response.adoc[]
 
 ====
