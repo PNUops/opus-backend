@@ -26,6 +26,7 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileComment;
 import com.opus.opus.modules.file.domain.dao.FileCommentRepository;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +79,17 @@ public class ContestSubmissionCommentQueryServiceTest extends IntegrationTest {
                 .isEqualTo(ContestSubmissionCommentFixture.COMMENT_DESCRIPTION);
         assertThat(response.get(0).memberId()).isEqualTo(member.getId());
         assertThat(response.get(0).memberName()).isEqualTo(member.getName());
+    }
+
+    @Test
+    @DisplayName("[성공] 코멘트 응답에 작성자 역할이 포함된다.")
+    void 코멘트_응답에_작성자_역할이_포함된다() {
+        commentRepository.save(ContestSubmissionCommentFixture.createComment(submission, member.getId()));
+
+        final List<ContestSubmissionCommentResponse> response =
+                commentQueryService.getComments(contest.getId(), submission.getId());
+
+        assertThat(response.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_학생.name());
     }
 
     @Test
@@ -137,6 +149,7 @@ public class ContestSubmissionCommentQueryServiceTest extends IntegrationTest {
         assertThat(response).hasSize(1);
         assertThat(response.get(0).memberId()).isEqualTo(leaver.getId());
         assertThat(response.get(0).memberName()).isNull();
+        assertThat(response.get(0).roleType()).isNull();
     }
 
     @Test

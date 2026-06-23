@@ -5,7 +5,6 @@ import java.util.List;
 public record ContestSubmissionCommentUpdateRequest(
 
         String description,
-
         List<Long> removeFileIds
 ) {
 }

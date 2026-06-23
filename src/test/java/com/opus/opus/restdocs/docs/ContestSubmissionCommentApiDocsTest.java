@@ -1,7 +1,12 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionCommentExceptionType.COMMENT_NOT_BELONG_TO_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionCommentExceptionType.NOTHING_TO_UPDATE;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -23,8 +28,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionCommentFileResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionCommentResponse;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionCommentException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionException;
+import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
@@ -128,6 +135,7 @@ public class ContestSubmissionCommentApiDocsTest extends RestDocsTest {
                         31L, 5L, "이지민", "발표 흐름이 좋네요. 데모 영상 길이만 조금 줄여보세요.",
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
+                        "ROLE_교수",
                         List.of(new ContestSubmissionCommentFileResponse(201L, "피드백.pdf", 524288L))
                 )
         );
@@ -153,6 +161,7 @@ public class ContestSubmissionCommentApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].description", "코멘트 본문"),
                                 dateTimeFieldWithPath("[].createdAt", "작성 시각"),
                                 dateTimeFieldWithPath("[].updatedAt", "마지막 수정 시각"),
+                                stringFieldWithPath("[].roleType", "작성자 역할 (MemberRoleType)"),
                                 arrayFieldWithPath("[].files", "첨부파일 목록"),
                                 numberFieldWithPath("[].files[].fileId", "첨부파일 ID"),
                                 stringFieldWithPath("[].files[].fileName", "첨부파일명"),
@@ -259,6 +268,224 @@ public class ContestSubmissionCommentApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("submissionId").description("제출물 ID"),
                                 parameterWithName("commentId").description("다른 사람이 작성한 코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회에 코멘트 등록 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회에_코멘트_등록_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestSubmissionCommentCommandService)
+                .createComment(any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/comments", 999, 12)
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isNotFound())
+                .andDo(document("create-submission-comment-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 코멘트 목록 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_코멘트_목록_조회_시_에러를_반환한다() throws Exception {
+        when(contestSubmissionCommentQueryService.getComments(any(), any()))
+                .thenThrow(new ContestException(NOT_FOUND_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/comments", 999, 12)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-submission-comments-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물의 코멘트 목록 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출물의_코멘트_목록_조회_시_에러를_반환한다() throws Exception {
+        when(contestSubmissionCommentQueryService.getComments(any(), any()))
+                .thenThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION));
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/comments", 1, 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-submission-comments-fail-submission-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("존재하지 않는 제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 수정할 내용이 모두 비어있으면 400 에러를 반환한다.")
+    void 수정할_내용이_모두_비어있으면_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionCommentException(NOTHING_TO_UPDATE))
+                .given(contestSubmissionCommentCommandService)
+                .updateComment(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 31)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        }))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-submission-comment-fail-nothing-to-update",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("수정할 코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 코멘트 수정 시 404 에러를 반환한다.")
+    void 존재하지_않는_코멘트_수정_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionCommentException(NOT_FOUND_COMMENT))
+                .given(contestSubmissionCommentCommandService)
+                .updateComment(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 999)
+                        .param("description", "코멘트 본문을 수정합니다.")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        }))
+                .andExpect(status().isNotFound())
+                .andDo(document("update-submission-comment-fail-comment-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("존재하지 않는 코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 코멘트가 해당 제출물에 속하지 않으면 400 에러를 반환한다.")
+    void 코멘트가_해당_제출물에_속하지_않으면_수정_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionCommentException(COMMENT_NOT_BELONG_TO_SUBMISSION))
+                .given(contestSubmissionCommentCommandService)
+                .updateComment(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 31)
+                        .param("description", "코멘트 본문을 수정합니다.")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        }))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-submission-comment-fail-not-belong",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("다른 제출물에 속한 코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 삭제할 첨부파일을 찾을 수 없으면 404 에러를 반환한다.")
+    void 삭제할_첨부파일을_찾을_수_없으면_에러를_반환한다() throws Exception {
+        willThrow(new FileException(NOT_FOUND, "삭제할 파일을 찾을 수 없습니다. ID=201"))
+                .given(contestSubmissionCommentCommandService)
+                .updateComment(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 31)
+                        .param("removeFileIds", "201")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        }))
+                .andExpect(status().isNotFound())
+                .andDo(document("update-submission-comment-fail-file-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 코멘트 삭제 시 404 에러를 반환한다.")
+    void 존재하지_않는_코멘트_삭제_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionCommentException(NOT_FOUND_COMMENT))
+                .given(contestSubmissionCommentCommandService)
+                .deleteComment(any(), any(), any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("delete-submission-comment-fail-comment-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("존재하지 않는 코멘트 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 코멘트가 해당 제출물에 속하지 않으면 삭제 시 400 에러를 반환한다.")
+    void 코멘트가_해당_제출물에_속하지_않으면_삭제_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionCommentException(COMMENT_NOT_BELONG_TO_SUBMISSION))
+                .given(contestSubmissionCommentCommandService)
+                .deleteComment(any(), any(), any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/submissions/{submissionId}/comments/{commentId}", 1, 12, 31)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("delete-submission-comment-fail-not-belong",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("commentId").description("다른 제출물에 속한 코멘트 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
