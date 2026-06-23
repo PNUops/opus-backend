@@ -119,6 +119,10 @@ public class Member extends BaseEntity {
         return roles.contains(MemberRoleType.ROLE_관리자);
     }
 
+    public boolean isStudent() {
+        return roles.contains(MemberRoleType.ROLE_학생);
+    }
+
     public void updateGithubUrl(final String githubUrl) {
         this.githubUrl = githubUrl;
     }

@@ -1,0 +1,24 @@
+package com.opus.opus.modules.contest.application.convenience;
+
+
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
+
+import com.opus.opus.modules.contest.domain.ContestSubmission;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
+import com.opus.opus.modules.contest.exception.ContestException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ContestSubmissionConvenience {
+
+    private final ContestSubmissionRepository contestSubmissionRepository;
+
+    public ContestSubmission getValidateExistSubmission(final Long submissionId) {
+        return contestSubmissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
+    }
+}
