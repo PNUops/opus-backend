@@ -30,4 +30,8 @@ public class ContestSubmissionConvenience {
     public ContestSubmission save(final ContestSubmission submission) {
         return contestSubmissionRepository.save(submission);
     }
+
+    public void delete(final ContestSubmission submission) {
+        contestSubmissionRepository.delete(submission);
+    }
 }

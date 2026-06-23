@@ -236,6 +236,26 @@ public class ContestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @PostMapping("/{contestId}/submissions/{submissionId}/files")
+    public ResponseEntity<Void> addSubmissionFiles(@PathVariable final Long contestId,
+                                                   @PathVariable final Long submissionId,
+                                                   @RequestPart("files") final List<MultipartFile> files,
+                                                   @LoginMember final Member member) {
+        contestSubmissionCommandService.addFiles(contestId, submissionId, files, member);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @DeleteMapping("/{contestId}/submissions/{submissionId}/files/{fileId}")
+    public ResponseEntity<Void> deleteSubmissionFile(@PathVariable final Long contestId,
+                                                     @PathVariable final Long submissionId,
+                                                     @PathVariable final Long fileId,
+                                                     @LoginMember final Member member) {
+        contestSubmissionCommandService.deleteFile(contestId, submissionId, fileId, member);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{contestId}/template")
     public ResponseEntity<ContestTemplateResponse> getContestTemplate(@PathVariable final Long contestId) {
         final ContestTemplateResponse response = contestQueryService.getContestTemplate(contestId);
