@@ -34,6 +34,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -54,8 +55,11 @@ import com.opus.opus.modules.contest.application.dto.response.TeamBulkErrorRespo
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse.TeamBulkResult;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
+import com.opus.opus.modules.contest.domain.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
@@ -908,6 +912,175 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .andDo(document("get-team-submissions-fail-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        )
+                ));
+    }
+
+    private void loginMember() {
+        when(memberArgumentResolver.supportsParameter(any())).thenReturn(true);
+        when(memberArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(member);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물 상세를 조회한다.")
+    void 제출물_상세를_조회한다() throws Exception {
+        loginMember();
+        final ContestSubmissionDetailResponse response = new ContestSubmissionDetailResponse(
+                12L, 3L, "오퍼스", "교내 성과 관리 플랫폼", "AI/데이터", "최종 발표 자료",
+                SubmissionStatus.SUBMITTED,
+                LocalDateTime.of(2026, 6, 5, 23, 59, 59),
+                LocalDateTime.of(2026, 6, 1, 10, 12, 33),
+                LocalDateTime.of(2026, 6, 3, 22, 1, 0),
+                List.of(
+                        new ContestSubmissionDetailResponse.FileResponse(101L, "발표자료.pdf", 1048576L),
+                        new ContestSubmissionDetailResponse.FileResponse(102L, "데모영상.mp4", 20971520L)
+                ),
+                0
+        );
+
+        when(contestQueryService.getSubmissionDetail(any(), any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}", 1L, 12L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-submission-detail",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("submissionId", "제출 ID"),
+                                numberFieldWithPath("teamId", "팀 ID"),
+                                stringFieldWithPath("teamName", "팀 이름"),
+                                stringFieldWithPath("projectOverview", "프로젝트 설명"),
+                                stringFieldWithPath("trackName", "분과명 (분과 미지정 시 null)"),
+                                stringFieldWithPath("submissionTypeName", "제출물 종류명"),
+                                stringFieldWithPath("status", "제출 상태(계산값) - 단건 조회에서는 SUBMITTED / LATE"),
+                                dateTimeFieldWithPath("deadlineAt", "제출 마감일시"),
+                                dateTimeFieldWithPath("firstSubmittedAt", "최초 제출일시"),
+                                dateTimeFieldWithPath("lastModifiedAt", "마지막 수정일시"),
+                                arrayFieldWithPath("files[]", "업로드된 파일 목록"),
+                                numberFieldWithPath("files[].fileId", "파일 ID"),
+                                stringFieldWithPath("files[].fileName", "파일명"),
+                                numberFieldWithPath("files[].fileSize", "파일 용량 (byte)"),
+                                numberFieldWithPath("commentCount", "코멘트 개수 (코멘트 기능 추가 전까지 항상 0)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물 상세 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출물_상세_조회_시_에러를_반환한다() throws Exception {
+        loginMember();
+
+        willThrow(new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION))
+                .given(contestQueryService)
+                .getSubmissionDetail(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}", 1L, 999L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-submission-detail-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("존재하지 않는 제출 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 항목에 파일을 제출한다.")
+    void 제출_항목에_파일을_제출한다() throws Exception {
+        loginMember();
+        final MockMultipartFile file = new MockMultipartFile(
+                "files", "발표자료.pdf", "application/pdf", "file-content".getBytes());
+
+        when(contestSubmissionCommandService.createSubmission(any(), any(), any(), any(), any()))
+                .thenReturn(new SubmissionCreateResponse(12L));
+
+        mockMvc.perform(multipart("/contests/{contestId}/submission-items/{submissionItemId}/submissions", 1L, 10L)
+                        .file(file)
+                        .queryParam("teamId", "3")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andDo(document("create-submission",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        queryParameters(
+                                parameterWithName("teamId").description("제출하는 팀 ID")
+                        ),
+                        requestParts(
+                                partWithName("files").description("업로드할 파일 목록 (여러 개 가능)")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("submissionId", "생성된 제출 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 제출물에 파일을 추가한다.")
+    void 기존_제출물에_파일을_추가한다() throws Exception {
+        loginMember();
+        final MockMultipartFile file = new MockMultipartFile(
+                "files", "추가자료.pdf", "application/pdf", "file-content".getBytes());
+
+        doNothing().when(contestSubmissionCommandService).addFiles(any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/files", 1L, 12L)
+                        .file(file)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andDo(document("add-submission-files",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        requestParts(
+                                partWithName("files").description("추가할 파일 목록 (기존 파일 포함 maxFileCount 이내)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물의 파일 한 건을 삭제한다.")
+    void 제출물의_파일_한_건을_삭제한다() throws Exception {
+        loginMember();
+
+        doNothing().when(contestSubmissionCommandService).deleteFile(any(), any(), any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/submissions/{submissionId}/files/{fileId}", 1L, 12L, 101L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-submission-file",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID"),
+                                parameterWithName("fileId").description("삭제할 파일 ID (FileDocument ID)")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
                         )
                 ));
     }

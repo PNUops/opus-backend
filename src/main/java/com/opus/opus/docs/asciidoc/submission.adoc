@@ -1,0 +1,114 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= SUBMISSION API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== 제출물 상세 조회
+=== `GET`: 제출물 상세 조회
+
+한 팀이 특정 제출물 종류로 낸 제출 한 건의 상세 정보를 조회합니다. +
+`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자/교수/직원/외부멘토는 제한이 없습니다. +
+`status`는 계산값으로, 단건 조회에서는 `SUBMITTED`(마감 내) / `LATE`(마감 후)만 반환됩니다. +
+`commentCount`는 제출물 코멘트 기능 추가 전까지 항상 0입니다.
+
+.HTTP Request
+include::{snippets}/get-submission-detail/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-detail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-submission-detail/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-detail/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-submission-detail/response-fields.adoc[]
+
+=== `GET`: 제출물 상세 조회 실패 (존재하지 않는 제출)
+
+.HTTP Request
+include::{snippets}/get-submission-detail-fail-not-found/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-detail-fail-not-found/path-parameters.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-detail-fail-not-found/http-response.adoc[]
+
+== 제출물 제출
+=== `POST`: 제출물 제출
+
+팀이 특정 제출 항목에 파일을 제출합니다. (`multipart/form-data`, 여러 파일 가능) +
+한 팀이 동일한 제출 항목에 중복 제출할 수 없으며, 파일을 추가하려면 "제출 파일 추가" API를 사용합니다. +
+`teamId`는 요청 파라미터로 전달하며, `ROLE_학생`은 해당 팀의 팀장/팀원이어야 합니다.
+
+.HTTP Request
+include::{snippets}/create-submission/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/create-submission/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/create-submission/request-headers.adoc[]
+
+.Query Parameters
+include::{snippets}/create-submission/query-parameters.adoc[]
+
+.Request Parts
+include::{snippets}/create-submission/request-parts.adoc[]
+
+.HTTP Response
+include::{snippets}/create-submission/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/create-submission/response-fields.adoc[]
+
+== 제출 파일 추가
+=== `POST`: 제출물에 파일 추가
+
+이미 제출된 제출물에 파일을 추가합니다. 기존 파일을 포함한 총 개수가 `maxFileCount`를 초과할 수 없습니다.
+
+.HTTP Request
+include::{snippets}/add-submission-files/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/add-submission-files/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/add-submission-files/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/add-submission-files/request-parts.adoc[]
+
+.HTTP Response
+include::{snippets}/add-submission-files/http-response.adoc[]
+
+== 제출 파일 삭제
+=== `DELETE`: 제출물의 파일 삭제
+
+제출물에 첨부된 파일 한 건을 삭제합니다. 마지막 남은 파일을 삭제하면 제출 자체가 취소됩니다.
+
+.HTTP Request
+include::{snippets}/delete-submission-file/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-submission-file/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-submission-file/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-submission-file/http-response.adoc[]
