@@ -50,4 +50,12 @@ public class ContestSubmission extends BaseEntity {
         this.submissionItem = submissionItem;
         this.isDeleted = false;
     }
+
+    public static ContestSubmission create(final Long teamId, final ContestSubmissionItem submissionItem) {
+        return ContestSubmission.builder()
+                .teamId(teamId)
+                .firstSubmittedAt(LocalDateTime.now())
+                .submissionItem(submissionItem)
+                .build();
+    }
 }

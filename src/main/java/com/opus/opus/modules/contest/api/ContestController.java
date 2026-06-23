@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.api;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
@@ -21,6 +22,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
@@ -58,6 +60,7 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final ContestSubmissionCommandService contestSubmissionCommandService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -219,6 +222,18 @@ public class ContestController {
         final ContestSubmissionDetailResponse response = contestQueryService.getSubmissionDetail(contestId,
                 submissionId, member);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @PostMapping("/{contestId}/submission-items/{submissionItemId}/submissions")
+    public ResponseEntity<SubmissionCreateResponse> createSubmission(@PathVariable final Long contestId,
+                                                                     @PathVariable final Long submissionItemId,
+                                                                     @RequestParam final Long teamId,
+                                                                     @RequestPart("files") final List<MultipartFile> files,
+                                                                     @LoginMember final Member member) {
+        final SubmissionCreateResponse response = contestSubmissionCommandService.createSubmission(contestId,
+                submissionItemId, teamId, files, member);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{contestId}/template")

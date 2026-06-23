@@ -4,6 +4,7 @@ package com.opus.opus.modules.contest.application.convenience;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
+import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,13 @@ public class ContestSubmissionConvenience {
     public ContestSubmission getValidateExistSubmission(final Long submissionId) {
         return contestSubmissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
+    }
+
+    public boolean existsSubmission(final Long teamId, final ContestSubmissionItem submissionItem) {
+        return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
+    }
+
+    public ContestSubmission save(final ContestSubmission submission) {
+        return contestSubmissionRepository.save(submission);
     }
 }
