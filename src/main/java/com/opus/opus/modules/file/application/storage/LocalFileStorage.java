@@ -3,6 +3,7 @@ package com.opus.opus.modules.file.application.storage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +46,19 @@ public class LocalFileStorage implements FileStorage {
         }
         try {
             return Files.readAllBytes(fullPath);
+        } catch (IOException e) {
+            throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE, FileExceptionType.NOT_EXISTS_PHYSICAL_FILE.errorMessage(), e);
+        }
+    }
+
+    @Override
+    public InputStream loadAsStream(final String relativePath) {
+        final Path fullPath = resolveSafely(relativePath);
+        if (!Files.exists(fullPath)) {
+            throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE);
+        }
+        try {
+            return Files.newInputStream(fullPath);
         } catch (IOException e) {
             throw new FileException(FileExceptionType.NOT_EXISTS_PHYSICAL_FILE, FileExceptionType.NOT_EXISTS_PHYSICAL_FILE.errorMessage(), e);
         }
