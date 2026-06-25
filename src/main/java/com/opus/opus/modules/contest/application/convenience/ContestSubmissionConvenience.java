@@ -26,12 +26,4 @@ public class ContestSubmissionConvenience {
     public boolean existsSubmission(final Long teamId, final ContestSubmissionItem submissionItem) {
         return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
     }
-
-    public ContestSubmission save(final ContestSubmission submission) {
-        return contestSubmissionRepository.save(submission);
-    }
-
-    public void delete(final ContestSubmission submission) {
-        contestSubmissionRepository.delete(submission);
-    }
 }

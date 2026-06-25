@@ -15,6 +15,7 @@ import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateRe
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.SubmissionFileFormat;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileDocumentCommandService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
@@ -43,6 +44,7 @@ public class ContestSubmissionCommandService {
     private final TeamMemberConvenience teamMemberConvenience;
     private final ContestSubmissionItemConvenience contestSubmissionItemConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestSubmissionRepository contestSubmissionRepository;
     private final FileDocumentCommandService fileDocumentCommandService;
     private final FileDocumentConvenience fileDocumentConvenience;
 
@@ -56,7 +58,7 @@ public class ContestSubmissionCommandService {
 
         validateSubmission(contestId, teamId, submissionItem, files, member);
 
-        final ContestSubmission submission = contestSubmissionConvenience.save(
+        final ContestSubmission submission = contestSubmissionRepository.save(
                 ContestSubmission.create(teamId, submissionItem));
         storeFiles(submission.getId(), files);
 
@@ -89,7 +91,7 @@ public class ContestSubmissionCommandService {
 
         fileDocumentCommandService.deleteDocumentFile(fileId);
         if (files.size() == 1) {
-            contestSubmissionConvenience.delete(submission);
+            contestSubmissionRepository.delete(submission);
         }
     }
 
