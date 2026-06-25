@@ -1,5 +1,7 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.contest.ContestSubmissionItemFixture.createRequest;
+import static com.opus.opus.contest.ContestSubmissionItemFixture.createRequestWithPeriod;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_PERIOD;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
@@ -14,7 +16,6 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.opus.opus.contest.ContestSubmissionItemFixture;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
@@ -39,7 +40,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
 
-        request = ContestSubmissionItemFixture.createRequest(1L);
+        request = createRequest(1L);
     }
 
     @Test
@@ -77,7 +78,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 시작일시가 마감일시보다 이후면 에러를 반환한다.")
     void 시작일시가_마감일시보다_이후면_에러를_반환한다() throws Exception {
-        final ContestSubmissionItemRequest invalidRequest = ContestSubmissionItemFixture.createRequestWithPeriod(
+        final ContestSubmissionItemRequest invalidRequest = createRequestWithPeriod(
                 LocalDateTime.of(2026, 8, 1, 0, 0),
                 LocalDateTime.of(2026, 7, 1, 0, 0)
         );

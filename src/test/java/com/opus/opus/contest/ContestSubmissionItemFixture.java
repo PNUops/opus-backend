@@ -1,5 +1,9 @@
 package com.opus.opus.contest;
 
+import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.PDF;
+import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.ZIP;
+import static com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC;
+
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
@@ -60,13 +64,13 @@ public class ContestSubmissionItemFixture {
                 "발표자료",
                 contestTrackId,
                 "PDF 형식의 발표자료를 제출하세요.",
-                List.of(SubmissionFileFormat.PDF, SubmissionFileFormat.ZIP),
+                List.of(PDF, ZIP),
                 50,
                 3,
                 LocalDateTime.of(2026, 7, 1, 0, 0),
                 LocalDateTime.of(2026, 7, 31, 23, 59),
                 true,
-                SubmissionVisibility.PUBLIC
+                PUBLIC
         );
     }
 
@@ -76,13 +80,13 @@ public class ContestSubmissionItemFixture {
                 "발표자료",
                 null,
                 "PDF 형식의 발표자료를 제출하세요.",
-                List.of(SubmissionFileFormat.PDF),
+                List.of(PDF),
                 50,
                 3,
                 startAt,
                 endAt,
                 true,
-                SubmissionVisibility.PUBLIC
+                PUBLIC
         );
     }
 }
