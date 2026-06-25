@@ -10,6 +10,7 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContestSubmissionItemCommandService {
 
     private final ContestSubmissionItemRepository contestSubmissionItemRepository;
+    private final ContestSubmissionRepository contestSubmissionRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
@@ -46,6 +48,14 @@ public class ContestSubmissionItemCommandService {
                 request.name(), request.description(), new HashSet<>(request.allowedFileFormats()),
                 request.maxFileSizeMb(), request.maxFileCount(), request.startAt(), request.endAt(),
                 request.allowLateSubmission(), request.visibility(), contestTrack);
+    }
+
+    public void deleteSubmissionItem(final Long contestId, final Long submissionItemId) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemConvenience.getValidateExistSubmissionItem(contestId, submissionItemId);
+        contestSubmissionRepository.deleteAllBySubmissionItemId(submissionItemId);
+        contestSubmissionItemRepository.delete(submissionItem);
     }
 
     private ContestTrack resolveContestTrack(final Long contestId, final Long contestTrackId) {
