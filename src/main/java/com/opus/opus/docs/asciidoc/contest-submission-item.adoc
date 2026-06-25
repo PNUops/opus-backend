@@ -1,0 +1,80 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST SUBMISSION ITEM API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 제출 항목 메모 생성
+
+.HTTP Request Headers
+include::{snippets}/create-submission-item-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/create-submission-item-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/create-submission-item-memo/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/create-submission-item-memo/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/create-submission-item-memo/http-response.adoc[]
+
+== `GET`: 제출 항목 메모 조회
+
+.HTTP Request Headers
+include::{snippets}/get-submission-item-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-item-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-submission-item-memo/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-item-memo/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-submission-item-memo/response-fields.adoc[]
+
+== `PATCH`: 제출 항목 메모 수정
+
+.HTTP Request Headers
+include::{snippets}/update-submission-item-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-submission-item-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-submission-item-memo/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/update-submission-item-memo/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/update-submission-item-memo/http-response.adoc[]
+
+== `DELETE`: 제출 항목 메모 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-submission-item-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-submission-item-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-submission-item-memo/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-submission-item-memo/http-response.adoc[]
