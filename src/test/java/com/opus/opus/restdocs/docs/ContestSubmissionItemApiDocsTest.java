@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
@@ -109,6 +110,25 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                 dateTimeFieldWithPath("endAt", "마감일시"),
                                 booleanFieldWithPath("allowLateSubmission", "지각 제출 허용 여부"),
                                 stringFieldWithPath("visibility", "공개 범위 (SubmissionVisibility)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 제출 항목 삭제는 성공한다.")
+    void 유효한_요청이면_제출_항목_삭제는_성공한다() throws Exception {
+        doNothing().when(contestSubmissionItemCommandService).deleteSubmissionItem(any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/submission-items/{submissionItemId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-submission-item",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         )
                 ));
     }

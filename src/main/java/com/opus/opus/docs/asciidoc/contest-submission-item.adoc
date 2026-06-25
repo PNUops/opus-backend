@@ -16,7 +16,7 @@ link:./opus.html[API 목록으로 돌아가기]
 
 == `POST`: 제출 항목 추가
 
-제출물을 낼 수 있는 설정을 추가하는 API입니다. (권한: 관리자)
+제출물을 낼 수 있는 설정을 추가하는 API입니다.
 
 .HTTP Request Headers
 include::{snippets}/create-submission-item/request-headers.adoc[]
@@ -51,7 +51,7 @@ include::{snippets}/create-submission-item-fail/request-fields.adoc[]
 
 == `PATCH`: 제출 항목 수정
 
-저장된 제출 항목 설정을 수정하는 API입니다. (권한: 관리자)
+저장된 제출 항목 설정을 수정하는 API입니다.
 
 .HTTP Request Headers
 include::{snippets}/update-submission-item/request-headers.adoc[]
@@ -67,3 +67,19 @@ include::{snippets}/update-submission-item/request-fields.adoc[]
 
 .HTTP Response
 include::{snippets}/update-submission-item/http-response.adoc[]
+
+== `DELETE`: 제출 항목 삭제
+
+저장된 제출 항목을 삭제하는 API입니다.
+
+.HTTP Request Headers
+include::{snippets}/delete-submission-item/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-submission-item/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-submission-item/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-submission-item/http-response.adoc[]
