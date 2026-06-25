@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,5 +29,14 @@ public class ContestSubmissionItemController {
                                                      @PathVariable final Long contestId) {
         contestSubmissionItemCommandService.createSubmissionItem(contestId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/{submissionItemId}")
+    public ResponseEntity<Void> updateSubmissionItem(@Valid @RequestBody final ContestSubmissionItemRequest request,
+                                                     @PathVariable final Long contestId,
+                                                     @PathVariable final Long submissionItemId) {
+        contestSubmissionItemCommandService.updateSubmissionItem(contestId, submissionItemId, request);
+        return ResponseEntity.noContent().build();
     }
 }

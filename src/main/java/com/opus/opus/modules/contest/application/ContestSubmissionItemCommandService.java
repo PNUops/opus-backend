@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_PERIOD;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSubmissionItemConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.domain.Contest;
@@ -25,12 +26,26 @@ public class ContestSubmissionItemCommandService {
 
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
+    private final ContestSubmissionItemConvenience contestSubmissionItemConvenience;
 
     public void createSubmissionItem(final Long contestId, final ContestSubmissionItemRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final ContestTrack contestTrack = resolveContestTrack(contestId, request.contestTrackId());
         validateSubmissionPeriod(request.startAt(), request.endAt());
         contestSubmissionItemRepository.save(buildSubmissionItem(request, contest, contestTrack));
+    }
+
+    public void updateSubmissionItem(final Long contestId, final Long submissionItemId,
+                                     final ContestSubmissionItemRequest request) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemConvenience.getValidateExistSubmissionItem(contestId, submissionItemId);
+        final ContestTrack contestTrack = resolveContestTrack(contestId, request.contestTrackId());
+        validateSubmissionPeriod(request.startAt(), request.endAt());
+        submissionItem.updateContestSubmissionItem(
+                request.name(), request.description(), new HashSet<>(request.allowedFileFormats()),
+                request.maxFileSizeMb(), request.maxFileCount(), request.startAt(), request.endAt(),
+                request.allowLateSubmission(), request.visibility(), contestTrack);
     }
 
     private ContestTrack resolveContestTrack(final Long contestId, final Long contestTrackId) {

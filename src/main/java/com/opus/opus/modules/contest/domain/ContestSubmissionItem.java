@@ -88,7 +88,7 @@ public class ContestSubmissionItem extends BaseEntity {
                                   final Contest contest, final ContestTrack contestTrack) {
         this.name = name;
         this.description = description;
-        this.allowedFileFormats = allowedFileFormats != null ? allowedFileFormats : new HashSet<>();
+        this.allowedFileFormats = allowedFileFormats != null ? new HashSet<>(allowedFileFormats) : new HashSet<>();
         this.maxFileSizeMb = maxFileSizeMb;
         this.maxFileCount = maxFileCount;
         this.startAt = startAt;
@@ -118,5 +118,29 @@ public class ContestSubmissionItem extends BaseEntity {
 
     public boolean isFileSizeExceeded(final long sizeBytes) {
         return sizeBytes > maxFileSizeMb * MB_IN_BYTES;
+    }
+
+    public void updateContestSubmissionItem(final String name, final String description,
+                                            final Set<SubmissionFileFormat> allowedFileFormats,
+                                            final Integer maxFileSizeMb,
+                                            final Integer maxFileCount, final LocalDateTime startAt,
+                                            final LocalDateTime endAt,
+                                            final Boolean allowLateSubmission, final SubmissionVisibility visibility,
+                                            final ContestTrack contestTrack) {
+        this.name = name;
+        this.description = description;
+        this.maxFileSizeMb = maxFileSizeMb;
+        this.maxFileCount = maxFileCount;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.allowLateSubmission = allowLateSubmission;
+        this.visibility = visibility;
+        this.contestTrack = contestTrack;
+        replaceAllowedFileFormats(allowedFileFormats);
+    }
+
+    private void replaceAllowedFileFormats(final Set<SubmissionFileFormat> allowedFileFormats) {
+        this.allowedFileFormats.clear();
+        this.allowedFileFormats.addAll(allowedFileFormats);
     }
 }
