@@ -27,6 +27,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     FILE_REQUIRED(HttpStatus.BAD_REQUEST, "파일은 필수입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 10MB를 초과할 수 없습니다."),
     FAILED_TO_VALIDATE_BULK_TEAMS(HttpStatus.BAD_REQUEST, "팀 일괄 등록 유효성 검사에 실패했습니다."),
+    NOT_FOUND_SUBMISSION_ITEM(HttpStatus.NOT_FOUND, "존재하지 않는 제출 항목입니다."),
     ;
 
     private final HttpStatus httpStatus;
