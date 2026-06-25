@@ -3,7 +3,6 @@ package com.opus.opus.modules.contest.application.dto.response;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.SubmissionStatus;
-import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.team.domain.Team;
 import java.time.LocalDateTime;
@@ -49,8 +48,7 @@ public record ContestSubmissionDetailResponse(
             Long fileSize
     ) {
         public static FileResponse from(final FileDocument fileDocument) {
-            final File file = fileDocument.getFile();
-            return new FileResponse(fileDocument.getId(), file.getName(), file.getFileSize());
+            return new FileResponse(fileDocument.getId(), fileDocument.getName(), fileDocument.getFileSize());
         }
     }
 }

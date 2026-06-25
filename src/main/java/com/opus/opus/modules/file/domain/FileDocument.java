@@ -49,4 +49,12 @@ public class FileDocument extends BaseEntity {
         return file.getFilePath();
     }
 
+    public String getName() {
+        return file.getName();
+    }
+
+    public Long getFileSize() {
+        return file.getFileSize();
+    }
+
 }
