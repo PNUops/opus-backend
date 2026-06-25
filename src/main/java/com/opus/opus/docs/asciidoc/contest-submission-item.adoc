@@ -1,0 +1,50 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST SUBMISSION ITEM API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `POST`: 제출 항목 추가
+
+제출물을 낼 수 있는 설정을 추가하는 API입니다. (권한: 관리자)
+
+.HTTP Request Headers
+include::{snippets}/create-submission-item/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/create-submission-item/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/create-submission-item/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/create-submission-item/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/create-submission-item/http-response.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 시작일시가 마감일시보다 이후
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-submission-item-fail/http-request.adoc[]
+
+include::{snippets}/create-submission-item-fail/http-response.adoc[]
+
+include::{snippets}/create-submission-item-fail/request-fields.adoc[]
+
+====
