@@ -1,5 +1,6 @@
 USE opus;
 
+DROP TABLE IF EXISTS `contest_submission_item_memo`;
 DROP TABLE IF EXISTS `contest_submission`;
 DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
 DROP TABLE IF EXISTS `contest_submission_item`;
@@ -113,6 +114,16 @@ CREATE TABLE `contest_submission_item_file_formats` (
   `contest_submission_item_id` bigint NOT NULL,
   `file_format` enum('PDF','ZIP','PNG','JPG','JPEG','GIF','MP4','PPT','PPTX','DOC','DOCX','HWP') NOT NULL,
   PRIMARY KEY (`contest_submission_item_id`,`file_format`)
+);
+
+CREATE TABLE `contest_submission_item_memo` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `content` varchar(500) NOT NULL,
+  `contest_submission_item_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_submission_item_memo_item_id` (`contest_submission_item_id`)
 );
 
 CREATE TABLE `contest_submission` (
