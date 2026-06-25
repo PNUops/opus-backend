@@ -48,3 +48,22 @@ include::{snippets}/create-submission-item-fail/http-response.adoc[]
 include::{snippets}/create-submission-item-fail/request-fields.adoc[]
 
 ====
+
+== `PATCH`: 제출 항목 수정
+
+저장된 제출 항목 설정을 수정하는 API입니다. (권한: 관리자)
+
+.HTTP Request Headers
+include::{snippets}/update-submission-item/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-submission-item/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-submission-item/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/update-submission-item/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/update-submission-item/http-response.adoc[]
