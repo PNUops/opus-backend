@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.contest.ContestFixture.createContest;
+import static com.opus.opus.contest.ContestSubmissionFixture.createSubmission;
 import static com.opus.opus.contest.ContestSubmissionItemFixture.createSubmissionItem;
 import static com.opus.opus.contest.ContestTrackFixture.createTrack;
 import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.PDF;
@@ -23,6 +24,7 @@ import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
@@ -41,6 +43,8 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private ContestSubmissionItemRepository contestSubmissionItemRepository;
+    @Autowired
+    private ContestSubmissionRepository contestSubmissionRepository;
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
@@ -196,5 +200,40 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
                 contest.getId(), submissionItem.getId(), request))
                 .isInstanceOf(ContestSubmissionItemException.class)
                 .hasMessage(INVALID_SUBMISSION_PERIOD.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 항목과 해당 항목의 제출물이 함께 삭제된다.")
+    void 제출_항목과_해당_항목의_제출물이_함께_삭제된다() {
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
+        contestSubmissionRepository.save(createSubmission(1L, submissionItem));
+        contestSubmissionRepository.save(createSubmission(2L, submissionItem));
+
+        contestSubmissionItemCommandService.deleteSubmissionItem(contest.getId(), submissionItem.getId());
+
+        assertThat(contestSubmissionItemRepository.findAll()).isEmpty();
+        assertThat(contestSubmissionRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출 항목이면 삭제에 실패한다.")
+    void 존재하지_않는_제출_항목이면_삭제에_실패한다() {
+        assertThatThrownBy(() -> contestSubmissionItemCommandService.deleteSubmissionItem(contest.getId(), 999L))
+                .isInstanceOf(ContestSubmissionItemException.class)
+                .hasMessage(NOT_FOUND_SUBMISSION_ITEM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회의 제출 항목이면 삭제에 실패한다.")
+    void 다른_대회의_제출_항목이면_삭제에_실패한다() {
+        final Contest otherContest = contestRepository.save(createContest());
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(otherContest, null));
+
+        assertThatThrownBy(() -> contestSubmissionItemCommandService.deleteSubmissionItem(
+                contest.getId(), submissionItem.getId()))
+                .isInstanceOf(ContestSubmissionItemException.class)
+                .hasMessage(INVALID_SUBMISSION_ITEM_FOR_CONTEST.errorMessage());
     }
 }
