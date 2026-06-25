@@ -7,9 +7,8 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.opus.opus.contest.ContestFixture;
@@ -112,8 +111,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
 
         assertThat(response.submissionId()).isNotNull();
         assertThat(contestSubmissionRepository.findById(response.submissionId())).isPresent();
-        verify(fileDocumentCommandService, times(2))
-                .storeDocumentFile(any(), eq(response.submissionId()), any());
+        verify(fileDocumentCommandService)
+                .storeDocumentFiles(eq(response.submissionId()), anyList());
     }
 
     @Test
@@ -188,7 +187,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 기존 제출에 파일을 추가하면 기존 fileOrder 다음 번호로 저장된다.")
+    @DisplayName("[성공] 기존 제출에 파일을 추가하면 파일 저장을 위임한다.")
     void 파일을_추가한다() {
         final ContestSubmission submission = contestSubmissionRepository.save(
                 ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
@@ -198,7 +197,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         contestSubmissionCommandService.addFiles(
                 contest.getId(), submission.getId(), List.of(pdf("추가.pdf")), member);
 
-        verify(fileDocumentCommandService).storeDocumentFile(any(), eq(submission.getId()), eq(3));
+        verify(fileDocumentCommandService).storeDocumentFiles(eq(submission.getId()), anyList());
     }
 
     @Test

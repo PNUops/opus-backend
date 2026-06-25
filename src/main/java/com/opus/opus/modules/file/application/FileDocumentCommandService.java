@@ -56,6 +56,17 @@ public class FileDocumentCommandService {
         }
     }
 
+    public void storeDocumentFiles(final Long submissionId, final List<MultipartFile> files) {
+        final int startOrder = fileDocumentRepository.findAllBySubmissionIdOrderByFileOrder(submissionId)
+                .stream()
+                .mapToInt(FileDocument::getFileOrder)
+                .max()
+                .orElse(0);
+        for (int i = 0; i < files.size(); i++) {
+            storeDocumentFile(files.get(i), submissionId, startOrder + 1 + i);
+        }
+    }
+
     public void deleteDocumentFile(final Long fileDocumentId) {
         final FileDocument fileDocument = fileDocumentRepository.findById(fileDocumentId)
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND,

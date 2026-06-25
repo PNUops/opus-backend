@@ -31,6 +31,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE contest_submission_item SET is_deleted = true WHERE id = ?")
 public class ContestSubmissionItem extends BaseEntity {
 
+    private static final long MB_IN_BYTES = 1024L * 1024L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -100,5 +102,21 @@ public class ContestSubmissionItem extends BaseEntity {
 
     public boolean isInContest(final Long contestId) {
         return contest.getId().equals(contestId);
+    }
+
+    public boolean isSubmissionClosed() {
+        return LocalDateTime.now().isAfter(endAt) && !allowLateSubmission;
+    }
+
+    public boolean isFileCountExceeded(final int totalFileCount) {
+        return totalFileCount > maxFileCount;
+    }
+
+    public boolean supportsFormat(final SubmissionFileFormat format) {
+        return allowedFileFormats.contains(format);
+    }
+
+    public boolean isFileSizeExceeded(final long sizeBytes) {
+        return sizeBytes > maxFileSizeMb * MB_IN_BYTES;
     }
 }

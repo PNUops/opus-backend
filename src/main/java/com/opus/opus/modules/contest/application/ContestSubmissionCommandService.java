@@ -19,13 +19,9 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileDocumentCommandService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
-import com.opus.opus.modules.file.domain.FileDocument;
-import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,8 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Transactional
 public class ContestSubmissionCommandService {
-
-    private static final long MB_IN_BYTES = 1024L * 1024L;
 
     private final ContestConvenience contestConvenience;
     private final TeamConvenience teamConvenience;
@@ -60,7 +54,7 @@ public class ContestSubmissionCommandService {
 
         final ContestSubmission submission = contestSubmissionRepository.save(
                 ContestSubmission.create(teamId, submissionItem));
-        storeFiles(submission.getId(), files);
+        fileDocumentCommandService.storeDocumentFiles(submission.getId(), files);
 
         return new SubmissionCreateResponse(submission.getId());
     }
@@ -72,11 +66,11 @@ public class ContestSubmissionCommandService {
         final ContestSubmissionItem submissionItem = getValidatedSubmissionItem(submission, contestId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
-        final List<FileDocument> existingFiles = fileDocumentConvenience.findAllBySubmissionId(submissionId);
-        validateFiles(submissionItem, files, existingFiles.size() + files.size());
+        final long existingFileCount = fileDocumentConvenience.countBySubmissionId(submissionId);
+        validateFiles(submissionItem, files, (int) existingFileCount + files.size());
         validateSubmittable(submissionItem);
 
-        appendFiles(submissionId, existingFiles, files);
+        fileDocumentCommandService.storeDocumentFiles(submissionId, files);
     }
 
     public void deleteFile(final Long contestId, final Long submissionId, final Long fileId, final Member member) {
@@ -85,12 +79,12 @@ public class ContestSubmissionCommandService {
         final ContestSubmissionItem submissionItem = getValidatedSubmissionItem(submission, contestId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
-        final List<FileDocument> files = fileDocumentConvenience.findAllBySubmissionId(submissionId);
-        validateFileBelongsToSubmission(files, fileId);
+        fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
         validateSubmittable(submissionItem);
 
+        final boolean isLastFile = fileDocumentConvenience.countBySubmissionId(submissionId) == 1;
         fileDocumentCommandService.deleteDocumentFile(fileId);
-        if (files.size() == 1) {
+        if (isLastFile) {
             contestSubmissionRepository.delete(submission);
         }
     }
@@ -132,15 +126,8 @@ public class ContestSubmissionCommandService {
         }
     }
 
-    private void validateFileBelongsToSubmission(final List<FileDocument> files, final Long fileId) {
-        final boolean exists = files.stream().anyMatch(file -> file.getId().equals(fileId));
-        if (!exists) {
-            throw new FileException(FileExceptionType.NOT_FOUND);
-        }
-    }
-
     private void validateFileCount(final ContestSubmissionItem submissionItem, final int totalFileCount) {
-        if (totalFileCount > submissionItem.getMaxFileCount()) {
+        if (submissionItem.isFileCountExceeded(totalFileCount)) {
             throw new ContestException(SUBMISSION_FILE_COUNT_EXCEEDED);
         }
     }
@@ -152,59 +139,25 @@ public class ContestSubmissionCommandService {
     }
 
     private void validateFileSizes(final ContestSubmissionItem submissionItem, final List<MultipartFile> files) {
-        final long maxFileSizeBytes = submissionItem.getMaxFileSizeMb() * MB_IN_BYTES;
         for (final MultipartFile file : files) {
-            if (file.getSize() > maxFileSizeBytes) {
+            if (submissionItem.isFileSizeExceeded(file.getSize())) {
                 throw new ContestException(SUBMISSION_FILE_SIZE_EXCEEDED);
             }
         }
     }
 
     private void validateFileFormat(final ContestSubmissionItem submissionItem, final String filename) {
-        final String extension = extractExtension(filename);
-        final SubmissionFileFormat format;
-        try {
-            format = SubmissionFileFormat.valueOf(extension.toUpperCase());
-        } catch (final IllegalArgumentException e) {
-            throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);
-        }
-        if (!submissionItem.getAllowedFileFormats().contains(format)) {
+        final SubmissionFileFormat format = SubmissionFileFormat.from(filename)
+                .orElseThrow(() -> new ContestException(INVALID_SUBMISSION_FILE_FORMAT));
+        if (!submissionItem.supportsFormat(format)) {
             throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);
         }
     }
 
     private void validateSubmittable(final ContestSubmissionItem submissionItem) {
-        final boolean afterDeadline = LocalDateTime.now().isAfter(submissionItem.getEndAt());
-        if (afterDeadline && !submissionItem.getAllowLateSubmission()) {
+        if (submissionItem.isSubmissionClosed()) {
             throw new ContestException(SUBMISSION_PERIOD_ENDED);
         }
     }
 
-    private void storeFiles(final Long submissionId, final List<MultipartFile> files) {
-        for (int i = 0; i < files.size(); i++) {
-            fileDocumentCommandService.storeDocumentFile(files.get(i), submissionId, i + 1);
-        }
-    }
-
-    private void appendFiles(final Long submissionId, final List<FileDocument> existingFiles,
-                             final List<MultipartFile> files) {
-        final int startOrder = existingFiles.stream()
-                .mapToInt(FileDocument::getFileOrder)
-                .max()
-                .orElse(0);
-        for (int i = 0; i < files.size(); i++) {
-            fileDocumentCommandService.storeDocumentFile(files.get(i), submissionId, startOrder + 1 + i);
-        }
-    }
-
-    private String extractExtension(final String filename) {
-        if (filename == null || filename.isBlank()) {
-            throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);
-        }
-        final int lastDot = filename.lastIndexOf('.');
-        if (lastDot <= 0 || lastDot >= filename.length() - 1) {
-            throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);
-        }
-        return filename.substring(lastDot + 1);
-    }
 }
