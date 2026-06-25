@@ -111,16 +111,15 @@ public class ContestSubmissionCommandService {
     }
 
     private ContestSubmissionItem getValidatedSubmissionItem(final ContestSubmission submission, final Long contestId) {
-        final ContestSubmissionItem submissionItem = contestSubmissionItemConvenience
-                .getValidateExistSubmissionItem(submission.getSubmissionItem().getId());
-        if (!submissionItem.getContest().getId().equals(contestId)) {
+        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
+        if (!submissionItem.isInContest(contestId)) {
             throw new ContestException(NOT_FOUND_SUBMISSION);
         }
         return submissionItem;
     }
 
     private void validateSubmissionItemInContest(final ContestSubmissionItem submissionItem, final Long contestId) {
-        if (!submissionItem.getContest().getId().equals(contestId)) {
+        if (!submissionItem.isInContest(contestId)) {
             throw new ContestException(NOT_FOUND_SUBMISSION_ITEM);
         }
     }

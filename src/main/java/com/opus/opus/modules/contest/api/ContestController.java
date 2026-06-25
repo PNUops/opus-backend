@@ -4,6 +4,7 @@ import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
@@ -61,6 +62,7 @@ public class ContestController {
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
     private final ContestSubmissionCommandService contestSubmissionCommandService;
+    private final ContestSubmissionQueryService contestSubmissionQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -219,7 +221,7 @@ public class ContestController {
     public ResponseEntity<ContestSubmissionDetailResponse> getSubmissionDetail(@PathVariable final Long contestId,
                                                                                @PathVariable final Long submissionId,
                                                                                @LoginMember final Member member) {
-        final ContestSubmissionDetailResponse response = contestQueryService.getSubmissionDetail(contestId,
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(contestId,
                 submissionId, member);
         return ResponseEntity.ok(response);
     }

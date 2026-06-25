@@ -938,7 +938,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 0
         );
 
-        when(contestQueryService.getSubmissionDetail(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionQueryService.getSubmissionDetail(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}", 1L, 12L)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -978,7 +978,7 @@ public class ContestApiDocsTest extends RestDocsTest {
         loginMember();
 
         willThrow(new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION))
-                .given(contestQueryService)
+                .given(contestSubmissionQueryService)
                 .getSubmissionDetail(any(), any(), any());
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}", 1L, 999L)

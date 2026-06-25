@@ -9,14 +9,12 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
-import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
-import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
@@ -27,18 +25,12 @@ import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
-import com.opus.opus.modules.contest.domain.ContestSubmission;
-import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
-import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.application.FileQueryService;
-import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.application.dto.FileResource;
-import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
@@ -46,7 +38,6 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
-import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
@@ -84,15 +75,12 @@ public class ContestQueryService {
     private final ContestSortConvenience contestSortConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
-    private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final TeamConvenience teamConvenience;
-    private final TeamMemberConvenience teamMemberConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
     private final MemberConvenience memberConvenience;
     private final TeamContestAwardConvenience teamContestAwardConvenience;
     private final FileImageConvenience fileImageConvenience;
-    private final FileDocumentConvenience fileDocumentConvenience;
 
     private static List<ContestRankingResponse> applyRanking(List<TeamRankingResult> votesPerTeam) {
         List<ContestRankingResponse> responseList = new ArrayList<>();
@@ -234,38 +222,6 @@ public class ContestQueryService {
         return teamList.stream()
                 .map(team -> ContestSubmissionResponse.from(team, trackNameMap.get(team.getTrackId())))
                 .toList();
-    }
-
-    public ContestSubmissionDetailResponse getSubmissionDetail(final Long contestId, final Long submissionId,
-                                                               final Member member) {
-        contestConvenience.validateExistContest(contestId);
-
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateExistSubmission(submissionId);
-        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
-        validateSubmissionInContest(submissionItem, contestId);
-
-        final Team team = teamConvenience.getValidateExistTeam(submission.getTeamId());
-        // 학생은 해당 팀의 팀장/팀원만 조회할 수 있다. (관리자/교수/직원/외부멘토는 제한 없음)
-        teamMemberConvenience.validateTeamMemberIfStudent(team.getId(), member);
-
-        final String trackName = submissionItem.getContestTrack() != null
-                ? submissionItem.getContestTrack().getTrackName()
-                : null;
-        final List<FileDocument> fileDocuments = fileDocumentConvenience.findAllBySubmissionId(submissionId);
-
-        /* TODO
-        제출물 코멘트 기능이 아직 없어서, 제출물 카운트를 0으로 고정하였습니다.
-        코멘트 기능 추가 시 실제 개수로 교체가 필요합니다.
-         */
-        final int commentCount = 0;
-
-        return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, commentCount);
-    }
-
-    private void validateSubmissionInContest(final ContestSubmissionItem submissionItem, final Long contestId) {
-        if (!submissionItem.getContest().getId().equals(contestId)) {
-            throw new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION);
-        }
     }
 
     public List<TeamSummaryResponse> getContestTeamSummaries(final Long contestId, final Member member) {

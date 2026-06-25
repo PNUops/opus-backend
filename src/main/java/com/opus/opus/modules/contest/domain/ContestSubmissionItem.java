@@ -97,4 +97,8 @@ public class ContestSubmissionItem extends BaseEntity {
         this.contestTrack = contestTrack;
         this.isDeleted = false;
     }
+
+    public boolean isInContest(final Long contestId) {
+        return contest.getId().equals(contestId);
+    }
 }
