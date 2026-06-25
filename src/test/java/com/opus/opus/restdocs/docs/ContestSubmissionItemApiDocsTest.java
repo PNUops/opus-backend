@@ -7,13 +7,16 @@ import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExcep
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -21,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -129,6 +133,41 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 유효한 요청이면 제출 항목 설정값 조회는 성공한다.")
+    void 유효한_요청이면_제출_항목_설정값_조회는_성공한다() throws Exception {
+        final ContestSubmissionItemResponse response = new ContestSubmissionItemResponse(
+                "발표자료", 1L, "PDF 형식의 발표자료를 제출하세요.", List.of("PDF", "ZIP"),
+                50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, "PUBLIC");
+
+        when(contestSubmissionItemQueryService.getSubmissionItem(any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/submission-items/{submissionItemId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-submission-item",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        responseFields(
+                                stringFieldWithPath("name", "제출물 종류 이름"),
+                                numberFieldWithPath("contestTrackId", "대상 분과 ID (전체 분과면 null)").optional(),
+                                stringFieldWithPath("description", "설명").optional(),
+                                arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
+                                numberFieldWithPath("maxFileSizeMb", "파일 크기 제한 (MB)"),
+                                numberFieldWithPath("maxFileCount", "파일 수 제한"),
+                                dateTimeFieldWithPath("startAt", "시작일시"),
+                                dateTimeFieldWithPath("endAt", "마감일시"),
+                                booleanFieldWithPath("allowLateSubmission", "지각 제출 허용 여부"),
+                                stringFieldWithPath("visibility", "공개 범위 (SubmissionVisibility)")
                         )
                 ));
     }
