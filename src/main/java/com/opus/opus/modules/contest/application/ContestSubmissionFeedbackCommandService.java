@@ -2,9 +2,9 @@ package com.opus.opus.modules.contest.application;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
-import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class ContestSubmissionFeedbackCommandService {
 
-    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
-
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
     private final FileFeedbackCommandService fileFeedbackCommandService;
 
     public void saveFeedback(final Long contestId, final Long submissionId, final Long memberId,
@@ -29,17 +28,8 @@ public class ContestSubmissionFeedbackCommandService {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission = contestSubmissionConvenience.getValidateExistSubmission(submissionId);
 
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackRepository
-                .findBySubmissionIdAndMemberId(submissionId, memberId)
-                .map(existing -> {
-                    existing.updateDescription(description);
-                    return existing;
-                })
-                .orElseGet(() -> contestSubmissionFeedbackRepository.save(ContestSubmissionFeedback.builder()
-                        .description(description)
-                        .memberId(memberId)
-                        .submission(submission)
-                        .build()));
+        final ContestSubmissionFeedback feedback =
+                contestSubmissionFeedbackConvenience.upsert(submission, memberId, description);
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());

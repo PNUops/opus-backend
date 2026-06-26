@@ -71,6 +71,30 @@ include::{snippets}/save-submission-feedback-fail-contest-not-found/http-respons
 
 ====
 
+.❌ Case 4: 빈 파일 첨부
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-empty-file/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-empty-file/http-response.adoc[]
+
+====
+
+.❌ Case 5: 삭제할 첨부파일을 찾을 수 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-file-not-found/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-file-not-found/http-response.adoc[]
+
+====
+
 == `GET`: 내 피드백 단건 조회
 
 외부멘토가 특정 제출물에 본인이 작성한 피드백 단건을 조회합니다. (작성 폼 프리필용)
@@ -101,6 +125,30 @@ include::{snippets}/get-my-submission-feedback/response-fields.adoc[]
 include::{snippets}/get-my-submission-feedback-fail-not-found/http-request.adoc[]
 
 include::{snippets}/get-my-submission-feedback-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-my-submission-feedback-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-my-submission-feedback-fail-contest-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 3: 존재하지 않는 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-my-submission-feedback-fail-submission-not-found/http-request.adoc[]
+
+include::{snippets}/get-my-submission-feedback-fail-submission-not-found/http-response.adoc[]
 
 ====
 

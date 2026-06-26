@@ -1,15 +1,13 @@
 package com.opus.opus.modules.contest.application;
 
-import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static java.util.stream.Collectors.toMap;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFeedbackResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionMyFeedbackResponse;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
-import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
-import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.file.application.FileFeedbackQueryService;
 import com.opus.opus.modules.file.application.convenience.FileFeedbackConvenience;
 import com.opus.opus.modules.file.application.dto.FeedbackFileInfo;
@@ -27,10 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ContestSubmissionFeedbackQueryService {
 
-    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
-
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
     private final MemberConvenience memberConvenience;
     private final FileFeedbackConvenience fileFeedbackConvenience;
     private final FileFeedbackQueryService fileFeedbackQueryService;
@@ -40,7 +37,7 @@ public class ContestSubmissionFeedbackQueryService {
         contestSubmissionConvenience.validateExistSubmission(submissionId);
 
         final List<ContestSubmissionFeedback> feedbacks =
-                contestSubmissionFeedbackRepository.findAllBySubmissionIdOrderByIdDesc(submissionId);
+                contestSubmissionFeedbackConvenience.getFeedbacksBySubmission(submissionId);
 
         final Map<Long, Member> memberMap = memberConvenience.findAllById(feedbacks.stream()
                         .map(ContestSubmissionFeedback::getMemberId)
@@ -65,9 +62,8 @@ public class ContestSubmissionFeedbackQueryService {
         contestConvenience.validateExistContest(contestId);
         contestSubmissionConvenience.validateExistSubmission(submissionId);
 
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackRepository
-                .findBySubmissionIdAndMemberId(submissionId, memberId)
-                .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
+        final ContestSubmissionFeedback feedback =
+                contestSubmissionFeedbackConvenience.getValidateMyFeedback(submissionId, memberId);
 
         final List<FeedbackFileInfo> files = fileFeedbackConvenience
                 .findFilesGroupedByFeedbackIds(List.of(feedback.getId()))
@@ -81,9 +77,8 @@ public class ContestSubmissionFeedbackQueryService {
         contestConvenience.validateExistContest(contestId);
         contestSubmissionConvenience.validateExistSubmission(submissionId);
 
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackRepository.findById(feedbackId)
-                .filter(found -> found.getSubmission().getId().equals(submissionId))
-                .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
+        final ContestSubmissionFeedback feedback =
+                contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
 
         return fileFeedbackQueryService.download(feedback.getId(), fileId);
     }

@@ -3,7 +3,9 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND_FEEDBACK_FILE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -354,6 +356,97 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                                 parameterWithName("submissionId").description("제출물 ID"),
                                 parameterWithName("feedbackId").description("피드백 ID"),
                                 parameterWithName("fileId").description("존재하지 않는 첨부파일 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 빈 파일을 첨부하면 400 에러를 반환한다.")
+    void 빈_파일을_첨부하면_에러를_반환한다() throws Exception {
+        final MockMultipartFile emptyFile = new MockMultipartFile(
+                "files", "빈파일.pdf", MediaType.APPLICATION_PDF_VALUE, new byte[0]);
+
+        willThrow(new FileException(EMPTY_FILE))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .file(emptyFile)
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("save-submission-feedback-fail-empty-file",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 삭제할 첨부파일이 본인 피드백에 없으면 404 에러를 반환한다.")
+    void 삭제할_첨부파일이_본인_피드백에_없으면_에러를_반환한다() throws Exception {
+        willThrow(new FileException(NOT_FOUND_FEEDBACK_FILE))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .param("description", "발표 흐름이 좋네요.")
+                        .param("removeFileIds", "201")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isNotFound())
+                .andDo(document("save-submission-feedback-fail-file-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 내 피드백 단건 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any()))
+                .thenThrow(new ContestException(NOT_FOUND_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 999, 12)
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-my-submission-feedback-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물의 내 피드백 단건 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출물의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any()))
+                .thenThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION));
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 999)
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-my-submission-feedback-fail-submission-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("존재하지 않는 제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")

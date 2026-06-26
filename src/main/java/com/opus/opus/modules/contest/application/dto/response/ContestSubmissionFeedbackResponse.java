@@ -18,8 +18,7 @@ public record ContestSubmissionFeedbackResponse(
         String roleType,
         List<ContestSubmissionFeedbackFileResponse> files
 ) {
-    public static ContestSubmissionFeedbackResponse of(final ContestSubmissionFeedback feedback, final Member member,
-                                                       final List<FeedbackFileInfo> files) {
+    public static ContestSubmissionFeedbackResponse of(final ContestSubmissionFeedback feedback, final Member member, final List<FeedbackFileInfo> files) {
         return new ContestSubmissionFeedbackResponse(
                 feedback.getId(),
                 feedback.getMemberId(),
