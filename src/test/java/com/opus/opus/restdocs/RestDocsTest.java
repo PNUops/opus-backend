@@ -10,11 +10,11 @@ import com.opus.opus.global.security.annotation.MemberArgumentResolver;
 import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.contest.api.ContestCategoryController;
 import com.opus.opus.modules.contest.api.ContestController;
-import com.opus.opus.modules.contest.api.ContestSubmissionCommentController;
+import com.opus.opus.modules.contest.api.ContestSubmissionFeedbackController;
 import com.opus.opus.modules.contest.api.ContestTrackController;
 import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
-import com.opus.opus.modules.contest.application.ContestSubmissionCommentCommandService;
-import com.opus.opus.modules.contest.application.ContestSubmissionCommentQueryService;
+import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackQueryService;
 import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
@@ -63,7 +63,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         TeamCommentController.class,
         ContestCategoryController.class,
         ContestTrackController.class,
-        ContestSubmissionCommentController.class,
+        ContestSubmissionFeedbackController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -125,10 +125,10 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected ContestTrackQueryService contestTrackQueryService;
 
     @MockitoBean
-    protected ContestSubmissionCommentCommandService contestSubmissionCommentCommandService;
+    protected ContestSubmissionFeedbackCommandService contestSubmissionFeedbackCommandService;
 
     @MockitoBean
-    protected ContestSubmissionCommentQueryService contestSubmissionCommentQueryService;
+    protected ContestSubmissionFeedbackQueryService contestSubmissionFeedbackQueryService;
 
     // Setting
     @Autowired
