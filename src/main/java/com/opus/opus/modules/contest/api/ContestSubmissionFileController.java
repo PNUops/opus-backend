@@ -1,7 +1,6 @@
 package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestSubmissionArchiveQueryService;
-import com.opus.opus.modules.contest.application.ContestSubmissionArchiveCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
 import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
@@ -33,7 +32,6 @@ public class ContestSubmissionFileController {
 
     private final ContestSubmissionFileQueryService contestSubmissionFileQueryService;
     private final ContestSubmissionArchiveQueryService contestSubmissionArchiveQueryService;
-    private final ContestSubmissionArchiveCommandService contestSubmissionArchiveService;
 
     @GetMapping("/archives")
     public ResponseEntity<ArchiveTargetsResponse> getArchiveTargets(
@@ -50,7 +48,7 @@ public class ContestSubmissionFileController {
             @PathVariable final Long contestId,
             @Valid @RequestBody final ArchiveRequest request
     ) {
-        final SubmissionArchive archive = contestSubmissionArchiveService.generateArchive(contestId, request);
+        final SubmissionArchive archive = contestSubmissionArchiveQueryService.generateArchive(contestId, request);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, attachment(archive.fileName()))

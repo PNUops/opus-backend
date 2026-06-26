@@ -17,7 +17,6 @@ import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionArchiveQueryService;
-import com.opus.opus.modules.contest.application.ContestSubmissionArchiveCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
 import com.opus.opus.modules.contest.application.ContestTrackCommandService;
 import com.opus.opus.modules.contest.application.ContestTrackQueryService;
@@ -130,9 +129,6 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestSubmissionArchiveQueryService contestSubmissionArchiveQueryService;
-
-    @MockitoBean
-    protected ContestSubmissionArchiveCommandService contestSubmissionArchiveService;
 
     // Setting
     @Autowired

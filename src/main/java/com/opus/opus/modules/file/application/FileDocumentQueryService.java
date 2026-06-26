@@ -47,15 +47,13 @@ public class FileDocumentQueryService {
         return fileDocumentRepository.findAllBySubmissionIdIn(submissionIds).stream()
                 .map(fileDocument -> new ArchiveFileEntry(
                         fileDocument.getSubmissionId(),
-                        fileDocument.getId(),
                         fileDocument.getFile().getName(),
-                        fileDocument.getFile().getFileSize()))
+                        fileDocument.getFile().getFileSize(),
+                        fileDocument.getFilePath()))
                 .toList();
     }
 
-    public InputStream openDocumentStream(final Long fileDocumentId) {
-        final FileDocument fileDocument = fileDocumentRepository.findById(fileDocumentId)
-                .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND));
-        return fileStorage.loadAsStream(fileDocument.getFilePath());
+    public InputStream openStream(final String filePath) {
+        return fileStorage.loadAsStream(filePath);
     }
 }

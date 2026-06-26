@@ -82,7 +82,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 선택한 대상의 제출 파일을 zip으로 다운로드한다.")
     void 선택한_대상의_제출_파일을_zip으로_다운로드한다() throws Exception {
         final StreamingResponseBody body = outputStream -> outputStream.write("zip-binary".getBytes());
-        when(contestSubmissionArchiveService.generateArchive(any(), any()))
+        when(contestSubmissionArchiveQueryService.generateArchive(any(), any()))
                 .thenReturn(new SubmissionArchive("2026-PNUops_20260605.zip", body));
 
         final ArchiveRequest request = new ArchiveRequest(List.of(
@@ -125,7 +125,9 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
                         responseHeaders(
-                                headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"발표자료.pdf\"")
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("파일 MIME 타입"),
+                                headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"발표자료.pdf\""),
+                                headerWithName(HttpHeaders.CONTENT_LENGTH).description("파일 크기(byte)")
                         )
                 ));
     }
