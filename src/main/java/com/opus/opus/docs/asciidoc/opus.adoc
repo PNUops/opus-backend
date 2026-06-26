@@ -35,4 +35,4 @@ link:./contest-category.html[대회 카테고리 API]
 
 link:./contest-track.html[대회 분과 API]
 
-link:./submission-comment.html[제출물 코멘트 API]
+link:./submission-feedback.html[제출물 피드백 API]
