@@ -18,8 +18,8 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
-import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemMemoRequest;
-import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemMemoResponse;
+import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionMemoRequest;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionMemoResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
@@ -30,13 +30,13 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
-public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
+public class ContestSubmissionApiDocsTest extends RestDocsTest {
 
     private static final String MEMBER_TOKEN = "Bearer member.access.token";
-    private static final String BASE_URL = "/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/memos";
+    private static final String BASE_URL = "/contests/{contestId}/teams/{teamId}/submissions/{submissionId}/memos";
 
     private Member member;
-    private ContestSubmissionItemMemoRequest request;
+    private ContestSubmissionMemoRequest request;
 
     @BeforeEach
     void setUp() {
@@ -49,24 +49,24 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                 .thenReturn(true);
         when(memberArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(member);
 
-        request = new ContestSubmissionItemMemoRequest("제출 항목에 대한 메모 내용입니다.");
+        request = new ContestSubmissionMemoRequest("제출물에 대한 메모 내용입니다.");
     }
 
     @Test
-    @DisplayName("[성공] 팀원이 제출 항목 메모를 생성한다.")
-    void 팀원이_제출_항목_메모를_생성한다() throws Exception {
-        doNothing().when(contestSubmissionItemMemoCommandService).createMemo(any(), any(), any(), any(), any());
+    @DisplayName("[성공] 팀원이 제출물 메모를 생성한다.")
+    void 팀원이_제출물_메모를_생성한다() throws Exception {
+        doNothing().when(contestSubmissionMemoCommandService).createMemo(any(), any(), any(), any(), any());
 
         mockMvc.perform(post(BASE_URL, 1, 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andDo(document("create-submission-item-memo",
+                .andDo(document("create-submission-memo",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("teamId").description("팀 ID"),
-                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                                parameterWithName("submissionId").description("제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (팀원)")
@@ -78,21 +78,21 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 팀원이 제출 항목 메모를 조회한다.")
-    void 팀원이_제출_항목_메모를_조회한다() throws Exception {
-        final ContestSubmissionItemMemoResponse response =
-                new ContestSubmissionItemMemoResponse(1L, "제출 항목에 대한 메모 내용입니다.", LocalDateTime.now());
+    @DisplayName("[성공] 팀원이 제출물 메모를 조회한다.")
+    void 팀원이_제출물_메모를_조회한다() throws Exception {
+        final ContestSubmissionMemoResponse response =
+                new ContestSubmissionMemoResponse(1L, "제출물에 대한 메모 내용입니다.", LocalDateTime.now());
 
-        when(contestSubmissionItemMemoQueryService.getMemo(any(), any(), any(), any())).thenReturn(response);
+        when(contestSubmissionMemoQueryService.getMemo(any(), any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get(BASE_URL, 1, 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
                 .andExpect(status().isOk())
-                .andDo(document("get-submission-item-memo",
+                .andDo(document("get-submission-memo",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("teamId").description("팀 ID"),
-                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                                parameterWithName("submissionId").description("제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (팀원)")
@@ -106,20 +106,20 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 팀원이 제출 항목 메모를 수정한다.")
-    void 팀원이_제출_항목_메모를_수정한다() throws Exception {
-        doNothing().when(contestSubmissionItemMemoCommandService).updateMemo(any(), any(), any(), any(), any());
+    @DisplayName("[성공] 팀원이 제출물 메모를 수정한다.")
+    void 팀원이_제출물_메모를_수정한다() throws Exception {
+        doNothing().when(contestSubmissionMemoCommandService).updateMemo(any(), any(), any(), any(), any());
 
         mockMvc.perform(patch(BASE_URL, 1, 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
-                .andDo(document("update-submission-item-memo",
+                .andDo(document("update-submission-memo",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("teamId").description("팀 ID"),
-                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                                parameterWithName("submissionId").description("제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (팀원)")
@@ -131,18 +131,18 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 팀원이 제출 항목 메모를 삭제한다.")
-    void 팀원이_제출_항목_메모를_삭제한다() throws Exception {
-        doNothing().when(contestSubmissionItemMemoCommandService).deleteMemo(any(), any(), any(), any());
+    @DisplayName("[성공] 팀원이 제출물 메모를 삭제한다.")
+    void 팀원이_제출물_메모를_삭제한다() throws Exception {
+        doNothing().when(contestSubmissionMemoCommandService).deleteMemo(any(), any(), any(), any());
 
         mockMvc.perform(delete(BASE_URL, 1, 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
                 .andExpect(status().isNoContent())
-                .andDo(document("delete-submission-item-memo",
+                .andDo(document("delete-submission-memo",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("teamId").description("팀 ID"),
-                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                                parameterWithName("submissionId").description("제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (팀원)")
