@@ -1,5 +1,6 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.INVALID_SUBMISSION_FOR_TEAM;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.MEMO_ALREADY_EXISTS;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.NOT_FOUND_MEMO;
@@ -119,6 +120,21 @@ class ContestSubmissionMemoCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(TeamMemberException.class)
                 .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
                         .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회의 contestId로 생성하면 INVALID_SUBMISSION_FOR_CONTEST 예외가 발생한다.")
+    void 다른_대회의_contestId로_생성하면_예외가_발생한다() {
+        // given
+        final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(2L));
+        final ContestSubmissionMemoRequest request = new ContestSubmissionMemoRequest("잘못된 메모");
+
+        // when & then
+        assertThatThrownBy(() ->
+                memoCommandService.createMemo(otherContest.getId(), team.getId(), submission.getId(), request, member))
+                .isInstanceOf(ContestSubmissionMemoException.class)
+                .satisfies(e -> assertThat(((ContestSubmissionMemoException) e).exceptionType())
+                        .isEqualTo(INVALID_SUBMISSION_FOR_CONTEST));
     }
 
     @Test
