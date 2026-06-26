@@ -30,7 +30,7 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
-public class ContestSubmissionApiDocsTest extends RestDocsTest {
+public class ContestSubmissionMemoApiDocsTest extends RestDocsTest {
 
     private static final String MEMBER_TOKEN = "Bearer member.access.token";
     private static final String BASE_URL = "/contests/{contestId}/teams/{teamId}/submissions/{submissionId}/memos";
