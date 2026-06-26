@@ -7,6 +7,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_COUNT_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
@@ -22,6 +23,8 @@ import com.opus.opus.modules.file.application.convenience.FileDocumentConvenienc
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.exception.TeamException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,7 +49,8 @@ public class ContestSubmissionCommandService {
                                                      final Long teamId, final List<MultipartFile> files,
                                                      final Member member) {
         contestConvenience.validateExistContest(contestId);
-        teamConvenience.validateExistTeam(teamId);
+        final Team team = teamConvenience.getValidateExistTeam(teamId);
+        validateTeamInContest(team, contestId);
         final ContestSubmissionItem submissionItem =
                 contestSubmissionItemConvenience.getValidateExistSubmissionItem(submissionItemId);
 
@@ -112,6 +116,12 @@ public class ContestSubmissionCommandService {
             throw new ContestException(NOT_FOUND_SUBMISSION);
         }
         return submissionItem;
+    }
+
+    private void validateTeamInContest(final Team team, final Long contestId) {
+        if (!team.isInContest(contestId)) {
+            throw new TeamException(NOT_FOUND_TEAM);
+        }
     }
 
     private void validateSubmissionItemInContest(final ContestSubmissionItem submissionItem, final Long contestId) {

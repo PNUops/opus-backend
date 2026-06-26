@@ -57,11 +57,7 @@ public class FileDocumentCommandService {
     }
 
     public void storeDocumentFiles(final Long submissionId, final List<MultipartFile> files) {
-        final int startOrder = fileDocumentRepository.findAllBySubmissionIdOrderByFileOrder(submissionId)
-                .stream()
-                .mapToInt(FileDocument::getFileOrder)
-                .max()
-                .orElse(0);
+        final int startOrder = fileDocumentRepository.findMaxFileOrderBySubmissionId(submissionId);
         for (int i = 0; i < files.size(); i++) {
             storeDocumentFile(files.get(i), submissionId, startOrder + 1 + i);
         }

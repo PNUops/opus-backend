@@ -121,6 +121,10 @@ public class Team extends BaseEntity {
                 .build();
     }
 
+    public boolean isInContest(final Long contestId) {
+        return this.contestId.equals(contestId);
+    }
+
     public void updateItemOrder(final Integer newOrder) {
         this.itemOrder = newOrder;
     }

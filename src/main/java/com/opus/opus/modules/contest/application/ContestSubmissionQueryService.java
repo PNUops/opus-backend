@@ -38,6 +38,7 @@ public class ContestSubmissionQueryService {
         validateSubmissionInContest(submissionItem, contestId);
 
         final Team team = teamConvenience.getValidateExistTeam(submission.getTeamId());
+        validateTeamInContest(team, contestId);
         // 학생은 해당 팀의 팀장/팀원만 조회할 수 있다. (관리자/교수/직원/외부멘토는 제한 없음)
         teamMemberConvenience.validateTeamMemberIfStudent(team.getId(), member);
 
@@ -57,6 +58,12 @@ public class ContestSubmissionQueryService {
 
     private void validateSubmissionInContest(final ContestSubmissionItem submissionItem, final Long contestId) {
         if (!submissionItem.isInContest(contestId)) {
+            throw new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION);
+        }
+    }
+
+    private void validateTeamInContest(final Team team, final Long contestId) {
+        if (!team.isInContest(contestId)) {
             throw new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION);
         }
     }
