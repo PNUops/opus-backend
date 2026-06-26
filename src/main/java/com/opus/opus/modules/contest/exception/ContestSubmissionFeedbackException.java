@@ -3,11 +3,11 @@ package com.opus.opus.modules.contest.exception;
 import com.opus.opus.global.base.BaseException;
 import com.opus.opus.global.base.BaseExceptionType;
 
-public class ContestSubmissionCommentException extends BaseException {
+public class ContestSubmissionFeedbackException extends BaseException {
 
-    private final ContestSubmissionCommentExceptionType exceptionType;
+    private final ContestSubmissionFeedbackExceptionType exceptionType;
 
-    public ContestSubmissionCommentException(final ContestSubmissionCommentExceptionType exceptionType) {
+    public ContestSubmissionFeedbackException(final ContestSubmissionFeedbackExceptionType exceptionType) {
         super(exceptionType.errorMessage());
         this.exceptionType = exceptionType;
     }

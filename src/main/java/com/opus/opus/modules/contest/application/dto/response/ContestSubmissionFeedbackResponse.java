@@ -1,35 +1,35 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-import com.opus.opus.modules.contest.domain.ContestSubmissionComment;
-import com.opus.opus.modules.file.application.dto.CommentFileInfo;
+import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
+import com.opus.opus.modules.file.application.dto.FeedbackFileInfo;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ContestSubmissionCommentResponse(
+public record ContestSubmissionFeedbackResponse(
 
-        Long commentId,
+        Long feedbackId,
         Long memberId,
         String memberName,
         String description,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String roleType,
-        List<ContestSubmissionCommentFileResponse> files
+        List<ContestSubmissionFeedbackFileResponse> files
 ) {
-    public static ContestSubmissionCommentResponse of(final ContestSubmissionComment comment, final Member member,
-                                                      final List<CommentFileInfo> files) {
-        return new ContestSubmissionCommentResponse(
-                comment.getId(),
-                comment.getMemberId(),
+    public static ContestSubmissionFeedbackResponse of(final ContestSubmissionFeedback feedback, final Member member,
+                                                       final List<FeedbackFileInfo> files) {
+        return new ContestSubmissionFeedbackResponse(
+                feedback.getId(),
+                feedback.getMemberId(),
                 member != null ? member.getName() : null,
-                comment.getDescription(),
-                comment.getCreatedAt(),
-                comment.getUpdatedAt(),
+                feedback.getDescription(),
+                feedback.getCreatedAt(),
+                feedback.getUpdatedAt(),
                 extractRoleType(member),
                 files.stream()
-                        .map(file -> new ContestSubmissionCommentFileResponse(
+                        .map(file -> new ContestSubmissionFeedbackFileResponse(
                                 file.fileId(), file.fileName(), file.fileSize()))
                         .toList()
         );

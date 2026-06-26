@@ -17,10 +17,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "file_comment")
+@Table(name = "file_feedback")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FileComment extends BaseEntity {
+public class FileFeedback extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,15 +31,15 @@ public class FileComment extends BaseEntity {
     private File file;
 
     @Column(nullable = false)
-    private Long commentId;
+    private Long feedbackId;
 
     @Column(nullable = false)
     private Integer fileOrder;
 
     @Builder
-    private FileComment(final File file, final Long commentId, final Integer fileOrder) {
+    private FileFeedback(final File file, final Long feedbackId, final Integer fileOrder) {
         this.file = file;
-        this.commentId = commentId;
+        this.feedbackId = feedbackId;
         this.fileOrder = fileOrder;
     }
 
@@ -53,5 +53,9 @@ public class FileComment extends BaseEntity {
 
     public String getFilePath() {
         return file.getFilePath();
+    }
+
+    public String getMimeType() {
+        return file.getMimeType();
     }
 }
