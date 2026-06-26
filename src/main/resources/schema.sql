@@ -1,6 +1,6 @@
 USE opus;
 
-DROP TABLE IF EXISTS `contest_submission_item_memo`;
+DROP TABLE IF EXISTS `contest_submission_memo`;
 DROP TABLE IF EXISTS `contest_submission`;
 DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
 DROP TABLE IF EXISTS `contest_submission_item`;
@@ -116,14 +116,14 @@ CREATE TABLE `contest_submission_item_file_formats` (
   PRIMARY KEY (`contest_submission_item_id`,`file_format`)
 );
 
-CREATE TABLE `contest_submission_item_memo` (
+CREATE TABLE `contest_submission_memo` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `content` varchar(500) NOT NULL,
-  `contest_submission_item_id` bigint NOT NULL,
+  `contest_submission_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_contest_submission_item_memo_item_id` (`contest_submission_item_id`)
+  UNIQUE KEY `uk_contest_submission_memo_submission_id` (`contest_submission_id`)
 );
 
 CREATE TABLE `contest_submission` (

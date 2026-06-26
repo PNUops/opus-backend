@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ContestSubmissionItemMemo extends BaseEntity {
+public class ContestSubmissionMemo extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,13 +28,13 @@ public class ContestSubmissionItemMemo extends BaseEntity {
     private String content;
 
     @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "contest_submission_item_id", nullable = false, unique = true)
-    private ContestSubmissionItem submissionItem;
+    @JoinColumn(name = "contest_submission_id", nullable = false, unique = true)
+    private ContestSubmission submission;
 
     @Builder
-    private ContestSubmissionItemMemo(final String content, final ContestSubmissionItem submissionItem) {
+    private ContestSubmissionMemo(final String content, final ContestSubmission submission) {
         this.content = content;
-        this.submissionItem = submissionItem;
+        this.submission = submission;
     }
 
     public void updateContent(final String content) {
