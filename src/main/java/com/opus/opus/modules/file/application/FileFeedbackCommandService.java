@@ -43,7 +43,7 @@ public class FileFeedbackCommandService {
 
         for (final Long fileId : fileIds) {
             final FileFeedback fileFeedback = fileFeedbackRepository.findByIdAndFeedbackId(fileId, feedbackId)
-                    .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND, "삭제할 파일을 찾을 수 없습니다. ID=" + fileId));
+                    .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND_FEEDBACK_FILE));
             deleteWithPhysicalFile(fileFeedback);
         }
     }
