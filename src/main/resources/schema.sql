@@ -3,6 +3,8 @@ USE opus;
 DROP TABLE IF EXISTS `contest_submission`;
 DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
 DROP TABLE IF EXISTS `contest_submission_item`;
+DROP TABLE IF EXISTS `contest_member_team_ids`;
+DROP TABLE IF EXISTS `contest_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_like`;
@@ -124,6 +126,21 @@ CREATE TABLE `contest_submission` (
   `team_id` bigint NOT NULL,
   `contest_submission_item_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_member` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  `member_id` bigint NOT NULL,
+  `contest_id` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_member_team_ids` (
+  `contest_member_id` bigint NOT NULL,
+  `team_id` bigint NOT NULL
 );
 
 CREATE TABLE `contest_sort` (
