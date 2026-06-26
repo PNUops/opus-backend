@@ -13,8 +13,7 @@ public record ContestSubmissionMyFeedbackResponse(
         LocalDateTime updatedAt,
         List<ContestSubmissionFeedbackFileResponse> files
 ) {
-    public static ContestSubmissionMyFeedbackResponse of(final ContestSubmissionFeedback feedback,
-                                                         final List<FeedbackFileInfo> files) {
+    public static ContestSubmissionMyFeedbackResponse of(final ContestSubmissionFeedback feedback, final List<FeedbackFileInfo> files) {
         return new ContestSubmissionMyFeedbackResponse(
                 feedback.getId(),
                 feedback.getDescription(),

@@ -20,10 +20,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "contest_submission_feedback",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_feedback_submission_member",
-                columnNames = {"contest_submission_id", "member_id"}))
+@Table(name = "contest_submission_feedback", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_feedback_member_submission", columnNames = {"member_id", "contest_submission_id"})
+})
 public class ContestSubmissionFeedback extends BaseEntity {
 
     @Id

@@ -56,8 +56,7 @@ public class ContestSubmissionFeedbackController {
             @PathVariable final Long submissionId,
             @LoginMember final Member member
     ) {
-        return ResponseEntity.ok(
-                contestSubmissionFeedbackQueryService.getMyFeedback(contestId, submissionId, member.getId()));
+        return ResponseEntity.ok(contestSubmissionFeedbackQueryService.getMyFeedback(contestId, submissionId, member.getId()));
     }
 
     @GetMapping

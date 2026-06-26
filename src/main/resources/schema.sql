@@ -136,7 +136,7 @@ CREATE TABLE `contest_submission_feedback` (
   `member_id` bigint NOT NULL,
   `contest_submission_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_feedback_submission_member` (`contest_submission_id`,`member_id`)
+  UNIQUE KEY `uk_feedback_member_submission` (`member_id`,`contest_submission_id`)
 );
 
 CREATE TABLE `contest_sort` (
