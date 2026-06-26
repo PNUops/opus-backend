@@ -76,6 +76,14 @@ public class TeamMemberConvenience {
         }
     }
 
+    public void validateTeamMemberInContestUnlessAdmin(final Long contestId, final Member member) {
+        if (!member.isAdmin()) {
+            if (!findMemberIdsByContestId(contestId).contains(member.getId())) {
+                throw new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM);
+            }
+        }
+    }
+
     public Set<Long> findMemberIdsByContestId(final Long contestId) {
         return teamMemberRepository.findMemberIdsByContestId(contestId);
     }

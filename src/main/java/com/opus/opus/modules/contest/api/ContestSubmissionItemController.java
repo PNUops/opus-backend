@@ -1,9 +1,11 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestSubmissionItemCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionItemQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
+import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -53,10 +55,12 @@ public class ContestSubmissionItemController {
         return ResponseEntity.noContent().build();
     }
 
-    @Secured("ROLE_관리자")
+    @Secured({"ROLE_관리자", "ROLE_학생"})
     @GetMapping("/{submissionItemId}")
     public ResponseEntity<ContestSubmissionItemResponse> getSubmissionItem(@PathVariable final Long contestId,
-                                                                           @PathVariable final Long submissionItemId) {
-        return ResponseEntity.ok(contestSubmissionItemQueryService.getSubmissionItem(contestId, submissionItemId));
+                                                                           @PathVariable final Long submissionItemId,
+                                                                           @LoginMember final Member member) {
+        return ResponseEntity.ok(
+                contestSubmissionItemQueryService.getSubmissionItem(contestId, submissionItemId, member));
     }
 }
