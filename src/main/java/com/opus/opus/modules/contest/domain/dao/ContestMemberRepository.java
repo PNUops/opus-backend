@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ContestMemberRepository extends JpaRepository<ContestMember, Long> {
 
     List<ContestMember> findAllByContestId(final Long contestId);
+
+    boolean existsByContestIdAndMemberId(final Long contestId, final Long memberId);
 }
