@@ -5,6 +5,7 @@ import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.ZIP;
 import static com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_PERIOD;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
@@ -47,6 +49,11 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     void setUp() {
         this.admin = MemberFixture.createMember();
         setField(admin, "id", 1L);
+
+        when(memberArgumentResolver.supportsParameter(
+                argThat(param -> param != null && param.hasParameterAnnotation(LoginMember.class))))
+                .thenReturn(true);
+        when(memberArgumentResolver.resolveArgument(any(), any(), any(), any())).thenReturn(admin);
 
         request = new ContestSubmissionItemRequest(
                 "발표자료", 1L, "PDF 형식의 발표자료를 제출하세요.", List.of(PDF, ZIP),
@@ -144,7 +151,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                 "발표자료", 1L, "PDF 형식의 발표자료를 제출하세요.", List.of("PDF", "ZIP"),
                 50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, "PUBLIC");
 
-        when(contestSubmissionItemQueryService.getSubmissionItem(any(), any())).thenReturn(response);
+        when(contestSubmissionItemQueryService.getSubmissionItem(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submission-items/{submissionItemId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -155,7 +162,8 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                 parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                                headerWithName(HttpHeaders.AUTHORIZATION)
+                                        .description("Bearer {accessToken} (관리자 또는 해당 대회의 팀장/팀원)")
                         ),
                         responseFields(
                                 stringFieldWithPath("name", "제출물 종류 이름"),

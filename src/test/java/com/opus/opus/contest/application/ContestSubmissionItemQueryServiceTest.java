@@ -5,10 +5,15 @@ import static com.opus.opus.contest.ContestSubmissionItemFixture.createSubmissio
 import static com.opus.opus.contest.ContestTrackFixture.createTrack;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.NOT_FOUND_SUBMISSION_ITEM;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.helper.IntegrationTest;
+import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestSubmissionItemQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
 import com.opus.opus.modules.contest.domain.Contest;
@@ -18,6 +23,16 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamMemberException;
+import com.opus.opus.team.TeamFixture;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,24 +49,54 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
     private ContestRepository contestRepository;
     @Autowired
     private ContestTrackRepository contestTrackRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private TeamRepository teamRepository;
+    @Autowired
+    private TeamMemberRepository teamMemberRepository;
 
     private Contest contest;
     private ContestTrack track;
+    private Member teamLeader;
+    private Member teamMember;
+    private Member admin;
 
     @BeforeEach
     void setUp() {
         contest = contestRepository.save(createContest());
         track = contestTrackRepository.save(createTrack(contest));
+
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        teamLeader = saveTeamMember(team, MemberFixture.createMemberWithUniqueNum(1), ROLE_팀장);
+        teamMember = saveTeamMember(team, MemberFixture.createMemberWithUniqueNum(2), ROLE_팀원);
+        admin = memberRepository.save(Member.generalMember()
+                .name("관리자")
+                .email("admin@pusan.ac.kr")
+                .password("{noop}12345678")
+                .studentId("000000000")
+                .roles(Set.of(ROLE_관리자))
+                .build());
+    }
+
+    private Member saveTeamMember(final Team team, final Member member, final TeamMemberRoleType roleType) {
+        final Member savedMember = memberRepository.save(member);
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(savedMember.getId())
+                .team(team)
+                .roles(Set.of(roleType))
+                .build());
+        return savedMember;
     }
 
     @Test
-    @DisplayName("[성공] 제출 항목의 설정값을 조회한다.")
-    void 제출_항목의_설정값을_조회한다() {
+    @DisplayName("[성공] 팀장이 제출 항목의 설정값을 조회한다.")
+    void 팀장이_제출_항목의_설정값을_조회한다() {
         final ContestSubmissionItem submissionItem =
                 contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
 
         final ContestSubmissionItemResponse response =
-                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId());
+                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId(), teamLeader);
 
         assertThat(response.name()).isEqualTo("발표자료");
         assertThat(response.contestTrackId()).isEqualTo(track.getId());
@@ -63,13 +108,50 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 팀원이 제출 항목의 설정값을 조회한다.")
+    void 팀원이_제출_항목의_설정값을_조회한다() {
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
+
+        final ContestSubmissionItemResponse response =
+                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId(), teamMember);
+
+        assertThat(response.name()).isEqualTo("발표자료");
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자는 팀에 속하지 않아도 제출 항목을 조회한다.")
+    void 관리자는_팀에_속하지_않아도_제출_항목을_조회한다() {
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
+
+        final ContestSubmissionItemResponse response =
+                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId(), admin);
+
+        assertThat(response.name()).isEqualTo("발표자료");
+    }
+
+    @Test
+    @DisplayName("[실패] 해당 대회의 팀에 속하지 않은 회원이면 조회에 실패한다.")
+    void 해당_대회의_팀에_속하지_않은_회원이면_조회에_실패한다() {
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
+        final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+
+        assertThatThrownBy(() -> contestSubmissionItemQueryService.getSubmissionItem(
+                contest.getId(), submissionItem.getId(), outsider))
+                .isInstanceOf(TeamMemberException.class)
+                .hasMessage(TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
+    }
+
+    @Test
     @DisplayName("[성공] 전체 분과 제출 항목은 분과 ID가 null로 조회된다.")
     void 전체_분과_제출_항목은_분과_ID가_null로_조회된다() {
         final ContestSubmissionItem submissionItem =
                 contestSubmissionItemRepository.save(createSubmissionItem(contest, null));
 
         final ContestSubmissionItemResponse response =
-                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId());
+                contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), submissionItem.getId(), teamLeader);
 
         assertThat(response.contestTrackId()).isNull();
     }
@@ -77,7 +159,7 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 제출 항목이면 조회에 실패한다.")
     void 존재하지_않는_제출_항목이면_조회에_실패한다() {
-        assertThatThrownBy(() -> contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), 999L))
+        assertThatThrownBy(() -> contestSubmissionItemQueryService.getSubmissionItem(contest.getId(), 999L, teamLeader))
                 .isInstanceOf(ContestSubmissionItemException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION_ITEM.errorMessage());
     }
@@ -90,7 +172,7 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
                 contestSubmissionItemRepository.save(createSubmissionItem(otherContest, null));
 
         assertThatThrownBy(() -> contestSubmissionItemQueryService.getSubmissionItem(
-                contest.getId(), submissionItem.getId()))
+                contest.getId(), submissionItem.getId(), teamLeader))
                 .isInstanceOf(ContestSubmissionItemException.class)
                 .hasMessage(INVALID_SUBMISSION_ITEM_FOR_CONTEST.errorMessage());
     }
