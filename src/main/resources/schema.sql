@@ -1,6 +1,6 @@
 USE opus;
 
-DROP TABLE IF EXISTS `contest_submission_comment`;
+DROP TABLE IF EXISTS `contest_submission_feedback`;
 DROP TABLE IF EXISTS `contest_submission`;
 DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
 DROP TABLE IF EXISTS `contest_submission_item`;
@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `file_document`;
 DROP TABLE IF EXISTS `file_image`;
-DROP TABLE IF EXISTS `file_comment`;
+DROP TABLE IF EXISTS `file_feedback`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
 DROP TABLE IF EXISTS `notification`;
@@ -128,15 +128,15 @@ CREATE TABLE `contest_submission` (
   PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `contest_submission_comment` (
+CREATE TABLE `contest_submission_feedback` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `description` varchar(255) NOT NULL,
-  `is_deleted` bit(1) NOT NULL,
+  `description` varchar(3000) NOT NULL,
   `member_id` bigint NOT NULL,
   `contest_submission_id` bigint NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_feedback_submission_member` (`contest_submission_id`,`member_id`)
 );
 
 CREATE TABLE `contest_sort` (
@@ -194,17 +194,17 @@ CREATE TABLE `file_document` (
   CONSTRAINT `fk_file_document_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
 );
 
-CREATE TABLE `file_comment` (
+CREATE TABLE `file_feedback` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `file_id` bigint NOT NULL,
-  `comment_id` bigint NOT NULL,
+  `feedback_id` bigint NOT NULL,
   `file_order` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_file_comment_file_id` (`file_id`),
-  KEY `idx_file_comment_comment_id` (`comment_id`),
-  CONSTRAINT `fk_file_comment_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `uk_file_feedback_file_id` (`file_id`),
+  KEY `idx_file_feedback_feedback_id` (`feedback_id`),
+  CONSTRAINT `fk_file_feedback_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `member` (

@@ -1,6 +1,6 @@
 package com.opus.opus.modules.file.application.dto;
 
-public record CommentFileInfo(
+public record FeedbackFileInfo(
 
         Long fileId,
         String fileName,

@@ -1,6 +1,6 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-public record ContestSubmissionCommentFileResponse(
+public record ContestSubmissionFeedbackFileResponse(
 
         Long fileId,
         String fileName,
