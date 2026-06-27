@@ -99,6 +99,14 @@ public class ContestMemberQueryService {
         if (memberType == null || memberType.isBlank()) {
             return null;
         }
+        final MemberRoleType roleType = toMemberRoleType(memberType);
+        if (!roleType.isStaff()) {
+            throw new ContestMemberException(INVALID_MEMBER_TYPE);
+        }
+        return roleType;
+    }
+
+    private MemberRoleType toMemberRoleType(final String memberType) {
         try {
             return MemberRoleType.valueOf(memberType);
         } catch (final IllegalArgumentException exception) {
