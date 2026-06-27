@@ -140,7 +140,8 @@ CREATE TABLE `contest_member` (
 
 CREATE TABLE `contest_member_team_ids` (
   `contest_member_id` bigint NOT NULL,
-  `team_id` bigint NOT NULL
+  `team_id` bigint NOT NULL,
+  PRIMARY KEY (`contest_member_id`,`team_id`)
 );
 
 CREATE TABLE `contest_sort` (

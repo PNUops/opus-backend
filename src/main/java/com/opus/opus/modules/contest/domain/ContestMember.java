@@ -12,7 +12,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +45,7 @@ public class ContestMember extends BaseEntity {
             name = "contest_member_team_ids",
             joinColumns = @JoinColumn(name = "contest_member_id"))
     @Column(name = "team_id", nullable = false)
-    private List<Long> teamIds = new ArrayList<>();
+    private Set<Long> teamIds = new LinkedHashSet<>();
 
     @Column(nullable = false)
     private Boolean isDeleted;
@@ -55,15 +54,13 @@ public class ContestMember extends BaseEntity {
     private ContestMember(final Contest contest, final Long memberId, final List<Long> teamIds) {
         this.contest = contest;
         this.memberId = memberId;
-        this.teamIds = teamIds != null ? teamIds : new ArrayList<>();
+        this.teamIds = teamIds != null ? new LinkedHashSet<>(teamIds) : new LinkedHashSet<>();
         this.isDeleted = false;
     }
 
     public void updateTeams(final List<Long> addTeamIds, final List<Long> deleteTeamIds) {
-        final Set<Long> updatedTeamIds = new LinkedHashSet<>(teamIds);
-        updatedTeamIds.addAll(addTeamIds);
-        deleteTeamIds.forEach(updatedTeamIds::remove);
-        this.teamIds = new ArrayList<>(updatedTeamIds);
+        teamIds.addAll(addTeamIds);
+        deleteTeamIds.forEach(teamIds::remove);
     }
 
 }
