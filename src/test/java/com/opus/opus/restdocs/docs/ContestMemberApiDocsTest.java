@@ -7,6 +7,7 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -16,6 +17,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
+import com.opus.opus.modules.contest.application.dto.request.StaffTeamUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse.TeamInfo;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -97,6 +99,35 @@ public class ContestMemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 arrayFieldWithPath("memberIds", "배정할 회원 ID 목록"),
                                 arrayFieldWithPath("teamIds", "담당 팀 ID 목록")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 배정된 담당 팀 목록을 수정한다.")
+    void 배정된_담당_팀_목록을_수정한다() throws Exception {
+        final StaffTeamUpdateRequest request = new StaffTeamUpdateRequest(
+                List.of(12L),
+                List.of(10L));
+
+        doNothing().when(contestMemberCommandService).updateAssignedTeams(any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/staff/{contestMemberId}", 1, 2)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("update-contest-member",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("contestMemberId").description("배정 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                arrayFieldWithPath("addTeamIds", "추가할 팀 ID 목록"),
+                                arrayFieldWithPath("deleteTeamIds", "삭제할 팀 ID 목록")
                         )
                 ));
     }
