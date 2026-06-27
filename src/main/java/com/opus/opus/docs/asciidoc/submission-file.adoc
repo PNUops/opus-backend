@@ -19,44 +19,44 @@ link:./opus.html[API 목록으로 돌아가기]
 선택한 '제출물 종류 및 분과' 조합들의 다운로드 대상 목록(제출 팀 수, 예상 용량)을 반환합니다.
 
 .Path Parameters
-include::{snippets}/get-submission-archive-targets/path-parameters.adoc[]
+include::{snippets}/get-submission-download-targets/path-parameters.adoc[]
 
 .Query Parameters
-include::{snippets}/get-submission-archive-targets/query-parameters.adoc[]
+include::{snippets}/get-submission-download-targets/query-parameters.adoc[]
 
 .HTTP Request Headers
-include::{snippets}/get-submission-archive-targets/request-headers.adoc[]
+include::{snippets}/get-submission-download-targets/request-headers.adoc[]
 
 .HTTP Request
-include::{snippets}/get-submission-archive-targets/http-request.adoc[]
+include::{snippets}/get-submission-download-targets/http-request.adoc[]
 
 .HTTP Response
-include::{snippets}/get-submission-archive-targets/http-response.adoc[]
+include::{snippets}/get-submission-download-targets/http-response.adoc[]
 
 .Response Body's Fields
-include::{snippets}/get-submission-archive-targets/response-fields.adoc[]
+include::{snippets}/get-submission-download-targets/response-fields.adoc[]
 
 == `POST`: 제출 파일 일괄 다운로드 (zip)
 
 선택한 조합들에 속한 모든 팀의 제출 파일을 하나의 zip으로 묶어 내려줍니다. 팀별 폴더 구조를 유지합니다.
 
 .Path Parameters
-include::{snippets}/download-submission-archive/path-parameters.adoc[]
+include::{snippets}/download-submissions/path-parameters.adoc[]
 
 .HTTP Request Headers
-include::{snippets}/download-submission-archive/request-headers.adoc[]
+include::{snippets}/download-submissions/request-headers.adoc[]
 
 .HTTP Request
-include::{snippets}/download-submission-archive/http-request.adoc[]
+include::{snippets}/download-submissions/http-request.adoc[]
 
 .Request Body's Fields
-include::{snippets}/download-submission-archive/request-fields.adoc[]
+include::{snippets}/download-submissions/request-fields.adoc[]
 
 .HTTP Response
-include::{snippets}/download-submission-archive/http-response.adoc[]
+include::{snippets}/download-submissions/http-response.adoc[]
 
 .Response Headers
-include::{snippets}/download-submission-archive/response-headers.adoc[]
+include::{snippets}/download-submissions/response-headers.adoc[]
 
 == `GET`: 제출 파일 개별 다운로드
 

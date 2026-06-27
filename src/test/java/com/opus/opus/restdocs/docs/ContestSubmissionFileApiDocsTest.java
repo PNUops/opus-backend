@@ -19,11 +19,11 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveTargetRequest;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetResponse;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
-import com.opus.opus.modules.contest.application.dto.response.SubmissionArchive;
+import com.opus.opus.modules.contest.application.dto.request.SubmissionDownloadRequest;
+import com.opus.opus.modules.contest.application.dto.request.DownloadTargetRequest;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResponse;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
@@ -50,16 +50,16 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 제출 파일 다운로드 대상 목록을 조회한다.")
     void 제출_파일_다운로드_대상_목록을_조회한다() throws Exception {
-        final ArchiveTargetsResponse response = new ArchiveTargetsResponse(List.of(
-                new ArchiveTargetResponse(3L, "최종 발표 자료", 2L, "AI/데이터", 6, 314572800L)));
-        when(contestSubmissionFileQueryService.getArchiveTargets(any(), any(), any())).thenReturn(response);
+        final DownloadTargetsResponse response = new DownloadTargetsResponse(List.of(
+                new DownloadTargetResponse(3L, "최종 발표 자료", 2L, "AI/데이터", 6, 314572800L)));
+        when(contestSubmissionFileQueryService.getDownloadTargets(any(), any(), any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/archives", 1)
+        mockMvc.perform(get("/contests/{contestId}/submissions/downloads", 1)
                         .param("submissionTypeId", "3")
                         .param("trackId", "2")
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
-                .andDo(document("get-submission-archive-targets",
+                .andDo(document("get-submission-download-targets",
                         pathParameters(parameterWithName("contestId").description("대회 ID")),
                         queryParameters(
                                 parameterWithName("submissionTypeId").description("제출물 종류 ID (선택)").optional(),
@@ -67,13 +67,13 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
                         responseFields(
-                                arrayFieldWithPath("archives", "다운로드 대상 목록"),
-                                numberFieldWithPath("archives[].submissionTypeId", "제출물 종류 ID"),
-                                stringFieldWithPath("archives[].submissionTypeName", "제출물 종류명"),
-                                numberFieldWithPath("archives[].trackId", "분과 ID"),
-                                stringFieldWithPath("archives[].trackName", "분과명"),
-                                numberFieldWithPath("archives[].submittedTeamCount", "제출 팀 수"),
-                                numberFieldWithPath("archives[].estimatedSize", "예상 용량 (byte)")
+                                arrayFieldWithPath("targets", "다운로드 대상 목록"),
+                                numberFieldWithPath("targets[].submissionTypeId", "제출물 종류 ID"),
+                                stringFieldWithPath("targets[].submissionTypeName", "제출물 종류명"),
+                                numberFieldWithPath("targets[].trackId", "분과 ID"),
+                                stringFieldWithPath("targets[].trackName", "분과명"),
+                                numberFieldWithPath("targets[].submittedTeamCount", "제출 팀 수"),
+                                numberFieldWithPath("targets[].estimatedSize", "예상 용량 (byte)")
                         )
                 ));
     }
@@ -82,18 +82,18 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 선택한 대상의 제출 파일을 zip으로 다운로드한다.")
     void 선택한_대상의_제출_파일을_zip으로_다운로드한다() throws Exception {
         final StreamingResponseBody body = outputStream -> outputStream.write("zip-binary".getBytes());
-        when(contestSubmissionFileQueryService.generateArchive(any(), any()))
-                .thenReturn(new SubmissionArchive("2026-PNUops_20260605.zip", body));
+        when(contestSubmissionFileQueryService.generateDownload(any(), any()))
+                .thenReturn(new SubmissionDownload("2026-PNUops_20260605.zip", body));
 
-        final ArchiveRequest request = new ArchiveRequest(List.of(
-                new ArchiveTargetRequest(3L, 2L), new ArchiveTargetRequest(3L, 5L)));
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(
+                new DownloadTargetRequest(3L, 2L), new DownloadTargetRequest(3L, 5L)));
 
-        mockMvc.perform(post("/contests/{contestId}/submissions/archives", 1)
+        mockMvc.perform(post("/contests/{contestId}/submissions/downloads", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andDo(document("download-submission-archive",
+                .andDo(document("download-submissions",
                         pathParameters(parameterWithName("contestId").description("대회 ID")),
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
                         requestFields(

@@ -1,10 +1,10 @@
 package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
-import com.opus.opus.modules.contest.application.dto.response.SubmissionArchive;
-import com.opus.opus.global.util.ContentDispositionUtil;
+import com.opus.opus.modules.contest.application.dto.request.SubmissionDownloadRequest;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
+import com.opus.opus.global.util.FileDownloadUtil;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,25 +30,25 @@ public class ContestSubmissionFileController {
 
     private final ContestSubmissionFileQueryService contestSubmissionFileQueryService;
 
-    @GetMapping("/archives")
-    public ResponseEntity<ArchiveTargetsResponse> getArchiveTargets(
+    @GetMapping("/downloads")
+    public ResponseEntity<DownloadTargetsResponse> getDownloadTargets(
             @PathVariable final Long contestId,
             @RequestParam(required = false) final Long submissionTypeId,
             @RequestParam(required = false) final Long trackId
     ) {
-        return ResponseEntity.ok(contestSubmissionFileQueryService.getArchiveTargets(contestId, submissionTypeId, trackId));
+        return ResponseEntity.ok(contestSubmissionFileQueryService.getDownloadTargets(contestId, submissionTypeId, trackId));
     }
 
-    @PostMapping("/archives")
-    public ResponseEntity<StreamingResponseBody> downloadArchive(
+    @PostMapping("/downloads")
+    public ResponseEntity<StreamingResponseBody> downloadSubmissions(
             @PathVariable final Long contestId,
-            @Valid @RequestBody final ArchiveRequest request
+            @Valid @RequestBody final SubmissionDownloadRequest request
     ) {
-        final SubmissionArchive submissionArchive = contestSubmissionFileQueryService.generateArchive(contestId, request);
+        final SubmissionDownload submissionDownload = contestSubmissionFileQueryService.generateDownload(contestId, request);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtil.attachment(submissionArchive.fileName()))
-                .body(submissionArchive.body());
+                .header(HttpHeaders.CONTENT_DISPOSITION, FileDownloadUtil.attachmentHeader(submissionDownload.fileName()))
+                .body(submissionDownload.body());
     }
 
     @GetMapping("/{submissionId}/files/{fileId}")
@@ -60,7 +60,7 @@ public class ContestSubmissionFileController {
         final DocumentFileDownload download = contestSubmissionFileQueryService.downloadSubmissionFile(contestId, submissionId, fileId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(download.mimeType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtil.attachment(download.fileName()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, FileDownloadUtil.attachmentHeader(download.fileName()))
                 .contentLength(download.fileSize())
                 .body(download.resource());
     }

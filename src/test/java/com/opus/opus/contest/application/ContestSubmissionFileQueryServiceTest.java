@@ -1,7 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_ARCHIVE;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,11 +15,11 @@ import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveTargetRequest;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetResponse;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
-import com.opus.opus.modules.contest.application.dto.response.SubmissionArchive;
+import com.opus.opus.modules.contest.application.dto.request.SubmissionDownloadRequest;
+import com.opus.opus.modules.contest.application.dto.request.DownloadTargetRequest;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResponse;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
@@ -145,12 +145,12 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 제출물 종류 × 분과 조합별로 제출 팀 수와 예상 용량을 집계한다.")
     void 종류_분과_조합별로_집계한다() {
-        final ArchiveTargetsResponse response = contestSubmissionFileQueryService.getArchiveTargets(
+        final DownloadTargetsResponse response = contestSubmissionFileQueryService.getDownloadTargets(
                 contest.getId(), null, null);
 
-        assertThat(response.archives())
-                .extracting(ArchiveTargetResponse::trackId, ArchiveTargetResponse::submittedTeamCount,
-                        ArchiveTargetResponse::estimatedSize)
+        assertThat(response.targets())
+                .extracting(DownloadTargetResponse::trackId, DownloadTargetResponse::submittedTeamCount,
+                        DownloadTargetResponse::estimatedSize)
                 .containsExactlyInAnyOrder(
                         tuple(trackAi.getId(), 2, 600L),
                         tuple(trackWeb.getId(), 1, 400L)
@@ -160,11 +160,11 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 분과로 필터링하면 해당 분과 조합만 반환한다.")
     void 분과로_필터링한다() {
-        final ArchiveTargetsResponse response = contestSubmissionFileQueryService.getArchiveTargets(
+        final DownloadTargetsResponse response = contestSubmissionFileQueryService.getDownloadTargets(
                 contest.getId(), null, trackWeb.getId());
 
-        assertThat(response.archives())
-                .extracting(ArchiveTargetResponse::trackId, ArchiveTargetResponse::submittedTeamCount)
+        assertThat(response.targets())
+                .extracting(DownloadTargetResponse::trackId, DownloadTargetResponse::submittedTeamCount)
                 .containsExactly(tuple(trackWeb.getId(), 1));
     }
 
@@ -176,24 +176,24 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
         final Team otherTeam = teamRepository.save(buildTeam(trackAi.getId(), "기타팀"));
         saveFile(saveSubmission(otherTeam.getId(), otherItem).getId(), "기타.pdf", 50L, 0);
 
-        final ArchiveTargetsResponse response = contestSubmissionFileQueryService.getArchiveTargets(
+        final DownloadTargetsResponse response = contestSubmissionFileQueryService.getDownloadTargets(
                 contest.getId(), item.getId(), null);
 
-        assertThat(response.archives())
-                .extracting(ArchiveTargetResponse::submissionTypeId)
+        assertThat(response.targets())
+                .extracting(DownloadTargetResponse::submissionTypeId)
                 .containsOnly(item.getId());
     }
 
     @Test
     @DisplayName("[성공] 선택한 대상의 제출 파일을 팀별 폴더 구조로 zip에 담는다.")
     void 선택한_대상의_제출_파일을_zip에_담는다() throws Exception {
-        final ArchiveRequest request = new ArchiveRequest(List.of(new ArchiveTargetRequest(item.getId(), null)));
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(new DownloadTargetRequest(item.getId(), null)));
 
-        final SubmissionArchive archive = contestSubmissionFileQueryService.generateArchive(contest.getId(), request);
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateDownload(contest.getId(), request);
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        archive.body().writeTo(out);
+        download.body().writeTo(out);
 
-        assertThat(archive.fileName()).endsWith(".zip");
+        assertThat(download.fileName()).endsWith(".zip");
         assertThat(readEntryNames(out.toByteArray()))
                 .containsExactlyInAnyOrder(
                         "AI팀1/발표자료.pdf", "AI팀1/보고서.pdf", "AI팀2/발표자료.pdf", "웹팀1/발표자료.pdf");
@@ -202,12 +202,12 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 특정 분과를 지정하면 해당 분과 팀의 파일만 zip에 담는다.")
     void 특정_분과만_zip에_담는다() throws Exception {
-        final ArchiveRequest request = new ArchiveRequest(
-                List.of(new ArchiveTargetRequest(item.getId(), trackWeb.getId())));
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(
+                List.of(new DownloadTargetRequest(item.getId(), trackWeb.getId())));
 
-        final SubmissionArchive archive = contestSubmissionFileQueryService.generateArchive(contest.getId(), request);
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateDownload(contest.getId(), request);
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        archive.body().writeTo(out);
+        download.body().writeTo(out);
 
         assertThat(readEntryNames(out.toByteArray())).containsExactly("웹팀1/발표자료.pdf");
     }
@@ -222,13 +222,13 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
         saveFile(saveSubmission(team.getId(), item).getId(), "자료.pdf", 100L, 0);
         saveFile(saveSubmission(team.getId(), otherItem).getId(), "자료.pdf", 200L, 0);
 
-        final ArchiveRequest request = new ArchiveRequest(List.of(
-                new ArchiveTargetRequest(item.getId(), null),
-                new ArchiveTargetRequest(otherItem.getId(), null)));
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(
+                new DownloadTargetRequest(item.getId(), null),
+                new DownloadTargetRequest(otherItem.getId(), null)));
 
-        final SubmissionArchive archive = contestSubmissionFileQueryService.generateArchive(contest.getId(), request);
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateDownload(contest.getId(), request);
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        archive.body().writeTo(out);
+        download.body().writeTo(out);
 
         final List<String> names = readEntryNames(out.toByteArray());
         assertThat(names).contains("중복팀/자료.pdf", "중복팀/자료(1).pdf");
@@ -238,11 +238,11 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 대상에 해당하는 제출이 없으면 예외가 발생한다.")
     void 대상에_해당하는_제출이_없으면_예외가_발생한다() {
-        final ArchiveRequest request = new ArchiveRequest(List.of(new ArchiveTargetRequest(item.getId(), 99999L)));
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(new DownloadTargetRequest(item.getId(), 99999L)));
 
-        assertThatThrownBy(() -> contestSubmissionFileQueryService.generateArchive(contest.getId(), request))
+        assertThatThrownBy(() -> contestSubmissionFileQueryService.generateDownload(contest.getId(), request))
                 .isInstanceOf(ContestSubmissionException.class)
-                .hasMessage(NO_SUBMISSIONS_TO_ARCHIVE.errorMessage());
+                .hasMessage(NO_SUBMISSIONS_TO_DOWNLOAD.errorMessage());
     }
 
     private List<String> readEntryNames(final byte[] zipBytes) throws Exception {

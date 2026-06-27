@@ -1,6 +1,6 @@
 package com.opus.opus.modules.contest.application.dto.response;
 
-public record ArchiveTargetResponse(
+public record DownloadTargetResponse(
 
         Long submissionTypeId,
         String submissionTypeName,

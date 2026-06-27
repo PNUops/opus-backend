@@ -2,14 +2,14 @@ package com.opus.opus.modules.contest.application;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
-import com.opus.opus.modules.contest.application.dto.request.ArchiveTargetRequest;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetResponse;
-import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
-import com.opus.opus.modules.contest.application.dto.response.SubmissionArchive;
+import com.opus.opus.modules.contest.application.dto.request.SubmissionDownloadRequest;
+import com.opus.opus.modules.contest.application.dto.request.DownloadTargetRequest;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResponse;
+import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.dao.ArchiveFileRow;
-import com.opus.opus.modules.contest.domain.dao.ArchiveTargetResult;
+import com.opus.opus.modules.contest.domain.dao.DownloadFileRow;
+import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestSubmissionException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType;
 import com.opus.opus.modules.file.application.FileDocumentQueryService;
@@ -49,33 +49,33 @@ public class ContestSubmissionFileQueryService {
         return fileDownload;
     }
 
-    public ArchiveTargetsResponse getArchiveTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
+    public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
         contestConvenience.validateExistContest(contestId);
 
-        final List<ArchiveTargetResponse> archives = contestSubmissionConvenience
-                .getArchiveTargets(contestId, submissionTypeId, trackId).stream()
-                .map(this::toArchiveTargetResponse)
+        final List<DownloadTargetResponse> targets = contestSubmissionConvenience
+                .getDownloadTargets(contestId, submissionTypeId, trackId).stream()
+                .map(this::toDownloadTargetResponse)
                 .toList();
 
-        return new ArchiveTargetsResponse(archives);
+        return new DownloadTargetsResponse(targets);
     }
 
-    public SubmissionArchive generateArchive(final Long contestId, final ArchiveRequest request) {
+    public SubmissionDownload generateDownload(final Long contestId, final SubmissionDownloadRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
-        final List<ArchiveFileRow> rows = contestSubmissionConvenience.getArchiveFileRows(contestId).stream()
+        final List<DownloadFileRow> rows = contestSubmissionConvenience.getDownloadFileRows(contestId).stream()
                 .filter(row -> matchesAnyTarget(row, request.targets()))
                 .toList();
 
         if (rows.isEmpty()) {
-            throw new ContestSubmissionException(ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_ARCHIVE);
+            throw new ContestSubmissionException(ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
         }
 
-        return new SubmissionArchive(generateFileName(contest), buildStreamingBody(rows));
+        return new SubmissionDownload(generateFileName(contest), buildStreamingBody(rows));
     }
 
-    private ArchiveTargetResponse toArchiveTargetResponse(final ArchiveTargetResult result) {
-        return new ArchiveTargetResponse(
+    private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
+        return new DownloadTargetResponse(
                 result.submissionTypeId(),
                 result.submissionTypeName(),
                 result.trackId(),
@@ -84,16 +84,16 @@ public class ContestSubmissionFileQueryService {
                 result.estimatedSize());
     }
 
-    private boolean matchesAnyTarget(final ArchiveFileRow row, final List<ArchiveTargetRequest> targets) {
+    private boolean matchesAnyTarget(final DownloadFileRow row, final List<DownloadTargetRequest> targets) {
         return targets.stream().anyMatch(target -> target.submissionTypeId().equals(row.submissionTypeId())
                 && (target.trackId() == null || target.trackId().equals(row.trackId())));
     }
 
-    private StreamingResponseBody buildStreamingBody(final List<ArchiveFileRow> rows) {
+    private StreamingResponseBody buildStreamingBody(final List<DownloadFileRow> rows) {
         return outputStream -> {
             final Set<String> usedEntryNames = new HashSet<>();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
-                for (final ArchiveFileRow row : rows) {
+                for (final DownloadFileRow row : rows) {
                     final String entryName = deduplicateEntryName(usedEntryNames,
                             row.teamName() + "/" + row.fileName());
                     zipOutputStream.putNextEntry(new ZipEntry(entryName));

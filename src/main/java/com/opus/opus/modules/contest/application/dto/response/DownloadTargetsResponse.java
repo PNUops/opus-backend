@@ -2,8 +2,8 @@ package com.opus.opus.modules.contest.application.dto.response;
 
 import java.util.List;
 
-public record ArchiveTargetsResponse(
+public record DownloadTargetsResponse(
 
-        List<ArchiveTargetResponse> archives
+        List<DownloadTargetResponse> targets
 ) {
 }
