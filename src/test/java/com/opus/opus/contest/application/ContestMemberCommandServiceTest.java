@@ -195,4 +195,23 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(ContestMemberException.class)
                 .hasMessage(INVALID_TEAM_FOR_CONTEST.errorMessage());
     }
+
+    @Test
+    @DisplayName("[성공] 배정을 삭제하면 더 이상 조회되지 않는다.")
+    void 배정을_삭제하면_더_이상_조회되지_않는다() {
+        final ContestMember contestMember = contestMemberRepository.save(
+                createContestMember(contest, professor.getId(), List.of(teamA.getId(), teamB.getId())));
+
+        contestMemberCommandService.deleteAssignment(contest.getId(), contestMember.getId());
+
+        assertThat(contestMemberRepository.findById(contestMember.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 배정은 삭제할 수 없다.")
+    void 존재하지_않는_배정은_삭제할_수_없다() {
+        assertThatThrownBy(() -> contestMemberCommandService.deleteAssignment(contest.getId(), 999L))
+                .isInstanceOf(ContestMemberException.class)
+                .hasMessage(NOT_FOUND_CONTEST_MEMBER.errorMessage());
+    }
 }
