@@ -54,3 +54,22 @@ include::{snippets}/assign-contest-member/request-fields.adoc[]
 
 .HTTP Response
 include::{snippets}/assign-contest-member/http-response.adoc[]
+
+== `PATCH`: 배정 팀 수정
+
+배정된 담당 팀 목록을 추가/삭제하여 수정한다.
+
+.HTTP Request Headers
+include::{snippets}/update-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-member/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-member/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-member/http-response.adoc[]
