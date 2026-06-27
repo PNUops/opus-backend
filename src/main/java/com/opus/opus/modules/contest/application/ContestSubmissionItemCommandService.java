@@ -9,11 +9,14 @@ import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionIt
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
+import com.opus.opus.modules.contest.domain.SubmissionFileFormat;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +48,7 @@ public class ContestSubmissionItemCommandService {
         final ContestTrack contestTrack = resolveContestTrack(contestId, request.contestTrackId());
         validateSubmissionPeriod(request.startAt(), request.endAt());
         submissionItem.updateContestSubmissionItem(
-                request.name(), request.description(), new HashSet<>(request.allowedFileFormats()),
+                request.name(), request.description(), toAllowedFileFormats(request.allowedFileFormats()),
                 request.maxFileSizeMb(), request.maxFileCount(), request.startAt(), request.endAt(),
                 request.allowLateSubmission(), request.visibility(), contestTrack);
     }
@@ -76,7 +79,7 @@ public class ContestSubmissionItemCommandService {
         return ContestSubmissionItem.builder()
                 .name(request.name())
                 .description(request.description())
-                .allowedFileFormats(new HashSet<>(request.allowedFileFormats()))
+                .allowedFileFormats(toAllowedFileFormats(request.allowedFileFormats()))
                 .maxFileSizeMb(request.maxFileSizeMb())
                 .maxFileCount(request.maxFileCount())
                 .startAt(request.startAt())
@@ -86,5 +89,12 @@ public class ContestSubmissionItemCommandService {
                 .contest(contest)
                 .contestTrack(contestTrack)
                 .build();
+    }
+
+    private Set<SubmissionFileFormat> toAllowedFileFormats(final List<SubmissionFileFormat> allowedFileFormats) {
+        if (allowedFileFormats == null) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(allowedFileFormats);
     }
 }

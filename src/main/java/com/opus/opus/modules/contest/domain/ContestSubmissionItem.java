@@ -141,6 +141,8 @@ public class ContestSubmissionItem extends BaseEntity {
 
     private void replaceAllowedFileFormats(final Set<SubmissionFileFormat> allowedFileFormats) {
         this.allowedFileFormats.clear();
-        this.allowedFileFormats.addAll(allowedFileFormats);
+        if (allowedFileFormats != null) {
+            this.allowedFileFormats.addAll(allowedFileFormats);
+        }
     }
 }

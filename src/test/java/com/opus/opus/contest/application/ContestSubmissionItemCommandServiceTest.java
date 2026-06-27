@@ -125,6 +125,20 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 허용 파일 형식이 없어도 제출 항목이 생성된다.")
+    void 허용_파일_형식이_없어도_제출_항목이_생성된다() {
+        final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
+                "발표자료", null, "파일 제출이 없는 항목입니다.", null,
+                50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, PUBLIC);
+
+        contestSubmissionItemCommandService.createSubmissionItem(contest.getId(), request);
+
+        final List<ContestSubmissionItem> submissionItems = contestSubmissionItemRepository.findAll();
+        assertThat(submissionItems).hasSize(1);
+        assertThat(submissionItems.get(0).getAllowedFileFormats()).isEmpty();
+    }
+
+    @Test
     @DisplayName("[실패] 시작일시와 마감일시가 같으면 제출 항목 생성에 실패한다.")
     void 시작일시와_마감일시가_같으면_제출_항목_생성에_실패한다() {
         final LocalDateTime sameTime = LocalDateTime.of(2026, 7, 1, 0, 0);

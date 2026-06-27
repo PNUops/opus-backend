@@ -3,7 +3,6 @@ package com.opus.opus.modules.contest.application.dto.request;
 import com.opus.opus.modules.contest.domain.SubmissionFileFormat;
 import com.opus.opus.modules.contest.domain.SubmissionVisibility;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
@@ -18,7 +17,6 @@ public record ContestSubmissionItemRequest(
 
         String description,
 
-        @NotEmpty(message = "허용 파일 형식은 최소 1개 이상이어야 합니다.")
         List<SubmissionFileFormat> allowedFileFormats,
 
         @NotNull(message = "파일 크기 제한은 필수입니다.")
