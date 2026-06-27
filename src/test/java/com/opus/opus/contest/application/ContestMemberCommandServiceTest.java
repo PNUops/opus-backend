@@ -77,8 +77,8 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
         assertThat(assigned)
                 .extracting(ContestMember::getMemberId)
                 .containsExactlyInAnyOrder(professor.getId(), mentor.getId());
-        assertThat(assigned.get(0).getTeamIds())
-                .containsExactlyInAnyOrder(teamA.getId(), teamB.getId());
+        assertThat(assigned).allSatisfy(member -> assertThat(member.getTeamIds())
+                .containsExactlyInAnyOrder(teamA.getId(), teamB.getId()));
     }
 
     @Test
