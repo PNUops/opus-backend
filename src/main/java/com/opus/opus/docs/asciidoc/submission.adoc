@@ -17,9 +17,9 @@ link:./opus.html[API 목록으로 돌아가기]
 == 제출물 상세 조회
 === `GET`: 제출물 상세 조회
 
-한 팀이 특정 제출물 종류로 낸 제출 한 건의 상세 정보를 조회합니다. +
-`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자/교수/직원/외부멘토는 제한이 없습니다. +
-`status`는 계산값으로, 단건 조회에서는 `SUBMITTED`(마감 내) / `LATE`(마감 후)만 반환됩니다. +
+한 팀이 특정 제출물 종류로 낸 제출 한 건의 상세 정보를 조회합니다.
+`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자/교수/직원/외부멘토는 제한이 없습니다.
+`status`는 계산값으로, 단건 조회에서는 `SUBMITTED`(마감 내) / `LATE`(마감 후)만 반환됩니다.
 `commentCount`는 제출물 코멘트 기능 추가 전까지 항상 0입니다.
 
 .HTTP Request
@@ -37,16 +37,19 @@ include::{snippets}/get-submission-detail/http-response.adoc[]
 .Response Fields
 include::{snippets}/get-submission-detail/response-fields.adoc[]
 
-=== `GET`: 제출물 상세 조회 실패 (존재하지 않는 제출)
+=== ⚠️ 실패 케이스
 
-.HTTP Request
+.❌ Case 1: 존재하지 않는 제출
+
+[%collapsible]
+
+====
+
 include::{snippets}/get-submission-detail-fail-not-found/http-request.adoc[]
 
-.Path Parameters
-include::{snippets}/get-submission-detail-fail-not-found/path-parameters.adoc[]
-
-.HTTP Response
 include::{snippets}/get-submission-detail-fail-not-found/http-response.adoc[]
+
+====
 
 == 제출물 제출
 === `POST`: 제출물 제출

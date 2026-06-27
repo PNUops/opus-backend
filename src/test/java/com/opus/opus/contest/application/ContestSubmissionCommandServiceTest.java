@@ -3,6 +3,7 @@ package com.opus.opus.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_ALREADY_EXISTS;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_COUNT_EXCEEDED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +104,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 팀원이 제출 항목에 파일을 제출하면 제출이 생성된다.")
-    void 제출을_생성한다() {
+    void 팀원이_파일을_제출하면_제출이_생성된다() {
         final List<MockMultipartFile> files = List.of(pdf("발표자료.pdf"), pdf("데모영상.pdf"));
 
         final SubmissionCreateResponse response = contestSubmissionCommandService.createSubmission(
@@ -124,6 +125,15 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
                 contest.getId(), submissionItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), member))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(SUBMISSION_ALREADY_EXISTS.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 파일 없이 제출하면 예외가 발생한다.")
+    void 파일_없이_제출하면_예외() {
+        assertThatThrownBy(() -> contestSubmissionCommandService.createSubmission(
+                contest.getId(), submissionItem.getId(), team.getId(), List.of(), member))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(SUBMISSION_FILE_REQUIRED.errorMessage());
     }
 
     @Test
@@ -194,7 +204,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         saveFileDocument(submission.getId(), 1, "기존1.pdf");
         saveFileDocument(submission.getId(), 2, "기존2.pdf");
 
-        contestSubmissionCommandService.addFiles(
+        contestSubmissionCommandService.addSubmissionFiles(
                 contest.getId(), submission.getId(), List.of(pdf("추가.pdf")), member);
 
         verify(fileDocumentCommandService).storeDocumentFiles(eq(submission.getId()), anyList());
@@ -210,7 +220,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         saveFileDocument(submission.getId(), 1, "기존1.pdf");
         saveFileDocument(submission.getId(), 2, "기존2.pdf");
 
-        assertThatThrownBy(() -> contestSubmissionCommandService.addFiles(
+        assertThatThrownBy(() -> contestSubmissionCommandService.addSubmissionFiles(
                 contest.getId(), submission.getId(), List.of(pdf("추가.pdf")), member))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(SUBMISSION_FILE_COUNT_EXCEEDED.errorMessage());

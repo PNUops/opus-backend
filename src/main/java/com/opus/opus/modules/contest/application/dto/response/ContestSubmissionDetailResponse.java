@@ -33,7 +33,7 @@ public record ContestSubmissionDetailResponse(
                 team.getOverview(),
                 trackName,
                 submissionItem.getName(),
-                SubmissionStatus.from(submission.getFirstSubmittedAt(), submissionItem.getEndAt()),
+                submission.isLate() ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED,
                 submissionItem.getEndAt(),
                 submission.getFirstSubmittedAt(),
                 submission.getUpdatedAt(),

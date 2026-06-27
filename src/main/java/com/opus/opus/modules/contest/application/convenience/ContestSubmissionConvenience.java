@@ -23,7 +23,15 @@ public class ContestSubmissionConvenience {
                 .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
     }
 
-    public boolean existsSubmission(final Long teamId, final ContestSubmissionItem submissionItem) {
+    public ContestSubmission getValidateSubmissionInContest(final Long submissionId, final Long contestId) {
+        final ContestSubmission submission = getValidateExistSubmission(submissionId);
+        if (!submission.isInContest(contestId)) {
+            throw new ContestException(NOT_FOUND_SUBMISSION);
+        }
+        return submission;
+    }
+
+    public boolean isSubmitted(final Long teamId, final ContestSubmissionItem submissionItem) {
         return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
     }
 }

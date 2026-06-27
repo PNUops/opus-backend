@@ -33,9 +33,9 @@ public class ContestSubmissionQueryService {
                                                                final Member member) {
         contestConvenience.validateExistContest(contestId);
 
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateExistSubmission(submissionId);
+        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(submissionId,
+                contestId);
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
-        validateSubmissionInContest(submissionItem, contestId);
 
         final Team team = teamConvenience.getValidateExistTeam(submission.getTeamId());
         validateTeamInContest(team, contestId);
@@ -54,12 +54,6 @@ public class ContestSubmissionQueryService {
         final int commentCount = 0;
 
         return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, commentCount);
-    }
-
-    private void validateSubmissionInContest(final ContestSubmissionItem submissionItem, final Long contestId) {
-        if (!submissionItem.isInContest(contestId)) {
-            throw new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION);
-        }
     }
 
     private void validateTeamInContest(final Team team, final Long contestId) {

@@ -33,7 +33,7 @@ public class FileDocumentCommandService {
 
         try {
             final byte[] fileBytes = multipartFile.getBytes();
-            final String extension = extractExtension(multipartFile.getOriginalFilename());
+            final String extension = File.extractExtension(multipartFile.getOriginalFilename());
             final String relativePath = filePathGenerator.generate(extension);
             final String mimeType = multipartFile.getContentType() != null
                     ? multipartFile.getContentType() : "application/octet-stream";
@@ -81,13 +81,5 @@ public class FileDocumentCommandService {
             fileDocumentRepository.delete(doc);
             eventPublisher.publishEvent(new PhysicalFileDeleteEvent(filePath));
         });
-    }
-
-    private String extractExtension(final String filename) {
-        if (filename == null || filename.isBlank()) {
-            return "bin";
-        }
-        final int lastDot = filename.lastIndexOf('.');
-        return (lastDot > 0 && lastDot < filename.length() - 1) ? filename.substring(lastDot + 1) : "bin";
     }
 }

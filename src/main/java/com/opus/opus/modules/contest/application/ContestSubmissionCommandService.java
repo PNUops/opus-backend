@@ -1,10 +1,10 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FILE_FORMAT;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION_ITEM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_ALREADY_EXISTS;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_COUNT_EXCEEDED;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -20,11 +20,13 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileDocumentCommandService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
+import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.exception.TeamException;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,14 +38,16 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class ContestSubmissionCommandService {
 
+    private final ContestSubmissionRepository contestSubmissionRepository;
+
     private final ContestConvenience contestConvenience;
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final ContestSubmissionItemConvenience contestSubmissionItemConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
-    private final ContestSubmissionRepository contestSubmissionRepository;
-    private final FileDocumentCommandService fileDocumentCommandService;
     private final FileDocumentConvenience fileDocumentConvenience;
+
+    private final FileDocumentCommandService fileDocumentCommandService;
 
     public SubmissionCreateResponse createSubmission(final Long contestId, final Long submissionItemId,
                                                      final Long teamId, final List<MultipartFile> files,
@@ -56,31 +60,36 @@ public class ContestSubmissionCommandService {
 
         validateSubmission(contestId, teamId, submissionItem, files, member);
 
-        final ContestSubmission submission = contestSubmissionRepository.save(
-                ContestSubmission.create(teamId, submissionItem));
+        final ContestSubmission submission = contestSubmissionRepository.save(ContestSubmission.builder()
+                .teamId(teamId)
+                .firstSubmittedAt(LocalDateTime.now())
+                .submissionItem(submissionItem)
+                .build());
         fileDocumentCommandService.storeDocumentFiles(submission.getId(), files);
 
         return new SubmissionCreateResponse(submission.getId());
     }
 
-    public void addFiles(final Long contestId, final Long submissionId, final List<MultipartFile> files,
-                         final Member member) {
+    public void addSubmissionFiles(final Long contestId, final Long submissionId, final List<MultipartFile> files,
+                                   final Member member) {
         contestConvenience.validateExistContest(contestId);
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateExistSubmission(submissionId);
-        final ContestSubmissionItem submissionItem = getValidatedSubmissionItem(submission, contestId);
+        final ContestSubmission submission =
+                contestSubmissionConvenience.getValidateSubmissionInContest(submissionId, contestId);
+        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
+        validateSubmittable(submissionItem);
         final long existingFileCount = fileDocumentConvenience.countBySubmissionId(submissionId);
         validateFiles(submissionItem, files, (int) existingFileCount + files.size());
-        validateSubmittable(submissionItem);
 
         fileDocumentCommandService.storeDocumentFiles(submissionId, files);
     }
 
     public void deleteFile(final Long contestId, final Long submissionId, final Long fileId, final Member member) {
         contestConvenience.validateExistContest(contestId);
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateExistSubmission(submissionId);
-        final ContestSubmissionItem submissionItem = getValidatedSubmissionItem(submission, contestId);
+        final ContestSubmission submission =
+                contestSubmissionConvenience.getValidateSubmissionInContest(submissionId, contestId);
+        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
         fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
@@ -99,8 +108,15 @@ public class ContestSubmissionCommandService {
         validateSubmissionItemInContest(submissionItem, contestId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
         validateNotAlreadySubmitted(teamId, submissionItem);
-        validateFiles(submissionItem, files, files.size());
         validateSubmittable(submissionItem);
+        validateFilesNotEmpty(files);
+        validateFiles(submissionItem, files, files.size());
+    }
+
+    private void validateFilesNotEmpty(final List<MultipartFile> files) {
+        if (files.isEmpty()) {
+            throw new ContestException(SUBMISSION_FILE_REQUIRED);
+        }
     }
 
     private void validateFiles(final ContestSubmissionItem submissionItem, final List<MultipartFile> files,
@@ -108,14 +124,6 @@ public class ContestSubmissionCommandService {
         validateFileCount(submissionItem, totalFileCount);
         validateFileFormats(submissionItem, files);
         validateFileSizes(submissionItem, files);
-    }
-
-    private ContestSubmissionItem getValidatedSubmissionItem(final ContestSubmission submission, final Long contestId) {
-        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
-        if (!submissionItem.isInContest(contestId)) {
-            throw new ContestException(NOT_FOUND_SUBMISSION);
-        }
-        return submissionItem;
     }
 
     private void validateTeamInContest(final Team team, final Long contestId) {
@@ -131,7 +139,7 @@ public class ContestSubmissionCommandService {
     }
 
     private void validateNotAlreadySubmitted(final Long teamId, final ContestSubmissionItem submissionItem) {
-        if (contestSubmissionConvenience.existsSubmission(teamId, submissionItem)) {
+        if (contestSubmissionConvenience.isSubmitted(teamId, submissionItem)) {
             throw new ContestException(SUBMISSION_ALREADY_EXISTS);
         }
     }
@@ -157,7 +165,8 @@ public class ContestSubmissionCommandService {
     }
 
     private void validateFileFormat(final ContestSubmissionItem submissionItem, final String filename) {
-        final SubmissionFileFormat format = SubmissionFileFormat.from(filename)
+        final String extension = File.extractExtension(filename);
+        final SubmissionFileFormat format = SubmissionFileFormat.fromExtension(extension)
                 .orElseThrow(() -> new ContestException(INVALID_SUBMISSION_FILE_FORMAT));
         if (!submissionItem.supportsFormat(format)) {
             throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);

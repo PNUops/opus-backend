@@ -9,6 +9,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     NOT_FOUND_SUBMISSION_ITEM(HttpStatus.NOT_FOUND, "존재하지 않는 제출 항목입니다."),
     SUBMISSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 제출한 제출 항목입니다."),
     INVALID_SUBMISSION_FILE_FORMAT(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다."),
+    SUBMISSION_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "제출물은 최소 한 개의 파일을 포함해야 합니다."),
     SUBMISSION_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 수를 초과했습니다."),
     SUBMISSION_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 크기를 초과했습니다."),
     SUBMISSION_PERIOD_ENDED(HttpStatus.BAD_REQUEST, "제출 기간이 종료되었습니다."),

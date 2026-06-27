@@ -244,7 +244,7 @@ public class ContestController {
                                                    @PathVariable final Long submissionId,
                                                    @RequestPart("files") final List<MultipartFile> files,
                                                    @LoginMember final Member member) {
-        contestSubmissionCommandService.addFiles(contestId, submissionId, files, member);
+        contestSubmissionCommandService.addSubmissionFiles(contestId, submissionId, files, member);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

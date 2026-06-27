@@ -51,11 +51,11 @@ public class ContestSubmission extends BaseEntity {
         this.isDeleted = false;
     }
 
-    public static ContestSubmission create(final Long teamId, final ContestSubmissionItem submissionItem) {
-        return ContestSubmission.builder()
-                .teamId(teamId)
-                .firstSubmittedAt(LocalDateTime.now())
-                .submissionItem(submissionItem)
-                .build();
+    public boolean isInContest(final Long contestId) {
+        return submissionItem.isInContest(contestId);
+    }
+
+    public boolean isLate() {
+        return firstSubmittedAt.isAfter(submissionItem.getEndAt());
     }
 }

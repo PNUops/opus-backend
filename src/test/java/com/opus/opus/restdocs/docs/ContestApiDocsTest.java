@@ -1040,7 +1040,7 @@ public class ContestApiDocsTest extends RestDocsTest {
         final MockMultipartFile file = new MockMultipartFile(
                 "files", "추가자료.pdf", "application/pdf", "file-content".getBytes());
 
-        doNothing().when(contestSubmissionCommandService).addFiles(any(), any(), any(), any());
+        doNothing().when(contestSubmissionCommandService).addSubmissionFiles(any(), any(), any(), any());
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/files", 1L, 12L)
                         .file(file)

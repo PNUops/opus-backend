@@ -17,9 +17,8 @@ public enum SubmissionFileFormat {
     DOCX,
     HWP;
 
-    public static Optional<SubmissionFileFormat> from(final String filename) {
-        final String extension = extractExtension(filename);
-        if (extension == null) {
+    public static Optional<SubmissionFileFormat> fromExtension(final String extension) {
+        if (extension == null || extension.isBlank()) {
             return Optional.empty();
         }
         try {
@@ -27,16 +26,5 @@ public enum SubmissionFileFormat {
         } catch (final IllegalArgumentException e) {
             return Optional.empty();
         }
-    }
-
-    private static String extractExtension(final String filename) {
-        if (filename == null || filename.isBlank()) {
-            return null;
-        }
-        final int lastDot = filename.lastIndexOf('.');
-        if (lastDot <= 0 || lastDot >= filename.length() - 1) {
-            return null;
-        }
-        return filename.substring(lastDot + 1);
     }
 }
