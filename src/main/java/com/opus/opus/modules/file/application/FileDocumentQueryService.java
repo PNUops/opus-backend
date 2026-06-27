@@ -1,6 +1,5 @@
 package com.opus.opus.modules.file.application;
 
-import com.opus.opus.modules.file.application.dto.ArchiveFileEntry;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.application.storage.FileStorage;
 import com.opus.opus.modules.file.domain.File;
@@ -9,7 +8,6 @@ import com.opus.opus.modules.file.domain.dao.FileDocumentRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.InputStream;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -38,19 +36,6 @@ public class FileDocumentQueryService {
                 file.getFileSize(),
                 fileDocument.getSubmissionId()
         );
-    }
-
-    public List<ArchiveFileEntry> getArchiveEntries(final List<Long> submissionIds) {
-        if (submissionIds.isEmpty()) {
-            return List.of();
-        }
-        return fileDocumentRepository.findAllBySubmissionIdIn(submissionIds).stream()
-                .map(fileDocument -> new ArchiveFileEntry(
-                        fileDocument.getSubmissionId(),
-                        fileDocument.getFile().getName(),
-                        fileDocument.getFile().getFileSize(),
-                        fileDocument.getFilePath()))
-                .toList();
     }
 
     public InputStream openStream(final String filePath) {

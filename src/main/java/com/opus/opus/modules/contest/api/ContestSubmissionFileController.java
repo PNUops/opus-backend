@@ -1,6 +1,5 @@
 package com.opus.opus.modules.contest.api;
 
-import com.opus.opus.modules.contest.application.ContestSubmissionArchiveQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
 import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
@@ -30,7 +29,6 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 public class ContestSubmissionFileController {
 
     private final ContestSubmissionFileQueryService contestSubmissionFileQueryService;
-    private final ContestSubmissionArchiveQueryService contestSubmissionArchiveQueryService;
 
     @GetMapping("/archives")
     public ResponseEntity<ArchiveTargetsResponse> getArchiveTargets(
@@ -38,7 +36,7 @@ public class ContestSubmissionFileController {
             @RequestParam(required = false) final Long submissionTypeId,
             @RequestParam(required = false) final Long trackId
     ) {
-        return ResponseEntity.ok(contestSubmissionArchiveQueryService.getArchiveTargets(contestId, submissionTypeId, trackId));
+        return ResponseEntity.ok(contestSubmissionFileQueryService.getArchiveTargets(contestId, submissionTypeId, trackId));
     }
 
     @PostMapping("/archives")
@@ -46,7 +44,7 @@ public class ContestSubmissionFileController {
             @PathVariable final Long contestId,
             @Valid @RequestBody final ArchiveRequest request
     ) {
-        final SubmissionArchive submissionArchive = contestSubmissionArchiveQueryService.generateArchive(contestId, request);
+        final SubmissionArchive submissionArchive = contestSubmissionFileQueryService.generateArchive(contestId, request);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtil.attachment(submissionArchive.fileName()))

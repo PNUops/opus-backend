@@ -52,7 +52,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     void 제출_파일_다운로드_대상_목록을_조회한다() throws Exception {
         final ArchiveTargetsResponse response = new ArchiveTargetsResponse(List.of(
                 new ArchiveTargetResponse(3L, "최종 발표 자료", 2L, "AI/데이터", 6, 314572800L)));
-        when(contestSubmissionArchiveQueryService.getArchiveTargets(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionFileQueryService.getArchiveTargets(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/archives", 1)
                         .param("submissionTypeId", "3")
@@ -82,7 +82,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 선택한 대상의 제출 파일을 zip으로 다운로드한다.")
     void 선택한_대상의_제출_파일을_zip으로_다운로드한다() throws Exception {
         final StreamingResponseBody body = outputStream -> outputStream.write("zip-binary".getBytes());
-        when(contestSubmissionArchiveQueryService.generateArchive(any(), any()))
+        when(contestSubmissionFileQueryService.generateArchive(any(), any()))
                 .thenReturn(new SubmissionArchive("2026-PNUops_20260605.zip", body));
 
         final ArchiveRequest request = new ArchiveRequest(List.of(
