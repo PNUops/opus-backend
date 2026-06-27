@@ -1,8 +1,6 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_MEMBER_TYPE;
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse;
@@ -65,14 +63,10 @@ public class ContestMemberQueryService {
 
     private String resolveRoleType(final Member member) {
         return member.getRoles().stream()
-                .filter(this::isStaffRole)
+                .filter(MemberRoleType::isStaff)
                 .map(Enum::name)
                 .findFirst()
                 .orElse(null);
-    }
-
-    private boolean isStaffRole(final MemberRoleType role) {
-        return role == ROLE_교수 || role == ROLE_외부멘토;
     }
 
     private List<ContestStaffResponse> filterStaff(final List<ContestStaffResponse> staff, final String memberType,

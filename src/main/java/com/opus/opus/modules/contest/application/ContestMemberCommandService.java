@@ -1,8 +1,10 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_MEMBER_TYPE;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -13,6 +15,8 @@ import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.exception.ContestMemberException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.exception.TeamException;
@@ -61,7 +65,17 @@ public class ContestMemberCommandService {
     }
 
     private void validateMembers(final List<Long> memberIds) {
-        memberIds.forEach(memberConvenience::validateExistMember);
+        final Map<Long, Member> members = memberConvenience.getMembersByIds(memberIds);
+        memberIds.forEach(memberId -> validateStaffMember(members.get(memberId)));
+    }
+
+    private void validateStaffMember(final Member member) {
+        if (member == null) {
+            throw new MemberException(NOT_FOUND_MEMBER);
+        }
+        if (!member.hasStaffRole()) {
+            throw new ContestMemberException(INVALID_MEMBER_TYPE);
+        }
     }
 
     private void validateTeams(final Long contestId, final List<Long> teamIds) {
