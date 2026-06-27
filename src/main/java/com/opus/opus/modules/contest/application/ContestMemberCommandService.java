@@ -49,6 +49,12 @@ public class ContestMemberCommandService {
         contestMember.updateTeams(request.addTeamIds(), request.deleteTeamIds());
     }
 
+    public void deleteAssignment(final Long contestId, final Long contestMemberId) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestMember contestMember = getContestMember(contestId, contestMemberId);
+        contestMemberRepository.delete(contestMember);
+    }
+
     private ContestMember getContestMember(final Long contestId, final Long contestMemberId) {
         return contestMemberRepository.findByIdAndContestId(contestMemberId, contestId)
                 .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));
