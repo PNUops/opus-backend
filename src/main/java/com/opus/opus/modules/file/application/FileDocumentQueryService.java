@@ -22,6 +22,7 @@ public class FileDocumentQueryService {
     private final FileDocumentRepository fileDocumentRepository;
     private final FileStorage fileStorage;
 
+    // 단일 파일 다운로드용. 파일 바이트 전체를 메모리에 적재해 응답에 필요한 메타데이터와 함께 반환한다.
     public DocumentFileDownload download(final Long fileDocumentId) {
         final FileDocument fileDocument = fileDocumentRepository.findById(fileDocumentId)
                 .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND));
@@ -38,6 +39,7 @@ public class FileDocumentQueryService {
         );
     }
 
+    // 아카이브(zip) 스트리밍용. 메모리에 적재하지 않고 파일을 스트림으로 열어 그대로 흘려보낸다.
     public InputStream openStream(final String filePath) {
         return fileStorage.loadAsStream(filePath);
     }

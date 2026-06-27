@@ -38,20 +38,18 @@ public class ContestSubmissionFileQueryService {
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
 
-    public DocumentFileDownload downloadSubmissionFile(final Long contestId, final Long submissionId,
-                                                       final Long fileId) {
+    public DocumentFileDownload downloadSubmissionFile(final Long contestId, final Long submissionId, final Long fileId) {
         contestConvenience.validateExistContest(contestId);
         contestSubmissionConvenience.validateExistSubmission(submissionId);
 
-        final DocumentFileDownload download = fileDocumentQueryService.download(fileId);
-        if (!download.submissionId().equals(submissionId)) {
+        final DocumentFileDownload fileDownload = fileDocumentQueryService.download(fileId);
+        if (!fileDownload.submissionId().equals(submissionId)) {
             throw new FileException(FileExceptionType.NOT_FOUND);
         }
-        return download;
+        return fileDownload;
     }
 
-    public ArchiveTargetsResponse getArchiveTargets(final Long contestId, final Long submissionTypeId,
-                                                    final Long trackId) {
+    public ArchiveTargetsResponse getArchiveTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
         contestConvenience.validateExistContest(contestId);
 
         final List<ArchiveTargetResponse> archives = contestSubmissionConvenience

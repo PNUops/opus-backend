@@ -9,13 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ContestSubmissionRepository extends JpaRepository<ContestSubmission, Long> {
 
-    boolean existsByTeamIdAndSubmissionItem(final Long teamId, final ContestSubmissionItem submissionItem);
-
-    @Query("SELECT s FROM ContestSubmission s JOIN FETCH s.submissionItem item "
-            + "WHERE item.contest.id = :contestId")
-    List<ContestSubmission> findAllByContestId(@Param("contestId") final Long contestId);
-
-    // 제출물 종류 × 분과(팀 기준) 조합별 제출 팀 수와 예상 용량(파일 크기 단순 합산)을 DB에서 집계한다.
+    // 제출물 종류와 분과별 제출 팀 수와 파일 용량을 DB에서 집계하여 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.ArchiveTargetResult(
                    item.id, item.name, track.id, track.trackName,
@@ -36,7 +30,7 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
                                                  @Param("submissionTypeId") Long submissionTypeId,
                                                  @Param("trackId") Long trackId);
 
-    // 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·경로) 행. 분과 미배정 팀의 제출물은 제외된다.
+    // 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·경로) 행 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.ArchiveFileRow(
                    item.id, track.id, team.teamName, f.name, f.filePath)

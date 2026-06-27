@@ -24,12 +24,7 @@ public class ContestSubmissionConvenience {
         }
     }
 
-    public List<ContestSubmission> getSubmissionsOfContest(final Long contestId) {
-        return contestSubmissionRepository.findAllByContestId(contestId);
-    }
-
-    public List<ArchiveTargetResult> getArchiveTargets(final Long contestId, final Long submissionTypeId,
-                                                       final Long trackId) {
+    public List<ArchiveTargetResult> getArchiveTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
         return contestSubmissionRepository.findArchiveTargets(contestId, submissionTypeId, trackId);
     }
 

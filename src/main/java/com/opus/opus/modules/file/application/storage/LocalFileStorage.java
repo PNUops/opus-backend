@@ -51,6 +51,7 @@ public class LocalFileStorage implements FileStorage {
         }
     }
 
+    // 파일 전체를 메모리에 올리지 않고 스트림으로 연다. (대용량/다수 파일 아카이브를 흘려보낼 때 사용)
     @Override
     public InputStream loadAsStream(final String relativePath) {
         final Path fullPath = resolveSafely(relativePath);
@@ -83,6 +84,7 @@ public class LocalFileStorage implements FileStorage {
         return Files.exists(resolveSafely(relativePath));
     }
 
+    // 정규화 후에도 basePath 밖을 벗어나면 차단한다. ("../" 등을 이용한 경로 탈출(path traversal) 방어)
     private Path resolveSafely(final String relativePath) {
         final Path fullPath = basePath.resolve(relativePath).normalize();
         if (!fullPath.startsWith(basePath)) {
