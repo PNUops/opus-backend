@@ -5,6 +5,7 @@ import static com.opus.opus.member.MemberFixture.createMemberWithRole;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -16,6 +17,7 @@ import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestMemberCommandService;
 import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
+import com.opus.opus.modules.contest.application.dto.request.StaffTeamUpdateRequest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
@@ -137,5 +139,60 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> contestMemberCommandService.assignStaff(contest.getId(), request))
                 .isInstanceOf(ContestMemberException.class)
                 .hasMessage(ALREADY_ASSIGNED_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 배정된 팀을 추가하고 삭제한다.")
+    void 배정된_팀을_추가하고_삭제한다() {
+        final ContestMember contestMember = contestMemberRepository.save(
+                createContestMember(contest, professor.getId(), List.of(teamA.getId())));
+        final StaffTeamUpdateRequest request = new StaffTeamUpdateRequest(
+                List.of(teamB.getId()), List.of(teamA.getId()));
+
+        contestMemberCommandService.updateAssignedTeams(contest.getId(), contestMember.getId(), request);
+
+        assertThat(contestMemberRepository.findById(contestMember.getId()).orElseThrow().getTeamIds())
+                .containsExactly(teamB.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 이미 배정된 팀을 추가해도 중복되지 않는다.")
+    void 이미_배정된_팀을_추가해도_중복되지_않는다() {
+        final ContestMember contestMember = contestMemberRepository.save(
+                createContestMember(contest, professor.getId(), List.of(teamA.getId(), teamB.getId())));
+        final StaffTeamUpdateRequest request = new StaffTeamUpdateRequest(
+                List.of(teamA.getId()), List.of());
+
+        contestMemberCommandService.updateAssignedTeams(contest.getId(), contestMember.getId(), request);
+
+        assertThat(contestMemberRepository.findById(contestMember.getId()).orElseThrow().getTeamIds())
+                .containsExactlyInAnyOrder(teamA.getId(), teamB.getId());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 배정은 수정할 수 없다.")
+    void 존재하지_않는_배정은_수정할_수_없다() {
+        final StaffTeamUpdateRequest request = new StaffTeamUpdateRequest(
+                List.of(teamA.getId()), List.of());
+
+        assertThatThrownBy(() -> contestMemberCommandService.updateAssignedTeams(contest.getId(), 999L, request))
+                .isInstanceOf(ContestMemberException.class)
+                .hasMessage(NOT_FOUND_CONTEST_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회의 팀은 추가할 수 없다.")
+    void 다른_대회의_팀은_추가할_수_없다() {
+        final ContestMember contestMember = contestMemberRepository.save(
+                createContestMember(contest, professor.getId(), List.of(teamA.getId())));
+        final Contest otherContest = contestRepository.save(ContestFixture.createContest());
+        final Team otherTeam = teamRepository.save(createTeamWithContestId(otherContest.getId()));
+        final StaffTeamUpdateRequest request = new StaffTeamUpdateRequest(
+                List.of(otherTeam.getId()), List.of());
+
+        assertThatThrownBy(
+                () -> contestMemberCommandService.updateAssignedTeams(contest.getId(), contestMember.getId(), request))
+                .isInstanceOf(ContestMemberException.class)
+                .hasMessage(INVALID_TEAM_FOR_CONTEST.errorMessage());
     }
 }
