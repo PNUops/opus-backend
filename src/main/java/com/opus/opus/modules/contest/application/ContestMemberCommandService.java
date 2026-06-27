@@ -20,7 +20,6 @@ import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.exception.TeamException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +110,7 @@ public class ContestMemberCommandService {
         return ContestMember.builder()
                 .contest(contest)
                 .memberId(memberId)
-                .teamIds(new ArrayList<>(teamIds))
+                .teamIds(teamIds)
                 .build();
     }
 }
