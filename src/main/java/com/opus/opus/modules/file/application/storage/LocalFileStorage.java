@@ -84,7 +84,7 @@ public class LocalFileStorage implements FileStorage {
         return Files.exists(resolveSafely(relativePath));
     }
 
-    // 정규화 후에도 basePath 밖을 벗어나면 차단한다. ("../" 등을 이용한 경로 탈출(path traversal) 방어)
+    // 파일 경로를 안전하게 해석하여 basePath를 벗어나지 않도록 한다
     private Path resolveSafely(final String relativePath) {
         final Path fullPath = basePath.resolve(relativePath).normalize();
         if (!fullPath.startsWith(basePath)) {

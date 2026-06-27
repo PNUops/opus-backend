@@ -39,7 +39,7 @@ public class FileDocumentQueryService {
         );
     }
 
-    // 아카이브(zip) 스트리밍용. 메모리에 적재하지 않고 파일을 스트림으로 열어 그대로 흘려보낸다.
+    // zip 파일 스트리밍용. 메모리에 적재하지 않고 파일을 스트림으로 열어 그대로 흘려보낸다.
     public InputStream openStream(final String filePath) {
         return fileStorage.loadAsStream(filePath);
     }

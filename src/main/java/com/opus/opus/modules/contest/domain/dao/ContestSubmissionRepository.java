@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ContestSubmissionRepository extends JpaRepository<ContestSubmission, Long> {
 
-    // 제출물 종류와 분과별 제출 팀 수와 파일 용량을 DB에서 집계하여 반환
+    // 제출물 종류, 분과별 제출 팀 수와 파일 용량을 DB에서 집계하여 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.DownloadTargetResult(
                    item.id, item.name, track.id, track.trackName,
@@ -30,7 +30,7 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
                                                  @Param("submissionTypeId") Long submissionTypeId,
                                                  @Param("trackId") Long trackId);
 
-    // 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·경로) 행 반환
+    // 제출 파일 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·경로) 행 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.DownloadFileRow(
                    item.id, track.id, team.teamName, f.name, f.filePath)

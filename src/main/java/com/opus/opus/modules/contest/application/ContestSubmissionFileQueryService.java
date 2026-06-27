@@ -64,14 +64,14 @@ public class ContestSubmissionFileQueryService {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
         final List<DownloadFileRow> rows = contestSubmissionConvenience.getDownloadFileRows(contestId).stream()
-                .filter(row -> matchesAnyTarget(row, request.targets()))
+                .filter(row -> matchesTarget(row, request.targets()))
                 .toList();
 
         if (rows.isEmpty()) {
             throw new ContestSubmissionException(ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
         }
 
-        return new SubmissionDownload(generateFileName(contest), buildStreamingBody(rows));
+        return new SubmissionDownload(generateZipFileName(contest), buildZipFileBody(rows));
     }
 
     private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
@@ -84,12 +84,13 @@ public class ContestSubmissionFileQueryService {
                 result.estimatedSize());
     }
 
-    private boolean matchesAnyTarget(final DownloadFileRow row, final List<DownloadTargetRequest> targets) {
-        return targets.stream().anyMatch(target -> target.submissionTypeId().equals(row.submissionTypeId())
-                && (target.trackId() == null || target.trackId().equals(row.trackId())));
+    private boolean matchesTarget(final DownloadFileRow row, final List<DownloadTargetRequest> targets) {
+        return targets.stream().anyMatch(target ->
+                target.submissionTypeId().equals(row.submissionTypeId())
+                        && (target.trackId() == null || target.trackId().equals(row.trackId())));
     }
 
-    private StreamingResponseBody buildStreamingBody(final List<DownloadFileRow> rows) {
+    private StreamingResponseBody buildZipFileBody(final List<DownloadFileRow> rows) {
         return outputStream -> {
             final Set<String> usedEntryNames = new HashSet<>();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
@@ -106,7 +107,7 @@ public class ContestSubmissionFileQueryService {
         };
     }
 
-    // 같은 폴더에 동일 파일명이 들어오면 ZipException(duplicate entry)으로 다운로드가 깨지므로
+    // 만약에 같은 폴더에 동일 파일명이 들어오면 ZipException(duplicate entry)으로 다운로드가 깨지므로
     // "이름(1).pdf"처럼 확장자 앞에 순번을 붙여 엔트리명 충돌을 회피한다.
     private String deduplicateEntryName(final Set<String> usedEntryNames, final String entryName) {
         if (usedEntryNames.add(entryName)) {
@@ -124,7 +125,7 @@ public class ContestSubmissionFileQueryService {
         return candidate;
     }
 
-    private String generateFileName(final Contest contest) {
+    private String generateZipFileName(final Contest contest) {
         final String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         final String contestName = contest.getContestName().replaceAll("\\s+", "");
         return "%s_%s.zip".formatted(contestName, date);
