@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
@@ -128,6 +129,25 @@ public class ContestMemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 arrayFieldWithPath("addTeamIds", "추가할 팀 ID 목록"),
                                 arrayFieldWithPath("deleteTeamIds", "삭제할 팀 ID 목록")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 배정을 삭제한다.")
+    void 배정을_삭제한다() throws Exception {
+        doNothing().when(contestMemberCommandService).deleteAssignment(any(), any());
+
+        mockMvc.perform(delete("/contests/{contestId}/staff/{contestMemberId}", 1, 2)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("delete-contest-member",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("contestMemberId").description("배정 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         )
                 ));
     }

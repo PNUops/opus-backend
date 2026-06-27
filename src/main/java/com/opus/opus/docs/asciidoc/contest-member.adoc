@@ -73,3 +73,19 @@ include::{snippets}/update-contest-member/request-fields.adoc[]
 
 .HTTP Response
 include::{snippets}/update-contest-member/http-response.adoc[]
+
+== `DELETE`: 배정 삭제
+
+해당 배정을 삭제하여 회원의 모든 담당 팀 배정을 제거한다.
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-member/http-response.adoc[]
