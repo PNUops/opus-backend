@@ -48,8 +48,7 @@ public class ContestSubmissionArchiveQueryService {
     private final TeamConvenience teamConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
 
-    public ArchiveTargetsResponse getArchiveTargets(final Long contestId, final Long submissionTypeId,
-                                                    final Long trackId) {
+    public ArchiveTargetsResponse getArchiveTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
         contestConvenience.validateExistContest(contestId);
 
         final List<ContestSubmission> submissions = contestSubmissionConvenience.getSubmissionsOfContest(contestId)

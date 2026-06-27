@@ -5,12 +5,11 @@ import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryServi
 import com.opus.opus.modules.contest.application.dto.request.ArchiveRequest;
 import com.opus.opus.modules.contest.application.dto.response.ArchiveTargetsResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionArchive;
+import com.opus.opus.global.util.ContentDispositionUtil;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import jakarta.validation.Valid;
-import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +38,7 @@ public class ContestSubmissionFileController {
             @RequestParam(required = false) final Long submissionTypeId,
             @RequestParam(required = false) final Long trackId
     ) {
-        return ResponseEntity.ok(
-                contestSubmissionArchiveQueryService.getArchiveTargets(contestId, submissionTypeId, trackId));
+        return ResponseEntity.ok(contestSubmissionArchiveQueryService.getArchiveTargets(contestId, submissionTypeId, trackId));
     }
 
     @PostMapping("/archives")
@@ -48,11 +46,11 @@ public class ContestSubmissionFileController {
             @PathVariable final Long contestId,
             @Valid @RequestBody final ArchiveRequest request
     ) {
-        final SubmissionArchive archive = contestSubmissionArchiveQueryService.generateArchive(contestId, request);
+        final SubmissionArchive submissionArchive = contestSubmissionArchiveQueryService.generateArchive(contestId, request);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(archive.fileName()))
-                .body(archive.body());
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtil.attachment(submissionArchive.fileName()))
+                .body(submissionArchive.body());
     }
 
     @GetMapping("/{submissionId}/files/{fileId}")
@@ -61,19 +59,11 @@ public class ContestSubmissionFileController {
             @PathVariable final Long submissionId,
             @PathVariable final Long fileId
     ) {
-        final DocumentFileDownload download = contestSubmissionFileQueryService.downloadSubmissionFile(
-                contestId, submissionId, fileId);
+        final DocumentFileDownload download = contestSubmissionFileQueryService.downloadSubmissionFile(contestId, submissionId, fileId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(download.mimeType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(download.fileName()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtil.attachment(download.fileName()))
                 .contentLength(download.fileSize())
                 .body(download.resource());
-    }
-
-    private String attachment(final String fileName) {
-        return ContentDisposition.attachment()
-                .filename(fileName, StandardCharsets.UTF_8)
-                .build()
-                .toString();
     }
 }
