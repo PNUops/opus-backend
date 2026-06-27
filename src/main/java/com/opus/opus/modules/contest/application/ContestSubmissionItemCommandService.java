@@ -66,7 +66,7 @@ public class ContestSubmissionItemCommandService {
     }
 
     private void validateSubmissionPeriod(final LocalDateTime startAt, final LocalDateTime endAt) {
-        if (startAt.isAfter(endAt)) {
+        if (!endAt.isAfter(startAt)) {
             throw new ContestSubmissionItemException(INVALID_SUBMISSION_PERIOD);
         }
     }

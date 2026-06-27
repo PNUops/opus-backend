@@ -125,6 +125,19 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[실패] 시작일시와 마감일시가 같으면 제출 항목 생성에 실패한다.")
+    void 시작일시와_마감일시가_같으면_제출_항목_생성에_실패한다() {
+        final LocalDateTime sameTime = LocalDateTime.of(2026, 7, 1, 0, 0);
+        final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
+                "발표자료", null, "PDF 형식의 발표자료를 제출하세요.", List.of(PDF, ZIP),
+                50, 3, sameTime, sameTime, true, PUBLIC);
+
+        assertThatThrownBy(() -> contestSubmissionItemCommandService.createSubmissionItem(contest.getId(), request))
+                .isInstanceOf(ContestSubmissionItemException.class)
+                .hasMessage(INVALID_SUBMISSION_PERIOD.errorMessage());
+    }
+
+    @Test
     @DisplayName("[성공] 제출 항목의 설정값이 수정된다.")
     void 제출_항목의_설정값이_수정된다() {
         final ContestSubmissionItem submissionItem =
@@ -195,6 +208,22 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
                 100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 7, 1, 0, 0), false, PRIVATE);
+
+        assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(
+                contest.getId(), submissionItem.getId(), request))
+                .isInstanceOf(ContestSubmissionItemException.class)
+                .hasMessage(INVALID_SUBMISSION_PERIOD.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 시작일시와 마감일시가 같으면 수정에 실패한다.")
+    void 시작일시와_마감일시가_같으면_수정에_실패한다() {
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
+        final LocalDateTime sameTime = LocalDateTime.of(2026, 8, 1, 0, 0);
+        final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
+                "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
+                100, 5, sameTime, sameTime, false, PRIVATE);
 
         assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(
                 contest.getId(), submissionItem.getId(), request))
