@@ -159,7 +159,7 @@ public class ContestSubmissionCommandService {
         final String extension = File.extractExtension(filename);
         final SubmissionFileFormat format = SubmissionFileFormat.fromExtension(extension)
                 .orElseThrow(() -> new ContestException(INVALID_SUBMISSION_FILE_FORMAT));
-        if (!submissionItem.supportsFormat(format)) {
+        if (!submissionItem.isAllowedFormat(format)) {
             throw new ContestException(INVALID_SUBMISSION_FILE_FORMAT);
         }
     }

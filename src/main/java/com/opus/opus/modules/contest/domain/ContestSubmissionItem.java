@@ -112,7 +112,7 @@ public class ContestSubmissionItem extends BaseEntity {
         return totalFileCount > maxFileCount;
     }
 
-    public boolean supportsFormat(final SubmissionFileFormat format) {
+    public boolean isAllowedFormat(final SubmissionFileFormat format) {
         return allowedFileFormats.contains(format);
     }
 
