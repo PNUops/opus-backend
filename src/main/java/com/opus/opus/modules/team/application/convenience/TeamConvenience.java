@@ -57,7 +57,11 @@ public class TeamConvenience {
 
     public Map<Long, Team> getTeamsByIds(final List<Long> teamIds) {
         return teamRepository.findAllById(teamIds).stream()
-                .collect(toMap(Team::getId, Function.identity()));
+                .collect(toMap(
+                        Team::getId,
+                        Function.identity(),
+                        (existing, replacement) -> existing
+                ));
     }
 
     public Team save(final Team team) {
