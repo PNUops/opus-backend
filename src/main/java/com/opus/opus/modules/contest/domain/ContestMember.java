@@ -13,7 +13,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -55,6 +57,13 @@ public class ContestMember extends BaseEntity {
         this.memberId = memberId;
         this.teamIds = teamIds != null ? teamIds : new ArrayList<>();
         this.isDeleted = false;
+    }
+
+    public void updateTeams(final List<Long> addTeamIds, final List<Long> deleteTeamIds) {
+        final Set<Long> updatedTeamIds = new LinkedHashSet<>(teamIds);
+        updatedTeamIds.addAll(addTeamIds);
+        deleteTeamIds.forEach(updatedTeamIds::remove);
+        this.teamIds = new ArrayList<>(updatedTeamIds);
     }
 
 }
