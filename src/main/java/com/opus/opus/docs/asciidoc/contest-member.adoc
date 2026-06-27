@@ -35,3 +35,22 @@ include::{snippets}/get-contest-member/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-contest-member/response-fields.adoc[]
+
+== `POST`: 일괄 배정
+
+여러 교수/외부멘토를 동일한 담당 팀 목록으로 한 번에 배정한다.
+
+.HTTP Request Headers
+include::{snippets}/assign-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/assign-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/assign-contest-member/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/assign-contest-member/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/assign-contest-member/http-response.adoc[]

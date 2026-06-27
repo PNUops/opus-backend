@@ -1,17 +1,21 @@
 package com.opus.opus.restdocs.docs;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse.TeamInfo;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -19,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 public class ContestMemberApiDocsTest extends RestDocsTest {
 
@@ -64,6 +69,34 @@ public class ContestMemberApiDocsTest extends RestDocsTest {
                                 arrayFieldWithPath("[].teams", "담당 팀 목록"),
                                 numberFieldWithPath("[].teams[].teamId", "팀 ID"),
                                 stringFieldWithPath("[].teams[].teamName", "팀 이름")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 교수/외부멘토를 담당 팀에 일괄 배정한다.")
+    void 교수_외부멘토를_담당_팀에_일괄_배정한다() throws Exception {
+        final StaffBatchAssignRequest request = new StaffBatchAssignRequest(
+                List.of(2L, 3L),
+                List.of(10L, 12L));
+
+        doNothing().when(contestMemberCommandService).assignStaff(any(), any());
+
+        mockMvc.perform(post("/contests/{contestId}/staff/batch", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andDo(document("assign-contest-member",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                arrayFieldWithPath("memberIds", "배정할 회원 ID 목록"),
+                                arrayFieldWithPath("teamIds", "담당 팀 ID 목록")
                         )
                 ));
     }
