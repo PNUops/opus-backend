@@ -254,7 +254,7 @@ public class ContestController {
                                                      @PathVariable final Long submissionId,
                                                      @PathVariable final Long fileId,
                                                      @LoginMember final Member member) {
-        contestSubmissionCommandService.deleteFile(contestId, submissionId, fileId, member);
+        contestSubmissionCommandService.deleteSubmissionFile(contestId, submissionId, fileId, member);
         return ResponseEntity.noContent().build();
     }
 

@@ -7,7 +7,6 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
@@ -24,8 +23,6 @@ import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
-import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.exception.TeamException;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +50,7 @@ public class ContestSubmissionCommandService {
                                                      final Long teamId, final List<MultipartFile> files,
                                                      final Member member) {
         contestConvenience.validateExistContest(contestId);
-        final Team team = teamConvenience.getValidateExistTeam(teamId);
-        validateTeamInContest(team, contestId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
         final ContestSubmissionItem submissionItem =
                 contestSubmissionItemConvenience.getValidateExistSubmissionItem(submissionItemId);
 
@@ -85,7 +81,8 @@ public class ContestSubmissionCommandService {
         fileDocumentCommandService.storeDocumentFiles(submissionId, files);
     }
 
-    public void deleteFile(final Long contestId, final Long submissionId, final Long fileId, final Member member) {
+    public void deleteSubmissionFile(final Long contestId, final Long submissionId, final Long fileId,
+                                     final Member member) {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission =
                 contestSubmissionConvenience.getValidateSubmissionInContest(submissionId, contestId);
@@ -124,12 +121,6 @@ public class ContestSubmissionCommandService {
         validateFileCount(submissionItem, totalFileCount);
         validateFileFormats(submissionItem, files);
         validateFileSizes(submissionItem, files);
-    }
-
-    private void validateTeamInContest(final Team team, final Long contestId) {
-        if (!team.isInContest(contestId)) {
-            throw new TeamException(NOT_FOUND_TEAM);
-        }
     }
 
     private void validateSubmissionItemInContest(final ContestSubmissionItem submissionItem, final Long contestId) {

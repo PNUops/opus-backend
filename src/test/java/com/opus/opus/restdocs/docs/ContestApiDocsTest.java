@@ -1067,7 +1067,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 제출물의_파일_한_건을_삭제한다() throws Exception {
         loginMember();
 
-        doNothing().when(contestSubmissionCommandService).deleteFile(any(), any(), any(), any());
+        doNothing().when(contestSubmissionCommandService).deleteSubmissionFile(any(), any(), any(), any());
 
         mockMvc.perform(delete("/contests/{contestId}/submissions/{submissionId}/files/{fileId}", 1L, 12L, 101L)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))

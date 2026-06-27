@@ -5,8 +5,6 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionCo
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
-import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.member.domain.Member;
@@ -37,8 +35,7 @@ public class ContestSubmissionQueryService {
                 contestId);
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
 
-        final Team team = teamConvenience.getValidateExistTeam(submission.getTeamId());
-        validateTeamInContest(team, contestId);
+        final Team team = teamConvenience.getValidateTeamInContest(submission.getTeamId(), contestId);
         // 학생은 해당 팀의 팀장/팀원만 조회할 수 있다. (관리자/교수/직원/외부멘토는 제한 없음)
         teamMemberConvenience.validateTeamMemberIfStudent(team.getId(), member);
 
@@ -54,11 +51,5 @@ public class ContestSubmissionQueryService {
         final int commentCount = 0;
 
         return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, commentCount);
-    }
-
-    private void validateTeamInContest(final Team team, final Long contestId) {
-        if (!team.isInContest(contestId)) {
-            throw new ContestException(ContestExceptionType.NOT_FOUND_SUBMISSION);
-        }
     }
 }

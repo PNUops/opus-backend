@@ -3,6 +3,7 @@ package com.opus.opus.modules.team.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST_SORT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.CONTEST_HAS_TEAM;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.INVALID_TEAM_FOR_CONTEST;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
 
@@ -34,6 +35,14 @@ public class TeamConvenience {
 
     public void validateExistTeam(final Long teamId) {
         teamRepository.findById(teamId).orElseThrow(() -> new TeamException(NOT_FOUND_TEAM));
+    }
+
+    public Team getValidateTeamInContest(final Long teamId, final Long contestId) {
+        final Team team = getValidateExistTeam(teamId);
+        if (!team.isInContest(contestId)) {
+            throw new TeamException(INVALID_TEAM_FOR_CONTEST);
+        }
+        return team;
     }
 
     public void validateAllTeamsDeletedInContest(final Long contestId) {
