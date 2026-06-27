@@ -2,10 +2,12 @@ package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
+import com.opus.opus.modules.contest.application.dto.request.StaffTeamUpdateRequest;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
@@ -37,6 +39,19 @@ public class ContestMemberCommandService {
         validateTeams(contestId, request.teamIds());
         validateNotAlreadyAssigned(contestId, request.memberIds());
         saveAssignments(contest, request);
+    }
+
+    public void updateAssignedTeams(final Long contestId, final Long contestMemberId,
+                                    final StaffTeamUpdateRequest request) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestMember contestMember = getContestMember(contestId, contestMemberId);
+        validateTeams(contestId, request.addTeamIds());
+        contestMember.updateTeams(request.addTeamIds(), request.deleteTeamIds());
+    }
+
+    private ContestMember getContestMember(final Long contestId, final Long contestMemberId) {
+        return contestMemberRepository.findByIdAndContestId(contestMemberId, contestId)
+                .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));
     }
 
     private void validateMembers(final List<Long> memberIds) {
