@@ -120,6 +120,7 @@ CREATE TABLE `contest_submission_memo` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
+  `is_deleted` bit(1) NOT NULL,
   `content` varchar(500) NOT NULL,
   `contest_submission_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
