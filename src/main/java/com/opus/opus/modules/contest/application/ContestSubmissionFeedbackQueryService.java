@@ -34,22 +34,13 @@ public class ContestSubmissionFeedbackQueryService {
 
     public List<ContestSubmissionFeedbackResponse> getFeedbacks(final Long contestId, final Long submissionId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.validateExistSubmission(submissionId);
+        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
 
         final List<ContestSubmissionFeedback> feedbacks =
                 contestSubmissionFeedbackConvenience.getFeedbacksBySubmission(submissionId);
 
-        final Map<Long, Member> memberMap = memberConvenience.findAllById(feedbacks.stream()
-                        .map(ContestSubmissionFeedback::getMemberId)
-                        .distinct()
-                        .toList())
-                .stream()
-                .collect(toMap(Member::getId, member -> member));
-
-        final Map<Long, List<FeedbackFileInfo>> filesByFeedbackId = fileFeedbackConvenience.findFilesGroupedByFeedbackIds(
-                feedbacks.stream()
-                        .map(ContestSubmissionFeedback::getId)
-                        .toList());
+        final Map<Long, Member> memberMap = findMembersByFeedbacks(feedbacks);
+        final Map<Long, List<FeedbackFileInfo>> filesByFeedbackId = groupFilesByFeedbacks(feedbacks);
 
         return feedbacks.stream()
                 .map(feedback -> ContestSubmissionFeedbackResponse.of(feedback, memberMap.get(feedback.getMemberId()),
@@ -57,10 +48,25 @@ public class ContestSubmissionFeedbackQueryService {
                 .toList();
     }
 
+    private Map<Long, Member> findMembersByFeedbacks(final List<ContestSubmissionFeedback> feedbacks) {
+        return memberConvenience.findAllById(feedbacks.stream()
+                        .map(ContestSubmissionFeedback::getMemberId)
+                        .distinct()
+                        .toList())
+                .stream()
+                .collect(toMap(Member::getId, member -> member));
+    }
+
+    private Map<Long, List<FeedbackFileInfo>> groupFilesByFeedbacks(final List<ContestSubmissionFeedback> feedbacks) {
+        return fileFeedbackConvenience.findFilesGroupedByFeedbackIds(feedbacks.stream()
+                .map(ContestSubmissionFeedback::getId)
+                .toList());
+    }
+
     public ContestSubmissionMyFeedbackResponse getFeedback(final Long contestId, final Long submissionId,
                                                              final Long memberId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.validateExistSubmission(submissionId);
+        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
 
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedback(submissionId, memberId);
@@ -75,7 +81,7 @@ public class ContestSubmissionFeedbackQueryService {
     public FileDownload downloadFeedbackFile(final Long contestId, final Long submissionId, final Long feedbackId,
                                              final Long fileId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.validateExistSubmission(submissionId);
+        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
 
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);

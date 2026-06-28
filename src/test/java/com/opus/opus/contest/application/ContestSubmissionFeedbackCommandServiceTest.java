@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -122,6 +123,17 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                 feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description, null, null))
                 .isInstanceOf(ContestSubmissionException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 제출물이 해당 대회 소속이 아니면 피드백을 저장할 수 없다.")
+    void 제출물이_해당_대회_소속이_아니면_피드백을_저장할_수_없다() {
+        final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(), description, null, null))
+                .isInstanceOf(ContestSubmissionException.class)
+                .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
 
 }

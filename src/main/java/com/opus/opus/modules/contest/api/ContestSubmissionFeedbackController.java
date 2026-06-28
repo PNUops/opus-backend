@@ -75,8 +75,7 @@ public class ContestSubmissionFeedbackController {
             @PathVariable final Long feedbackId,
             @PathVariable final Long fileId
     ) {
-        final FileDownload download = contestSubmissionFeedbackQueryService.downloadFeedbackFile(
-                contestId, submissionId, feedbackId, fileId);
+        final FileDownload download = contestSubmissionFeedbackQueryService.downloadFeedbackFile(contestId, submissionId, feedbackId, fileId);
 
         final ContentDisposition contentDisposition = ContentDisposition.attachment()
                 .filename(download.fileName(), StandardCharsets.UTF_8)

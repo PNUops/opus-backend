@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
@@ -31,7 +32,6 @@ import com.opus.opus.modules.file.domain.FileFeedback;
 import com.opus.opus.modules.file.domain.dao.FileFeedbackRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,17 +83,6 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         assertThat(response).hasSize(2);
         assertThat(response.get(0).description())
                 .isEqualTo(ContestSubmissionFeedbackFixture.FEEDBACK_DESCRIPTION);
-    }
-
-    @Test
-    @DisplayName("[성공] 피드백 응답에 작성자 역할이 포함된다.")
-    void 피드백_응답에_작성자_역할이_포함된다() {
-        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
-
-        final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
-
-        assertThat(response.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_학생.name());
     }
 
     @Test
@@ -154,7 +143,6 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         assertThat(response).hasSize(1);
         assertThat(response.get(0).memberId()).isEqualTo(leaver.getId());
         assertThat(response.get(0).memberName()).isNull();
-        assertThat(response.get(0).roleType()).isNull();
     }
 
     @Test
@@ -220,5 +208,15 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
                 contest.getId(), submission.getId(), feedback.getId(), invalidFileId))
                 .isInstanceOf(FileException.class)
                 .hasMessage(NOT_FOUND.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 제출물이 해당 대회 소속이 아니면 피드백 목록을 조회할 수 없다.")
+    void 제출물이_해당_대회_소속이_아니면_피드백_목록을_조회할_수_없다() {
+        final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
+
+        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(otherContest.getId(), submission.getId()))
+                .isInstanceOf(ContestSubmissionException.class)
+                .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
 }

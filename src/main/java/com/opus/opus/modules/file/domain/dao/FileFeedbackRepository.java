@@ -18,5 +18,10 @@ public interface FileFeedbackRepository extends JpaRepository<FileFeedback, Long
 
     List<FileFeedback> findAllByFeedbackIdOrderByFileOrder(Long feedbackId);
 
+    @Query("SELECT COALESCE(MAX(ff.fileOrder), -1) FROM FileFeedback ff WHERE ff.feedbackId = :feedbackId")
+    int findMaxFileOrderByFeedbackId(Long feedbackId);
+
+    long countByFeedbackId(Long feedbackId);
+
     Optional<FileFeedback> findByIdAndFeedbackId(Long id, Long feedbackId);
 }

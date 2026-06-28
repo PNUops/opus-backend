@@ -33,7 +33,7 @@ public class ContestSubmissionFeedbackConvenience {
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public ContestSubmissionFeedback upsert(final ContestSubmission submission, final Long memberId, final String description) {
+    public ContestSubmissionFeedback upsertFeedback(final ContestSubmission submission, final Long memberId, final String description) {
         return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submission.getId(), memberId)
                 .map(existing -> {
                     existing.updateDescription(description);
