@@ -20,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class FileFeedbackCommandService {
 
+    private static final int MAX_FEEDBACK_FILE_COUNT = 5;
+
     private final FileFeedbackRepository fileFeedbackRepository;
     private final FilePathGenerator filePathGenerator;
     private final FileStorage fileStorage;
@@ -29,10 +31,27 @@ public class FileFeedbackCommandService {
         if (multipartFiles == null || multipartFiles.isEmpty()) {
             return;
         }
+        validateNotEmpty(multipartFiles);
+        validateFileCountLimit(multipartFiles, feedbackId);
 
-        int fileOrder = fileFeedbackRepository.findAllByFeedbackIdOrderByFileOrder(feedbackId).size();
+        int fileOrder = fileFeedbackRepository.findMaxFileOrderByFeedbackId(feedbackId) + 1;
         for (final MultipartFile multipartFile : multipartFiles) {
             storeFeedbackFile(multipartFile, feedbackId, fileOrder++);
+        }
+    }
+
+    private void validateNotEmpty(final List<MultipartFile> multipartFiles) {
+        final boolean hasEmpty = multipartFiles.stream()
+                .anyMatch(multipartFile -> multipartFile == null || multipartFile.isEmpty());
+        if (hasEmpty) {
+            throw new FileException(FileExceptionType.EMPTY_FILE);
+        }
+    }
+
+    private void validateFileCountLimit(final List<MultipartFile> multipartFiles, final Long feedbackId) {
+        final long existingCount = fileFeedbackRepository.countByFeedbackId(feedbackId);
+        if (existingCount + multipartFiles.size() > MAX_FEEDBACK_FILE_COUNT) {
+            throw new FileException(FileExceptionType.EXCEED_FEEDBACK_FILE_LIMIT);
         }
     }
 
@@ -49,10 +68,6 @@ public class FileFeedbackCommandService {
     }
 
     private void storeFeedbackFile(final MultipartFile multipartFile, final Long feedbackId, final int fileOrder) {
-        if (multipartFile == null || multipartFile.isEmpty()) {
-            throw new FileException(FileExceptionType.EMPTY_FILE);
-        }
-
         try {
             final byte[] fileBytes = multipartFile.getBytes();
             final String extension = extractExtension(multipartFile.getOriginalFilename());

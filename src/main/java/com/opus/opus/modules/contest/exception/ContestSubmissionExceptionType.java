@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 public enum ContestSubmissionExceptionType implements BaseExceptionType {
 
     NOT_FOUND_SUBMISSION(HttpStatus.NOT_FOUND, "존재하지 않는 제출물입니다."),
+    INVALID_SUBMISSION_FOR_CONTEST(HttpStatus.BAD_REQUEST, "해당 대회에 속하지 않는 제출물입니다."),
     ;
 
     private final HttpStatus httpStatus;

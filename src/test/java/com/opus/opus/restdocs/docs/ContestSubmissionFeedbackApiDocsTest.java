@@ -232,7 +232,6 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                         50L, 5L, "이지민", "발표 흐름이 좋네요. 데모 영상 길이만 조금 줄여보세요.",
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
-                        "ROLE_외부멘토",
                         List.of(new ContestSubmissionFeedbackFileResponse(201L, "피드백.pdf", 524288L))
                 )
         );
@@ -258,7 +257,6 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].description", "피드백 본문"),
                                 dateTimeFieldWithPath("[].createdAt", "작성 시각"),
                                 dateTimeFieldWithPath("[].updatedAt", "마지막 수정 시각"),
-                                stringFieldWithPath("[].roleType", "작성자 역할 (MemberRoleType)"),
                                 arrayFieldWithPath("[].files", "첨부파일 목록"),
                                 numberFieldWithPath("[].files[].fileId", "첨부파일 ID"),
                                 stringFieldWithPath("[].files[].fileName", "첨부파일명"),

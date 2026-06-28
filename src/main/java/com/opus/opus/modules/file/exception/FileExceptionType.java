@@ -15,6 +15,7 @@ public enum FileExceptionType implements BaseExceptionType {
     SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다"),
     DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다"),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "업로드할 파일이 비어 있거나 존재하지 않습니다"),
+    EXCEED_FEEDBACK_FILE_LIMIT(HttpStatus.BAD_REQUEST, "피드백 첨부파일은 최대 5개까지 첨부할 수 있습니다"),
     DUPLICATE_SINGLE_IMAGE(HttpStatus.CONFLICT, "해당 참조에 이미 동일 타입의 이미지가 존재합니다"),
     ;
 

@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.application.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
@@ -16,14 +17,13 @@ public class ContestSubmissionConvenience {
 
     private final ContestSubmissionRepository contestSubmissionRepository;
 
-    public ContestSubmission getValidateExistSubmission(final Long submissionId) {
-        return contestSubmissionRepository.findById(submissionId)
+    public ContestSubmission getValidateSubmissionInContest(final Long contestId, final Long submissionId) {
+        final ContestSubmission submission = contestSubmissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ContestSubmissionException(NOT_FOUND_SUBMISSION));
-    }
 
-    public void validateExistSubmission(final Long submissionId) {
-        if (!contestSubmissionRepository.existsById(submissionId)) {
-            throw new ContestSubmissionException(NOT_FOUND_SUBMISSION);
+        if (!submission.getSubmissionItem().getContest().getId().equals(contestId)) {
+            throw new ContestSubmissionException(INVALID_SUBMISSION_FOR_CONTEST);
         }
+        return submission;
     }
 }
