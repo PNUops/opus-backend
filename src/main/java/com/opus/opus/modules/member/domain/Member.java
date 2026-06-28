@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -120,9 +121,11 @@ public class Member extends BaseEntity {
     }
 
     // 단일 역할 가정 하에 대표 역할 1건을 반환한다.
-    // 복수 역할 회원이 생기면 Set 순회 순서에 의존해 결과가 비결정적이므로, 그때는 우선순위 규칙이 필요하다.
+    // 복수 역할 회원이 생기더라도 MemberRoleType.id가 가장 작은 역할을 항상 동일하게 반환해 결과를 결정적으로 유지한다.
     public MemberRoleType getPrimaryRole() {
-        return roles.stream().findFirst().orElse(null);
+        return roles.stream()
+                .min(Comparator.comparingLong(MemberRoleType::getId))
+                .orElse(null);
     }
 
     public void updateGithubUrl(final String githubUrl) {

@@ -11,12 +11,16 @@ import java.util.Set;
 public class MemberFixture {
 
     public static Member createMemberWithEmailAndRole(final String email, final MemberRoleType role) {
+        return createMemberWithEmailAndRoles(email, role);
+    }
+
+    public static Member createMemberWithEmailAndRoles(final String email, final MemberRoleType... roles) {
         return Member.generalMember()
                 .name("테스트회원")
                 .email(email)
                 .password("{noop}123456789")
                 .studentId(email.substring(0, email.indexOf('@')))
-                .roles(new HashSet<>(Set.of(role)))
+                .roles(new HashSet<>(Set.of(roles)))
                 .build();
     }
 

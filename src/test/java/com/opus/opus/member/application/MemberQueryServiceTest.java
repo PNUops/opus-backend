@@ -453,4 +453,16 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 .isInstanceOf(MemberException.class)
                 .hasMessage(INVALID_ROLE_TYPE.errorMessage());
     }
+
+    @Test
+    @DisplayName("[성공] 복수 역할 회원의 대표 역할은 id가 가장 작은 역할로 결정된다.")
+    void 복수_역할_회원의_대표_역할은_id가_가장_작은_역할로_결정된다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(
+                "kim@pusan.ac.kr", MemberRoleType.ROLE_교수, MemberRoleType.ROLE_학생));
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("kim", null);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_학생);
+    }
 }
