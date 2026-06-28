@@ -21,8 +21,27 @@ public class ContestSubmissionItemFixture {
         return baseBuilder(contest).build();
     }
 
-    public static ContestSubmissionItem createSubmissionItem(final Contest contest, final ContestTrack track) {
-        return baseBuilder(contest).contestTrack(track).build();
+    public static ContestSubmissionItem createSubmissionItem(final Contest contest, final ContestTrack contestTrack) {
+        return createSubmissionItem(contest, contestTrack, "발표자료",
+                LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59));
+    }
+
+    public static ContestSubmissionItem createSubmissionItem(final Contest contest, final ContestTrack contestTrack,
+                                                             final String name, final LocalDateTime startAt,
+                                                             final LocalDateTime endAt) {
+        return ContestSubmissionItem.builder()
+                .name(name)
+                .description("PDF 형식의 발표자료를 제출하세요.")
+                .allowedFileFormats(Set.of(PDF, ZIP))
+                .maxFileSizeMb(50)
+                .maxFileCount(3)
+                .startAt(startAt)
+                .endAt(endAt)
+                .allowLateSubmission(true)
+                .visibility(PUBLIC)
+                .contest(contest)
+                .contestTrack(contestTrack)
+                .build();
     }
 
     public static ContestSubmissionItem createSubmissionItemWithDeadline(final Contest contest,

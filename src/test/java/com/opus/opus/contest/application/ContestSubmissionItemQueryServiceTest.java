@@ -16,6 +16,7 @@ import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestSubmissionItemQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemSummaryResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
@@ -32,6 +33,8 @@ import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.team.TeamFixture;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -175,5 +178,90 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
                 contest.getId(), submissionItem.getId(), teamLeader))
                 .isInstanceOf(ContestSubmissionItemException.class)
                 .hasMessage(INVALID_SUBMISSION_ITEM_FOR_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 항목 목록을 최신 수정 순으로 조회한다.")
+    void 제출_항목_목록을_최신_수정_순으로_조회한다() {
+        final LocalDateTime now = LocalDateTime.now();
+        final ContestSubmissionItem first = contestSubmissionItemRepository.saveAndFlush(
+                createSubmissionItem(contest, track, "발표자료", now.minusDays(1), now.plusDays(1)));
+        final ContestSubmissionItem second = contestSubmissionItemRepository.saveAndFlush(
+                createSubmissionItem(contest, track, "포스터", now.minusDays(1), now.plusDays(1)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), null);
+
+        assertThat(responses).extracting(ContestSubmissionItemSummaryResponse::contestSubmissionItemId)
+                .containsExactly(second.getId(), first.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 시작 전 제출 항목은 운영 상태가 SCHEDULED로 조회된다.")
+    void 시작_전_제출_항목은_운영_상태가_SCHEDULED로_조회된다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, track, "발표자료", now.plusDays(1), now.plusDays(2)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), null);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).operationStatus()).isEqualTo("SCHEDULED");
+    }
+
+    @Test
+    @DisplayName("[성공] 진행 중인 제출 항목은 운영 상태가 IN_PROGRESS로 조회된다.")
+    void 진행_중인_제출_항목은_운영_상태가_IN_PROGRESS로_조회된다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, track, "발표자료", now.minusDays(1), now.plusDays(1)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), null);
+
+        assertThat(responses.get(0).operationStatus()).isEqualTo("IN_PROGRESS");
+    }
+
+    @Test
+    @DisplayName("[성공] 마감된 제출 항목은 운영 상태가 CLOSED로 조회된다.")
+    void 마감된_제출_항목은_운영_상태가_CLOSED로_조회된다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, track, "발표자료", now.minusDays(2), now.minusDays(1)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), null);
+
+        assertThat(responses.get(0).operationStatus()).isEqualTo("CLOSED");
+    }
+
+    @Test
+    @DisplayName("[성공] 운영 상태로 필터링하여 제출 항목 목록을 조회한다.")
+    void 운영_상태로_필터링하여_제출_항목_목록을_조회한다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, track, "진행중", now.minusDays(1), now.plusDays(1)));
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, track, "마감", now.minusDays(2), now.minusDays(1)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), "IN_PROGRESS");
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).name()).isEqualTo("진행중");
+    }
+
+    @Test
+    @DisplayName("[성공] 전체 분과 제출 항목은 분과명이 null로 조회된다.")
+    void 전체_분과_제출_항목은_분과명이_null로_조회된다() {
+        final LocalDateTime now = LocalDateTime.now();
+        contestSubmissionItemRepository.save(
+                createSubmissionItem(contest, null, "발표자료", now.minusDays(1), now.plusDays(1)));
+
+        final List<ContestSubmissionItemSummaryResponse> responses =
+                contestSubmissionItemQueryService.getSubmissionItems(contest.getId(), null);
+
+        assertThat(responses.get(0).trackName()).isNull();
     }
 }
