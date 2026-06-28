@@ -1,5 +1,7 @@
 package com.opus.opus.modules.contest.domain;
 
+import java.util.Optional;
+
 public enum SubmissionFileFormat {
 
     PDF,
@@ -13,5 +15,16 @@ public enum SubmissionFileFormat {
     PPTX,
     DOC,
     DOCX,
-    HWP
+    HWP;
+
+    public static Optional<SubmissionFileFormat> fromExtension(final String extension) {
+        if (extension == null || extension.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(SubmissionFileFormat.valueOf(extension.toUpperCase()));
+        } catch (final IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
 }

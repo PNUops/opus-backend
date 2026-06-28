@@ -3,6 +3,8 @@ package com.opus.opus.modules.contest.api;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestSortCustomRequest;
@@ -15,13 +17,15 @@ import com.opus.opus.modules.contest.application.dto.response.ContestCurrentTogg
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -57,6 +61,8 @@ public class ContestController {
 
     private final ContestCommandService contestCommandService;
     private final ContestQueryService contestQueryService;
+    private final ContestSubmissionCommandService contestSubmissionCommandService;
+    private final ContestSubmissionQueryService contestSubmissionQueryService;
 
     @GetMapping("/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -208,6 +214,48 @@ public class ContestController {
     public ResponseEntity<List<ContestSubmissionResponse>> getTeamSubmissions(@PathVariable final Long contestId) {
         final List<ContestSubmissionResponse> responses = contestQueryService.getTeamSubmissions(contestId);
         return ResponseEntity.ok(responses);
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
+    @GetMapping("/{contestId}/submissions/{submissionId}")
+    public ResponseEntity<ContestSubmissionDetailResponse> getSubmissionDetail(@PathVariable final Long contestId,
+                                                                               @PathVariable final Long submissionId,
+                                                                               @LoginMember final Member member) {
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(contestId,
+                submissionId, member);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @PostMapping("/{contestId}/submission-items/{submissionItemId}/submissions")
+    public ResponseEntity<SubmissionCreateResponse> createSubmission(@PathVariable final Long contestId,
+                                                                     @PathVariable final Long submissionItemId,
+                                                                     @RequestParam final Long teamId,
+                                                                     @RequestPart("files") final List<MultipartFile> files,
+                                                                     @LoginMember final Member member) {
+        final SubmissionCreateResponse response = contestSubmissionCommandService.createSubmission(contestId,
+                submissionItemId, teamId, files, member);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @PostMapping("/{contestId}/submissions/{submissionId}/files")
+    public ResponseEntity<Void> addSubmissionFiles(@PathVariable final Long contestId,
+                                                   @PathVariable final Long submissionId,
+                                                   @RequestPart("files") final List<MultipartFile> files,
+                                                   @LoginMember final Member member) {
+        contestSubmissionCommandService.addSubmissionFiles(contestId, submissionId, files, member);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자"})
+    @DeleteMapping("/{contestId}/submissions/{submissionId}/files/{fileId}")
+    public ResponseEntity<Void> deleteSubmissionFile(@PathVariable final Long contestId,
+                                                     @PathVariable final Long submissionId,
+                                                     @PathVariable final Long fileId,
+                                                     @LoginMember final Member member) {
+        contestSubmissionCommandService.deleteSubmissionFile(contestId, submissionId, fileId, member);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{contestId}/template")
