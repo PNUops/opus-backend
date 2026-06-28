@@ -31,4 +31,14 @@ public class ContestSubmissionFixture {
                 .submissionItem(submissionItem)
                 .build();
     }
+
+    public static ContestSubmission createSubmissionWithFirstSubmittedAt(final Long teamId,
+                                                                         final ContestSubmissionItem submissionItem,
+                                                                         final LocalDateTime firstSubmittedAt) {
+        return ContestSubmission.builder()
+                .teamId(teamId)
+                .firstSubmittedAt(firstSubmittedAt)
+                .submissionItem(submissionItem)
+                .build();
+    }
 }

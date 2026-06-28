@@ -1,8 +1,8 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,7 +20,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackReposit
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import java.util.List;
@@ -121,7 +120,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
 
         assertThatThrownBy(() ->
                 feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description, null, null))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
 
@@ -132,7 +131,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
 
         assertThatThrownBy(() ->
                 feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(), description, null, null))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
 

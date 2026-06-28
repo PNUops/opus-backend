@@ -2,7 +2,7 @@ package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,7 +27,6 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionF
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFeedbackResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionMyFeedbackResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.file.exception.FileException;
@@ -93,7 +92,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 제출물에 피드백 저장 시 404 에러를 반환한다.")
     void 존재하지_않는_제출물에_피드백_저장_시_에러를_반환한다() throws Exception {
-        willThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION))
+        willThrow(new ContestException(NOT_FOUND_SUBMISSION))
                 .given(contestSubmissionFeedbackCommandService)
                 .saveFeedback(any(), any(), any(), any(), any(), any());
 
@@ -288,7 +287,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 제출물의 피드백 목록 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_제출물의_피드백_목록_조회_시_에러를_반환한다() throws Exception {
         when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any()))
-                .thenThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION));
+                .thenThrow(new ContestException(NOT_FOUND_SUBMISSION));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -459,7 +458,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 제출물의 내 피드백 단건 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_제출물의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
         when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
-                .thenThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION));
+                .thenThrow(new ContestException(NOT_FOUND_SUBMISSION));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 999)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))

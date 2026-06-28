@@ -1,8 +1,8 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +25,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackReposit
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileFeedback;
@@ -161,7 +160,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         final Long invalidSubmissionId = 999L;
 
         assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(contest.getId(), invalidSubmissionId))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
 
@@ -216,7 +215,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
 
         assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(otherContest.getId(), submission.getId()))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
 }
