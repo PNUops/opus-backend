@@ -11,8 +11,11 @@ import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.contest.api.ContestCategoryController;
 import com.opus.opus.modules.contest.api.ContestController;
 import com.opus.opus.modules.contest.api.ContestMemberController;
+import com.opus.opus.modules.contest.api.ContestSubmissionFeedbackController;
 import com.opus.opus.modules.contest.api.ContestTrackController;
 import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackQueryService;
 import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestMemberCommandService;
@@ -66,6 +69,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         ContestCategoryController.class,
         ContestTrackController.class,
         ContestMemberController.class,
+        ContestSubmissionFeedbackController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -137,6 +141,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestMemberCommandService contestMemberCommandService;
+
+    @MockitoBean
+    protected ContestSubmissionFeedbackCommandService contestSubmissionFeedbackCommandService;
+
+    @MockitoBean
+    protected ContestSubmissionFeedbackQueryService contestSubmissionFeedbackQueryService;
 
     // Setting
     @Autowired

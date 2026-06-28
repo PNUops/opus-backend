@@ -1,6 +1,6 @@
 package com.opus.opus.modules.contest.application.convenience;
 
-
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
@@ -23,10 +23,20 @@ public class ContestSubmissionConvenience {
                 .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
     }
 
-    public ContestSubmission getValidateSubmissionInContest(final Long submissionId, final Long contestId) {
+    // 제출물 기능(#160): 대회 소속이 아니면 존재하지 않는 것으로 간주 → 404
+    public ContestSubmission getValidateSubmissionInContest(final Long contestId, final Long submissionId) {
         final ContestSubmission submission = getValidateExistSubmission(submissionId);
         if (!submission.isInContest(contestId)) {
             throw new ContestException(NOT_FOUND_SUBMISSION);
+        }
+        return submission;
+    }
+
+    // 피드백 기능(#159): 대회 소속이 아니면 잘못된 요청 → 400
+    public ContestSubmission getValidateSubmissionBelongsToContest(final Long contestId, final Long submissionId) {
+        final ContestSubmission submission = getValidateExistSubmission(submissionId);
+        if (!submission.isInContest(contestId)) {
+            throw new ContestException(INVALID_SUBMISSION_FOR_CONTEST);
         }
         return submission;
     }

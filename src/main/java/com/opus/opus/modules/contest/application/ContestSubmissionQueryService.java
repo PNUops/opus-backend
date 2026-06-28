@@ -31,8 +31,7 @@ public class ContestSubmissionQueryService {
                                                                final Member member) {
         contestConvenience.validateExistContest(contestId);
 
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(submissionId,
-                contestId);
+        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
 
         final Team team = teamConvenience.getValidateTeamInContest(submission.getTeamId(), contestId);

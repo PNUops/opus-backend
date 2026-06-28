@@ -37,4 +37,5 @@ link:./contest-track.html[대회 분과 API]
 
 link:./contest-member.html[대회 배정(교수/외부멘토) API]
 
+link:./submission-feedback.html[제출물 피드백 API]
 link:./submission.html[제출물 API]
