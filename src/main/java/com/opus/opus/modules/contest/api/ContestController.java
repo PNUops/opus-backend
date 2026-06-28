@@ -25,6 +25,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatist
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -294,5 +295,14 @@ public class ContestController {
                                                                   @RequestPart("file") final MultipartFile file) {
         final TeamBulkUploadResponse response = contestCommandService.bulkUploadTeams(contestId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
+    @GetMapping("/{contestId}/teams/{teamId}/summary")
+    public ResponseEntity<TeamDashboardSummaryResponse> getTeamDashboardSummary(
+            @PathVariable final Long contestId,
+            @PathVariable final Long teamId,
+            @LoginMember final Member member) {
+        return ResponseEntity.ok(contestQueryService.getTeamDashboardSummary(contestId, teamId, member));
     }
 }

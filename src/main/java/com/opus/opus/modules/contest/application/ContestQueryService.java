@@ -20,14 +20,19 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.application.dto.FileResource;
@@ -38,6 +43,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamVoteConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
@@ -46,6 +52,7 @@ import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +76,9 @@ public class ContestQueryService {
     private final FileQueryService fileQueryService;
 
     private final ContestRepository contestRepository;
+    private final ContestSubmissionItemRepository contestSubmissionItemRepository;
+    private final ContestSubmissionRepository contestSubmissionRepository;
+    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
 
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestConvenience contestConvenience;
@@ -76,6 +86,7 @@ public class ContestQueryService {
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestTemplateConvenience contestTemplateConvenience;
     private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
     private final TeamVoteConvenience teamVoteConvenience;
     private final TeamLikeConvenience teamLikeConvenience;
     private final MemberConvenience memberConvenience;
@@ -278,6 +289,38 @@ public class ContestQueryService {
         contestConvenience.getValidateExistContest(contestId);
         final ContestTemplate template = contestTemplateConvenience.getValidateExistTemplate(contestId);
         return ContestTemplateResponse.from(template);
+    }
+
+    public TeamDashboardSummaryResponse getTeamDashboardSummary(final Long contestId, final Long teamId,
+                                                                final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        final Team team = teamConvenience.getValidateTeamInContest(teamId, contestId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
+
+        final LocalDateTime now = LocalDateTime.now();
+        final List<ContestSubmissionItem> futureItems = team.getTrackId() != null
+                ? contestSubmissionItemRepository.findFutureItemsByContestAndTrack(contestId, team.getTrackId(), now)
+                : contestSubmissionItemRepository.findFutureCommonItemsByContest(contestId, now);
+
+        final List<ContestSubmissionItem> pendingItems = futureItems.stream()
+                .filter(item -> !contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, item))
+                .toList();
+
+        final long pendingSubmissionCount = pendingItems.size();
+        final LocalDateTime nearestDeadline = pendingItems.stream()
+                .map(ContestSubmissionItem::getEndAt)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        final long unreadFeedbackCount =
+                contestSubmissionFeedbackRepository.countBySubmission_TeamIdAndIsReadFalse(teamId);
+        final String latestFeedbackPreview = contestSubmissionFeedbackRepository
+                .findTopBySubmission_TeamIdOrderByCreatedAtDesc(teamId)
+                .map(f -> f.getDescription())
+                .orElse(null);
+
+        return new TeamDashboardSummaryResponse(pendingSubmissionCount, nearestDeadline,
+                unreadFeedbackCount, latestFeedbackPreview);
     }
 
     private record VoteLikeResult(Set<Long> votedTeamIds, Set<Long> likedTeamIds) {
