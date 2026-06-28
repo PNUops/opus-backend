@@ -119,6 +119,12 @@ public class Member extends BaseEntity {
         return roles.contains(MemberRoleType.ROLE_관리자);
     }
 
+    // 단일 역할 가정 하에 대표 역할 1건을 반환한다.
+    // 복수 역할 회원이 생기면 Set 순회 순서에 의존해 결과가 비결정적이므로, 그때는 우선순위 규칙이 필요하다.
+    public MemberRoleType getPrimaryRole() {
+        return roles.stream().findFirst().orElse(null);
+    }
+
     public void updateGithubUrl(final String githubUrl) {
         this.githubUrl = githubUrl;
     }

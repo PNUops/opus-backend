@@ -8,6 +8,7 @@ import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImage;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -21,8 +22,11 @@ import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -50,8 +54,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberQueryService {
 
     private static final int LIKE_PREVIEW_SIZE = 3;
+    private static final int SEARCH_RESULT_LIMIT = 20;
 
     private final MemberConvenience memberConvenience;
+    private final MemberRepository memberRepository;
     private final FileImageConvenience fileImageConvenience;
     private final FileQueryService fileQueryService;
     private final TeamCommentRepository teamCommentRepository;
@@ -96,6 +102,28 @@ public class MemberQueryService {
     public AccountInfoResponse getAccountInfo(final Long memberId) {
         final Member member = memberConvenience.getValidateExistMember(memberId);
         return AccountInfoResponse.from(member);
+    }
+
+    public List<MemberSearchResponse> getMembersByKeyword(final String keyword, final String roleType) {
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        final MemberRoleType parsedRoleType = parseRoleType(roleType);
+        final Pageable pageable = PageRequest.of(0, SEARCH_RESULT_LIMIT);
+        return memberRepository.searchByEmailPrefix(keyword, parsedRoleType, pageable).stream()
+                .map(MemberSearchResponse::from)
+                .toList();
+    }
+
+    private MemberRoleType parseRoleType(final String roleType) {
+        if (roleType == null || roleType.isBlank()) {
+            return null;
+        }
+        try {
+            return MemberRoleType.valueOf(roleType);
+        } catch (final IllegalArgumentException e) {
+            throw new MemberException(INVALID_ROLE_TYPE);
+        }
     }
 
     public List<MyProjectResponse> getMyProjects(final Long memberId) {
