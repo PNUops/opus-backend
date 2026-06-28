@@ -4,11 +4,11 @@ import static com.opus.opus.contest.ContestMemberFixture.createContestMember;
 import static com.opus.opus.member.MemberFixture.createMemberWithRole;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
-import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.TEAM_NOT_IN_CONTEST;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -125,8 +125,8 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
                 List.of(professor.getId()), List.of(otherTeam.getId()));
 
         assertThatThrownBy(() -> contestMemberCommandService.assignStaff(contest.getId(), request))
-                .isInstanceOf(ContestMemberException.class)
-                .hasMessage(INVALID_TEAM_FOR_CONTEST.errorMessage());
+                .isInstanceOf(TeamException.class)
+                .hasMessage(TEAM_NOT_IN_CONTEST.errorMessage());
     }
 
     @Test
@@ -192,8 +192,8 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
 
         assertThatThrownBy(
                 () -> contestMemberCommandService.updateAssignedTeams(contest.getId(), contestMember.getId(), request))
-                .isInstanceOf(ContestMemberException.class)
-                .hasMessage(INVALID_TEAM_FOR_CONTEST.errorMessage());
+                .isInstanceOf(TeamException.class)
+                .hasMessage(TEAM_NOT_IN_CONTEST.errorMessage());
     }
 
     @Test

@@ -3,10 +3,8 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.DUPLICATE_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_MEMBER_TYPE;
-import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
-import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
@@ -19,8 +17,6 @@ import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
-import com.opus.opus.modules.team.domain.Team;
-import com.opus.opus.modules.team.exception.TeamException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +38,7 @@ public class ContestMemberCommandService {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         validateNoDuplicateMembers(request.memberIds());
         validateMembers(request.memberIds());
-        validateTeams(contestId, request.teamIds());
+        teamConvenience.validateTeamsInContest(contestId, request.teamIds());
         validateNotAlreadyAssigned(contestId, request.memberIds());
         saveAssignments(contest, request);
     }
@@ -51,7 +47,7 @@ public class ContestMemberCommandService {
                                     final StaffTeamUpdateRequest request) {
         contestConvenience.validateExistContest(contestId);
         final ContestMember contestMember = getContestMember(contestId, contestMemberId);
-        validateTeams(contestId, request.addTeamIds());
+        teamConvenience.validateTeamsInContest(contestId, request.addTeamIds());
         contestMember.updateTeams(request.addTeamIds(), request.deleteTeamIds());
     }
 
@@ -83,20 +79,6 @@ public class ContestMemberCommandService {
         }
         if (!member.hasStaffRole()) {
             throw new ContestMemberException(INVALID_MEMBER_TYPE);
-        }
-    }
-
-    private void validateTeams(final Long contestId, final List<Long> teamIds) {
-        final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
-        teamIds.forEach(teamId -> validateTeamInContest(contestId, teams.get(teamId)));
-    }
-
-    private void validateTeamInContest(final Long contestId, final Team team) {
-        if (team == null) {
-            throw new TeamException(NOT_FOUND_TEAM);
-        }
-        if (!team.getContestId().equals(contestId)) {
-            throw new ContestMemberException(INVALID_TEAM_FOR_CONTEST);
         }
     }
 
