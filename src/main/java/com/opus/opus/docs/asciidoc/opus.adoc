@@ -46,3 +46,5 @@ link:./submission.html[제출물 API]
 link:./contest-submission-item.html[대회 제출 항목 API]
 
 link:./submission-file.html[제출 파일 다운로드 API]
+
+link:./mentor.html[멘토 활동 조회 API]
