@@ -12,6 +12,7 @@ import com.opus.opus.modules.contest.api.ContestCategoryController;
 import com.opus.opus.modules.contest.api.ContestController;
 import com.opus.opus.modules.contest.api.ContestMemberController;
 import com.opus.opus.modules.contest.api.ContestSubmissionFeedbackController;
+import com.opus.opus.modules.contest.api.ContestSubmissionFileController;
 import com.opus.opus.modules.contest.api.ContestTrackController;
 import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
@@ -22,6 +23,7 @@ import com.opus.opus.modules.contest.application.ContestMemberCommandService;
 import com.opus.opus.modules.contest.application.ContestMemberQueryService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
 import com.opus.opus.modules.contest.application.ContestTrackCommandService;
 import com.opus.opus.modules.contest.application.ContestTrackQueryService;
@@ -70,6 +72,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         ContestTrackController.class,
         ContestMemberController.class,
         ContestSubmissionFeedbackController.class,
+        ContestSubmissionFileController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -147,6 +150,9 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestSubmissionFeedbackQueryService contestSubmissionFeedbackQueryService;
+
+    @MockitoBean
+    protected ContestSubmissionFileQueryService contestSubmissionFileQueryService;
 
     // Setting
     @Autowired

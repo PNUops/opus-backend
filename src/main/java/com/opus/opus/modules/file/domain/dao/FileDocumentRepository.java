@@ -10,6 +10,17 @@ public interface FileDocumentRepository extends JpaRepository<FileDocument, Long
 
     List<FileDocument> findAllBySubmissionIdOrderByFileOrder(Long submissionId);
 
+    // 여러 제출물의 파일 정보를 (제출ID·파일문서ID·파일명)으로 한 번에 조회 (zip 구성용)
+    @Query("""
+            SELECT new com.opus.opus.modules.file.domain.dao.SubmissionFileInfo(
+                   fd.submissionId, fd.id, f.name)
+            FROM FileDocument fd
+            JOIN fd.file f
+            WHERE fd.submissionId IN :submissionIds
+            ORDER BY fd.submissionId, fd.fileOrder
+            """)
+    List<SubmissionFileInfo> findFilesBySubmissionIds(@Param("submissionIds") List<Long> submissionIds);
+
     boolean existsByIdAndSubmissionId(Long id, Long submissionId);
 
     long countBySubmissionId(Long submissionId);
