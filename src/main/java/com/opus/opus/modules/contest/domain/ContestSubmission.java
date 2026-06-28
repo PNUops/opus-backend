@@ -41,7 +41,6 @@ public class ContestSubmission extends BaseEntity {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "contest_submission_item_id", nullable = false)
     private ContestSubmissionItem submissionItem;
-
     @Builder
     private ContestSubmission(final Long teamId, final LocalDateTime firstSubmittedAt,
                               final ContestSubmissionItem submissionItem) {
