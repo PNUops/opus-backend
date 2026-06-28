@@ -1,0 +1,91 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST MEMBER API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `GET`: 배정 목록 조회
+
+교수/외부멘토 별 배정된 팀 리스트를 조회한다.
+
+.HTTP Request Headers
+include::{snippets}/get-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-contest-member/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-contest-member/query-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-contest-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-contest-member/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-contest-member/response-fields.adoc[]
+
+== `POST`: 일괄 배정
+
+여러 교수/외부멘토를 동일한 담당 팀 목록으로 한 번에 배정한다.
+
+.HTTP Request Headers
+include::{snippets}/assign-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/assign-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/assign-contest-member/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/assign-contest-member/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/assign-contest-member/http-response.adoc[]
+
+== `PATCH`: 배정 팀 수정
+
+배정된 담당 팀 목록을 추가/삭제하여 수정한다.
+
+.HTTP Request Headers
+include::{snippets}/update-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-contest-member/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/update-contest-member/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/update-contest-member/http-response.adoc[]
+
+== `DELETE`: 배정 삭제
+
+해당 배정을 삭제하여 회원의 모든 담당 팀 배정을 제거한다.
+
+.HTTP Request Headers
+include::{snippets}/delete-contest-member/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-contest-member/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-contest-member/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-contest-member/http-response.adoc[]
