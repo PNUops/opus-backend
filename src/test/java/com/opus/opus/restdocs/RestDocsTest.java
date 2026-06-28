@@ -15,6 +15,7 @@ import com.opus.opus.modules.contest.api.ContestSubmissionFeedbackController;
 import com.opus.opus.modules.contest.api.ContestSubmissionFileController;
 import com.opus.opus.modules.contest.api.ContestSubmissionItemController;
 import com.opus.opus.modules.contest.api.ContestSubmissionMemoController;
+import com.opus.opus.modules.contest.api.ContestTeamSubmissionController;
 import com.opus.opus.modules.contest.api.ContestTrackController;
 import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
@@ -81,6 +82,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         ContestSubmissionFileController.class,
         ContestSubmissionItemController.class,
         ContestSubmissionMemoController.class,
+        ContestTeamSubmissionController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
