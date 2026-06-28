@@ -10,4 +10,6 @@ public interface ContestSubmissionFeedbackRepository extends JpaRepository<Conte
     List<ContestSubmissionFeedback> findAllBySubmissionIdOrderByIdDesc(Long submissionId);
 
     Optional<ContestSubmissionFeedback> findBySubmissionIdAndMemberId(Long submissionId, Long memberId);
+
+    long countBySubmissionIdIn(List<Long> submissionIds);
 }

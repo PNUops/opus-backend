@@ -3,8 +3,13 @@ package com.opus.opus.modules.contest.application;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.member.domain.Member;
@@ -23,6 +28,9 @@ public class ContestSubmissionQueryService {
 
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestSubmissionRepository contestSubmissionRepository;
+    private final ContestSubmissionItemRepository contestSubmissionItemRepository;
+    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final FileDocumentConvenience fileDocumentConvenience;
@@ -50,5 +58,34 @@ public class ContestSubmissionQueryService {
         final int commentCount = 0;
 
         return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, commentCount);
+    }
+
+    public ContestSubmissionSummaryResponse getSubmissionSummary(final Long contestId, final Long teamId,
+                                                                  final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);
+
+        final long totalItemCount = contestSubmissionItemRepository.countByContestId(contestId);
+        final List<ContestSubmission> submissions = contestSubmissionRepository.findAllByTeamIdAndContestId(teamId,
+                contestId);
+        final long submittedCount = submissions.size();
+        final List<Long> submissionIds = submissions.stream().map(ContestSubmission::getId).toList();
+        final long totalFeedbackCount = submissionIds.isEmpty() ? 0
+                : contestSubmissionFeedbackRepository.countBySubmissionIdIn(submissionIds);
+
+        return new ContestSubmissionSummaryResponse(totalItemCount, submittedCount, totalFeedbackCount);
+    }
+
+    public List<ContestSubmissionTimelineResponse> getSubmissionTimeline(final Long contestId, final Long teamId,
+                                                                          final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);
+
+        return contestSubmissionRepository.findAllByTeamIdAndContestId(teamId, contestId)
+                .stream()
+                .map(ContestSubmissionTimelineResponse::from)
+                .toList();
     }
 }
