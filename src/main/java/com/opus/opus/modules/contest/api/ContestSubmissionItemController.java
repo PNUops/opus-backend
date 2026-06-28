@@ -5,8 +5,10 @@ import com.opus.opus.modules.contest.application.ContestSubmissionItemCommandSer
 import com.opus.opus.modules.contest.application.ContestSubmissionItemQueryService;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
@@ -53,6 +56,13 @@ public class ContestSubmissionItemController {
                                                      @PathVariable final Long submissionItemId) {
         contestSubmissionItemCommandService.deleteSubmissionItem(contestId, submissionItemId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping
+    public ResponseEntity<List<ContestSubmissionItemSummaryResponse>> getSubmissionItems(
+            @PathVariable final Long contestId, @RequestParam(required = false) final String status) {
+        return ResponseEntity.ok(contestSubmissionItemQueryService.getSubmissionItems(contestId, status));
     }
 
     @Secured({"ROLE_관리자", "ROLE_학생"})
