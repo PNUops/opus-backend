@@ -6,7 +6,10 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
+import com.opus.opus.modules.contest.domain.dao.DownloadSubmissionRow;
+import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,5 +46,13 @@ public class ContestSubmissionConvenience {
 
     public boolean isSubmitted(final Long teamId, final ContestSubmissionItem submissionItem) {
         return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
+    }
+
+    public List<DownloadTargetResult> getDownloadTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
+        return contestSubmissionRepository.findDownloadTargets(contestId, submissionTypeId, trackId);
+    }
+
+    public List<DownloadSubmissionRow> getDownloadSubmissions(final Long contestId) {
+        return contestSubmissionRepository.findDownloadSubmissions(contestId);
     }
 }
