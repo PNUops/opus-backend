@@ -13,9 +13,8 @@ import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.application.FileDocumentQueryService;
+import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
-import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -36,17 +35,15 @@ public class ContestSubmissionFileQueryService {
 
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final FileDocumentConvenience fileDocumentConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
 
     public DocumentFileDownload downloadSubmissionFile(final Long contestId, final Long submissionId, final Long fileId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateExistSubmission(submissionId);
+        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+        fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
 
-        final DocumentFileDownload fileDownload = fileDocumentQueryService.download(fileId);
-        if (!fileDownload.submissionId().equals(submissionId)) {
-            throw new FileException(FileExceptionType.NOT_FOUND);
-        }
-        return fileDownload;
+        return fileDocumentQueryService.download(fileId);
     }
 
     public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
@@ -98,7 +95,7 @@ public class ContestSubmissionFileQueryService {
                     final String entryName = deduplicateEntryName(usedEntryNames,
                             row.teamName() + "/" + row.fileName());
                     zipOutputStream.putNextEntry(new ZipEntry(entryName));
-                    try (InputStream inputStream = fileDocumentQueryService.openStream(row.filePath())) {
+                    try (InputStream inputStream = fileDocumentQueryService.openStream(row.fileDocumentId())) {
                         inputStream.transferTo(zipOutputStream);
                     }
                     zipOutputStream.closeEntry();

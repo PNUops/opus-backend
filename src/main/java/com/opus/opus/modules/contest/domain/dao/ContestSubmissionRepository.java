@@ -31,10 +31,10 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
                                                  @Param("submissionTypeId") Long submissionTypeId,
                                                  @Param("trackId") Long trackId);
 
-    // 제출 파일 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·경로) 행 반환
+    // 제출 파일 다운로드 대상 zip 구성을 위한 (종류·분과·팀명·파일명·파일문서ID) 행 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.DownloadFileRow(
-                   item.id, track.id, team.teamName, f.name, f.filePath)
+                   item.id, track.id, team.teamName, f.name, fd.id)
             FROM ContestSubmission s
             JOIN s.submissionItem item
             JOIN Team team ON team.id = s.teamId

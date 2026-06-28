@@ -34,13 +34,15 @@ public class FileDocumentQueryService {
                 resource,
                 file.getName(),
                 file.getMimeType(),
-                file.getFileSize(),
-                fileDocument.getSubmissionId()
+                file.getFileSize()
         );
     }
 
     // zip 파일 스트리밍용. 메모리에 적재하지 않고 파일을 스트림으로 열어 그대로 흘려보낸다.
-    public InputStream openStream(final String filePath) {
-        return fileStorage.loadAsStream(filePath);
+    public InputStream openStream(final Long fileDocumentId) {
+        final FileDocument fileDocument = fileDocumentRepository.findById(fileDocumentId)
+                .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND));
+
+        return fileStorage.loadAsStream(fileDocument.getFilePath());
     }
 }

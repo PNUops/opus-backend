@@ -7,7 +7,6 @@ public record DocumentFileDownload(
         Resource resource,
         String fileName,
         String mimeType,
-        Long fileSize,
-        Long submissionId
+        Long fileSize
 ) {
 }

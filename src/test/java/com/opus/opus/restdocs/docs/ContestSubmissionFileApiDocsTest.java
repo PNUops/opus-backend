@@ -112,7 +112,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     void 제출_파일을_개별_다운로드한다() throws Exception {
         when(contestSubmissionFileQueryService.downloadSubmissionFile(any(), any(), any()))
                 .thenReturn(new DocumentFileDownload(new ByteArrayResource("pdf-binary".getBytes()),
-                        "발표자료.pdf", "application/pdf", 1048576L, 12L));
+                        "발표자료.pdf", "application/pdf", 1048576L));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/files/{fileId}", 1, 12, 101)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))

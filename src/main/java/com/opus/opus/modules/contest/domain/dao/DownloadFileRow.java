@@ -6,6 +6,6 @@ public record DownloadFileRow(
         Long trackId,
         String teamName,
         String fileName,
-        String filePath
+        Long fileDocumentId
 ) {
 }

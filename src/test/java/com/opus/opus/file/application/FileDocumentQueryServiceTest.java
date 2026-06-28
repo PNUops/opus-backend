@@ -40,7 +40,6 @@ public class FileDocumentQueryServiceTest extends FileModuleIntegrationTest {
         assertThat(result.fileName()).isEqualTo("발표자료.pdf");
         assertThat(result.mimeType()).isEqualTo("application/pdf");
         assertThat(result.fileSize()).isEqualTo(1048576L);
-        assertThat(result.submissionId()).isEqualTo(12L);
         assertThat(result.resource()).isNotNull();
     }
 

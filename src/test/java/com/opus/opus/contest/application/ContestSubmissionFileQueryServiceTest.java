@@ -109,7 +109,6 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
                 contest.getId(), submissionAi1.getId(), fileAi1.getId());
 
         assertThat(result.fileName()).isEqualTo("발표자료.pdf");
-        assertThat(result.submissionId()).isEqualTo(submissionAi1.getId());
     }
 
     @Test
@@ -139,6 +138,22 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
                 99999L, submissionAi1.getId(), fileAi1.getId()))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회에 속한 제출물의 파일은 다운로드할 수 없다.")
+    void 다른_대회에_속한_제출물의_파일은_다운로드할_수_없다() {
+        final Contest otherContest = contestRepository.save(ContestFixture.createContest());
+        final ContestSubmissionItem otherItem = submissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(otherContest));
+        final ContestSubmission otherSubmission = saveSubmission(
+                teamRepository.save(buildTeam(trackAi.getId(), "타대회팀")).getId(), otherItem);
+        final FileDocument otherFile = saveFile(otherSubmission.getId(), "발표자료.pdf", 100L, 0);
+
+        assertThatThrownBy(() -> contestSubmissionFileQueryService.downloadSubmissionFile(
+                contest.getId(), otherSubmission.getId(), otherFile.getId()))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
 
     @Test
