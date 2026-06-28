@@ -1,6 +1,7 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.ALREADY_ASSIGNED_MEMBER;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.DUPLICATE_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_MEMBER_TYPE;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_TEAM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
@@ -22,6 +23,7 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.exception.TeamException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,7 @@ public class ContestMemberCommandService {
 
     public void assignStaff(final Long contestId, final StaffBatchAssignRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        validateNoDuplicateMembers(request.memberIds());
         validateMembers(request.memberIds());
         validateTeams(contestId, request.teamIds());
         validateNotAlreadyAssigned(contestId, request.memberIds());
@@ -61,6 +64,12 @@ public class ContestMemberCommandService {
     private ContestMember getContestMember(final Long contestId, final Long contestMemberId) {
         return contestMemberRepository.findByIdAndContestId(contestMemberId, contestId)
                 .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));
+    }
+
+    private void validateNoDuplicateMembers(final List<Long> memberIds) {
+        if (memberIds.size() != Set.copyOf(memberIds).size()) {
+            throw new ContestMemberException(DUPLICATE_MEMBER);
+        }
     }
 
     private void validateMembers(final List<Long> memberIds) {
