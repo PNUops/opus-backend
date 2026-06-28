@@ -364,4 +364,5 @@ public class ContestQueryServiceTest extends IntegrationTest {
                 .extracting(TeamSummaryResponse::teamId)
                 .containsExactly(first.getId(), second.getId(), third.getId());
     }
+
 }

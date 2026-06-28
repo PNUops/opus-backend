@@ -1,11 +1,12 @@
 package com.opus.opus.modules.contest.application.convenience;
 
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
+import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
+import com.opus.opus.modules.contest.exception.ContestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +18,20 @@ public class ContestSubmissionConvenience {
 
     private final ContestSubmissionRepository contestSubmissionRepository;
 
-    public ContestSubmission getValidateSubmissionInContest(final Long contestId, final Long submissionId) {
-        final ContestSubmission submission = contestSubmissionRepository.findById(submissionId)
-                .orElseThrow(() -> new ContestSubmissionException(NOT_FOUND_SUBMISSION));
+    public ContestSubmission getValidateExistSubmission(final Long submissionId) {
+        return contestSubmissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
+    }
 
-        if (!submission.getSubmissionItem().getContest().getId().equals(contestId)) {
-            throw new ContestSubmissionException(INVALID_SUBMISSION_FOR_CONTEST);
+    public ContestSubmission getValidateSubmissionInContest(final Long contestId, final Long submissionId) {
+        final ContestSubmission submission = getValidateExistSubmission(submissionId);
+        if (!submission.isInContest(contestId)) {
+            throw new ContestException(INVALID_SUBMISSION_FOR_CONTEST);
         }
         return submission;
+    }
+
+    public boolean isSubmitted(final Long teamId, final ContestSubmissionItem submissionItem) {
+        return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
     }
 }
