@@ -4,6 +4,7 @@ package com.opus.opus.modules.team.application.convenience;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST_SORT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.CONTEST_HAS_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.TEAM_NOT_IN_CONTEST;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
 import static java.util.stream.Collectors.toMap;
 
@@ -62,6 +63,20 @@ public class TeamConvenience {
                         Function.identity(),
                         (existing, replacement) -> existing
                 ));
+    }
+
+    public void validateTeamsInContest(final Long contestId, final List<Long> teamIds) {
+        final Map<Long, Team> teams = getTeamsByIds(teamIds);
+        teamIds.forEach(teamId -> validateTeamInContest(contestId, teams.get(teamId)));
+    }
+
+    private void validateTeamInContest(final Long contestId, final Team team) {
+        if (team == null) {
+            throw new TeamException(NOT_FOUND_TEAM);
+        }
+        if (!team.getContestId().equals(contestId)) {
+            throw new TeamException(TEAM_NOT_IN_CONTEST);
+        }
     }
 
     public Team save(final Team team) {
