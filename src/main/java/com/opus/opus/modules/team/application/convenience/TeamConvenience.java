@@ -4,7 +4,9 @@ package com.opus.opus.modules.team.application.convenience;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST_SORT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.CONTEST_HAS_TEAM;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.TEAM_NOT_IN_CONTEST;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.TRACK_HAS_TEAM;
+import static java.util.stream.Collectors.toMap;
 
 import com.opus.opus.modules.contest.domain.SortType;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -16,7 +18,9 @@ import com.opus.opus.modules.team.exception.TeamException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +54,29 @@ public class TeamConvenience {
 
     public List<Team> getTeamsOfContest(final Long contestId) {
         return teamRepository.findAllByContestId(contestId);
+    }
+
+    public Map<Long, Team> getTeamsByIds(final List<Long> teamIds) {
+        return teamRepository.findAllById(teamIds).stream()
+                .collect(toMap(
+                        Team::getId,
+                        Function.identity(),
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    public void validateTeamsInContest(final Long contestId, final List<Long> teamIds) {
+        final Map<Long, Team> teams = getTeamsByIds(teamIds);
+        teamIds.forEach(teamId -> validateTeamInContest(contestId, teams.get(teamId)));
+    }
+
+    private void validateTeamInContest(final Long contestId, final Team team) {
+        if (team == null) {
+            throw new TeamException(NOT_FOUND_TEAM);
+        }
+        if (!team.getContestId().equals(contestId)) {
+            throw new TeamException(TEAM_NOT_IN_CONTEST);
+        }
     }
 
     public Team save(final Team team) {
