@@ -3,10 +3,14 @@ package com.opus.opus.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestSubmissionFeedbackFixture;
 import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -20,9 +24,17 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackReposit
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamMemberException;
+import com.opus.opus.team.TeamFixture;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,9 +54,14 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @Autowired
     private ContestSubmissionFeedbackRepository feedbackRepository;
     @Autowired
+    private TeamRepository teamRepository;
+    @Autowired
+    private TeamMemberRepository teamMemberRepository;
+    @Autowired
     private MemberRepository memberRepository;
 
     private Contest contest;
+    private Team team;
     private ContestSubmission submission;
     private Member member;
 
@@ -56,8 +73,14 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         contest = contestRepository.save(ContestFixture.createContest());
         final ContestSubmissionItem submissionItem =
                 submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
-        submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(1L, submissionItem));
+        team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
         member = memberRepository.save(MemberFixture.createMember());
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(member.getId())
+                .team(team)
+                .roles(Set.of(ROLE_팀원))
+                .build());
     }
 
     @Test
@@ -133,6 +156,44 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                 feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(), description, null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 팀원이 피드백을 읽음 처리하면 isRead가 true가 된다.")
+    void 팀원이_피드백을_읽음_처리하면_isRead가_true가_된다() {
+        final ContestSubmissionFeedback feedback =
+                feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
+
+        feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), member);
+
+        final ContestSubmissionFeedback updated = feedbackRepository.findById(feedback.getId()).orElseThrow();
+        assertThat(updated.getIsRead()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[실패] 팀원이 아닌 사용자가 읽음 처리하면 TEAM_MEMBER_NOT_FOUND_IN_TEAM 예외가 발생한다.")
+    void 팀원이_아닌_사용자가_읽음_처리하면_예외가_발생한다() {
+        final ContestSubmissionFeedback feedback =
+                feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
+        final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), outsider))
+                .isInstanceOf(TeamMemberException.class)
+                .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
+                        .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 피드백을 읽음 처리하면 NOT_FOUND_FEEDBACK 예외가 발생한다.")
+    void 존재하지_않는_피드백을_읽음_처리하면_예외가_발생한다() {
+        final Long invalidFeedbackId = 999L;
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), invalidFeedbackId, team.getId(), member))
+                .isInstanceOf(ContestSubmissionFeedbackException.class)
+                .satisfies(e -> assertThat(((ContestSubmissionFeedbackException) e).exceptionType())
+                        .isEqualTo(NOT_FOUND_FEEDBACK));
     }
 
 }
