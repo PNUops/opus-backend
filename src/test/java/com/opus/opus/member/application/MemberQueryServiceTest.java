@@ -455,6 +455,18 @@ public class MemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] keyword의 LIKE 와일드카드(_, %)는 리터럴로 취급된다.")
+    void keyword의_LIKE_와일드카드는_리터럴로_취급된다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("a_b@pusan.ac.kr", MemberRoleType.ROLE_학생));
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("axb@pusan.ac.kr", MemberRoleType.ROLE_학생));
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("a_b", null);
+
+        assertThat(responses).extracting(MemberSearchResponse::email)
+                .containsExactly("a_b@pusan.ac.kr");
+    }
+
+    @Test
     @DisplayName("[성공] 복수 역할 회원의 대표 역할은 id가 가장 작은 역할로 결정된다.")
     void 복수_역할_회원의_대표_역할은_id가_가장_작은_역할로_결정된다() {
         memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(

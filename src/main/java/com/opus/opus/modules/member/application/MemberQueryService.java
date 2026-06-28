@@ -110,9 +110,16 @@ public class MemberQueryService {
         }
         final MemberRoleType parsedRoleType = parseRoleType(roleType);
         final Pageable pageable = PageRequest.of(0, SEARCH_RESULT_LIMIT);
-        return memberRepository.searchByEmailPrefix(keyword, parsedRoleType, pageable).stream()
+        return memberRepository.searchByEmailPrefix(escapeLikePattern(keyword), parsedRoleType, pageable).stream()
                 .map(MemberSearchResponse::from)
                 .toList();
+    }
+
+    // keyword에 포함된 LIKE 와일드카드(%, _)와 ESCAPE 문자(\)를 이스케이프해 리터럴 접두사 매칭을 보장한다.
+    private String escapeLikePattern(final String keyword) {
+        return keyword.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     private MemberRoleType parseRoleType(final String roleType) {

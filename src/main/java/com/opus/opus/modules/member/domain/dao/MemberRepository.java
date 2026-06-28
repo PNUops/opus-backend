@@ -18,7 +18,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("""
             SELECT DISTINCT m FROM Member m
             LEFT JOIN m.roles r
-            WHERE LOWER(m.email) LIKE LOWER(CONCAT(:keyword, '%'))
+            WHERE LOWER(m.email) LIKE LOWER(CONCAT(:keyword, '%')) ESCAPE '\\'
               AND (:roleType IS NULL OR r = :roleType)
             ORDER BY m.email ASC
             """)
