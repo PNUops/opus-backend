@@ -5,6 +5,7 @@ import com.opus.opus.modules.team.domain.Team;
 import java.util.List;
 
 public record TeamSubmissionsResponse(
+
         Long teamId,
         String teamName,
         String projectName,

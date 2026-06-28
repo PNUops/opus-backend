@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.application.dto.response;
 import com.opus.opus.modules.team.domain.Team;
 
 public record MentorProjectResponse(
+
         Long teamId,
         String teamName,
         String projectName,

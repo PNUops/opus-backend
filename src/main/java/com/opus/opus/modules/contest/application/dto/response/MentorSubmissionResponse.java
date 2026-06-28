@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.domain.ContestSubmission;
 import java.util.List;
 
 public record MentorSubmissionResponse(
+
         Long submissionId,
         Long submissionItemId,
         String submissionItemName,
