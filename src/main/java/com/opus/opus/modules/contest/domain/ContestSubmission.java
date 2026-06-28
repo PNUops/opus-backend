@@ -41,7 +41,6 @@ public class ContestSubmission extends BaseEntity {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "contest_submission_item_id", nullable = false)
     private ContestSubmissionItem submissionItem;
-
     @Builder
     private ContestSubmission(final Long teamId, final LocalDateTime firstSubmittedAt,
                               final ContestSubmissionItem submissionItem) {
@@ -49,5 +48,13 @@ public class ContestSubmission extends BaseEntity {
         this.firstSubmittedAt = firstSubmittedAt;
         this.submissionItem = submissionItem;
         this.isDeleted = false;
+    }
+
+    public boolean isInContest(final Long contestId) {
+        return submissionItem.isInContest(contestId);
+    }
+
+    public boolean isLate() {
+        return firstSubmittedAt.isAfter(submissionItem.getEndAt());
     }
 }

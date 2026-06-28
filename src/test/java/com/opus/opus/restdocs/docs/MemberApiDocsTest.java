@@ -9,6 +9,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOU
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static java.time.LocalDateTime.of;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,9 +54,11 @@ import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.ProjectInfo;
+import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
@@ -883,6 +886,62 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].contestId", "대회 ID"),
                                 stringFieldWithPath("[].projectName", "프로젝트명"),
                                 stringFieldWithPath("[].contestName", "대회명")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 이메일로 회원을 검색할 수 있다.")
+    void 관리자가_이메일로_회원을_검색할_수_있다() throws Exception {
+        final List<MemberSearchResponse> responses = List.of(
+                new MemberSearchResponse(1L, "김철수", "kim1@pusan.ac.kr", MemberRoleType.ROLE_학생),
+                new MemberSearchResponse(2L, "김영희", "kim2@pusan.ac.kr", MemberRoleType.ROLE_교수)
+        );
+
+        when(memberQueryService.getMembersByKeyword(any(), any())).thenReturn(responses);
+
+        mockMvc.perform(get("/admin/members/search")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("keyword", "kim")
+                        .param("roleType", "ROLE_학생"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-search-members",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("keyword").description("검색할 이메일 (앞부분 일치, 대소문자 무시). 누락/빈값이면 빈 배열 반환").optional(),
+                                parameterWithName("roleType").description("역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional()
+                        ),
+                        responseFields(
+                                numberFieldWithPath("[].memberId", "회원 ID"),
+                                stringFieldWithPath("[].name", "회원 이름"),
+                                stringFieldWithPath("[].email", "회원 이메일"),
+                                stringFieldWithPath("[].roleType", "회원 역할")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 역할 값으로 검색하면 400 에러를 반환한다.")
+    void 유효하지_않은_역할_값으로_검색하면_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_ROLE_TYPE))
+                .given(memberQueryService).getMembersByKeyword(any(), any());
+
+        mockMvc.perform(get("/admin/members/search")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("keyword", "kim")
+                        .param("roleType", "ROLE_없음"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-search-members-fail-invalid-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("keyword").description("검색할 이메일").optional(),
+                                parameterWithName("roleType").description("유효하지 않은 역할 값").optional()
                         )
                 ));
     }

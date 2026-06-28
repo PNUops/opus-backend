@@ -1,8 +1,12 @@
 USE opus;
 
+DROP TABLE IF EXISTS `contest_submission_memo`;
+DROP TABLE IF EXISTS `contest_submission_feedback`;
 DROP TABLE IF EXISTS `contest_submission`;
 DROP TABLE IF EXISTS `contest_submission_item_file_formats`;
 DROP TABLE IF EXISTS `contest_submission_item`;
+DROP TABLE IF EXISTS `contest_member_team_ids`;
+DROP TABLE IF EXISTS `contest_member`;
 DROP TABLE IF EXISTS `team_member_roles`;
 DROP TABLE IF EXISTS `team_vote`;
 DROP TABLE IF EXISTS `team_like`;
@@ -18,6 +22,7 @@ DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
 DROP TABLE IF EXISTS `file_document`;
 DROP TABLE IF EXISTS `file_image`;
+DROP TABLE IF EXISTS `file_feedback`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
 DROP TABLE IF EXISTS `notification`;
@@ -115,6 +120,17 @@ CREATE TABLE `contest_submission_item_file_formats` (
   PRIMARY KEY (`contest_submission_item_id`,`file_format`)
 );
 
+CREATE TABLE `contest_submission_memo` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  `content` varchar(500) NOT NULL,
+  `contest_submission_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contest_submission_memo_submission_id` (`contest_submission_id`)
+);
+
 CREATE TABLE `contest_submission` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
@@ -124,6 +140,33 @@ CREATE TABLE `contest_submission` (
   `team_id` bigint NOT NULL,
   `contest_submission_item_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_member` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `is_deleted` bit(1) NOT NULL,
+  `member_id` bigint NOT NULL,
+  `contest_id` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `contest_member_team_ids` (
+  `contest_member_id` bigint NOT NULL,
+  `team_id` bigint NOT NULL,
+  PRIMARY KEY (`contest_member_id`,`team_id`)
+);
+
+CREATE TABLE `contest_submission_feedback` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `description` varchar(3000) NOT NULL,
+  `member_id` bigint NOT NULL,
+  `contest_submission_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_feedback_member_submission` (`member_id`,`contest_submission_id`)
 );
 
 CREATE TABLE `contest_sort` (
@@ -167,6 +210,19 @@ CREATE TABLE `file_image` (
   KEY `idx_file_image_ref` (`reference_id`, `reference_type`, `image_type`),
   KEY `idx_file_image_zombie` (`is_webp_converted`, `created_at`),
   CONSTRAINT `fk_file_image_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `file_feedback` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `file_id` bigint NOT NULL,
+  `feedback_id` bigint NOT NULL,
+  `file_order` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_file_feedback_file_id` (`file_id`),
+  KEY `idx_file_feedback_feedback_id` (`feedback_id`),
+  CONSTRAINT `fk_file_feedback_file` FOREIGN KEY (`file_id`) REFERENCES `file` (`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE `file_document` (

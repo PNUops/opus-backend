@@ -26,6 +26,7 @@ import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -183,6 +184,14 @@ public class MemberController {
     public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
         memberCommandService.withdrawByAdmin(memberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/search")
+    public ResponseEntity<List<MemberSearchResponse>> getMembersByKeyword(
+            @RequestParam(required = false) final String keyword,
+            @RequestParam(required = false) final String roleType) {
+        return ResponseEntity.ok(memberQueryService.getMembersByKeyword(keyword, roleType));
     }
 
     @GetMapping("/members/me/projects")
