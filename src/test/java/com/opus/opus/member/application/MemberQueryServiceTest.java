@@ -3,6 +3,7 @@ package com.opus.opus.member.application;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,8 +34,10 @@ import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -381,5 +384,73 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 "latest", null, null, null, team.getContestId(), 0, 12);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 이메일 앞부분이 일치하는 회원을 검색할 수 있다.")
+    void 이메일_앞부분이_일치하는_회원을_검색할_수_있다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim1@pusan.ac.kr", MemberRoleType.ROLE_학생));
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim2@pusan.ac.kr", MemberRoleType.ROLE_교수));
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("lee@pusan.ac.kr", MemberRoleType.ROLE_학생));
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("kim", null);
+
+        assertThat(responses).hasSize(2);
+        assertThat(responses).extracting(MemberSearchResponse::email)
+                .containsExactly("kim1@pusan.ac.kr", "kim2@pusan.ac.kr");
+    }
+
+    @Test
+    @DisplayName("[성공] 이메일 검색은 대소문자를 구분하지 않는다.")
+    void 이메일_검색은_대소문자를_구분하지_않는다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim@pusan.ac.kr", MemberRoleType.ROLE_학생));
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("KIM", null);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).email()).isEqualTo("kim@pusan.ac.kr");
+    }
+
+    @Test
+    @DisplayName("[성공] 역할 필터를 지정하면 해당 역할의 회원만 검색된다.")
+    void 역할_필터를_지정하면_해당_역할의_회원만_검색된다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim1@pusan.ac.kr", MemberRoleType.ROLE_학생));
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim2@pusan.ac.kr", MemberRoleType.ROLE_교수));
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("kim", "ROLE_교수");
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).email()).isEqualTo("kim2@pusan.ac.kr");
+        assertThat(responses.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[성공] 검색 결과는 최대 20건으로 제한된다.")
+    void 검색_결과는_최대_20건으로_제한된다() {
+        for (int i = 0; i < 25; i++) {
+            memberRepository.save(MemberFixture.createMemberWithEmailAndRole(
+                    String.format("search%02d@pusan.ac.kr", i), MemberRoleType.ROLE_학생));
+        }
+
+        final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("search", null);
+
+        assertThat(responses).hasSize(20);
+    }
+
+    @Test
+    @DisplayName("[성공] 키워드가 비어있으면 빈 목록을 반환한다.")
+    void 키워드가_비어있으면_빈_목록을_반환한다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRole("kim@pusan.ac.kr", MemberRoleType.ROLE_학생));
+
+        assertThat(memberQueryService.getMembersByKeyword(null, null)).isEmpty();
+        assertThat(memberQueryService.getMembersByKeyword("   ", null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 역할 값으로 검색하면 예외가 발생한다.")
+    void 유효하지_않은_역할_값으로_검색하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getMembersByKeyword("kim", "ROLE_없음"))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(INVALID_ROLE_TYPE.errorMessage());
     }
 }
