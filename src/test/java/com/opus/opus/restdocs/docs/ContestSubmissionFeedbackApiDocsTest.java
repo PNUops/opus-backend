@@ -69,6 +69,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
                         .file(file)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "발표 흐름이 좋네요. 데모 영상 길이만 조금 줄여보세요.")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -95,6 +99,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .saveFeedback(any(), any(), any(), any(), any(), any());
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 999)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "발표 흐름이 좋네요.")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -114,6 +122,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 본문이 비어있으면 400 에러를 반환한다.")
     void 본문이_비어있으면_에러를_반환한다() throws Exception {
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -137,6 +149,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .saveFeedback(any(), any(), any(), any(), any(), any());
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 999, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "발표 흐름이 좋네요.")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -162,7 +178,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 List.of(new ContestSubmissionFeedbackFileResponse(201L, "피드백.pdf", 524288L))
         );
 
-        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 12)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
@@ -191,7 +207,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 작성한 피드백이 없으면 단건 조회 시 404 에러를 반환한다.")
     void 작성한_피드백이_없으면_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
                 .thenThrow(new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 12)
@@ -375,6 +391,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
                         .file(emptyFile)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "발표 흐름이 좋네요.")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
                         .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -398,6 +418,10 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .saveFeedback(any(), any(), any(), any(), any(), any());
 
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
                         .param("description", "발표 흐름이 좋네요.")
                         .param("removeFileIds", "201")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
@@ -417,7 +441,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 대회의 내 피드백 단건 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
                 .thenThrow(new ContestException(NOT_FOUND_CONTEST));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 999, 12)
@@ -437,7 +461,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 제출물의 내 피드백 단건 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_제출물의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getMyFeedback(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
                 .thenThrow(new ContestSubmissionException(NOT_FOUND_SUBMISSION));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 999)

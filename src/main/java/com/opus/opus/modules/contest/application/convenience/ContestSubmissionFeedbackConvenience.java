@@ -22,7 +22,7 @@ public class ContestSubmissionFeedbackConvenience {
         return contestSubmissionFeedbackRepository.findAllBySubmissionIdOrderByIdDesc(submissionId);
     }
 
-    public ContestSubmissionFeedback getValidateMyFeedback(final Long submissionId, final Long memberId) {
+    public ContestSubmissionFeedback getValidateFeedback(final Long submissionId, final Long memberId) {
         return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId)
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
