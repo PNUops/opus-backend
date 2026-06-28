@@ -50,4 +50,12 @@ public class ContestSubmission extends BaseEntity {
         this.submissionItem = submissionItem;
         this.isDeleted = false;
     }
+
+    public boolean isInContest(final Long contestId) {
+        return submissionItem.isInContest(contestId);
+    }
+
+    public boolean isLate() {
+        return firstSubmittedAt.isAfter(submissionItem.getEndAt());
+    }
 }

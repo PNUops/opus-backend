@@ -123,6 +123,10 @@ public class Member extends BaseEntity {
         return roles.stream().anyMatch(MemberRoleType::isStaff);
     }
 
+    public boolean isStudent() {
+        return roles.contains(MemberRoleType.ROLE_학생);
+    }
+
     public void updateGithubUrl(final String githubUrl) {
         this.githubUrl = githubUrl;
     }

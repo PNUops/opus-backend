@@ -70,6 +70,15 @@ public class TeamConvenience {
         teamIds.forEach(teamId -> validateTeamInContest(contestId, teams.get(teamId)));
     }
 
+
+    public Team getValidateTeamInContest(final Long teamId, final Long contestId) {
+        final Team team = getValidateExistTeam(teamId);
+        if (!team.getContestId().equals(contestId)) {
+            throw new TeamException(TEAM_NOT_IN_CONTEST);
+        }
+        return team;
+    }
+
     private void validateTeamInContest(final Long contestId, final Team team) {
         if (team == null) {
             throw new TeamException(NOT_FOUND_TEAM);
