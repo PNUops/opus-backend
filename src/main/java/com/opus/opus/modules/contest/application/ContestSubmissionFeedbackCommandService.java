@@ -26,7 +26,7 @@ public class ContestSubmissionFeedbackCommandService {
                              final String description, final List<MultipartFile> files,
                              final List<Long> removeFileIds) {
         contestConvenience.validateExistContest(contestId);
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
 
         final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.upsertFeedback(submission, memberId, description);
 

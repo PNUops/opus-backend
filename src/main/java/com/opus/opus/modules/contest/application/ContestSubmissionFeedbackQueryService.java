@@ -34,7 +34,7 @@ public class ContestSubmissionFeedbackQueryService {
 
     public List<ContestSubmissionFeedbackResponse> getFeedbacks(final Long contestId, final Long submissionId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
 
         final List<ContestSubmissionFeedback> feedbacks =
                 contestSubmissionFeedbackConvenience.getFeedbacksBySubmission(submissionId);
@@ -66,7 +66,7 @@ public class ContestSubmissionFeedbackQueryService {
     public ContestSubmissionMyFeedbackResponse getFeedback(final Long contestId, final Long submissionId,
                                                              final Long memberId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
 
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedback(submissionId, memberId);
@@ -81,7 +81,7 @@ public class ContestSubmissionFeedbackQueryService {
     public FileDownload downloadFeedbackFile(final Long contestId, final Long submissionId, final Long feedbackId,
                                              final Long fileId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
 
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
