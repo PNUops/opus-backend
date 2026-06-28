@@ -482,6 +482,43 @@ include::{snippets}/admin-withdraw-member-fail-not-found/path-parameters.adoc[]
 
 ====
 
+== `GET`: 회원 검색
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 이메일 앞부분 일치로 검색하며(대소문자 무시)
+최대 20건을 이메일 오름차순으로 반환합니다. `keyword`가 누락/빈값이면 빈 배열을 반환합니다.
+`roleType`을 지정하면 해당 역할의 회원만 필터링합니다.
+
+.HTTP Request
+include::{snippets}/admin-search-members/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-search-members/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-search-members/request-headers.adoc[]
+
+.Query Parameters
+include::{snippets}/admin-search-members/query-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-search-members/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 유효하지 않은 역할 값
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-search-members-fail-invalid-role/http-request.adoc[]
+
+include::{snippets}/admin-search-members-fail-invalid-role/http-response.adoc[]
+
+include::{snippets}/admin-search-members-fail-invalid-role/query-parameters.adoc[]
+
+====
+
 == `GET`: 계정 정보 조회
 
 .HTTP Request

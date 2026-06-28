@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -117,6 +118,22 @@ public class Member extends BaseEntity {
 
     public boolean isAdmin() {
         return roles.contains(MemberRoleType.ROLE_관리자);
+    }
+
+    // 단일 역할 가정 하에 대표 역할 1건을 반환한다.
+    // 복수 역할 회원이 생기더라도 MemberRoleType.id가 가장 작은 역할을 항상 동일하게 반환해 결과를 결정적으로 유지한다.
+    public MemberRoleType getPrimaryRole() {
+        return roles.stream()
+                .min(Comparator.comparingLong(MemberRoleType::getId))
+                .orElse(null);
+    }
+
+    public boolean hasStaffRole() {
+        return roles.stream().anyMatch(MemberRoleType::isStaff);
+    }
+
+    public boolean isStudent() {
+        return roles.contains(MemberRoleType.ROLE_학생);
     }
 
     public void updateGithubUrl(final String githubUrl) {

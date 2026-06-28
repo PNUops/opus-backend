@@ -5,6 +5,16 @@ import org.springframework.http.HttpStatus;
 
 public enum ContestExceptionType implements BaseExceptionType {
     NOT_FOUND_CONTEST(HttpStatus.NOT_FOUND, "존재하지 않는 대회입니다."),
+    NOT_FOUND_SUBMISSION(HttpStatus.NOT_FOUND, "존재하지 않는 제출물입니다."),
+    INVALID_SUBMISSION_FOR_CONTEST(HttpStatus.BAD_REQUEST, "해당 대회에 속하지 않는 제출물입니다."),
+    NO_SUBMISSIONS_TO_DOWNLOAD(HttpStatus.NOT_FOUND, "다운로드할 제출물이 없습니다."),
+    NOT_FOUND_SUBMISSION_ITEM(HttpStatus.NOT_FOUND, "존재하지 않는 제출 항목입니다."),
+    SUBMISSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 제출한 제출 항목입니다."),
+    INVALID_SUBMISSION_FILE_FORMAT(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다."),
+    SUBMISSION_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "제출물은 최소 한 개의 파일을 포함해야 합니다."),
+    SUBMISSION_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 수를 초과했습니다."),
+    SUBMISSION_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 크기를 초과했습니다."),
+    SUBMISSION_PERIOD_ENDED(HttpStatus.BAD_REQUEST, "제출 기간이 종료되었습니다."),
     CONTEST_HAS_TEAMS(HttpStatus.CONFLICT, "먼저 해당 대회의 모든 팀을 삭제해주세요."),
     CURRENT_CONTEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "현재 진행 중인 대회는 최대 2개까지 설정할 수 있습니다."),
     ALREADY_CURRENT_CONTEST(HttpStatus.BAD_REQUEST, "이미 현재 대회입니다."),
@@ -18,6 +28,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     DUPLICATE_TEAM_ID_IN_SORT_REQUEST(HttpStatus.BAD_REQUEST, "중복된 팀ID가 있습니다."),
     DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST(HttpStatus.BAD_REQUEST, "중복된 itemOrder가 있습니다."),
     NOT_EXIST_TEAM_IN_CONTEST(HttpStatus.NOT_FOUND, "현재 대회에 소속된 팀이 아닙니다"),
+    NOT_CONTEST_MEMBER(HttpStatus.FORBIDDEN, "현재 대회에 소속된 회원이 아닙니다."),
     INVALID_CONTEST_SORT_CUSTOM_REQUEST(HttpStatus.BAD_REQUEST, "저장된 팀 개수와 request의 팀 개수가 다릅니다"),
     NOT_ALLOWED_DURING_VOTING_PERIOD(HttpStatus.BAD_REQUEST, "현재 투표 기간이므로 해당 작업을 수행할 수 없습니다."),
     NOT_VOTE_PERIOD_NOW(HttpStatus.BAD_REQUEST, "지금은 투표 기간이 아닙니다."),
@@ -27,8 +38,6 @@ public enum ContestExceptionType implements BaseExceptionType {
     FILE_REQUIRED(HttpStatus.BAD_REQUEST, "파일은 필수입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 10MB를 초과할 수 없습니다."),
     FAILED_TO_VALIDATE_BULK_TEAMS(HttpStatus.BAD_REQUEST, "팀 일괄 등록 유효성 검사에 실패했습니다."),
-    NOT_FOUND_SUBMISSION_ITEM(HttpStatus.NOT_FOUND, "존재하지 않는 제출 항목입니다."),
-    NOT_FOUND_SUBMISSION(HttpStatus.NOT_FOUND, "존재하지 않는 제출물입니다."),
     ;
 
     private final HttpStatus httpStatus;
