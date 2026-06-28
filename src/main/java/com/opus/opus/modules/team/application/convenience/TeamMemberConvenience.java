@@ -1,10 +1,12 @@
 package com.opus.opus.modules.team.application.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_CONTEST_MEMBER;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.NOT_TEAM_LEADER;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
@@ -78,8 +80,8 @@ public class TeamMemberConvenience {
 
     public void validateTeamMemberInContestUnlessAdmin(final Long contestId, final Member member) {
         if (!member.isAdmin()) {
-            if (!findMemberIdsByContestId(contestId).contains(member.getId())) {
-                throw new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM);
+            if (!teamMemberRepository.existsByContestIdAndMemberId(contestId, member.getId())) {
+                throw new ContestException(NOT_CONTEST_MEMBER);
             }
         }
     }
