@@ -184,7 +184,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
                 feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
 
         final ContestSubmissionMyFeedbackResponse response =
-                feedbackQueryService.getMyFeedback(contest.getId(), submission.getId(), member.getId());
+                feedbackQueryService.getFeedback(contest.getId(), submission.getId(), member.getId());
 
         assertThat(response.feedbackId()).isEqualTo(feedback.getId());
         assertThat(response.description()).isEqualTo(ContestSubmissionFeedbackFixture.FEEDBACK_DESCRIPTION);
@@ -193,7 +193,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 작성한 피드백이 없으면 단건 조회 시 예외가 발생한다.")
     void 작성한_피드백이_없으면_단건_조회_시_예외가_발생한다() {
-        assertThatThrownBy(() -> feedbackQueryService.getMyFeedback(contest.getId(), submission.getId(), member.getId()))
+        assertThatThrownBy(() -> feedbackQueryService.getFeedback(contest.getId(), submission.getId(), member.getId()))
                 .isInstanceOf(ContestSubmissionFeedbackException.class)
                 .hasMessage(NOT_FOUND_FEEDBACK.errorMessage());
     }

@@ -21,7 +21,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,7 +35,7 @@ public class ContestSubmissionFeedbackController {
     private final ContestSubmissionFeedbackCommandService contestSubmissionFeedbackCommandService;
     private final ContestSubmissionFeedbackQueryService contestSubmissionFeedbackQueryService;
 
-    @PostMapping
+    @PutMapping
     @Secured("ROLE_외부멘토")
     public ResponseEntity<Void> saveFeedback(
             @PathVariable final Long contestId,
@@ -44,19 +44,18 @@ public class ContestSubmissionFeedbackController {
             @RequestPart(required = false) final List<MultipartFile> files,
             @LoginMember final Member member
     ) {
-        contestSubmissionFeedbackCommandService.saveFeedback(contestId, submissionId, member.getId(),
-                request.description(), files, request.removeFileIds());
+        contestSubmissionFeedbackCommandService.saveFeedback(contestId, submissionId, member.getId(), request.description(), files, request.removeFileIds());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
     @Secured("ROLE_외부멘토")
-    public ResponseEntity<ContestSubmissionMyFeedbackResponse> getMyFeedback(
+    public ResponseEntity<ContestSubmissionMyFeedbackResponse> getFeedback(
             @PathVariable final Long contestId,
             @PathVariable final Long submissionId,
             @LoginMember final Member member
     ) {
-        return ResponseEntity.ok(contestSubmissionFeedbackQueryService.getMyFeedback(contestId, submissionId, member.getId()));
+        return ResponseEntity.ok(contestSubmissionFeedbackQueryService.getFeedback(contestId, submissionId, member.getId()));
     }
 
     @GetMapping

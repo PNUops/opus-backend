@@ -57,13 +57,13 @@ public class ContestSubmissionFeedbackQueryService {
                 .toList();
     }
 
-    public ContestSubmissionMyFeedbackResponse getMyFeedback(final Long contestId, final Long submissionId,
+    public ContestSubmissionMyFeedbackResponse getFeedback(final Long contestId, final Long submissionId,
                                                              final Long memberId) {
         contestConvenience.validateExistContest(contestId);
         contestSubmissionConvenience.validateExistSubmission(submissionId);
 
         final ContestSubmissionFeedback feedback =
-                contestSubmissionFeedbackConvenience.getValidateMyFeedback(submissionId, memberId);
+                contestSubmissionFeedbackConvenience.getValidateFeedback(submissionId, memberId);
 
         final List<FeedbackFileInfo> files = fileFeedbackConvenience
                 .findFilesGroupedByFeedbackIds(List.of(feedback.getId()))
