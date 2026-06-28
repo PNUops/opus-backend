@@ -70,7 +70,7 @@ public class ContestSubmissionCommandService {
                                    final Member member) {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission =
-                contestSubmissionConvenience.getValidateSubmissionInContest(submissionId, contestId);
+                contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
@@ -87,7 +87,7 @@ public class ContestSubmissionCommandService {
                                      final Member member) {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission =
-                contestSubmissionConvenience.getValidateSubmissionInContest(submissionId, contestId);
+                contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
