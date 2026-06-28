@@ -28,6 +28,16 @@ public class MemberFixture {
                 .build();
     }
 
+    public static Member createMemberWithRole(final String name, final int number, final MemberRoleType role) {
+        return Member.generalMember()
+                .name(name)
+                .email("example" + number + "@pusan.ac.kr")
+                .password("{noop}123456789")
+                .studentId("20211234" + number)
+                .roles(new HashSet<>(Set.of(role)))
+                .build();
+    }
+
     public static Member createSocialMember(String email, String socialId) {
         return Member.socialMember()
                 .name("소셜회원")

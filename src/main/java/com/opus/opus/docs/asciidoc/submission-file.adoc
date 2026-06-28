@@ -1,0 +1,156 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= SUBMISSION FILE DOWNLOAD API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `GET`: 제출 파일 다운로드 대상 목록 조회
+
+선택한 '제출물 종류 및 분과' 조합들의 다운로드 대상 목록(제출 팀 수, 예상 용량)을 반환합니다.
+
+.Path Parameters
+include::{snippets}/get-submission-download-targets/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-submission-download-targets/query-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/get-submission-download-targets/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-submission-download-targets/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-download-targets/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-submission-download-targets/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-submission-download-targets-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-submission-download-targets-fail-contest-not-found/http-response.adoc[]
+
+====
+
+== `POST`: 제출 파일 일괄 다운로드 (zip)
+
+선택한 조합들에 속한 모든 팀의 제출 파일을 하나의 zip으로 묶어 내려줍니다. 팀별 폴더 구조를 유지합니다.
+
+.Path Parameters
+include::{snippets}/download-submissions/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/download-submissions/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/download-submissions/http-request.adoc[]
+
+.Request Body's Fields
+include::{snippets}/download-submissions/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/download-submissions/http-response.adoc[]
+
+.Response Headers
+include::{snippets}/download-submissions/response-headers.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 빈 배열 (다운로드 대상 없음)
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submissions-fail-empty-targets/http-request.adoc[]
+
+include::{snippets}/download-submissions-fail-empty-targets/http-response.adoc[]
+
+====
+
+.❌ Case 2: 대상에 해당하는 제출 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submissions-fail-no-submissions/http-request.adoc[]
+
+include::{snippets}/download-submissions-fail-no-submissions/http-response.adoc[]
+
+====
+
+== `GET`: 제출 파일 개별 다운로드
+
+제출물 상세에서 파일을 하나씩 내려받습니다.
+
+.Path Parameters
+include::{snippets}/download-submission-file/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/download-submission-file/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/download-submission-file/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/download-submission-file/http-response.adoc[]
+
+.Response Headers
+include::{snippets}/download-submission-file/response-headers.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 파일
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-file-fail-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-file-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-file-fail-submission-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-file-fail-submission-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 3: 물리적 파일 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-file-fail-physical-file-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-file-fail-physical-file-not-found/http-response.adoc[]
+
+====

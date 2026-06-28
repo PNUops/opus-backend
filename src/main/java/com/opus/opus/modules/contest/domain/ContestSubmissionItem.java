@@ -31,6 +31,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE contest_submission_item SET is_deleted = true WHERE id = ?")
 public class ContestSubmissionItem extends BaseEntity {
 
+    private static final long MB_IN_BYTES = 1024L * 1024L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -86,7 +88,7 @@ public class ContestSubmissionItem extends BaseEntity {
                                   final Contest contest, final ContestTrack contestTrack) {
         this.name = name;
         this.description = description;
-        this.allowedFileFormats = allowedFileFormats != null ? allowedFileFormats : new HashSet<>();
+        this.allowedFileFormats = allowedFileFormats != null ? new HashSet<>(allowedFileFormats) : new HashSet<>();
         this.maxFileSizeMb = maxFileSizeMb;
         this.maxFileCount = maxFileCount;
         this.startAt = startAt;
@@ -96,5 +98,51 @@ public class ContestSubmissionItem extends BaseEntity {
         this.contest = contest;
         this.contestTrack = contestTrack;
         this.isDeleted = false;
+    }
+
+    public boolean isInContest(final Long contestId) {
+        return contest.getId().equals(contestId);
+    }
+
+    public boolean isSubmissionClosed() {
+        return LocalDateTime.now().isAfter(endAt) && !allowLateSubmission;
+    }
+
+    public boolean isFileCountExceeded(final int totalFileCount) {
+        return totalFileCount > maxFileCount;
+    }
+
+    public boolean isAllowedFormat(final SubmissionFileFormat format) {
+        return allowedFileFormats.contains(format);
+    }
+
+    public boolean isFileSizeExceeded(final long sizeBytes) {
+        return sizeBytes > maxFileSizeMb * MB_IN_BYTES;
+    }
+
+    public void updateContestSubmissionItem(final String name, final String description,
+                                            final Set<SubmissionFileFormat> allowedFileFormats,
+                                            final Integer maxFileSizeMb,
+                                            final Integer maxFileCount, final LocalDateTime startAt,
+                                            final LocalDateTime endAt,
+                                            final Boolean allowLateSubmission, final SubmissionVisibility visibility,
+                                            final ContestTrack contestTrack) {
+        this.name = name;
+        this.description = description;
+        this.maxFileSizeMb = maxFileSizeMb;
+        this.maxFileCount = maxFileCount;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.allowLateSubmission = allowLateSubmission;
+        this.visibility = visibility;
+        this.contestTrack = contestTrack;
+        replaceAllowedFileFormats(allowedFileFormats);
+    }
+
+    private void replaceAllowedFileFormats(final Set<SubmissionFileFormat> allowedFileFormats) {
+        this.allowedFileFormats.clear();
+        if (allowedFileFormats != null) {
+            this.allowedFileFormats.addAll(allowedFileFormats);
+        }
     }
 }
