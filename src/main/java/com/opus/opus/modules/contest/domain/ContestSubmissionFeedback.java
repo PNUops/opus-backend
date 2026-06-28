@@ -35,6 +35,9 @@ public class ContestSubmissionFeedback extends BaseEntity {
     @Column(nullable = false)
     private Long memberId;
 
+    @Column(nullable = false)
+    private Boolean isRead;
+
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "contest_submission_id", nullable = false)
     private ContestSubmission submission;
@@ -44,9 +47,14 @@ public class ContestSubmissionFeedback extends BaseEntity {
         this.description = description;
         this.memberId = memberId;
         this.submission = submission;
+        this.isRead = false;
     }
 
     public void updateDescription(final String newDescription) {
         this.description = newDescription;
+    }
+
+    public void markAsRead() {
+        this.isRead = true;
     }
 }
