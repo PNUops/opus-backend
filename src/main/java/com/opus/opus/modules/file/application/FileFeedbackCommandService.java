@@ -62,7 +62,7 @@ public class FileFeedbackCommandService {
 
         for (final Long fileId : fileIds) {
             final FileFeedback fileFeedback = fileFeedbackRepository.findByIdAndFeedbackId(fileId, feedbackId)
-                    .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND_FEEDBACK_FILE));
+                    .orElseThrow(() -> new FileException(FileExceptionType.NOT_FOUND));
             deleteWithPhysicalFile(fileFeedback);
         }
     }

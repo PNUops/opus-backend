@@ -11,7 +11,6 @@ public enum FileExceptionType implements BaseExceptionType {
     NOT_EXISTS_PHYSICAL_FILE(HttpStatus.NOT_FOUND, "물리적 파일이 존재하지 않습니다"),
     NOT_WEBP_CONVERTED(HttpStatus.ACCEPTED, "이미지 변환중 입니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다"),
-    NOT_FOUND_FEEDBACK_FILE(HttpStatus.NOT_FOUND, "삭제할 첨부파일을 찾을 수 없습니다"),
     SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다"),
     DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다"),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "업로드할 파일이 비어 있거나 존재하지 않습니다"),

@@ -5,7 +5,6 @@ import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackE
 import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
-import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND_FEEDBACK_FILE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -411,7 +410,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 삭제할 첨부파일이 본인 피드백에 없으면 404 에러를 반환한다.")
     void 삭제할_첨부파일이_본인_피드백에_없으면_에러를_반환한다() throws Exception {
-        willThrow(new FileException(NOT_FOUND_FEEDBACK_FILE))
+        willThrow(new FileException(NOT_FOUND))
                 .given(contestSubmissionFeedbackCommandService)
                 .saveFeedback(any(), any(), any(), any(), any(), any());
 
