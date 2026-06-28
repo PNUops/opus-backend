@@ -70,7 +70,7 @@ public class ContestSubmissionFeedbackController {
     }
 
     @PatchMapping("/{feedbackId}/read")
-    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
+    @Secured({"ROLE_학생"})
     public ResponseEntity<Void> markFeedbackAsRead(
             @PathVariable final Long contestId,
             @PathVariable final Long submissionId,

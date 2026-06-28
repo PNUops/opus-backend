@@ -297,7 +297,7 @@ public class ContestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
+    @Secured({"ROLE_학생", "ROLE_관리자"})
     @GetMapping("/{contestId}/teams/{teamId}/summary")
     public ResponseEntity<TeamDashboardSummaryResponse> getTeamDashboardSummary(
             @PathVariable final Long contestId,
