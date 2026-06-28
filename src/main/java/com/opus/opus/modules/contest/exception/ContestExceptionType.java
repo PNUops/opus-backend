@@ -5,6 +5,16 @@ import org.springframework.http.HttpStatus;
 
 public enum ContestExceptionType implements BaseExceptionType {
     NOT_FOUND_CONTEST(HttpStatus.NOT_FOUND, "존재하지 않는 대회입니다."),
+    NOT_FOUND_SUBMISSION(HttpStatus.NOT_FOUND, "존재하지 않는 제출물입니다."),
+    INVALID_SUBMISSION_FOR_CONTEST(HttpStatus.BAD_REQUEST, "해당 대회에 속하지 않는 제출물입니다."),
+    NO_SUBMISSIONS_TO_DOWNLOAD(HttpStatus.NOT_FOUND, "다운로드할 제출물이 없습니다."),
+    NOT_FOUND_SUBMISSION_ITEM(HttpStatus.NOT_FOUND, "존재하지 않는 제출 항목입니다."),
+    SUBMISSION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 제출한 제출 항목입니다."),
+    INVALID_SUBMISSION_FILE_FORMAT(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다."),
+    SUBMISSION_FILE_REQUIRED(HttpStatus.BAD_REQUEST, "제출물은 최소 한 개의 파일을 포함해야 합니다."),
+    SUBMISSION_FILE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 수를 초과했습니다."),
+    SUBMISSION_FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "제출 가능한 파일 크기를 초과했습니다."),
+    SUBMISSION_PERIOD_ENDED(HttpStatus.BAD_REQUEST, "제출 기간이 종료되었습니다."),
     CONTEST_HAS_TEAMS(HttpStatus.CONFLICT, "먼저 해당 대회의 모든 팀을 삭제해주세요."),
     CURRENT_CONTEST_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "현재 진행 중인 대회는 최대 2개까지 설정할 수 있습니다."),
     ALREADY_CURRENT_CONTEST(HttpStatus.BAD_REQUEST, "이미 현재 대회입니다."),

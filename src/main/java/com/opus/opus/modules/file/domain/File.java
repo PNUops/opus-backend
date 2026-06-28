@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class File extends BaseEntity {
 
+    private static final String DEFAULT_EXTENSION = "bin";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,6 +44,17 @@ public class File extends BaseEntity {
         file.mimeType = mimeType;
         file.fileSize = fileSize;
         return file;
+    }
+
+    public static String extractExtension(final String filename) {
+        if (filename == null || filename.isBlank()) {
+            return DEFAULT_EXTENSION;
+        }
+        final int lastDot = filename.lastIndexOf('.');
+        if (lastDot <= 0 || lastDot >= filename.length() - 1) {
+            return DEFAULT_EXTENSION;
+        }
+        return filename.substring(lastDot + 1);
     }
 
 }

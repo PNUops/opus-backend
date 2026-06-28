@@ -2,19 +2,16 @@ package com.opus.opus.modules.contest.exception;
 
 import com.opus.opus.global.base.BaseException;
 import com.opus.opus.global.base.BaseExceptionType;
-import lombok.Getter;
 
-@Getter
-public class ContestSubmissionException extends BaseException {
+public class ContestMemberException extends BaseException {
+    private final ContestMemberExceptionType exceptionType;
 
-    private final ContestSubmissionExceptionType exceptionType;
-
-    public ContestSubmissionException(final ContestSubmissionExceptionType exceptionType) {
+    public ContestMemberException(final ContestMemberExceptionType exceptionType) {
         super(exceptionType.errorMessage());
         this.exceptionType = exceptionType;
     }
 
-    public ContestSubmissionException(final ContestSubmissionExceptionType exceptionType, final String message) {
+    public ContestMemberException(final ContestMemberExceptionType exceptionType, final String message) {
         super(message);
         this.exceptionType = exceptionType;
     }

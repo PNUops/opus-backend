@@ -1,8 +1,8 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD;
-import static com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +29,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.application.storage.FileStorage;
 import com.opus.opus.modules.file.domain.File;
@@ -129,7 +128,7 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     void 존재하지_않는_제출물의_파일은_다운로드할_수_없다() {
         assertThatThrownBy(() -> contestSubmissionFileQueryService.downloadSubmissionFile(
                 contest.getId(), 99999L, fileAi1.getId()))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
 
@@ -241,7 +240,7 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
         final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(new DownloadTargetRequest(item.getId(), 99999L)));
 
         assertThatThrownBy(() -> contestSubmissionFileQueryService.generateDownload(contest.getId(), request))
-                .isInstanceOf(ContestSubmissionException.class)
+                .isInstanceOf(ContestException.class)
                 .hasMessage(NO_SUBMISSIONS_TO_DOWNLOAD.errorMessage());
     }
 

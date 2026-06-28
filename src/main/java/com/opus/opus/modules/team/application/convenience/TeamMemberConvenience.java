@@ -55,6 +55,12 @@ public class TeamMemberConvenience {
         }
     }
 
+    public void validateTeamMemberIfStudent(final Long teamId, final Member member) {
+        if (member.isStudent()) {
+            getValidateExistTeamMember(teamId, member.getId());
+        }
+    }
+
     /*
         [팀장/팀원 권한 검증 위치 변경]
         ROLE_팀장, ROLE_팀원을 JwtProvider roles에 추가해 @Secured로 검증하는 방식은

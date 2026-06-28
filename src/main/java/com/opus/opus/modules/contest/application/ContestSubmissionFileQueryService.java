@@ -10,8 +10,8 @@ import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.dao.DownloadFileRow;
 import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
-import com.opus.opus.modules.contest.exception.ContestSubmissionException;
-import com.opus.opus.modules.contest.exception.ContestSubmissionExceptionType;
+import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.application.FileDocumentQueryService;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.exception.FileException;
@@ -40,7 +40,7 @@ public class ContestSubmissionFileQueryService {
 
     public DocumentFileDownload downloadSubmissionFile(final Long contestId, final Long submissionId, final Long fileId) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.validateExistSubmission(submissionId);
+        contestSubmissionConvenience.getValidateExistSubmission(submissionId);
 
         final DocumentFileDownload fileDownload = fileDocumentQueryService.download(fileId);
         if (!fileDownload.submissionId().equals(submissionId)) {
@@ -68,7 +68,7 @@ public class ContestSubmissionFileQueryService {
                 .toList();
 
         if (rows.isEmpty()) {
-            throw new ContestSubmissionException(ContestSubmissionExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
+            throw new ContestException(ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
         }
 
         return new SubmissionDownload(generateZipFileName(contest), buildZipFileBody(rows));
