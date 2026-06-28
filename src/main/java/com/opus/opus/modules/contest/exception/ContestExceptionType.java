@@ -28,6 +28,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     DUPLICATE_TEAM_ID_IN_SORT_REQUEST(HttpStatus.BAD_REQUEST, "중복된 팀ID가 있습니다."),
     DUPLICATE_ITEM_ORDER_IN_SORT_REQUEST(HttpStatus.BAD_REQUEST, "중복된 itemOrder가 있습니다."),
     NOT_EXIST_TEAM_IN_CONTEST(HttpStatus.NOT_FOUND, "현재 대회에 소속된 팀이 아닙니다"),
+    NOT_CONTEST_MEMBER(HttpStatus.FORBIDDEN, "현재 대회에 소속된 회원이 아닙니다."),
     INVALID_CONTEST_SORT_CUSTOM_REQUEST(HttpStatus.BAD_REQUEST, "저장된 팀 개수와 request의 팀 개수가 다릅니다"),
     NOT_ALLOWED_DURING_VOTING_PERIOD(HttpStatus.BAD_REQUEST, "현재 투표 기간이므로 해당 작업을 수행할 수 없습니다."),
     NOT_VOTE_PERIOD_NOW(HttpStatus.BAD_REQUEST, "지금은 투표 기간이 아닙니다."),
