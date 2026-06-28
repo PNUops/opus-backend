@@ -36,6 +36,20 @@ include::{snippets}/get-submission-download-targets/http-response.adoc[]
 .Response Body's Fields
 include::{snippets}/get-submission-download-targets/response-fields.adoc[]
 
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-submission-download-targets-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-submission-download-targets-fail-contest-not-found/http-response.adoc[]
+
+====
+
 == `POST`: 제출 파일 일괄 다운로드 (zip)
 
 선택한 조합들에 속한 모든 팀의 제출 파일을 하나의 zip으로 묶어 내려줍니다. 팀별 폴더 구조를 유지합니다.
@@ -57,6 +71,32 @@ include::{snippets}/download-submissions/http-response.adoc[]
 
 .Response Headers
 include::{snippets}/download-submissions/response-headers.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 빈 배열 (다운로드 대상 없음)
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submissions-fail-empty-targets/http-request.adoc[]
+
+include::{snippets}/download-submissions-fail-empty-targets/http-response.adoc[]
+
+====
+
+.❌ Case 2: 대상에 해당하는 제출 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submissions-fail-no-submissions/http-request.adoc[]
+
+include::{snippets}/download-submissions-fail-no-submissions/http-response.adoc[]
+
+====
 
 == `GET`: 제출 파일 개별 다운로드
 
@@ -88,5 +128,29 @@ include::{snippets}/download-submission-file/response-headers.adoc[]
 include::{snippets}/download-submission-file-fail-not-found/http-request.adoc[]
 
 include::{snippets}/download-submission-file-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-file-fail-submission-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-file-fail-submission-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 3: 물리적 파일 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-file-fail-physical-file-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-file-fail-physical-file-not-found/http-response.adoc[]
 
 ====

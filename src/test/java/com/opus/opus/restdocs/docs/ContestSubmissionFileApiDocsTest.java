@@ -1,5 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD;
+import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_PHYSICAL_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
@@ -24,6 +28,7 @@ import com.opus.opus.modules.contest.application.dto.request.DownloadTargetReque
 import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResponse;
 import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
@@ -102,6 +107,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("targets[].trackId", "분과 ID (선택, 생략 시 전체 분과)").optional()
                         ),
                         responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("application/zip"),
                                 headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"...zip\"")
                         )
                 ));
@@ -146,6 +152,95 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("submissionId").description("제출 ID"),
                                 parameterWithName("fileId").description("존재하지 않는 파일 ID")
+                        ),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 빈 배열로 zip 다운로드를 요청하면 400 에러를 반환한다.")
+    void 빈_배열로_zip_다운로드를_요청하면_에러를_반환한다() throws Exception {
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of());
+
+        mockMvc.perform(post("/contests/{contestId}/submissions/downloads", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("download-submissions-fail-empty-targets",
+                        pathParameters(parameterWithName("contestId").description("대회 ID")),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대상에 해당하는 제출이 없으면 404 에러를 반환한다.")
+    void 대상에_해당하는_제출이_없으면_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NO_SUBMISSIONS_TO_DOWNLOAD))
+                .given(contestSubmissionFileQueryService).generateDownload(any(), any());
+
+        final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(
+                new DownloadTargetRequest(3L, 2L)));
+
+        mockMvc.perform(post("/contests/{contestId}/submissions/downloads", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-submissions-fail-no-submissions",
+                        pathParameters(parameterWithName("contestId").description("대회 ID")),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 다운로드 대상 목록 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_다운로드_대상_목록_조회_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestSubmissionFileQueryService).getDownloadTargets(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/downloads", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-submission-download-targets-fail-contest-not-found",
+                        pathParameters(parameterWithName("contestId").description("존재하지 않는 대회 ID")),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물의 파일 개별 다운로드 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출물의_파일_개별_다운로드_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_SUBMISSION))
+                .given(contestSubmissionFileQueryService).downloadSubmissionFile(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/files/{fileId}", 1, 999, 101)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-submission-file-fail-submission-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("존재하지 않는 제출 ID"),
+                                parameterWithName("fileId").description("파일 ID")
+                        ),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 물리적 파일이 존재하지 않으면 404 에러를 반환한다.")
+    void 물리적_파일이_존재하지_않으면_에러를_반환한다() throws Exception {
+        willThrow(new FileException(NOT_EXISTS_PHYSICAL_FILE))
+                .given(contestSubmissionFileQueryService).downloadSubmissionFile(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/files/{fileId}", 1, 12, 101)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-submission-file-fail-physical-file-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID"),
+                                parameterWithName("fileId").description("파일 ID")
                         ),
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
                 ));
