@@ -3,12 +3,12 @@ package com.opus.opus.contest.application;
 import static com.opus.opus.contest.ContestFixture.createContest;
 import static com.opus.opus.contest.ContestSubmissionItemFixture.createSubmissionItem;
 import static com.opus.opus.contest.ContestTrackFixture.createTrack;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_CONTEST_MEMBER;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.NOT_FOUND_SUBMISSION_ITEM;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
-import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -23,6 +23,7 @@ import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -31,7 +32,6 @@ import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
-import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.team.TeamFixture;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -143,8 +143,8 @@ class ContestSubmissionItemQueryServiceTest extends IntegrationTest {
 
         assertThatThrownBy(() -> contestSubmissionItemQueryService.getSubmissionItem(
                 contest.getId(), submissionItem.getId(), outsider))
-                .isInstanceOf(TeamMemberException.class)
-                .hasMessage(TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_CONTEST_MEMBER.errorMessage());
     }
 
     @Test
