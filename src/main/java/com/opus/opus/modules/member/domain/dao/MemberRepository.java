@@ -16,10 +16,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findAllByIdIncludingDeleted(@Param("ids") List<Long> ids);
 
     @Query("""
-            SELECT DISTINCT m FROM Member m
-            LEFT JOIN m.roles r
+            SELECT m FROM Member m
             WHERE LOWER(m.email) LIKE LOWER(CONCAT(:keyword, '%')) ESCAPE '\\'
-              AND (:roleType IS NULL OR r = :roleType)
+              AND (:roleType IS NULL OR :roleType MEMBER OF m.roles)
             ORDER BY m.email ASC
             """)
     List<Member> searchByEmailPrefix(@Param("keyword") String keyword,
