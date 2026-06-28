@@ -4,11 +4,11 @@ import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
-import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse.MentorProjectResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.FileResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.SubmissionResponse;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestTrack;
@@ -87,10 +87,11 @@ public class ContestMentorQueryService {
         final List<Long> submissionIds = submissions.stream().map(ContestSubmission::getId).toList();
         final Set<Long> reviewedSubmissionIds = Set.copyOf(
                 contestSubmissionFeedbackRepository.findReviewedSubmissionIds(mentor.getId(), submissionIds));
-        final Map<Long, List<FileResponse>> filesBySubmissionId = filesGroupedBySubmission(submissionIds);
+        final Map<Long, List<ContestSubmissionFileResponse>> filesBySubmissionId = filesGroupedBySubmission(submissionIds);
 
-        final List<SubmissionResponse> submissionResponses = submissions.stream()
-                .map(submission -> SubmissionResponse.of(submission, reviewedSubmissionIds.contains(submission.getId()),
+        final List<MentorSubmissionResponse> submissionResponses = submissions.stream()
+                .map(submission -> MentorSubmissionResponse.of(submission,
+                        reviewedSubmissionIds.contains(submission.getId()),
                         filesBySubmissionId.getOrDefault(submission.getId(), List.of())))
                 .toList();
 
@@ -117,9 +118,9 @@ public class ContestMentorQueryService {
                         TeamPendingFeedbackResult::pendingFeedbackCount));
     }
 
-    private Map<Long, List<FileResponse>> filesGroupedBySubmission(final List<Long> submissionIds) {
+    private Map<Long, List<ContestSubmissionFileResponse>> filesGroupedBySubmission(final List<Long> submissionIds) {
         return fileDocumentQueryService.findFilesBySubmissionIds(submissionIds).stream()
                 .collect(Collectors.groupingBy(SubmissionFileInfo::submissionId,
-                        Collectors.mapping(FileResponse::from, Collectors.toList())));
+                        Collectors.mapping(ContestSubmissionFileResponse::from, Collectors.toList())));
     }
 }

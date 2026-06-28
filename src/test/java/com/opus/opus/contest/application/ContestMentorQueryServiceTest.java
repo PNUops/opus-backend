@@ -16,12 +16,12 @@ import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.modules.contest.application.ContestMentorQueryService;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
-import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse.MentorProjectResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse.FeedbackStatus;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.FeedbackStatus;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.FileResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.SubmissionResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
@@ -154,13 +154,13 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
         assertThat(response.trackName()).isEqualTo(track.getTrackName());
         assertThat(response.pendingFeedbackCount()).isEqualTo(1);
         assertThat(response.submissions())
-                .extracting(SubmissionResponse::feedbackStatus)
+                .extracting(MentorSubmissionResponse::feedbackStatus)
                 .containsExactly(FeedbackStatus.COMPLETED, FeedbackStatus.PENDING);
 
-        final SubmissionResponse reviewed = response.submissions().get(0);
+        final MentorSubmissionResponse reviewed = response.submissions().get(0);
         assertThat(reviewed.submissionItemName()).isEqualTo("중간발표 자료");
         assertThat(reviewed.files())
-                .extracting(FileResponse::fileName, FileResponse::fileSize)
+                .extracting(ContestSubmissionFileResponse::fileName, ContestSubmissionFileResponse::fileSize)
                 .containsExactly(tuple("중간발표.pdf", 13002342L));
     }
 

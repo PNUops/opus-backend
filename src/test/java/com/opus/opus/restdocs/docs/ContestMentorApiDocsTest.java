@@ -13,12 +13,12 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
-import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse.MentorProjectResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse.FeedbackStatus;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.FeedbackStatus;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.FileResponse;
-import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse.SubmissionResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.util.List;
@@ -79,10 +79,10 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
     void 멘토가_담당_팀의_제출물_및_피드백_상태를_조회한다() throws Exception {
         final TeamSubmissionsResponse response = new TeamSubmissionsResponse(10L, "AI팀1", "AI 프로젝트", "융합트랙", 1L,
                 List.of(
-                        new SubmissionResponse(12L, 3L, "중간발표 자료2", FeedbackStatus.COMPLETED,
-                                List.of(new FileResponse(201L, "AI프로젝트_AI팀1_중간발표자료2.pptx", 13002342L))),
-                        new SubmissionResponse(13L, 4L, "최종발표자료", FeedbackStatus.PENDING,
-                                List.of(new FileResponse(205L, "AI프로젝트_AI팀1_최종발표자료.pptx", 13002342L)))
+                        new MentorSubmissionResponse(12L, 3L, "중간발표 자료2", FeedbackStatus.COMPLETED,
+                                List.of(new ContestSubmissionFileResponse(201L, "AI프로젝트_AI팀1_중간발표자료2.pptx", 13002342L))),
+                        new MentorSubmissionResponse(13L, 4L, "최종발표자료", FeedbackStatus.PENDING,
+                                List.of(new ContestSubmissionFileResponse(205L, "AI프로젝트_AI팀1_최종발표자료.pptx", 13002342L)))
                 ));
 
         when(contestMentorQueryService.getTeamSubmissions(any(), any(), any())).thenReturn(response);

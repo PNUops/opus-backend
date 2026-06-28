@@ -19,7 +19,7 @@ public record ContestSubmissionDetailResponse(
         LocalDateTime deadlineAt,
         LocalDateTime firstSubmittedAt,
         LocalDateTime lastModifiedAt,
-        List<FileResponse> files,
+        List<ContestSubmissionFileResponse> files,
         Integer commentCount
 ) {
     public static ContestSubmissionDetailResponse of(final ContestSubmission submission, final Team team,
@@ -37,18 +37,8 @@ public record ContestSubmissionDetailResponse(
                 submissionItem.getEndAt(),
                 submission.getFirstSubmittedAt(),
                 submission.getUpdatedAt(),
-                fileDocuments.stream().map(FileResponse::from).toList(),
+                fileDocuments.stream().map(ContestSubmissionFileResponse::from).toList(),
                 commentCount
         );
-    }
-
-    public record FileResponse(
-            Long fileId,
-            String fileName,
-            Long fileSize
-    ) {
-        public static FileResponse from(final FileDocument fileDocument) {
-            return new FileResponse(fileDocument.getId(), fileDocument.getName(), fileDocument.getFileSize());
-        }
     }
 }
