@@ -20,6 +20,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,6 +28,7 @@ import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionItemSummaryResponse;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -140,6 +142,48 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 항목 목록 조회는 성공한다.")
+    void 제출_항목_목록_조회는_성공한다() throws Exception {
+        final List<ContestSubmissionItemSummaryResponse> responses = List.of(
+                new ContestSubmissionItemSummaryResponse(1L, "발표자료", "AI 분과",
+                        LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59),
+                        true, "PUBLIC", "IN_PROGRESS"),
+                new ContestSubmissionItemSummaryResponse(2L, "포스터", null,
+                        LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59),
+                        false, "PRIVATE", "SCHEDULED"));
+
+        when(contestSubmissionItemQueryService.getSubmissionItems(any(), any())).thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/submission-items", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .param("status", "IN_PROGRESS"))
+                .andExpect(status().isOk())
+                .andDo(document("get-submission-items",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("status").optional()
+                                        .description("운영 상태 필터 (SCHEDULED, IN_PROGRESS, CLOSED)")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "제출 항목 목록"),
+                                numberFieldWithPath("[].contestSubmissionItemId", "제출물 ID"),
+                                stringFieldWithPath("[].name", "제출물 종류 이름"),
+                                stringFieldWithPath("[].trackName", "대상 분과명 (전체 분과면 null)").optional(),
+                                dateTimeFieldWithPath("[].startAt", "시작일시"),
+                                dateTimeFieldWithPath("[].endAt", "마감일시"),
+                                booleanFieldWithPath("[].allowLateSubmission", "지각 제출 허용 여부"),
+                                stringFieldWithPath("[].visibility", "공개 범위 (SubmissionVisibility)"),
+                                stringFieldWithPath("[].operationStatus", "운영 상태 (SCHEDULED, IN_PROGRESS, CLOSED)")
                         )
                 ));
     }
