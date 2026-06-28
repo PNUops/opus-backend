@@ -3,11 +3,22 @@ package com.opus.opus.member;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.SocialType;
 import java.util.HashSet;
 import java.util.Set;
 
 public class MemberFixture {
+
+    public static Member createMemberWithRole(final String name, final int number, final MemberRoleType role) {
+        return Member.generalMember()
+                .name(name)
+                .email("example" + number + "@pusan.ac.kr")
+                .password("{noop}123456789")
+                .studentId("20211234" + number)
+                .roles(new HashSet<>(Set.of(role)))
+                .build();
+    }
 
     public static Member createSocialMember(String email, String socialId) {
         return Member.socialMember()
