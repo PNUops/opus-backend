@@ -6,7 +6,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
-import com.opus.opus.modules.contest.domain.dao.DownloadFileRow;
+import com.opus.opus.modules.contest.domain.dao.DownloadSubmissionRow;
 import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestException;
 import java.util.List;
@@ -52,7 +52,7 @@ public class ContestSubmissionConvenience {
         return contestSubmissionRepository.findDownloadTargets(contestId, submissionTypeId, trackId);
     }
 
-    public List<DownloadFileRow> getDownloadFileRows(final Long contestId) {
-        return contestSubmissionRepository.findDownloadFileRows(contestId);
+    public List<DownloadSubmissionRow> getDownloadSubmissions(final Long contestId) {
+        return contestSubmissionRepository.findDownloadSubmissions(contestId);
     }
 }

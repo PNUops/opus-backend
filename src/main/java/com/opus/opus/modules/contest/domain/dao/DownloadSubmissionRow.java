@@ -1,11 +1,10 @@
 package com.opus.opus.modules.contest.domain.dao;
 
-public record DownloadFileRow(
+public record DownloadSubmissionRow(
 
         Long submissionTypeId,
         Long trackId,
         String teamName,
-        String fileName,
-        Long fileDocumentId
+        Long submissionId
 ) {
 }

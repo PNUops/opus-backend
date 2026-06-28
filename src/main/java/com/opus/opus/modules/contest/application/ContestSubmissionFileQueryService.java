@@ -8,19 +8,22 @@ import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResp
 import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
 import com.opus.opus.modules.contest.domain.Contest;
-import com.opus.opus.modules.contest.domain.dao.DownloadFileRow;
+import com.opus.opus.modules.contest.domain.dao.DownloadSubmissionRow;
 import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.application.FileDocumentQueryService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
+import com.opus.opus.modules.file.domain.dao.SubmissionFileInfo;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import lombok.RequiredArgsConstructor;
@@ -60,15 +63,22 @@ public class ContestSubmissionFileQueryService {
     public SubmissionDownload generateDownload(final Long contestId, final SubmissionDownloadRequest request) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
 
-        final List<DownloadFileRow> rows = contestSubmissionConvenience.getDownloadFileRows(contestId).stream()
-                .filter(row -> matchesTarget(row, request.targets()))
+        final List<DownloadSubmissionRow> submissions = contestSubmissionConvenience.getDownloadSubmissions(contestId).stream()
+                .filter(submission -> matchesTarget(submission, request.targets()))
                 .toList();
-
-        if (rows.isEmpty()) {
+        if (submissions.isEmpty()) {
             throw new ContestException(ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
         }
 
-        return new SubmissionDownload(generateZipFileName(contest), buildZipFileBody(rows));
+        final Map<Long, String> teamNameBySubmissionId = submissions.stream()
+                .collect(Collectors.toMap(DownloadSubmissionRow::submissionId, DownloadSubmissionRow::teamName));
+        final List<SubmissionFileInfo> files = fileDocumentQueryService.findFilesBySubmissionIds(
+                submissions.stream().map(DownloadSubmissionRow::submissionId).toList());
+        if (files.isEmpty()) {
+            throw new ContestException(ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
+        }
+
+        return new SubmissionDownload(generateZipFileName(contest), buildZipFileBody(files, teamNameBySubmissionId));
     }
 
     private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
@@ -81,21 +91,22 @@ public class ContestSubmissionFileQueryService {
                 result.estimatedSize());
     }
 
-    private boolean matchesTarget(final DownloadFileRow row, final List<DownloadTargetRequest> targets) {
+    private boolean matchesTarget(final DownloadSubmissionRow submission, final List<DownloadTargetRequest> targets) {
         return targets.stream().anyMatch(target ->
-                target.submissionTypeId().equals(row.submissionTypeId())
-                        && (target.trackId() == null || target.trackId().equals(row.trackId())));
+                target.submissionTypeId().equals(submission.submissionTypeId())
+                        && (target.trackId() == null || target.trackId().equals(submission.trackId())));
     }
 
-    private StreamingResponseBody buildZipFileBody(final List<DownloadFileRow> rows) {
+    private StreamingResponseBody buildZipFileBody(final List<SubmissionFileInfo> files,
+                                                   final Map<Long, String> teamNameBySubmissionId) {
         return outputStream -> {
             final Set<String> usedEntryNames = new HashSet<>();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
-                for (final DownloadFileRow row : rows) {
+                for (final SubmissionFileInfo file : files) {
                     final String entryName = deduplicateEntryName(usedEntryNames,
-                            row.teamName() + "/" + row.fileName());
+                            teamNameBySubmissionId.get(file.submissionId()) + "/" + file.fileName());
                     zipOutputStream.putNextEntry(new ZipEntry(entryName));
-                    try (InputStream inputStream = fileDocumentQueryService.openStream(row.fileDocumentId())) {
+                    try (InputStream inputStream = fileDocumentQueryService.openStream(file.fileDocumentId())) {
                         inputStream.transferTo(zipOutputStream);
                     }
                     zipOutputStream.closeEntry();

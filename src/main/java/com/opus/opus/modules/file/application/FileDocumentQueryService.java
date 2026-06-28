@@ -5,9 +5,11 @@ import com.opus.opus.modules.file.application.storage.FileStorage;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.file.domain.dao.FileDocumentRepository;
+import com.opus.opus.modules.file.domain.dao.SubmissionFileInfo;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import java.io.InputStream;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -36,6 +38,11 @@ public class FileDocumentQueryService {
                 file.getMimeType(),
                 file.getFileSize()
         );
+    }
+
+    // 여러 제출물에 속한 파일 정보를 한 번에 조회한다. (zip 구성 시 제출물별 파일 목록 확보용)
+    public List<SubmissionFileInfo> findFilesBySubmissionIds(final List<Long> submissionIds) {
+        return fileDocumentRepository.findFilesBySubmissionIds(submissionIds);
     }
 
     // zip 파일 스트리밍용. 메모리에 적재하지 않고 파일을 스트림으로 열어 그대로 흘려보낸다.
