@@ -25,6 +25,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "startDate와 endDate를 모두 입력해주세요"),
     INVALID_DATE_ORDER(HttpStatus.BAD_REQUEST, "startDate는 endDate보다 이전이어야 합니다."),
     INVALID_SORT_VALUE(HttpStatus.BAD_REQUEST, "정렬 기준은 latest 또는 oldest만 가능합니다."),
+    INVALID_ROLE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 역할 값입니다."),
     ;
 
     private final HttpStatus httpStatus;
