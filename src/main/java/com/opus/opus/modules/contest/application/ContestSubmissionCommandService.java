@@ -75,10 +75,12 @@ public class ContestSubmissionCommandService {
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
         validateSubmittable(submissionItem);
+        validateFilesNotEmpty(files);
         final long existingFileCount = fileDocumentConvenience.countBySubmissionId(submissionId);
         validateFiles(submissionItem, files, (int) existingFileCount + files.size());
 
         fileDocumentCommandService.storeDocumentFiles(submissionId, files);
+        contestSubmissionRepository.touchUpdatedAt(submissionId);
     }
 
     public void deleteSubmissionFile(final Long contestId, final Long submissionId, final Long fileId,
@@ -96,6 +98,8 @@ public class ContestSubmissionCommandService {
         fileDocumentCommandService.deleteDocumentFile(fileId);
         if (isLastFile) {
             contestSubmissionRepository.delete(submission);
+        } else {
+            contestSubmissionRepository.touchUpdatedAt(submissionId);
         }
     }
 
@@ -113,6 +117,11 @@ public class ContestSubmissionCommandService {
     private void validateFilesNotEmpty(final List<MultipartFile> files) {
         if (files.isEmpty()) {
             throw new ContestException(SUBMISSION_FILE_REQUIRED);
+        }
+        for (final MultipartFile file : files) {
+            if (file.isEmpty()) {
+                throw new ContestException(SUBMISSION_FILE_REQUIRED);
+            }
         }
     }
 
