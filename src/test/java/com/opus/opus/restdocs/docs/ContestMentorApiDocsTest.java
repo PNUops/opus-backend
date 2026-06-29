@@ -67,7 +67,7 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("projects[].teamId", "팀 ID"),
                                 stringFieldWithPath("projects[].teamName", "팀명"),
                                 stringFieldWithPath("projects[].projectName", "프로젝트명"),
-                                stringFieldWithPath("projects[].trackName", "분과(트랙)명"),
+                                stringFieldWithPath("projects[].trackName", "분과(트랙)명 (분과 미지정 시 null)"),
                                 stringFieldWithPath("projects[].roleType", "역할 (MemberRoleType)"),
                                 numberFieldWithPath("projects[].pendingFeedbackCount", "이 팀의 피드백 대기 건수")
                         )
@@ -102,7 +102,7 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("teamId", "팀 ID"),
                                 stringFieldWithPath("teamName", "팀명"),
                                 stringFieldWithPath("projectName", "프로젝트명"),
-                                stringFieldWithPath("trackName", "분과(트랙)명"),
+                                stringFieldWithPath("trackName", "분과(트랙)명 (분과 미지정 시 null)"),
                                 numberFieldWithPath("pendingFeedbackCount", "이 팀의 피드백 대기 건수"),
                                 arrayFieldWithPath("submissions", "제출물 목록"),
                                 numberFieldWithPath("submissions[].submissionId", "제출 ID"),
