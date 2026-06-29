@@ -164,6 +164,7 @@ CREATE TABLE `contest_submission_feedback` (
   `updated_at` datetime(6) DEFAULT NULL,
   `description` varchar(3000) NOT NULL,
   `member_id` bigint NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
   `contest_submission_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_feedback_member_submission` (`member_id`,`contest_submission_id`)

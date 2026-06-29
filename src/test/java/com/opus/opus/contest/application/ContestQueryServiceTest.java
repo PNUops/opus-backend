@@ -4,6 +4,8 @@ import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
 import static com.opus.opus.team.TeamVoteFixture.createTeamVote;
 import static java.time.LocalDateTime.now;
@@ -12,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestSortFixture;
+import com.opus.opus.contest.ContestSubmissionFeedbackFixture;
+import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.contest.ContestTemplateFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -22,13 +26,19 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSort;
+import com.opus.opus.modules.contest.domain.ContestSubmission;
+import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTemplateRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestTemplateException;
@@ -36,12 +46,16 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
 import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamVoteFixture;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,6 +74,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Autowired
     private TeamRepository teamRepository;
     @Autowired
+    private TeamMemberRepository teamMemberRepository;
+    @Autowired
     private TeamVoteRepository teamVoteRepository;
     @Autowired
     private ContestTemplateRepository contestTemplateRepository;
@@ -67,6 +83,12 @@ public class ContestQueryServiceTest extends IntegrationTest {
     private ContestCategoryRepository contestCategoryRepository;
     @Autowired
     private ContestSortRepository contestSortRepository;
+    @Autowired
+    private ContestSubmissionItemRepository submissionItemRepository;
+    @Autowired
+    private ContestSubmissionRepository submissionRepository;
+    @Autowired
+    private ContestSubmissionFeedbackRepository feedbackRepository;
 
     private Contest contest;
     private Team team;
@@ -83,6 +105,11 @@ public class ContestQueryServiceTest extends IntegrationTest {
         contestSort = contestSortRepository.save(ContestSortFixture.createContestSort(contest));
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         member = memberRepository.save(MemberFixture.createMember());
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(member.getId())
+                .team(team)
+                .roles(Set.of(ROLE_팀원))
+                .build());
     }
 
     @Test
@@ -363,6 +390,101 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThat(responses)
                 .extracting(TeamSummaryResponse::teamId)
                 .containsExactly(first.getId(), second.getId(), third.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 미제출 항목이 있으면 pendingSubmissionCount에 반영된다.")
+    void 미제출_항목이_있으면_pendingSubmissionCount에_반영된다() {
+        submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.pendingSubmissionCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("[성공] 이미 제출한 항목은 pendingSubmissionCount에 포함되지 않는다.")
+    void 이미_제출한_항목은_pendingSubmissionCount에_포함되지_않는다() {
+        final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.pendingSubmissionCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("[성공] 마감이 지난 항목은 pendingSubmissionCount에 포함되지 않는다.")
+    void 마감이_지난_항목은_pendingSubmissionCount에_포함되지_않는다() {
+        submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItemWithPastDeadline(contest));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.pendingSubmissionCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("[성공] nearestDeadline은 미제출 항목 중 가장 가까운 endAt이다.")
+    void nearestDeadline은_미제출_항목_중_가장_가까운_endAt이다() {
+        final LocalDateTime nearDeadline = now().plusDays(3);
+        final LocalDateTime farDeadline = now().plusDays(10);
+        submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItemWithEndAt(contest, nearDeadline));
+        submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItemWithEndAt(contest, farDeadline));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.nearestDeadline()).isEqualToIgnoringNanos(nearDeadline);
+    }
+
+    @Test
+    @DisplayName("[성공] 읽지 않은 피드백 수가 unreadFeedbackCount에 반영된다.")
+    void 읽지_않은_피드백_수가_unreadFeedbackCount에_반영된다() {
+        final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmission submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.unreadFeedbackCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("[성공] 읽은 피드백은 unreadFeedbackCount에 포함되지 않는다.")
+    void 읽은_피드백은_unreadFeedbackCount에_포함되지_않는다() {
+        final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmission submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createReadFeedback(submission, member.getId()));
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.unreadFeedbackCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("[성공] 피드백이 없으면 latestFeedbackPreview가 null이다.")
+    void 피드백이_없으면_latestFeedbackPreview가_null이다() {
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.latestFeedbackPreview()).isNull();
+    }
+
+    @Test
+    @DisplayName("[실패] 팀원이 아닌 사용자가 대시보드 통계를 조회하면 TEAM_MEMBER_NOT_FOUND_IN_TEAM 예외가 발생한다.")
+    void 팀원이_아닌_사용자가_대시보드_통계를_조회하면_예외가_발생한다() {
+        final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
+
+        assertThatThrownBy(() ->
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), outsider))
+                .isInstanceOf(TeamMemberException.class)
+                .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
+                        .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
     }
 
 }

@@ -14,4 +14,14 @@ public class ContestSubmissionFeedbackFixture {
                 .submission(submission)
                 .build();
     }
+
+    public static ContestSubmissionFeedback createReadFeedback(final ContestSubmission submission, final Long memberId) {
+        final ContestSubmissionFeedback feedback = ContestSubmissionFeedback.builder()
+                .description(FEEDBACK_DESCRIPTION)
+                .memberId(memberId)
+                .submission(submission)
+                .build();
+        feedback.markAsRead();
+        return feedback;
+    }
 }

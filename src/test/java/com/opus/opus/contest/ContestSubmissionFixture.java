@@ -24,6 +24,34 @@ public class ContestSubmissionFixture {
                 .build();
     }
 
+    public static ContestSubmissionItem createSubmissionItemWithPastDeadline(final Contest contest) {
+        return ContestSubmissionItem.builder()
+                .name("마감된 제출 항목")
+                .maxFileSizeMb(10)
+                .maxFileCount(5)
+                .startAt(LocalDateTime.now().minusDays(14))
+                .endAt(LocalDateTime.now().minusDays(1))
+                .allowLateSubmission(false)
+                .visibility(SubmissionVisibility.PUBLIC)
+                .allowedFileFormats(Set.of(SubmissionFileFormat.PDF))
+                .contest(contest)
+                .build();
+    }
+
+    public static ContestSubmissionItem createSubmissionItemWithEndAt(final Contest contest, final LocalDateTime endAt) {
+        return ContestSubmissionItem.builder()
+                .name("제출 항목")
+                .maxFileSizeMb(10)
+                .maxFileCount(5)
+                .startAt(endAt.minusDays(7))
+                .endAt(endAt)
+                .allowLateSubmission(false)
+                .visibility(SubmissionVisibility.PUBLIC)
+                .allowedFileFormats(Set.of(SubmissionFileFormat.PDF))
+                .contest(contest)
+                .build();
+    }
+
     public static ContestSubmission createSubmission(final Long teamId, final ContestSubmissionItem submissionItem) {
         return ContestSubmission.builder()
                 .teamId(teamId)

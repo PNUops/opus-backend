@@ -6,6 +6,8 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFe
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
+import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class ContestSubmissionFeedbackCommandService {
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
     private final FileFeedbackCommandService fileFeedbackCommandService;
+    private final TeamMemberConvenience teamMemberConvenience;
 
     public void saveFeedback(final Long contestId, final Long submissionId, final Long memberId,
                              final String description, final List<MultipartFile> files,
@@ -32,5 +35,15 @@ public class ContestSubmissionFeedbackCommandService {
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());
+    }
+
+    public void markFeedbackAsRead(final Long contestId, final Long submissionId, final Long feedbackId,
+                                   final Long teamId, final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
+        final ContestSubmissionFeedback feedback =
+                contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
+        feedback.markAsRead();
     }
 }
