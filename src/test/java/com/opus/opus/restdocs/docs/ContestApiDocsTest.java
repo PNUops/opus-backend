@@ -56,14 +56,17 @@ import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResp
 import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResponse.TeamBulkResult;
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
+import com.opus.opus.modules.contest.application.dto.response.FileResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
-import com.opus.opus.modules.contest.domain.SubmissionStatus;
+import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -878,7 +881,7 @@ public class ContestApiDocsTest extends RestDocsTest {
 
         when(contestQueryService.getTeamSubmissions(any())).thenReturn(responses);
 
-        mockMvc.perform(get("/contests/{contestId}/submissions", 1)
+        mockMvc.perform(get("/contests/{contestId}/team-detail-submissions", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-team-submissions",
@@ -907,7 +910,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .given(contestQueryService)
                 .getTeamSubmissions(any());
 
-        mockMvc.perform(get("/contests/{contestId}/submissions", 999)
+        mockMvc.perform(get("/contests/{contestId}/team-detail-submissions", 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-team-submissions-fail-not-found",
@@ -933,6 +936,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                 LocalDateTime.of(2026, 6, 1, 10, 12, 33),
                 LocalDateTime.of(2026, 6, 3, 22, 1, 0),
                 List.of(
+                        new FileResponse(101L, "발표자료.pdf", 1048576L),
+                        new FileResponse(102L, "데모영상.mp4", 20971520L)
                         new ContestSubmissionFileResponse(101L, "발표자료.pdf", 1048576L),
                         new ContestSubmissionFileResponse(102L, "데모영상.mp4", 20971520L)
                 ),
@@ -959,7 +964,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("teamName", "팀 이름"),
                                 stringFieldWithPath("projectOverview", "프로젝트 설명"),
                                 stringFieldWithPath("trackName", "분과명 (분과 미지정 시 null)"),
-                                stringFieldWithPath("submissionTypeName", "제출물 종류명"),
+                                stringFieldWithPath("submissionItemName", "제출 항목명"),
                                 stringFieldWithPath("status", "제출 상태(계산값) - 단건 조회에서는 SUBMITTED / LATE"),
                                 dateTimeFieldWithPath("deadlineAt", "제출 마감일시"),
                                 dateTimeFieldWithPath("firstSubmittedAt", "최초 제출일시"),
@@ -989,6 +994,150 @@ public class ContestApiDocsTest extends RestDocsTest {
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
                                 parameterWithName("submissionId").description("존재하지 않는 제출 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀의 제출물 항목별 현황을 조회한다.")
+    void 팀_제출물_현황을_조회한다() throws Exception {
+        loginMember();
+        final List<TeamSubmissionItemResponse> responses = List.of(
+                new TeamSubmissionItemResponse(10L, 12L, "최종 발표 자료", "발표 자료를 제출하세요",
+                        LocalDateTime.of(2026, 6, 5, 23, 59, 59), SubmissionStatus.SUBMITTED,
+                        List.of(new FileResponse(101L, "발표자료.pdf", 1048576L))),
+                new TeamSubmissionItemResponse(11L, null, "포스터", "포스터를 제출하세요",
+                        LocalDateTime.of(2026, 6, 10, 23, 59, 59), SubmissionStatus.NOT_SUBMITTED, List.of()));
+
+        when(contestSubmissionQueryService.getTeamSubmissionStatuses(any(), any(), any(), any()))
+                .thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 1L)
+                        .param("teamId", "3")
+                        .param("status", "SUBMITTED")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-submissions",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("teamId").description("조회할 팀 ID"),
+                                parameterWithName("status").description(
+                                        "제출 상태 필터 (SUBMITTED / LATE / NOT_SUBMITTED / NOT_SUBMITTED_AFTER_DEADLINE)")
+                                        .optional()
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "팀 제출물 항목별 현황 목록"),
+                                numberFieldWithPath("[].submissionItemId", "제출 항목 ID"),
+                                numberFieldWithPath("[].submissionId", "제출 ID (미제출이면 null)").optional(),
+                                stringFieldWithPath("[].submissionItemName", "제출 항목명"),
+                                stringFieldWithPath("[].description", "제출 항목 설명"),
+                                dateTimeFieldWithPath("[].deadlineAt", "제출 마감일시"),
+                                stringFieldWithPath("[].status", "제출 상태 (계산값)"),
+                                arrayFieldWithPath("[].files", "업로드된 파일 목록 (미제출이면 빈 배열)"),
+                                numberFieldWithPath("[].files[].fileId", "파일 ID"),
+                                stringFieldWithPath("[].files[].fileName", "파일명"),
+                                numberFieldWithPath("[].files[].fileSize", "파일 용량 (byte)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 팀 제출물 현황을 조회하면 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_팀_제출물_현황_조회_시_에러를_반환한다() throws Exception {
+        loginMember();
+
+        willThrow(new ContestException(ContestExceptionType.NOT_FOUND_CONTEST))
+                .given(contestSubmissionQueryService)
+                .getTeamSubmissionStatuses(any(), any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions", 999L)
+                        .param("teamId", "3")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-submissions-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("teamId").description("조회할 팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀의 마감 예정 제출 항목을 조회한다.")
+    void 팀_마감_예정_제출_항목을_조회한다() throws Exception {
+        loginMember();
+        final List<UpcomingSubmissionResponse> responses = List.of(
+                new UpcomingSubmissionResponse(201L, "중간 발표 자료",
+                        LocalDateTime.of(2026, 6, 5, 23, 59, 0), LocalDateTime.of(2026, 6, 1, 10, 0, 0),
+                        SubmissionStatus.SUBMITTED),
+                new UpcomingSubmissionResponse(202L, "최종 보고서",
+                        LocalDateTime.of(2026, 6, 18, 23, 59, 0), null, SubmissionStatus.NOT_SUBMITTED));
+
+        when(contestSubmissionQueryService.getUpcomingTeamSubmissions(any(), any(), any()))
+                .thenReturn(responses);
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/upcoming", 1L)
+                        .param("teamId", "3")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-upcoming-submissions",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("teamId").description("조회할 팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "마감 예정 제출 항목 목록 (마감일 오름차순)"),
+                                numberFieldWithPath("[].submissionItemId", "제출 항목 ID"),
+                                stringFieldWithPath("[].submissionItemName", "제출 항목명"),
+                                dateTimeFieldWithPath("[].deadlineAt", "제출 마감일시"),
+                                dateTimeFieldWithPath("[].lastModifiedAt", "최종 수정일시 (미제출이면 null)").optional(),
+                                stringFieldWithPath("[].status",
+                                        "제출 상태 (계산값: SUBMITTED / LATE / NOT_SUBMITTED)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 마감 예정 제출 항목을 조회하면 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_마감_예정_제출_항목_조회_시_에러를_반환한다() throws Exception {
+        loginMember();
+
+        willThrow(new ContestException(ContestExceptionType.NOT_FOUND_CONTEST))
+                .given(contestSubmissionQueryService)
+                .getUpcomingTeamSubmissions(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/upcoming", 999L)
+                        .param("teamId", "3")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-upcoming-submissions-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("teamId").description("조회할 팀 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
