@@ -29,7 +29,7 @@ public class ContestTeamSubmissionController {
             @PathVariable final Long contestId,
             @PathVariable final Long teamId,
             @LoginMember final Member member) {
-        return ResponseEntity.ok(contestSubmissionQueryService.getSubmissionSummary(contestId, teamId, member));
+        return ResponseEntity.ok(contestSubmissionQueryService.getTeamSubmissionSummary(contestId, teamId, member));
     }
 
     @GetMapping("/timeline")

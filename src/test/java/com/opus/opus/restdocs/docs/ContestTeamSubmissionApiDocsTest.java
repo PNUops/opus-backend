@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
-import com.opus.opus.modules.contest.domain.SubmissionStatus;
+import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
@@ -50,7 +50,7 @@ public class ContestTeamSubmissionApiDocsTest extends RestDocsTest {
     void 팀의_제출_현황_요약을_조회한다() throws Exception {
         final TeamSubmissionSummaryResponse response = new TeamSubmissionSummaryResponse(3L, 2L, 1L);
 
-        when(contestSubmissionQueryService.getSubmissionSummary(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionQueryService.getTeamSubmissionSummary(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get(BASE_URL + "/summary", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))

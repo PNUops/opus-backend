@@ -146,8 +146,8 @@ public class ContestSubmissionQueryService {
                 .toList();
     }
 
-    public TeamSubmissionSummaryResponse getSubmissionSummary(final Long contestId, final Long teamId,
-                                                              final Member member) {
+    public TeamSubmissionSummaryResponse getTeamSubmissionSummary(final Long contestId, final Long teamId,
+                                                                  final Member member) {
         contestConvenience.validateExistContest(contestId);
         teamConvenience.getValidateTeamInContest(teamId, contestId);
         teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);

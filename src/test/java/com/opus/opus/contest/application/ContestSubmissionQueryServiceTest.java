@@ -620,7 +620,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item2));
         contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item3));
 
-        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getSubmissionSummary(
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
                 contest.getId(), team.getId(), member);
 
         assertThat(response.totalItemCount()).isEqualTo(3);
@@ -644,7 +644,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         contestSubmissionFeedbackRepository.save(
                 ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember2.getId()));
 
-        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getSubmissionSummary(
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
                 contest.getId(), team.getId(), member);
 
         assertThat(response.totalFeedbackCount()).isEqualTo(2);
@@ -656,7 +656,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         prepareTeamAndMember();
         joinTeam(member, team);
 
-        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getSubmissionSummary(
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
                 contest.getId(), team.getId(), member);
 
         assertThat(response.totalItemCount()).isZero();
@@ -669,7 +669,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     void 비소속_학생_요약_조회_예외() {
         prepareTeamAndMember();
         assertThatThrownBy(
-                () -> contestSubmissionQueryService.getSubmissionSummary(contest.getId(), team.getId(), member))
+                () -> contestSubmissionQueryService.getTeamSubmissionSummary(contest.getId(), team.getId(), member))
                 .isInstanceOf(TeamMemberException.class)
                 .hasMessage(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
     }
@@ -681,7 +681,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         final Contest otherContest = contestRepository.save(ContestFixture.createContest());
 
         assertThatThrownBy(
-                () -> contestSubmissionQueryService.getSubmissionSummary(otherContest.getId(), team.getId(), member))
+                () -> contestSubmissionQueryService.getTeamSubmissionSummary(otherContest.getId(), team.getId(), member))
                 .isInstanceOf(TeamException.class);
     }
 
