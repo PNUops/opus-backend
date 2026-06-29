@@ -2,7 +2,7 @@ package com.opus.opus.modules.contest.application.dto.response;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
-import com.opus.opus.modules.contest.domain.SubmissionStatus;
+import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.file.domain.FileDocument;
 import com.opus.opus.modules.team.domain.Team;
 import java.time.LocalDateTime;
@@ -14,17 +14,17 @@ public record ContestSubmissionDetailResponse(
         String teamName,
         String projectOverview,
         String trackName,
-        String submissionTypeName,
+        String submissionItemName,
         SubmissionStatus status,
         LocalDateTime deadlineAt,
         LocalDateTime firstSubmittedAt,
         LocalDateTime lastModifiedAt,
-        List<FileResponse> files,
+        List<ContestSubmissionFileResponse> files,
         Integer commentCount
 ) {
     public static ContestSubmissionDetailResponse of(final ContestSubmission submission, final Team team,
                                                      final String trackName, final List<FileDocument> fileDocuments,
-                                                     final int commentCount) {
+                                                     final int commentCount, final SubmissionStatus status) {
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         return new ContestSubmissionDetailResponse(
                 submission.getId(),
@@ -33,22 +33,12 @@ public record ContestSubmissionDetailResponse(
                 team.getOverview(),
                 trackName,
                 submissionItem.getName(),
-                submission.isLate() ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED,
+                status,
                 submissionItem.getEndAt(),
                 submission.getFirstSubmittedAt(),
                 submission.getUpdatedAt(),
-                fileDocuments.stream().map(FileResponse::from).toList(),
+                fileDocuments.stream().map(ContestSubmissionFileResponse::from).toList(),
                 commentCount
         );
-    }
-
-    public record FileResponse(
-            Long fileId,
-            String fileName,
-            Long fileSize
-    ) {
-        public static FileResponse from(final FileDocument fileDocument) {
-            return new FileResponse(fileDocument.getId(), fileDocument.getName(), fileDocument.getFileSize());
-        }
     }
 }

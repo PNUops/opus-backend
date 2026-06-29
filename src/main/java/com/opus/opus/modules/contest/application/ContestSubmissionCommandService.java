@@ -91,8 +91,8 @@ public class ContestSubmissionCommandService {
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
-        fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
         validateSubmittable(submissionItem);
+        fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
 
         final boolean isLastFile = fileDocumentConvenience.countBySubmissionId(submissionId) == 1;
         fileDocumentCommandService.deleteDocumentFile(fileId);

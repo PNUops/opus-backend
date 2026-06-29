@@ -20,6 +20,10 @@ public class FileDocumentConvenience {
         return fileDocumentRepository.findAllBySubmissionIdOrderByFileOrder(submissionId);
     }
 
+    public List<FileDocument> findAllBySubmissionIds(final List<Long> submissionIds) {
+        return fileDocumentRepository.findAllBySubmissionIdInOrderBySubmissionIdAscFileOrderAsc(submissionIds);
+    }
+
     public void validateFileBelongsToSubmission(final Long submissionId, final Long fileId) {
         if (!fileDocumentRepository.existsByIdAndSubmissionId(fileId, submissionId)) {
             throw new FileException(FileExceptionType.NOT_FOUND);

@@ -61,12 +61,13 @@ public class ContestSubmissionFeedbackController {
     }
 
     @GetMapping
-    @Secured("ROLE_관리자")
+    @Secured({"ROLE_관리자", "ROLE_학생"})
     public ResponseEntity<List<ContestSubmissionFeedbackResponse>> getFeedbacks(
             @PathVariable final Long contestId,
-            @PathVariable final Long submissionId
+            @PathVariable final Long submissionId,
+            @LoginMember final Member member
     ) {
-        return ResponseEntity.ok(contestSubmissionFeedbackQueryService.getFeedbacks(contestId, submissionId));
+        return ResponseEntity.ok(contestSubmissionFeedbackQueryService.getFeedbacks(contestId, submissionId, member));
     }
 
     @PatchMapping("/{feedbackId}/read")
@@ -83,14 +84,15 @@ public class ContestSubmissionFeedbackController {
     }
 
     @GetMapping("/{feedbackId}/files/{fileId}")
-    @Secured("ROLE_관리자")
+    @Secured({"ROLE_관리자", "ROLE_학생"})
     public ResponseEntity<Resource> downloadFeedbackFile(
             @PathVariable final Long contestId,
             @PathVariable final Long submissionId,
             @PathVariable final Long feedbackId,
-            @PathVariable final Long fileId
+            @PathVariable final Long fileId,
+            @LoginMember final Member member
     ) {
-        final FileDownload download = contestSubmissionFeedbackQueryService.downloadFeedbackFile(contestId, submissionId, feedbackId, fileId);
+        final FileDownload download = contestSubmissionFeedbackQueryService.downloadFeedbackFile(contestId, submissionId, feedbackId, fileId, member);
 
         final ContentDisposition contentDisposition = ContentDisposition.attachment()
                 .filename(download.fileName(), StandardCharsets.UTF_8)

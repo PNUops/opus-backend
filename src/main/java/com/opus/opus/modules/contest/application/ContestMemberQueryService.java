@@ -51,7 +51,7 @@ public class ContestMemberQueryService {
         if (member == null) {
             return null;
         }
-        return ContestStaffResponse.of(contestMember, member, mapTeams(contestMember, teams), resolveRoleType(member));
+        return ContestStaffResponse.of(contestMember, member, mapTeams(contestMember, teams), member.getStaffRoleName());
     }
 
     private List<Team> mapTeams(final ContestMember contestMember, final Map<Long, Team> teams) {
@@ -59,14 +59,6 @@ public class ContestMemberQueryService {
                 .map(teams::get)
                 .filter(Objects::nonNull)
                 .toList();
-    }
-
-    private String resolveRoleType(final Member member) {
-        return member.getRoles().stream()
-                .filter(MemberRoleType::isStaff)
-                .map(Enum::name)
-                .findFirst()
-                .orElse(null);
     }
 
     private List<ContestStaffResponse> filterStaff(final List<ContestStaffResponse> staff, final String memberType,

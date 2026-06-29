@@ -5,6 +5,8 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVAL
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -59,6 +61,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
     private Contest contest;
     private ContestSubmission submission;
     private Member member;
+    private Member admin;
 
     @BeforeEach
     void setUp() {
@@ -66,7 +69,8 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         final ContestSubmissionItem submissionItem =
                 submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
         submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(1L, submissionItem));
-        member = memberRepository.save(MemberFixture.createMember());
+        member = memberRepository.save(MemberFixture.createMemberWithRole("이지민", 0, ROLE_외부멘토));
+        admin = memberRepository.save(MemberFixture.createMemberWithRole("관리자", 9, ROLE_관리자));
     }
 
     @Test
@@ -77,18 +81,24 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, otherMember.getId()));
 
         final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
+                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId(), admin);
 
         assertThat(response).hasSize(2);
         assertThat(response.get(0).description())
                 .isEqualTo(ContestSubmissionFeedbackFixture.FEEDBACK_DESCRIPTION);
+        final ContestSubmissionFeedbackResponse mentorFeedback = response.stream()
+                .filter(it -> it.memberId().equals(member.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(mentorFeedback.memberName()).isEqualTo(member.getName());
+        assertThat(mentorFeedback.memberRoleType()).isEqualTo(ROLE_외부멘토.name());
     }
 
     @Test
     @DisplayName("[성공] 피드백이 없는 제출물은 빈 리스트를 반환한다.")
     void 피드백이_없는_제출물은_빈_리스트를_반환한다() {
         final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
+                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId(), admin);
 
         assertThat(response).isEmpty();
     }
@@ -103,7 +113,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
                 feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, otherMember.getId()));
 
         final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
+                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId(), admin);
 
         assertThat(response).extracting(ContestSubmissionFeedbackResponse::feedbackId)
                 .containsExactly(second.getId(), first.getId());
@@ -121,7 +131,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
                 .build());
 
         final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
+                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId(), admin);
 
         assertThat(response.get(0).files()).hasSize(1);
         assertThat(response.get(0).files().get(0).fileId()).isEqualTo(fileFeedback.getId());
@@ -137,7 +147,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         memberRepository.delete(leaver);
 
         final List<ContestSubmissionFeedbackResponse> response =
-                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId());
+                feedbackQueryService.getFeedbacks(contest.getId(), submission.getId(), admin);
 
         assertThat(response).hasSize(1);
         assertThat(response.get(0).memberId()).isEqualTo(leaver.getId());
@@ -149,7 +159,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
     void 존재하지_않는_대회의_피드백_목록은_조회할_수_없다() {
         final Long invalidContestId = 999L;
 
-        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(invalidContestId, submission.getId()))
+        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(invalidContestId, submission.getId(), admin))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
@@ -159,7 +169,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
     void 존재하지_않는_제출물의_피드백_목록은_조회할_수_없다() {
         final Long invalidSubmissionId = 999L;
 
-        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(contest.getId(), invalidSubmissionId))
+        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(contest.getId(), invalidSubmissionId, admin))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
@@ -191,7 +201,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         final Long invalidFeedbackId = 999L;
 
         assertThatThrownBy(() -> feedbackQueryService.downloadFeedbackFile(
-                contest.getId(), submission.getId(), invalidFeedbackId, 1L))
+                contest.getId(), submission.getId(), invalidFeedbackId, 1L, admin))
                 .isInstanceOf(ContestSubmissionFeedbackException.class)
                 .hasMessage(NOT_FOUND_FEEDBACK.errorMessage());
     }
@@ -204,7 +214,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
         final Long invalidFileId = 999L;
 
         assertThatThrownBy(() -> feedbackQueryService.downloadFeedbackFile(
-                contest.getId(), submission.getId(), feedback.getId(), invalidFileId))
+                contest.getId(), submission.getId(), feedback.getId(), invalidFileId, admin))
                 .isInstanceOf(FileException.class)
                 .hasMessage(NOT_FOUND.errorMessage());
     }
@@ -214,7 +224,7 @@ public class ContestSubmissionFeedbackQueryServiceTest extends IntegrationTest {
     void 제출물이_해당_대회_소속이_아니면_피드백_목록을_조회할_수_없다() {
         final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
 
-        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(otherContest.getId(), submission.getId()))
+        assertThatThrownBy(() -> feedbackQueryService.getFeedbacks(otherContest.getId(), submission.getId(), admin))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }

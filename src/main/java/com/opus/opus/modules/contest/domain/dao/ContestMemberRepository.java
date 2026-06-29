@@ -12,4 +12,6 @@ public interface ContestMemberRepository extends JpaRepository<ContestMember, Lo
     boolean existsByContestIdAndMemberId(final Long contestId, final Long memberId);
 
     Optional<ContestMember> findByIdAndContestId(final Long id, final Long contestId);
+
+    Optional<ContestMember> findByContestIdAndMemberId(final Long contestId, final Long memberId);
 }
