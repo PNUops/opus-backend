@@ -7,6 +7,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionCo
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFeedbackResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionMyFeedbackResponse;
+import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.file.application.FileFeedbackQueryService;
 import com.opus.opus.modules.file.application.convenience.FileFeedbackConvenience;
@@ -14,6 +15,7 @@ import com.opus.opus.modules.file.application.dto.FeedbackFileInfo;
 import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +33,14 @@ public class ContestSubmissionFeedbackQueryService {
     private final MemberConvenience memberConvenience;
     private final FileFeedbackConvenience fileFeedbackConvenience;
     private final FileFeedbackQueryService fileFeedbackQueryService;
+    private final TeamMemberConvenience teamMemberConvenience;
 
-    public List<ContestSubmissionFeedbackResponse> getFeedbacks(final Long contestId, final Long submissionId) {
+    public List<ContestSubmissionFeedbackResponse> getFeedbacks(final Long contestId, final Long submissionId,
+                                                                final Member member) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        final ContestSubmission submission =
+                contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
         final List<ContestSubmissionFeedback> feedbacks =
                 contestSubmissionFeedbackConvenience.getFeedbacksBySubmission(submissionId);
@@ -79,9 +85,11 @@ public class ContestSubmissionFeedbackQueryService {
     }
 
     public FileDownload downloadFeedbackFile(final Long contestId, final Long submissionId, final Long feedbackId,
-                                             final Long fileId) {
+                                             final Long fileId, final Member member) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        final ContestSubmission submission =
+                contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        teamMemberConvenience.validateTeamMemberUnlessAdmin(submission.getTeamId(), member);
 
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);

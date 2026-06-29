@@ -132,6 +132,14 @@ public class Member extends BaseEntity {
         return roles.stream().anyMatch(MemberRoleType::isStaff);
     }
 
+    public String getStaffRoleName() {
+        return roles.stream()
+                .filter(MemberRoleType::isStaff)
+                .map(Enum::name)
+                .findFirst()
+                .orElse(null);
+    }
+
     public boolean isStudent() {
         return roles.contains(MemberRoleType.ROLE_학생);
     }

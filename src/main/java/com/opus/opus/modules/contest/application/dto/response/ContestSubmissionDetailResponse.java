@@ -19,7 +19,7 @@ public record ContestSubmissionDetailResponse(
         LocalDateTime deadlineAt,
         LocalDateTime firstSubmittedAt,
         LocalDateTime lastModifiedAt,
-        List<FileResponse> files,
+        List<ContestSubmissionFileResponse> files,
         Integer commentCount
 ) {
     public static ContestSubmissionDetailResponse of(final ContestSubmission submission, final Team team,
@@ -37,7 +37,7 @@ public record ContestSubmissionDetailResponse(
                 submissionItem.getEndAt(),
                 submission.getFirstSubmittedAt(),
                 submission.getUpdatedAt(),
-                fileDocuments.stream().map(FileResponse::from).toList(),
+                fileDocuments.stream().map(ContestSubmissionFileResponse::from).toList(),
                 commentCount
         );
     }

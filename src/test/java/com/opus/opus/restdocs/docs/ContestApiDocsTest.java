@@ -57,6 +57,7 @@ import com.opus.opus.modules.contest.application.dto.response.TeamBulkUploadResp
 import com.opus.opus.modules.contest.application.dto.response.ContestSortResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.FileResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
@@ -935,8 +936,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                 LocalDateTime.of(2026, 6, 1, 10, 12, 33),
                 LocalDateTime.of(2026, 6, 3, 22, 1, 0),
                 List.of(
-                        new FileResponse(101L, "발표자료.pdf", 1048576L),
-                        new FileResponse(102L, "데모영상.mp4", 20971520L)
+                        new ContestSubmissionFileResponse(101L, "발표자료.pdf", 1048576L),
+                        new ContestSubmissionFileResponse(102L, "데모영상.mp4", 20971520L)
                 ),
                 0
         );

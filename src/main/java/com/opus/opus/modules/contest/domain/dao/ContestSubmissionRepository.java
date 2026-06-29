@@ -45,6 +45,32 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             """)
     List<DownloadSubmissionRow> findDownloadSubmissions(@Param("contestId") Long contestId);
 
+    // 멘토 조회용: 팀의 공개(PUBLIC) 제출물을 제출 항목과 함께 조회한다.
+    @Query("""
+            SELECT s
+            FROM ContestSubmission s
+            JOIN FETCH s.submissionItem item
+            WHERE s.teamId = :teamId
+              AND item.contest.id = :contestId
+              AND item.visibility = com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC
+            ORDER BY item.id
+            """)
+    List<ContestSubmission> findPublicSubmissionsByTeam(Long contestId, Long teamId);
+
+    // 멘토 조회용: 담당 팀들의 공개(PUBLIC) 제출물 중 해당 멘토가 아직 피드백하지 않은 건수를 팀별로 집계한다.
+    @Query("""
+            SELECT new com.opus.opus.modules.contest.domain.dao.TeamPendingFeedbackResult(
+                   s.teamId, SUM(CASE WHEN f.id IS NULL THEN 1L ELSE 0L END))
+            FROM ContestSubmission s
+            JOIN s.submissionItem item
+            LEFT JOIN ContestSubmissionFeedback f ON f.submission = s AND f.memberId = :memberId
+            WHERE item.contest.id = :contestId
+              AND item.visibility = com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC
+              AND s.teamId IN :teamIds
+            GROUP BY s.teamId
+            """)
+    List<TeamPendingFeedbackResult> findPendingFeedbackCountsByTeams(Long contestId, Long memberId, List<Long> teamIds);
+
     boolean existsByTeamIdAndSubmissionItem(final Long teamId, final ContestSubmissionItem submissionItem);
 
     void deleteAllBySubmissionItemId(final Long submissionItemId);
