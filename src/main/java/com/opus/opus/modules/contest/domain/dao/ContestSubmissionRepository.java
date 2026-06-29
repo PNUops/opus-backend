@@ -2,6 +2,7 @@ package com.opus.opus.modules.contest.domain.dao;
 
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -46,9 +47,80 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
 
     boolean existsByTeamIdAndSubmissionItem(final Long teamId, final ContestSubmissionItem submissionItem);
 
+    void deleteAllBySubmissionItemId(final Long submissionItemId);
+
     @Modifying(clearAutomatically = true)
     @Query("UPDATE ContestSubmission s SET s.updatedAt = CURRENT_TIMESTAMP WHERE s.id = :submissionId")
     void touchUpdatedAt(@Param("submissionId") final Long submissionId);
 
-    void deleteAllBySubmissionItemId(final Long submissionItemId);
+    @Query("""
+            SELECT new com.opus.opus.modules.contest.domain.dao.TeamSubmissionStatusResult(
+                   i.id, s.id, i.name, i.description, i.endAt, s.firstSubmittedAt)
+            FROM ContestSubmissionItem i
+            LEFT JOIN ContestSubmission s ON s.submissionItem = i AND s.teamId = :teamId
+            WHERE i.contest.id = :contestId
+              AND (i.contestTrack IS NULL OR i.contestTrack.id = :trackId)
+            ORDER BY i.id
+            """)
+    List<TeamSubmissionStatusResult> findTeamSubmissionStatuses(final Long contestId, final Long teamId,
+                                                                final Long trackId);
+
+    @Query("""
+            SELECT new com.opus.opus.modules.contest.domain.dao.UpcomingSubmissionResult(
+                   i.id, s.id, i.name, i.endAt, s.updatedAt, s.firstSubmittedAt)
+            FROM ContestSubmissionItem i
+            LEFT JOIN ContestSubmission s ON s.submissionItem = i AND s.teamId = :teamId
+            WHERE i.contest.id = :contestId
+              AND (i.contestTrack IS NULL OR i.contestTrack.id = :trackId)
+              AND i.endAt > :now
+            ORDER BY i.endAt
+            """)
+    List<UpcomingSubmissionResult> findUpcomingTeamSubmissions(final Long contestId, final Long teamId,
+                                                               final Long trackId, final LocalDateTime now);
+
+    @Query(value = """
+            SELECT new com.opus.opus.modules.contest.domain.dao.ContestSubmissionStatusResult(
+                   s.id, t.id, t.teamName, ct.trackName, i.name, s.firstSubmittedAt, s.updatedAt, i.endAt)
+            FROM ContestSubmissionItem i
+            CROSS JOIN Team t
+            LEFT JOIN ContestSubmission s ON s.submissionItem = i AND s.teamId = t.id
+            LEFT JOIN ContestTrack ct ON ct.id = t.trackId
+            WHERE i.contest.id = :contestId
+              AND t.contestId = :contestId
+              AND (i.contestTrack IS NULL OR i.contestTrack.id = t.trackId)
+              AND (:submissionItemId IS NULL OR i.id = :submissionItemId)
+              AND (:trackId IS NULL OR t.trackId = :trackId)
+              AND (:keyword IS NULL OR t.teamName LIKE CONCAT('%', :keyword, '%'))
+              AND (:status IS NULL
+                   OR (:status = 'SUBMITTED'
+                       AND s.id IS NOT NULL AND s.firstSubmittedAt <= i.endAt)
+                   OR (:status = 'LATE'
+                       AND s.id IS NOT NULL AND s.firstSubmittedAt > i.endAt)
+                   OR (:status = 'NOT_SUBMITTED'
+                       AND s.id IS NULL AND :now <= i.endAt)
+                   OR (:status = 'NOT_SUBMITTED_AFTER_DEADLINE'
+                       AND s.id IS NULL AND :now > i.endAt))
+            ORDER BY t.id, i.id
+            """)
+    List<ContestSubmissionStatusResult> findSubmissionStatuses(final Long contestId, final Long submissionItemId,
+                                                               final String status, final Long trackId,
+                                                               final String keyword, final LocalDateTime now);
+
+    @Query("""
+            SELECT new com.opus.opus.modules.contest.domain.dao.ContestSubmissionSummaryResult(
+                   COUNT(i),
+                   COALESCE(SUM(CASE WHEN s.id IS NOT NULL AND s.firstSubmittedAt <= i.endAt THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN s.id IS NULL THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN s.id IS NOT NULL AND s.firstSubmittedAt > i.endAt THEN 1 ELSE 0 END), 0))
+            FROM ContestSubmissionItem i
+            CROSS JOIN Team t
+            LEFT JOIN ContestSubmission s ON s.submissionItem = i AND s.teamId = t.id
+            WHERE i.contest.id = :contestId
+              AND t.contestId = :contestId
+              AND (i.contestTrack IS NULL OR i.contestTrack.id = t.trackId)
+              AND (:submissionItemId IS NULL OR i.id = :submissionItemId)
+              AND (:trackId IS NULL OR t.trackId = :trackId)
+            """)
+    ContestSubmissionSummaryResult findSubmissionSummary(final Long contestId, final Long submissionItemId,
+                                                         final Long trackId);
 }

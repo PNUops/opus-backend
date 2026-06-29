@@ -104,6 +104,10 @@ public class ContestSubmissionItem extends BaseEntity {
         return contest.getId().equals(contestId);
     }
 
+    public String getTrackName() {
+        return contestTrack != null ? contestTrack.getTrackName() : null;
+    }
+
     public boolean isSubmissionClosed() {
         return LocalDateTime.now().isAfter(endAt) && !allowLateSubmission;
     }

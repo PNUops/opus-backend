@@ -21,6 +21,8 @@ public interface FileDocumentRepository extends JpaRepository<FileDocument, Long
             """)
     List<SubmissionFileInfo> findFilesBySubmissionIds(@Param("submissionIds") List<Long> submissionIds);
 
+    List<FileDocument> findAllBySubmissionIdInOrderBySubmissionIdAscFileOrderAsc(List<Long> submissionIds);
+
     boolean existsByIdAndSubmissionId(Long id, Long submissionId);
 
     long countBySubmissionId(Long submissionId);
