@@ -5,10 +5,15 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionCo
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionStatusResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionStatusResult;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionSummaryResult;
 import com.opus.opus.modules.contest.domain.dao.TeamSubmissionStatusResult;
@@ -36,6 +41,9 @@ public class ContestSubmissionQueryService {
 
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestSubmissionRepository contestSubmissionRepository;
+    private final ContestSubmissionItemRepository contestSubmissionItemRepository;
+    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
     private final FileDocumentConvenience fileDocumentConvenience;
@@ -135,6 +143,35 @@ public class ContestSubmissionQueryService {
                 .map(result -> UpcomingSubmissionResponse.of(result,
                         determineSubmissionStatus(result.submissionId(), result.firstSubmittedAt(),
                                 result.deadlineAt(), now)))
+                .toList();
+    }
+
+    public TeamSubmissionSummaryResponse getTeamSubmissionSummary(final Long contestId, final Long teamId,
+                                                                  final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);
+
+        final long totalItemCount = contestSubmissionItemRepository.countByContestId(contestId);
+        final List<ContestSubmission> submissions = contestSubmissionRepository.findAllByTeamIdAndContestId(teamId,
+                contestId);
+        final long submittedCount = submissions.size();
+        final List<Long> submissionIds = submissions.stream().map(ContestSubmission::getId).toList();
+        final long totalFeedbackCount = submissionIds.isEmpty() ? 0
+                : contestSubmissionFeedbackRepository.countBySubmissionIdIn(submissionIds);
+
+        return new TeamSubmissionSummaryResponse(totalItemCount, submittedCount, totalFeedbackCount);
+    }
+
+    public List<ContestSubmissionTimelineResponse> getSubmissionTimeline(final Long contestId, final Long teamId,
+                                                                         final Member member) {
+        contestConvenience.validateExistContest(contestId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);
+
+        return contestSubmissionRepository.findAllByTeamIdAndContestId(teamId, contestId)
+                .stream()
+                .map(ContestSubmissionTimelineResponse::from)
                 .toList();
     }
 

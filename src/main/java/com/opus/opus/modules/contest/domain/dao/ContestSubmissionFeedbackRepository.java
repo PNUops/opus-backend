@@ -13,6 +13,8 @@ public interface ContestSubmissionFeedbackRepository extends JpaRepository<Conte
 
     Optional<ContestSubmissionFeedback> findBySubmissionIdAndMemberId(Long submissionId, Long memberId);
 
+    long countBySubmissionIdIn(List<Long> submissionIds);
+
     // 멘토 조회용: 주어진 제출물들 중 해당 멘토가 피드백을 작성한 제출물 ID 목록
     @Query("""
             SELECT f.submission.id

@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestSubmissionFeedbackFixture;
 import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.contest.ContestSubmissionItemFixture;
 import com.opus.opus.contest.ContestTrackFixture;
@@ -16,7 +17,9 @@ import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionStatusResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItemResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
@@ -24,6 +27,7 @@ import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
@@ -44,6 +48,7 @@ import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.team.TeamFixture;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,6 +77,8 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     private FileDocumentRepository fileDocumentRepository;
     @Autowired
     private TeamMemberRepository teamMemberRepository;
+    @Autowired
+    private ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
 
     private Contest contest;
     private Team team;
@@ -598,6 +605,146 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
                 contest.getId(), 99999L, member))
                 .isInstanceOf(TeamException.class)
                 .hasMessage(TeamExceptionType.NOT_FOUND_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 현황 요약을 조회하면 전체 항목 수와 제출 완료 수를 반환한다.")
+    void 제출_현황_요약_조회() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        contestSubmissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmissionItem item2 = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmissionItem item3 = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item2));
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item3));
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.totalItemCount()).isEqualTo(3);
+        assertThat(response.submittedCount()).isEqualTo(2);
+        assertThat(response.totalFeedbackCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물에 달린 피드백 총 수를 반환한다.")
+    void 피드백_카운트_포함_요약_조회() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmission submission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), item));
+        final Member feedbackMember1 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        final Member feedbackMember2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember1.getId()));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember2.getId()));
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.totalFeedbackCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 항목이 없는 대회는 모든 카운트가 0이다.")
+    void 제출_항목_없는_대회_요약_조회() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.totalItemCount()).isZero();
+        assertThat(response.submittedCount()).isZero();
+        assertThat(response.totalFeedbackCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 비소속 학생은 제출 현황 요약을 조회할 수 없다.")
+    void 비소속_학생_요약_조회_예외() {
+        prepareTeamAndMember();
+        assertThatThrownBy(
+                () -> contestSubmissionQueryService.getTeamSubmissionSummary(contest.getId(), team.getId(), member))
+                .isInstanceOf(TeamMemberException.class)
+                .hasMessage(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀으로 요약을 조회하면 예외가 발생한다.")
+    void 대회_미소속_팀_요약_조회_예외() {
+        prepareTeamAndMember();
+        final Contest otherContest = contestRepository.save(ContestFixture.createContest());
+
+        assertThatThrownBy(
+                () -> contestSubmissionQueryService.getTeamSubmissionSummary(otherContest.getId(), team.getId(), member))
+                .isInstanceOf(TeamException.class);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 타임라인을 조회하면 제출 시각 오름차순으로 반환한다.")
+    void 제출_타임라인_시간순_조회() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item1 = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmissionItem item2 = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmissionWithFirstSubmittedAt(
+                team.getId(), item1, LocalDateTime.now().minusDays(2)));
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmissionWithFirstSubmittedAt(
+                team.getId(), item2, LocalDateTime.now().minusDays(1)));
+
+        final List<ContestSubmissionTimelineResponse> responses = contestSubmissionQueryService.getSubmissionTimeline(
+                contest.getId(), team.getId(), member);
+
+        assertThat(responses).hasSize(2);
+        assertThat(responses.get(0).submissionItemName()).isEqualTo(item1.getName());
+        assertThat(responses.get(1).submissionItemName()).isEqualTo(item2.getName());
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물이 없으면 빈 타임라인을 반환한다.")
+    void 제출_없는_팀_타임라인_빈_리스트() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+
+        final List<ContestSubmissionTimelineResponse> responses = contestSubmissionQueryService.getSubmissionTimeline(
+                contest.getId(), team.getId(), member);
+
+        assertThat(responses).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 마감 이후에 제출된 항목의 타임라인 상태는 LATE이다.")
+    void 지각_제출_타임라인_상태_LATE() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItemWithDeadline(
+                        contest, LocalDateTime.now().minusDays(2), true));
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmissionWithFirstSubmittedAt(
+                team.getId(), item, LocalDateTime.now().minusDays(1)));
+
+        final List<ContestSubmissionTimelineResponse> responses = contestSubmissionQueryService.getSubmissionTimeline(
+                contest.getId(), team.getId(), member);
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).status()).isEqualTo(SubmissionStatus.LATE);
+    }
+
+    @Test
+    @DisplayName("[실패] 비소속 학생은 제출 타임라인을 조회할 수 없다.")
+    void 비소속_학생_타임라인_조회_예외() {
+        prepareTeamAndMember();
+        assertThatThrownBy(
+                () -> contestSubmissionQueryService.getSubmissionTimeline(contest.getId(), team.getId(), member))
+                .isInstanceOf(TeamMemberException.class)
+                .hasMessage(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
     }
 
     private UpcomingSubmissionResponse findUpcomingByItem(final List<UpcomingSubmissionResponse> responses,

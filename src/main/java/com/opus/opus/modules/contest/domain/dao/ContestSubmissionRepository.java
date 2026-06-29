@@ -80,6 +80,16 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
     void touchUpdatedAt(@Param("submissionId") final Long submissionId);
 
     @Query("""
+            SELECT s FROM ContestSubmission s
+            JOIN FETCH s.submissionItem item
+            WHERE s.teamId = :teamId
+              AND item.contest.id = :contestId
+            ORDER BY s.firstSubmittedAt ASC
+            """)
+    List<ContestSubmission> findAllByTeamIdAndContestId(@Param("teamId") Long teamId,
+                                                        @Param("contestId") Long contestId);
+
+    @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.TeamSubmissionStatusResult(
                    i.id, s.id, i.name, i.description, i.endAt, s.firstSubmittedAt)
             FROM ContestSubmissionItem i
