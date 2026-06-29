@@ -13,8 +13,8 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.opus.opus.member.MemberFixture;
-import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.domain.SubmissionStatus;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.restdocs.RestDocsTest;
@@ -48,7 +48,7 @@ public class ContestTeamSubmissionApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 팀의 제출 현황 요약을 조회한다.")
     void 팀의_제출_현황_요약을_조회한다() throws Exception {
-        final ContestSubmissionSummaryResponse response = new ContestSubmissionSummaryResponse(3L, 2L, 1L);
+        final TeamSubmissionSummaryResponse response = new TeamSubmissionSummaryResponse(3L, 2L, 1L);
 
         when(contestSubmissionQueryService.getSubmissionSummary(any(), any(), any())).thenReturn(response);
 

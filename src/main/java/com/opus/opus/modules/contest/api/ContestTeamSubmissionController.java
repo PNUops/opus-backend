@@ -2,8 +2,8 @@ package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
-import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionTimelineResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class ContestTeamSubmissionController {
     private final ContestSubmissionQueryService contestSubmissionQueryService;
 
     @GetMapping("/summary")
-    public ResponseEntity<ContestSubmissionSummaryResponse> getSubmissionSummary(
+    public ResponseEntity<TeamSubmissionSummaryResponse> getSubmissionSummary(
             @PathVariable final Long contestId,
             @PathVariable final Long teamId,
             @LoginMember final Member member) {
