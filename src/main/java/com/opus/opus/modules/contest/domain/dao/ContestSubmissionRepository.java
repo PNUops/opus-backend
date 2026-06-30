@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ContestSubmissionRepository extends JpaRepository<ContestSubmission, Long> {
 
-    // 제출물 종류, 분과별 제출 팀 수와 파일 용량을 DB에서 집계하여 반환
+    // 제출 항목, 분과별 제출 팀 수와 파일 용량을 DB에서 집계하여 반환
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.DownloadTargetResult(
                    item.id, item.name, track.id, track.trackName,
@@ -23,16 +23,16 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             LEFT JOIN FileDocument fd ON fd.submissionId = s.id
             LEFT JOIN fd.file f
             WHERE item.contest.id = :contestId
-              AND (:submissionTypeId IS NULL OR item.id = :submissionTypeId)
+              AND (:submissionItemId IS NULL OR item.id = :submissionItemId)
               AND (:trackId IS NULL OR track.id = :trackId)
             GROUP BY item.id, item.name, track.id, track.trackName
             ORDER BY item.id, track.id
             """)
     List<DownloadTargetResult> findDownloadTargets(@Param("contestId") Long contestId,
-                                                 @Param("submissionTypeId") Long submissionTypeId,
+                                                 @Param("submissionItemId") Long submissionItemId,
                                                  @Param("trackId") Long trackId);
 
-    // 제출 파일 다운로드 대상 zip 구성을 위한 제출물 단위 (종류·분과·팀명·제출ID) 행 반환
+    // 제출 파일 다운로드 대상 zip 구성을 위한 제출물 단위 (항목·분과·팀명·제출ID) 행 반환
     // 파일 정보는 file 모듈에서 제출ID로 조회한다.
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.DownloadSubmissionRow(

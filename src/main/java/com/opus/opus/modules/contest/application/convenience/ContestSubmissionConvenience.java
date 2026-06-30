@@ -86,9 +86,9 @@ public class ContestSubmissionConvenience {
         return contestSubmissionRepository.existsByTeamIdAndSubmissionItem(teamId, submissionItem);
     }
 
-    public List<DownloadTargetResult> getDownloadTargets(final Long contestId, final Long submissionTypeId,
+    public List<DownloadTargetResult> getDownloadTargets(final Long contestId, final Long submissionItemId,
                                                          final Long trackId) {
-        return contestSubmissionRepository.findDownloadTargets(contestId, submissionTypeId, trackId);
+        return contestSubmissionRepository.findDownloadTargets(contestId, submissionItemId, trackId);
     }
 
     public List<DownloadSubmissionRow> getDownloadSubmissions(final Long contestId) {

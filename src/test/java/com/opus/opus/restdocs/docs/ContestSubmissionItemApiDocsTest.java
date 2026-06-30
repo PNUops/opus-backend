@@ -80,7 +80,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         requestFields(
-                                stringFieldWithPath("name", "제출물 종류 이름"),
+                                stringFieldWithPath("name", "제출 항목 이름"),
                                 numberFieldWithPath("contestTrackId", "대상 분과 ID (생략 시 전체 분과)").optional(),
                                 stringFieldWithPath("description", "설명").optional(),
                                 arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
@@ -113,7 +113,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         requestFields(
-                                stringFieldWithPath("name", "제출물 종류 이름"),
+                                stringFieldWithPath("name", "제출 항목 이름"),
                                 numberFieldWithPath("contestTrackId", "대상 분과 ID (생략 시 전체 분과)").optional(),
                                 stringFieldWithPath("description", "설명").optional(),
                                 arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
@@ -177,7 +177,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                         responseFields(
                                 arrayFieldWithPath("[]", "제출 항목 목록"),
                                 numberFieldWithPath("[].contestSubmissionItemId", "제출물 ID"),
-                                stringFieldWithPath("[].name", "제출물 종류 이름"),
+                                stringFieldWithPath("[].name", "제출 항목 이름"),
                                 stringFieldWithPath("[].trackName", "대상 분과명 (전체 분과면 null)").optional(),
                                 dateTimeFieldWithPath("[].startAt", "시작일시"),
                                 dateTimeFieldWithPath("[].endAt", "마감일시"),
@@ -210,7 +210,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                         .description("Bearer {accessToken} (관리자 또는 해당 대회의 팀장/팀원)")
                         ),
                         responseFields(
-                                stringFieldWithPath("name", "제출물 종류 이름"),
+                                stringFieldWithPath("name", "제출 항목 이름"),
                                 numberFieldWithPath("contestTrackId", "대상 분과 ID (전체 분과면 null)").optional(),
                                 stringFieldWithPath("description", "설명").optional(),
                                 arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
@@ -247,7 +247,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
                         ),
                         requestFields(
-                                stringFieldWithPath("name", "제출물 종류 이름"),
+                                stringFieldWithPath("name", "제출 항목 이름"),
                                 numberFieldWithPath("contestTrackId", "대상 분과 ID (생략 시 전체 분과)").optional(),
                                 stringFieldWithPath("description", "설명").optional(),
                                 arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
