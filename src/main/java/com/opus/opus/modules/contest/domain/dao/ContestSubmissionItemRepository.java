@@ -17,5 +17,6 @@ public interface ContestSubmissionItemRepository extends JpaRepository<ContestSu
     @Query("SELECT i FROM ContestSubmissionItem i WHERE i.contest.id = :contestId AND i.endAt > :now AND i.contestTrack IS NULL")
     List<ContestSubmissionItem> findFutureCommonItemsByContest(@Param("contestId") Long contestId, @Param("now") LocalDateTime now);
 
-    long countByContestId(Long contestId);
+    @Query("SELECT COUNT(i) FROM ContestSubmissionItem i WHERE i.contest.id = :contestId AND (i.contestTrack IS NULL OR i.contestTrack.id = :trackId)")
+    long countByContestAndTrack(@Param("contestId") Long contestId, @Param("trackId") Long trackId);
 }

@@ -939,7 +939,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                         new ContestSubmissionFileResponse(101L, "발표자료.pdf", 1048576L),
                         new ContestSubmissionFileResponse(102L, "데모영상.mp4", 20971520L)
                 ),
-                0
+                2
         );
 
         when(contestSubmissionQueryService.getSubmissionDetail(any(), any(), any())).thenReturn(response);
@@ -971,7 +971,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("files[].fileId", "파일 ID"),
                                 stringFieldWithPath("files[].fileName", "파일명"),
                                 numberFieldWithPath("files[].fileSize", "파일 용량 (byte)"),
-                                numberFieldWithPath("commentCount", "코멘트 개수 (코멘트 기능 추가 전까지 항상 0)")
+                                numberFieldWithPath("feedbackCount", "피드백 개수")
                         )
                 ));
     }

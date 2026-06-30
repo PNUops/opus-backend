@@ -92,7 +92,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     }
 
     private void prepareTeamAndMember() {
-        team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        team = teamRepository.save(TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), track.getId()));
         member = memberRepository.save(MemberFixture.createMember());
     }
 
@@ -130,10 +130,32 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         assertThat(response.trackName()).isEqualTo(track.getTrackName());
         assertThat(response.submissionItemName()).isEqualTo(item.getName());
         assertThat(response.status()).isEqualTo(SubmissionStatus.SUBMITTED);
-        assertThat(response.commentCount()).isZero();
+        assertThat(response.feedbackCount()).isZero();
         assertThat(response.files()).hasSize(1);
         assertThat(response.files().get(0).fileName()).isEqualTo("발표자료.pdf");
         assertThat(response.files().get(0).fileSize()).isEqualTo(1048576L);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물 상세 조회 시 제출물에 달린 피드백 개수를 반환한다.")
+    void 제출물_상세의_피드백_개수를_반환한다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItem(contest, track));
+        final ContestSubmission submission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), item));
+        final Member feedbackMember1 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        final Member feedbackMember2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember1.getId()));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember2.getId()));
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member);
+
+        assertThat(response.feedbackCount()).isEqualTo(2);
     }
 
     @Test
@@ -626,6 +648,22 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         assertThat(response.totalItemCount()).isEqualTo(3);
         assertThat(response.submittedCount()).isEqualTo(2);
         assertThat(response.totalFeedbackCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 현황 요약의 전체 항목 수는 팀 분과에 해당하는 항목만 센다.")
+    void 요약_전체_항목_수는_팀_분과_항목만_센다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestTrack otherTrack = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
+        contestSubmissionItemRepository.save(ContestSubmissionItemFixture.createSubmissionItem(contest));
+        contestSubmissionItemRepository.save(ContestSubmissionItemFixture.createSubmissionItem(contest, track));
+        contestSubmissionItemRepository.save(ContestSubmissionItemFixture.createSubmissionItem(contest, otherTrack));
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.totalItemCount()).isEqualTo(2);
     }
 
     @Test

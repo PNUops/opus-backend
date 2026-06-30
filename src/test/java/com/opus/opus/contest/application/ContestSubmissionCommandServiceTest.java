@@ -1,6 +1,7 @@
 package com.opus.opus.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FILE_FORMAT;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_ITEM_FOR_TRACK;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_ALREADY_EXISTS;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_COUNT_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_REQUIRED;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.contest.ContestSubmissionItemFixture;
+import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
@@ -22,9 +24,11 @@ import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateRe
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileDocument;
@@ -65,6 +69,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
     private ContestSubmissionItemRepository contestSubmissionItemRepository;
     @Autowired
     private ContestSubmissionRepository contestSubmissionRepository;
+    @Autowired
+    private ContestTrackRepository contestTrackRepository;
     @Autowired
     private FileDocumentRepository fileDocumentRepository;
     @Autowired
@@ -194,6 +200,48 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
                 contest.getId(), submissionItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), other))
                 .isInstanceOf(TeamMemberException.class)
                 .hasMessage(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 팀의 분과와 다른 분과의 제출 항목에는 제출할 수 없다.")
+    void 분과_불일치_제출_예외() {
+        final ContestTrack itemTrack = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
+        final ContestSubmissionItem trackItem = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItem(contest, itemTrack));
+        final Team otherTrackTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), itemTrack.getId() + 1L));
+        final Member leader = saveTeamLeader(otherTrackTeam, 2);
+
+        assertThatThrownBy(() -> contestSubmissionCommandService.createSubmission(
+                contest.getId(), trackItem.getId(), otherTrackTeam.getId(), List.of(pdf("발표자료.pdf")), leader))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(INVALID_SUBMISSION_ITEM_FOR_TRACK.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 팀의 분과와 같은 분과의 제출 항목에는 제출할 수 있다.")
+    void 동일_분과_제출_성공() {
+        final ContestTrack itemTrack = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
+        final ContestSubmissionItem trackItem = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItem(contest, itemTrack));
+        final Team trackTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTrackId(contest.getId(), itemTrack.getId()));
+        final Member leader = saveTeamLeader(trackTeam, 3);
+
+        final SubmissionCreateResponse response = contestSubmissionCommandService.createSubmission(
+                contest.getId(), trackItem.getId(), trackTeam.getId(), List.of(pdf("발표자료.pdf")), leader);
+
+        assertThat(response.submissionId()).isNotNull();
+    }
+
+    private Member saveTeamLeader(final Team newTeam, final int uniqueNum) {
+        final Member leader = memberRepository.save(MemberFixture.createMemberWithUniqueNum(uniqueNum));
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(leader.getId())
+                .team(newTeam)
+                .roles(Set.of(TeamMemberRoleType.ROLE_팀장))
+                .build());
+        return leader;
     }
 
     @Test
