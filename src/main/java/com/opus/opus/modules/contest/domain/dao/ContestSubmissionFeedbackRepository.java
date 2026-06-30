@@ -17,6 +17,8 @@ public interface ContestSubmissionFeedbackRepository extends JpaRepository<Conte
 
     Optional<ContestSubmissionFeedback> findTopBySubmission_TeamIdOrderByCreatedAtDesc(Long teamId);
 
+    long countBySubmissionId(Long submissionId);
+
     long countBySubmissionIdIn(List<Long> submissionIds);
 
     @Query("""
