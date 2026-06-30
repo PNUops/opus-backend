@@ -1005,6 +1005,30 @@ public class ContestApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 공개 범위에 따른 열람 권한이 없으면 403 에러를 반환한다.")
+    void 공개_범위_열람_권한이_없으면_에러를_반환한다() throws Exception {
+        loginMember();
+
+        willThrow(new ContestException(ContestExceptionType.NOT_ALLOWED_TO_VIEW_SUBMISSION))
+                .given(contestSubmissionQueryService)
+                .getSubmissionDetail(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}", 1L, 12L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isForbidden())
+                .andDo(document("get-submission-detail-fail-forbidden",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 팀의 제출물 항목별 현황을 조회한다.")
     void 팀_제출물_현황을_조회한다() throws Exception {
         loginMember();

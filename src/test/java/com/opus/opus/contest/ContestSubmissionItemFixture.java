@@ -56,6 +56,11 @@ public class ContestSubmissionItemFixture {
                 .build();
     }
 
+    public static ContestSubmissionItem createSubmissionItemWithVisibility(final Contest contest,
+                                                                           final SubmissionVisibility visibility) {
+        return baseBuilder(contest).visibility(visibility).build();
+    }
+
     public static ContestSubmissionItem createSubmissionItemWithMaxFileCount(final Contest contest,
                                                                              final int maxFileCount) {
         return baseBuilder(contest).maxFileCount(maxFileCount).build();

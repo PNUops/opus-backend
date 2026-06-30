@@ -1,5 +1,6 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_TO_VIEW_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static java.time.LocalDateTime.now;
@@ -7,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestMemberFixture;
 import com.opus.opus.contest.ContestSubmissionFeedbackFixture;
 import com.opus.opus.contest.ContestSubmissionFixture;
 import com.opus.opus.contest.ContestSubmissionItemFixture;
@@ -25,7 +27,9 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTrack;
+import com.opus.opus.modules.contest.domain.SubmissionVisibility;
 import com.opus.opus.modules.contest.application.SubmissionStatus;
+import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
@@ -79,6 +83,8 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     private TeamMemberRepository teamMemberRepository;
     @Autowired
     private ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
+    @Autowired
+    private ContestMemberRepository contestMemberRepository;
 
     private Contest contest;
     private Team team;
@@ -106,6 +112,12 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
 
     private Team saveTeam(final String teamName) {
         return teamRepository.save(TeamFixture.createTeamWithContestIdAndTeamName(contest.getId(), teamName));
+    }
+
+    private ContestSubmission saveSubmissionWithVisibility(final SubmissionVisibility visibility) {
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItemWithVisibility(contest, visibility));
+        return contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
     }
 
     @Test
@@ -184,18 +196,137 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 해당 팀 소속이 아닌 학생은 제출물 상세를 조회할 수 없다.")
-    void 비소속_학생_상세_조회_예외() {
+    @DisplayName("[성공] PUBLIC 제출물은 팀 비소속 회원도 조회할 수 있다.")
+    void PUBLIC_제출물은_비소속_회원도_조회한다() {
         prepareTeamAndMember();
-        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
-                ContestSubmissionItemFixture.createSubmissionItem(contest));
-        final ContestSubmission submission = contestSubmissionRepository.save(
-                ContestSubmissionFixture.createSubmission(team.getId(), item));
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.PUBLIC);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] MEMBER 제출물은 로그인한 회원이면 조회할 수 있다.")
+    void MEMBER_제출물은_로그인_회원이_조회한다() {
+        prepareTeamAndMember();
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.MEMBER);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] TEAM 제출물은 제출 팀의 팀원이 조회할 수 있다.")
+    void TEAM_제출물은_팀원이_조회한다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.TEAM);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] TEAM 제출물은 관리자가 조회할 수 있다.")
+    void TEAM_제출물은_관리자가_조회한다() {
+        prepareTeamAndMember();
+        final Member admin = memberRepository.save(
+                MemberFixture.createMemberWithRole("관리자", 1, MemberRoleType.ROLE_관리자));
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.TEAM);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), admin);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[실패] TEAM 제출물은 제출 팀 소속이 아닌 회원이 조회할 수 없다.")
+    void TEAM_제출물_비소속_회원_조회_예외() {
+        prepareTeamAndMember();
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.TEAM);
 
         assertThatThrownBy(() -> contestSubmissionQueryService.getSubmissionDetail(
                 contest.getId(), submission.getId(), member))
-                .isInstanceOf(TeamMemberException.class)
-                .hasMessage(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM.errorMessage());
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_ALLOWED_TO_VIEW_SUBMISSION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] STAFF 제출물은 제출 팀의 팀원이 조회할 수 있다.")
+    void STAFF_제출물은_팀원이_조회한다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.STAFF);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] STAFF 제출물은 해당 팀에 지정된 교수가 조회할 수 있다.")
+    void STAFF_제출물은_지정된_교수가_조회한다() {
+        prepareTeamAndMember();
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithRole("교수", 1, MemberRoleType.ROLE_교수));
+        contestMemberRepository.save(
+                ContestMemberFixture.createContestMember(contest, professor.getId(), List.of(team.getId())));
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.STAFF);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), professor);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] STAFF 제출물은 해당 팀에 지정된 외부멘토가 조회할 수 있다.")
+    void STAFF_제출물은_지정된_외부멘토가_조회한다() {
+        prepareTeamAndMember();
+        final Member mentor = memberRepository.save(
+                MemberFixture.createMemberWithRole("멘토", 1, MemberRoleType.ROLE_외부멘토));
+        contestMemberRepository.save(
+                ContestMemberFixture.createContestMember(contest, mentor.getId(), List.of(team.getId())));
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.STAFF);
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), mentor);
+
+        assertThat(response.submissionId()).isEqualTo(submission.getId());
+    }
+
+    @Test
+    @DisplayName("[실패] STAFF 제출물은 해당 팀에 지정되지 않은 교수가 조회할 수 없다.")
+    void STAFF_제출물_미지정_교수_조회_예외() {
+        prepareTeamAndMember();
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithRole("교수", 1, MemberRoleType.ROLE_교수));
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.STAFF);
+
+        assertThatThrownBy(() -> contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), professor))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_ALLOWED_TO_VIEW_SUBMISSION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] STAFF 제출물은 제출 팀 소속이 아닌 일반 회원이 조회할 수 없다.")
+    void STAFF_제출물_비소속_회원_조회_예외() {
+        prepareTeamAndMember();
+        final ContestSubmission submission = saveSubmissionWithVisibility(SubmissionVisibility.STAFF);
+
+        assertThatThrownBy(() -> contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), submission.getId(), member))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_ALLOWED_TO_VIEW_SUBMISSION.errorMessage());
     }
 
     @Test
