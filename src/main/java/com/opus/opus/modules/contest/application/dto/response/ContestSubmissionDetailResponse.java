@@ -20,11 +20,11 @@ public record ContestSubmissionDetailResponse(
         LocalDateTime firstSubmittedAt,
         LocalDateTime lastModifiedAt,
         List<ContestSubmissionFileResponse> files,
-        Integer commentCount
+        long feedbackCount
 ) {
     public static ContestSubmissionDetailResponse of(final ContestSubmission submission, final Team team,
                                                      final String trackName, final List<FileDocument> fileDocuments,
-                                                     final int commentCount, final SubmissionStatus status) {
+                                                     final long feedbackCount, final SubmissionStatus status) {
         final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
         return new ContestSubmissionDetailResponse(
                 submission.getId(),
@@ -38,7 +38,7 @@ public record ContestSubmissionDetailResponse(
                 submission.getFirstSubmittedAt(),
                 submission.getUpdatedAt(),
                 fileDocuments.stream().map(ContestSubmissionFileResponse::from).toList(),
-                commentCount
+                feedbackCount
         );
     }
 }
