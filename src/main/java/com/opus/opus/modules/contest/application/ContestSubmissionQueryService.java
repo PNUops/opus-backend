@@ -2,6 +2,7 @@ package com.opus.opus.modules.contest.application;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionDetailResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionStatusResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
@@ -10,7 +11,7 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItem
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
-import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
@@ -41,6 +42,7 @@ public class ContestSubmissionQueryService {
 
     private final ContestConvenience contestConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
+    private final ContestTrackConvenience contestTrackConvenience;
     private final ContestSubmissionRepository contestSubmissionRepository;
     private final ContestSubmissionItemRepository contestSubmissionItemRepository;
     private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
@@ -54,23 +56,21 @@ public class ContestSubmissionQueryService {
 
         final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(contestId,
                 submissionId);
-        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
 
         final Team team = teamConvenience.getValidateTeamInContest(submission.getTeamId(), contestId);
         // 학생은 해당 팀의 팀장/팀원만 조회할 수 있다. (관리자/교수/직원/외부멘토는 제한 없음)
         teamMemberConvenience.validateTeamMemberIfStudent(team.getId(), member);
 
-        final String trackName = submissionItem.getTrackName();
+        final ContestTrack track = team.getTrackId() != null
+                ? contestTrackConvenience.getValidateExistTrack(team.getContestId(), team.getTrackId())
+                : null;
+        final String trackName = track != null ? track.getTrackName() : null;
         final List<FileDocument> fileDocuments = fileDocumentConvenience.findAllBySubmissionId(submissionId);
 
-        /* TODO
-        제출물 코멘트 기능이 아직 없어서, 제출물 카운트를 0으로 고정하였습니다.
-        코멘트 기능 추가 시 실제 개수로 교체가 필요합니다.
-         */
-        final int commentCount = 0;
+        final long feedbackCount = contestSubmissionFeedbackRepository.countBySubmissionId(submissionId);
 
         final SubmissionStatus status = submission.isLate() ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED;
-        return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, commentCount, status);
+        return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, feedbackCount, status);
     }
 
     public List<ContestSubmissionStatusResponse> getSubmissionStatuses(final Long contestId,
@@ -149,10 +149,11 @@ public class ContestSubmissionQueryService {
     public TeamSubmissionSummaryResponse getTeamSubmissionSummary(final Long contestId, final Long teamId,
                                                                   final Member member) {
         contestConvenience.validateExistContest(contestId);
-        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        final Team team = teamConvenience.getValidateTeamInContest(teamId, contestId);
         teamMemberConvenience.validateTeamMemberIfStudent(teamId, member);
 
-        final long totalItemCount = contestSubmissionItemRepository.countByContestId(contestId);
+        final long totalItemCount = contestSubmissionItemRepository.countByContestAndTrack(contestId,
+                team.getTrackId());
         final List<ContestSubmission> submissions = contestSubmissionRepository.findAllByTeamIdAndContestId(teamId,
                 contestId);
         final long submittedCount = submissions.size();
