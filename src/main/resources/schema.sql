@@ -128,7 +128,7 @@ CREATE TABLE `contest_submission_memo` (
   `content` varchar(500) NOT NULL,
   `contest_submission_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_contest_submission_memo_submission_id` (`contest_submission_id`)
+  UNIQUE KEY `uq_memo_active_submission` ((CASE WHEN `is_deleted` = false THEN `contest_submission_id` ELSE NULL END))
 );
 
 CREATE TABLE `contest_submission` (
