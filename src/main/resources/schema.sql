@@ -380,3 +380,4 @@ CREATE TABLE `team_vote` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_team_vote_member_team` (`member_id`, `team_id`)
 );
+
