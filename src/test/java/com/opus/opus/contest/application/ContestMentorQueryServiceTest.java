@@ -95,7 +95,7 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
 
         final ContestSubmissionItem midItem = saveItem("중간발표 자료", SubmissionVisibility.PUBLIC);
         final ContestSubmissionItem finalItem = saveItem("최종발표 자료", SubmissionVisibility.PUBLIC);
-        final ContestSubmissionItem privateItem = saveItem("비공개 자료", SubmissionVisibility.PRIVATE);
+        final ContestSubmissionItem privateItem = saveItem("비공개 자료", SubmissionVisibility.STAFF);
 
         reviewedSubmission = contestSubmissionRepository.save(createSubmission(developTeam.getId(), midItem));
         pendingSubmission = contestSubmissionRepository.save(createSubmission(developTeam.getId(), finalItem));
