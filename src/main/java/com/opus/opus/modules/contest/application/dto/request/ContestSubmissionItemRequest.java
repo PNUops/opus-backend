@@ -10,7 +10,7 @@ import java.util.List;
 
 public record ContestSubmissionItemRequest(
 
-        @NotBlank(message = "제출물 종류 이름은 비어 있을 수 없습니다.")
+        @NotBlank(message = "제출 항목 이름은 비어 있을 수 없습니다.")
         String name,
 
         Long contestTrackId,

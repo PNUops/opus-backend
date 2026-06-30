@@ -6,7 +6,9 @@ import static com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC;
 
 import com.opus.opus.modules.contest.application.dto.request.ContestSubmissionItemRequest;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.ContestSubmissionMemo;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.SubmissionFileFormat;
 import com.opus.opus.modules.contest.domain.SubmissionVisibility;
@@ -107,5 +109,21 @@ public class ContestSubmissionItemFixture {
                 true,
                 PUBLIC
         );
+    }
+
+    public static ContestSubmission createSubmission(final ContestSubmissionItem submissionItem,
+                                                     final Long teamId) {
+        return ContestSubmission.builder()
+                .teamId(teamId)
+                .firstSubmittedAt(LocalDateTime.now())
+                .submissionItem(submissionItem)
+                .build();
+    }
+
+    public static ContestSubmissionMemo createMemo(final ContestSubmission submission) {
+        return ContestSubmissionMemo.builder()
+                .content("테스트 메모 내용입니다.")
+                .submission(submission)
+                .build();
     }
 }

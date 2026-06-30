@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotNull;
 
 public record DownloadTargetRequest(
 
-        @NotNull(message = "제출물 종류 ID는 필수입니다.")
-        Long submissionTypeId,
+        @NotNull(message = "제출 항목 ID는 필수입니다.")
+        Long submissionItemId,
         Long trackId
 ) {
 }

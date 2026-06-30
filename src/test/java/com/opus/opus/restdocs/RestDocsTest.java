@@ -11,9 +11,12 @@ import com.opus.opus.helper.ApiTestHelper;
 import com.opus.opus.modules.contest.api.ContestCategoryController;
 import com.opus.opus.modules.contest.api.ContestController;
 import com.opus.opus.modules.contest.api.ContestMemberController;
+import com.opus.opus.modules.contest.api.ContestMentorController;
 import com.opus.opus.modules.contest.api.ContestSubmissionFeedbackController;
 import com.opus.opus.modules.contest.api.ContestSubmissionFileController;
 import com.opus.opus.modules.contest.api.ContestSubmissionItemController;
+import com.opus.opus.modules.contest.api.ContestSubmissionMemoController;
+import com.opus.opus.modules.contest.api.ContestTeamSubmissionController;
 import com.opus.opus.modules.contest.api.ContestTrackController;
 import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
@@ -22,7 +25,10 @@ import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestMemberCommandService;
 import com.opus.opus.modules.contest.application.ContestMemberQueryService;
+import com.opus.opus.modules.contest.application.ContestMentorQueryService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.ContestSubmissionMemoCommandService;
+import com.opus.opus.modules.contest.application.ContestSubmissionMemoQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionFileQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
@@ -74,9 +80,12 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         ContestCategoryController.class,
         ContestTrackController.class,
         ContestMemberController.class,
+        ContestMentorController.class,
         ContestSubmissionFeedbackController.class,
         ContestSubmissionFileController.class,
         ContestSubmissionItemController.class,
+        ContestSubmissionMemoController.class,
+        ContestTeamSubmissionController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -144,7 +153,16 @@ public abstract class RestDocsTest extends ApiTestHelper {
     protected ContestTrackQueryService contestTrackQueryService;
 
     @MockitoBean
+    protected ContestSubmissionMemoCommandService contestSubmissionMemoCommandService;
+
+    @MockitoBean
+    protected ContestSubmissionMemoQueryService contestSubmissionMemoQueryService;
+
+    @MockitoBean
     protected ContestMemberQueryService contestMemberQueryService;
+
+    @MockitoBean
+    protected ContestMentorQueryService contestMentorQueryService;
 
     @MockitoBean
     protected ContestMemberCommandService contestMemberCommandService;

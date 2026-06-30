@@ -676,3 +676,85 @@ include::{snippets}/bulk-upload-teams-fail-validation/response-fields.adoc[]
 include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-request.adoc[]
 include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-response.adoc[]
 ====
+
+== 관리자 제출 현황 조회
+
+=== `GET`: 제출물 제출 현황 조회
+
+선택한 제출 항목를 기준으로 전체 팀의 제출 현황을 조회합니다.
+제출 상태는 저장값이 아니라 마감일시와 실제 제출 여부를 조회 시점에 비교하여 계산합니다.
+제출 상태 · 분과 필터, 팀 이름 검색을 지원하며, 전체 데이터를 반환합니다.
+
+.HTTP Request Headers
+include::{snippets}/get-admin-contest-submissions/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-admin-contest-submissions/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-admin-contest-submissions/query-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-admin-contest-submissions/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-admin-contest-submissions/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-admin-contest-submissions/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-admin-contest-submissions-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-admin-contest-submissions-fail-contest-not-found/http-response.adoc[]
+
+include::{snippets}/get-admin-contest-submissions-fail-contest-not-found/path-parameters.adoc[]
+
+====
+
+=== `GET`: 제출물 제출 현황 통계 조회
+
+제출 현황 상단 통계 카드(전체 / 제출 완료 / 미제출 / 지각 제출)를 채우기 위한 집계 정보를 조회합니다.
+제출 항목 · 분과 필터를 기준으로 집계하며, 팀 이름 검색어는 통계에 반영하지 않습니다.
+미제출 카드는 마감 전 미제출과 마감 후 미제출을 합산한 값으로 내려줍니다.
+
+.HTTP Request Headers
+include::{snippets}/get-admin-contest-submissions-summary/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-admin-contest-submissions-summary/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-admin-contest-submissions-summary/query-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-admin-contest-submissions-summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-admin-contest-submissions-summary/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-admin-contest-submissions-summary/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-admin-contest-submissions-summary-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-admin-contest-submissions-summary-fail-contest-not-found/http-response.adoc[]
+
+include::{snippets}/get-admin-contest-submissions-summary-fail-contest-not-found/path-parameters.adoc[]
+
+====

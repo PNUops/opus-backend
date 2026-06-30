@@ -1,4 +1,4 @@
-package com.opus.opus.modules.contest.domain;
+package com.opus.opus.modules.contest.application;
 
 public enum SubmissionStatus {
 

@@ -1,0 +1,258 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST SUBMISSION API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== 제출물
+
+=== `GET`: 제출물 상세 조회
+
+한 팀이 특정 제출 항목으로 낸 제출 한 건의 상세 정보를 조회합니다.
+`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자/교수/직원/외부멘토는 제한이 없습니다.
+`status`는 계산값으로, 단건 조회에서는 `SUBMITTED`(마감 내) / `LATE`(마감 후)만 반환됩니다.
+`commentCount`는 제출물 코멘트 기능 추가 전까지 항상 0입니다.
+
+.HTTP Request
+include::{snippets}/get-submission-detail/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-detail/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-submission-detail/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-detail/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-submission-detail/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 제출
+[%collapsible]
+====
+
+include::{snippets}/get-submission-detail-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-submission-detail-fail-not-found/http-response.adoc[]
+
+====
+
+=== `GET`: 팀 제출물 현황 목록 조회
+
+팀 페이지에서 해당 팀이 제출해야 하는 제출물 항목 전체와, 항목별 제출 현황을 조회합니다.
+`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자는 제한이 없습니다.
+제출 상태(`status`)는 저장값이 아니라 마감일시와 실제 제출 여부를 조회 시점에 비교하여 계산하며, `status` 파라미터로 필터링할 수 있습니다.
+미제출 항목은 `submissionId`가 `null`이고 `files`는 빈 배열입니다.
+
+.HTTP Request
+include::{snippets}/get-team-submissions/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/get-team-submissions/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-team-submissions/query-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-submissions/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-submissions/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-submissions/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+[%collapsible]
+====
+
+include::{snippets}/get-team-submissions-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-team-submissions-fail-contest-not-found/http-response.adoc[]
+
+include::{snippets}/get-team-submissions-fail-contest-not-found/path-parameters.adoc[]
+
+====
+
+=== `GET`: 마감 예정 제출 항목 목록 조회
+
+특정 팀의 마감일이 지나지 않은(`deadlineAt`이 조회 시점 이후인) 제출 항목만 마감일 오름차순으로 조회합니다.
+`ROLE_학생`은 해당 팀의 팀장/팀원만 조회할 수 있으며, 관리자는 제한이 없습니다.
+제출 상태(`status`)는 저장값이 아니라 마감일시와 실제 제출 여부를 조회 시점에 비교하여 계산하며, `SUBMITTED` / `LATE` / `NOT_SUBMITTED` 중 하나입니다.
+미제출 항목은 `lastModifiedAt`이 `null`입니다.
+
+.HTTP Request
+include::{snippets}/get-upcoming-submissions/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/get-upcoming-submissions/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-upcoming-submissions/query-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-upcoming-submissions/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/get-upcoming-submissions/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-upcoming-submissions/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+[%collapsible]
+====
+
+include::{snippets}/get-upcoming-submissions-fail-contest-not-found/http-request.adoc[]
+
+include::{snippets}/get-upcoming-submissions-fail-contest-not-found/http-response.adoc[]
+
+include::{snippets}/get-upcoming-submissions-fail-contest-not-found/path-parameters.adoc[]
+
+====
+
+=== `POST`: 제출물 제출
+
+팀이 특정 제출 항목에 파일을 제출합니다. (`multipart/form-data`, 여러 파일 가능) 한 팀이 동일한 제출 항목에 중복 제출할 수 없으며, 파일을 추가하려면 "제출 파일 추가" API를 사용합니다.
+`teamId`는 요청 파라미터로 전달하며, `ROLE_학생`은 해당 팀의 팀장/팀원이어야 합니다.
+
+.HTTP Request
+include::{snippets}/create-submission/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/create-submission/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/create-submission/request-headers.adoc[]
+
+.Query Parameters
+include::{snippets}/create-submission/query-parameters.adoc[]
+
+.Request Parts
+include::{snippets}/create-submission/request-parts.adoc[]
+
+.HTTP Response
+include::{snippets}/create-submission/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/create-submission/response-fields.adoc[]
+
+=== `POST`: 제출물에 파일 추가
+
+이미 제출된 제출물에 파일을 추가합니다. 기존 파일을 포함한 총 개수가 `maxFileCount`를 초과할 수 없습니다.
+
+.HTTP Request
+include::{snippets}/add-submission-files/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/add-submission-files/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/add-submission-files/request-headers.adoc[]
+
+.Request Parts
+include::{snippets}/add-submission-files/request-parts.adoc[]
+
+.HTTP Response
+include::{snippets}/add-submission-files/http-response.adoc[]
+
+=== `DELETE`: 제출물의 파일 삭제
+
+제출물에 첨부된 파일 한 건을 삭제합니다.
+마지막 남은 파일을 삭제하면 제출 자체가 취소됩니다.
+
+.HTTP Request
+include::{snippets}/delete-submission-file/http-request.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-submission-file/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/delete-submission-file/request-headers.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-submission-file/http-response.adoc[]
+
+== 제출물 메모
+
+=== `POST`: 제출물 메모 생성
+
+.HTTP Request Headers
+include::{snippets}/create-submission-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/create-submission-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/create-submission-memo/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/create-submission-memo/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/create-submission-memo/http-response.adoc[]
+
+=== `GET`: 제출물 메모 조회
+
+.HTTP Request Headers
+include::{snippets}/get-submission-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-submission-memo/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-memo/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-submission-memo/response-fields.adoc[]
+
+=== `PATCH`: 제출물 메모 수정
+
+.HTTP Request Headers
+include::{snippets}/update-submission-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-submission-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-submission-memo/http-request.adoc[]
+
+.Request Fields
+include::{snippets}/update-submission-memo/request-fields.adoc[]
+
+.HTTP Response
+include::{snippets}/update-submission-memo/http-response.adoc[]
+
+=== `DELETE`: 제출물 메모 삭제
+
+.HTTP Request Headers
+include::{snippets}/delete-submission-memo/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/delete-submission-memo/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/delete-submission-memo/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/delete-submission-memo/http-response.adoc[]

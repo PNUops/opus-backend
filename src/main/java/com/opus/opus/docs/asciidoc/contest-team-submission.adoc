@@ -1,0 +1,49 @@
+ifndef::snippets[]
+:snippets: ./build/generated-snippets
+endif::[]
+
+= CONTEST TEAM SUBMISSION API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== API 목록
+
+link:./opus.html[API 목록으로 돌아가기]
+
+== `GET`: 제출 현황 요약 조회
+
+.HTTP Request Headers
+include::{snippets}/get-submission-summary/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-summary/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-submission-summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-summary/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-submission-summary/response-fields.adoc[]
+
+== `GET`: 제출 타임라인 조회
+
+.HTTP Request Headers
+include::{snippets}/get-submission-timeline/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-submission-timeline/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-submission-timeline/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-submission-timeline/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-submission-timeline/response-fields.adoc[]

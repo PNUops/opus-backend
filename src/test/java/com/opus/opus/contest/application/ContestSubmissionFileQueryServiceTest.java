@@ -157,8 +157,8 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 제출물 종류 × 분과 조합별로 제출 팀 수와 예상 용량을 집계한다.")
-    void 종류_분과_조합별로_집계한다() {
+    @DisplayName("[성공] 제출 항목 × 분과 조합별로 제출 팀 수와 예상 용량을 집계한다.")
+    void 항목_분과_조합별로_집계한다() {
         final DownloadTargetsResponse response = contestSubmissionFileQueryService.getDownloadTargets(
                 contest.getId(), null, null);
 
@@ -183,8 +183,8 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 제출물 종류로 필터링하면 해당 종류 조합만 반환한다.")
-    void 제출물_종류로_필터링한다() {
+    @DisplayName("[성공] 제출 항목으로 필터링하면 해당 항목 조합만 반환한다.")
+    void 제출_항목으로_필터링한다() {
         final ContestSubmissionItem otherItem = submissionItemRepository.save(
                 ContestSubmissionFixture.createSubmissionItem(contest));
         final Team otherTeam = teamRepository.save(buildTeam(trackAi.getId(), "기타팀"));
@@ -194,7 +194,7 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
                 contest.getId(), item.getId(), null);
 
         assertThat(response.targets())
-                .extracting(DownloadTargetResponse::submissionTypeId)
+                .extracting(DownloadTargetResponse::submissionItemId)
                 .containsOnly(item.getId());
     }
 

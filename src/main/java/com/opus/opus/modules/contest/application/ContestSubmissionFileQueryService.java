@@ -49,11 +49,11 @@ public class ContestSubmissionFileQueryService {
         return fileDocumentQueryService.download(fileId);
     }
 
-    public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionTypeId, final Long trackId) {
+    public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionItemId, final Long trackId) {
         contestConvenience.validateExistContest(contestId);
 
         final List<DownloadTargetResponse> targets = contestSubmissionConvenience
-                .getDownloadTargets(contestId, submissionTypeId, trackId).stream()
+                .getDownloadTargets(contestId, submissionItemId, trackId).stream()
                 .map(this::toDownloadTargetResponse)
                 .toList();
 
@@ -83,8 +83,8 @@ public class ContestSubmissionFileQueryService {
 
     private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
         return new DownloadTargetResponse(
-                result.submissionTypeId(),
-                result.submissionTypeName(),
+                result.submissionItemId(),
+                result.submissionItemName(),
                 result.trackId(),
                 result.trackName(),
                 Math.toIntExact(result.submittedTeamCount()),
@@ -93,7 +93,7 @@ public class ContestSubmissionFileQueryService {
 
     private boolean matchesTarget(final DownloadSubmissionRow submission, final List<DownloadTargetRequest> targets) {
         return targets.stream().anyMatch(target ->
-                target.submissionTypeId().equals(submission.submissionTypeId())
+                target.submissionItemId().equals(submission.submissionItemId())
                         && (target.trackId() == null || target.trackId().equals(submission.trackId())));
     }
 

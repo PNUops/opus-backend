@@ -4,6 +4,7 @@ public record SubmissionFileInfo(
 
         Long submissionId,
         Long fileDocumentId,
-        String fileName
+        String fileName,
+        Long fileSize
 ) {
 }

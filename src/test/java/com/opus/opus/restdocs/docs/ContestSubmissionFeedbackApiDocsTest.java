@@ -227,14 +227,14 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     void 관리자가_제출물의_피드백_목록을_조회할_수_있다() throws Exception {
         final List<ContestSubmissionFeedbackResponse> response = List.of(
                 new ContestSubmissionFeedbackResponse(
-                        50L, 5L, "이지민", "발표 흐름이 좋네요. 데모 영상 길이만 조금 줄여보세요.",
+                        50L, 5L, "이지민", "ROLE_외부멘토", "발표 흐름이 좋네요. 데모 영상 길이만 조금 줄여보세요.",
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
                         LocalDateTime.of(2026, 6, 2, 11, 0, 0),
                         List.of(new ContestSubmissionFeedbackFileResponse(201L, "피드백.pdf", 524288L))
                 )
         );
 
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any())).thenReturn(response);
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -252,6 +252,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].feedbackId", "피드백 ID"),
                                 numberFieldWithPath("[].memberId", "작성자 ID"),
                                 stringFieldWithPath("[].memberName", "작성자 이름"),
+                                stringFieldWithPath("[].memberRoleType", "작성자 역할 (MemberRoleType)"),
                                 stringFieldWithPath("[].description", "피드백 본문"),
                                 dateTimeFieldWithPath("[].createdAt", "작성 시각"),
                                 dateTimeFieldWithPath("[].updatedAt", "마지막 수정 시각"),
@@ -266,7 +267,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 대회의 피드백 목록 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_피드백_목록_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any()))
                 .thenThrow(new ContestException(NOT_FOUND_CONTEST));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 999, 12)
@@ -286,7 +287,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 제출물의 피드백 목록 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_제출물의_피드백_목록_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any()))
                 .thenThrow(new ContestException(NOT_FOUND_SUBMISSION));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 999)
@@ -309,7 +310,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
         final FileDownload download = new FileDownload(
                 new ByteArrayResource("feedback-file".getBytes()), "피드백.pdf", MediaType.APPLICATION_PDF_VALUE);
 
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
                 .thenReturn(download);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",
@@ -332,7 +333,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 피드백의 파일 다운로드 시 404 에러를 반환한다.")
     void 존재하지_않는_피드백의_파일_다운로드_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
                 .thenThrow(new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",
@@ -355,7 +356,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 피드백에 속하지 않은 파일 다운로드 시 404 에러를 반환한다.")
     void 피드백에_속하지_않은_파일_다운로드_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
                 .thenThrow(new FileException(NOT_FOUND));
 
         mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",

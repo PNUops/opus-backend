@@ -33,10 +33,10 @@ public class ContestSubmissionFileController {
     @GetMapping("/downloads")
     public ResponseEntity<DownloadTargetsResponse> getDownloadTargets(
             @PathVariable final Long contestId,
-            @RequestParam(required = false) final Long submissionTypeId,
+            @RequestParam(required = false) final Long submissionItemId,
             @RequestParam(required = false) final Long trackId
     ) {
-        return ResponseEntity.ok(contestSubmissionFileQueryService.getDownloadTargets(contestId, submissionTypeId, trackId));
+        return ResponseEntity.ok(contestSubmissionFileQueryService.getDownloadTargets(contestId, submissionItemId, trackId));
     }
 
     @PostMapping("/downloads")
