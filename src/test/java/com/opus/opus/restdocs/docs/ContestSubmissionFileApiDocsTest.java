@@ -60,21 +60,21 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
         when(contestSubmissionFileQueryService.getDownloadTargets(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/submissions/downloads", 1)
-                        .param("submissionTypeId", "3")
+                        .param("submissionItemId", "3")
                         .param("trackId", "2")
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-submission-download-targets",
                         pathParameters(parameterWithName("contestId").description("대회 ID")),
                         queryParameters(
-                                parameterWithName("submissionTypeId").description("제출물 종류 ID (선택)").optional(),
+                                parameterWithName("submissionItemId").description("제출 항목 ID (선택)").optional(),
                                 parameterWithName("trackId").description("분과 ID (선택)").optional()
                         ),
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
                         responseFields(
                                 arrayFieldWithPath("targets", "다운로드 대상 목록"),
-                                numberFieldWithPath("targets[].submissionTypeId", "제출물 종류 ID"),
-                                stringFieldWithPath("targets[].submissionTypeName", "제출물 종류명"),
+                                numberFieldWithPath("targets[].submissionItemId", "제출 항목 ID"),
+                                stringFieldWithPath("targets[].submissionItemName", "제출 항목명"),
                                 numberFieldWithPath("targets[].trackId", "분과 ID"),
                                 stringFieldWithPath("targets[].trackName", "분과명"),
                                 numberFieldWithPath("targets[].submittedTeamCount", "제출 팀 수"),
@@ -103,7 +103,7 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
                         requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
                         requestFields(
                                 arrayFieldWithPath("targets", "다운로드 대상 조합"),
-                                numberFieldWithPath("targets[].submissionTypeId", "제출물 종류 ID"),
+                                numberFieldWithPath("targets[].submissionItemId", "제출 항목 ID"),
                                 numberFieldWithPath("targets[].trackId", "분과 ID (선택, 생략 시 전체 분과)").optional()
                         ),
                         responseHeaders(

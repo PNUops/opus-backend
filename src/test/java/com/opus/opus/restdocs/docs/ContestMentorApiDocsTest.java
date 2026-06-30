@@ -107,7 +107,7 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                                 arrayFieldWithPath("submissions", "제출물 목록"),
                                 numberFieldWithPath("submissions[].submissionId", "제출 ID"),
                                 numberFieldWithPath("submissions[].submissionItemId", "제출 항목 ID"),
-                                stringFieldWithPath("submissions[].submissionItemName", "제출물 항목명"),
+                                stringFieldWithPath("submissions[].submissionItemName", "제출 항목명"),
                                 stringFieldWithPath("submissions[].feedbackStatus", "피드백 상태 (COMPLETED/PENDING)"),
                                 arrayFieldWithPath("submissions[].files", "첨부 파일 목록"),
                                 numberFieldWithPath("submissions[].files[].fileId", "첨부 파일 ID"),

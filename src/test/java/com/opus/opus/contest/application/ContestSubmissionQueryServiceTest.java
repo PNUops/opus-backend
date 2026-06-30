@@ -178,7 +178,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 제출 항목 기준으로 전체 팀의 제출 현황을 조회한다.")
-    void 제출물_종류_기준_전체_팀_현황을_조회한다() {
+    void 제출_항목_기준_전체_팀_현황을_조회한다() {
         final Team submitted = saveTeam("오퍼스");
         final Team notSubmitted = saveTeam("팀B");
         final ContestSubmissionItem item = contestSubmissionItemRepository.save(
@@ -285,7 +285,7 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 제출 항목를 지정하지 않으면 팀×제출 항목 모든 조합을 조회한다.")
-    void 종류_미지정시_팀과_종류의_모든_조합을_조회한다() {
+    void 항목_미지정시_팀과_항목의_모든_조합을_조회한다() {
         saveTeam("팀A");
         saveTeam("팀B");
         contestSubmissionItemRepository.save(ContestSubmissionItemFixture.createSubmissionItem(contest));
