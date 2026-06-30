@@ -107,7 +107,7 @@ CREATE TABLE `contest_submission_item` (
   `max_file_size_mb` int NOT NULL,
   `name` varchar(255) NOT NULL,
   `start_at` datetime(6) NOT NULL,
-  `visibility` enum('PUBLIC','PRIVATE') NOT NULL,
+  `visibility` enum('TEAM','STAFF','MEMBER','PUBLIC') NOT NULL,
   `contest_id` bigint NOT NULL,
   `contest_track_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`)

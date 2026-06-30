@@ -155,7 +155,7 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                         true, "PUBLIC", "IN_PROGRESS"),
                 new ContestSubmissionItemSummaryResponse(2L, "포스터", null,
                         LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59),
-                        false, "PRIVATE", "SCHEDULED"));
+                        false, "TEAM", "SCHEDULED"));
 
         when(contestSubmissionItemQueryService.getSubmissionItems(any(), any())).thenReturn(responses);
 

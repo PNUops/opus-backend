@@ -6,8 +6,8 @@ import static com.opus.opus.contest.ContestSubmissionItemFixture.createSubmissio
 import static com.opus.opus.contest.ContestTrackFixture.createTrack;
 import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.PDF;
 import static com.opus.opus.modules.contest.domain.SubmissionFileFormat.ZIP;
-import static com.opus.opus.modules.contest.domain.SubmissionVisibility.PRIVATE;
 import static com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC;
+import static com.opus.opus.modules.contest.domain.SubmissionVisibility.TEAM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_PERIOD;
@@ -158,7 +158,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
                 contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
-                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, PRIVATE);
+                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, TEAM);
 
         contestSubmissionItemCommandService.updateSubmissionItem(contest.getId(), submissionItem.getId(), request);
 
@@ -167,7 +167,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
         assertThat(updated.getName()).isEqualTo("수정된 발표자료");
         assertThat(updated.getMaxFileCount()).isEqualTo(5);
         assertThat(updated.getAllowedFileFormats()).containsExactly(PDF);
-        assertThat(updated.getVisibility()).isEqualTo(PRIVATE);
+        assertThat(updated.getVisibility()).isEqualTo(TEAM);
     }
 
     @Test
@@ -177,7 +177,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
                 contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", null, "수정된 설명", List.of(PDF),
-                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, PRIVATE);
+                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, TEAM);
 
         contestSubmissionItemCommandService.updateSubmissionItem(contest.getId(), submissionItem.getId(), request);
 
@@ -191,7 +191,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_제출_항목이면_수정에_실패한다() {
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
-                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, PRIVATE);
+                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, TEAM);
 
         assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(contest.getId(), 999L, request))
                 .isInstanceOf(ContestSubmissionItemException.class)
@@ -206,7 +206,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
                 contestSubmissionItemRepository.save(createSubmissionItem(otherContest, null));
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", null, "수정된 설명", List.of(PDF),
-                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, PRIVATE);
+                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 8, 31, 23, 59), false, TEAM);
 
         assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(
                 contest.getId(), submissionItem.getId(), request))
@@ -221,7 +221,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
                 contestSubmissionItemRepository.save(createSubmissionItem(contest, track));
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
-                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 7, 1, 0, 0), false, PRIVATE);
+                100, 5, LocalDateTime.of(2026, 8, 1, 0, 0), LocalDateTime.of(2026, 7, 1, 0, 0), false, TEAM);
 
         assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(
                 contest.getId(), submissionItem.getId(), request))
@@ -237,7 +237,7 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
         final LocalDateTime sameTime = LocalDateTime.of(2026, 8, 1, 0, 0);
         final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
                 "수정된 발표자료", track.getId(), "수정된 설명", List.of(PDF),
-                100, 5, sameTime, sameTime, false, PRIVATE);
+                100, 5, sameTime, sameTime, false, TEAM);
 
         assertThatThrownBy(() -> contestSubmissionItemCommandService.updateSubmissionItem(
                 contest.getId(), submissionItem.getId(), request))
