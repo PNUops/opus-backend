@@ -320,11 +320,10 @@ public class ContestController {
     }
 
     @Secured({"ROLE_학생", "ROLE_관리자"})
-    @GetMapping("/{contestId}/teams/{teamId}/summary")
-    public ResponseEntity<TeamDashboardSummaryResponse> getTeamDashboardSummary(
-            @PathVariable final Long contestId,
-            @PathVariable final Long teamId,
-            @LoginMember final Member member) {
+    @GetMapping("/contests/{contestId}/teams/{teamId}/summary")
+    public ResponseEntity<TeamDashboardSummaryResponse> getTeamDashboardSummary(@PathVariable final Long contestId,
+                                                                                @PathVariable final Long teamId,
+                                                                                @LoginMember final Member member) {
         return ResponseEntity.ok(contestQueryService.getTeamDashboardSummary(contestId, teamId, member));
     }
 

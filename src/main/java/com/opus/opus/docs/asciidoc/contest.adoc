@@ -677,6 +677,53 @@ include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-request.adoc[]
 include::{snippets}/bulk-upload-teams-fail-contest-not-found/http-response.adoc[]
 ====
 
+== 팀 대시보드 요약 조회
+
+=== `GET`: 팀 대시보드 요약 조회
+
+NOTE: 팀 소속 학생 또는 관리자만 접근 가능합니다. 미제출 항목 수, 가장 가까운 마감 일시, 읽지 않은 피드백 수, 최근 피드백 미리보기를 반환합니다.
+
+.Path Parameters
+include::{snippets}/get-team-dashboard-summary/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-team-dashboard-summary/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-team-dashboard-summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-team-dashboard-summary/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-team-dashboard-summary/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+====
+include::{snippets}/get-team-dashboard-summary-fail-contest-not-found/http-request.adoc[]
+include::{snippets}/get-team-dashboard-summary-fail-contest-not-found/http-response.adoc[]
+====
+
+.❌ Case 2: 존재하지 않는 팀
+
+[%collapsible]
+====
+include::{snippets}/get-team-dashboard-summary-fail-team-not-found/http-request.adoc[]
+include::{snippets}/get-team-dashboard-summary-fail-team-not-found/http-response.adoc[]
+====
+
+.❌ Case 3: 소속되지 않은 팀
+
+[%collapsible]
+====
+include::{snippets}/get-team-dashboard-summary-fail-not-team-member/http-request.adoc[]
+include::{snippets}/get-team-dashboard-summary-fail-not-team-member/http-response.adoc[]
+====
+
 == 관리자 제출 현황 조회
 
 === `GET`: 제출물 제출 현황 조회

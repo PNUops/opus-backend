@@ -65,6 +65,7 @@ import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItemResponse;
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
@@ -72,10 +73,13 @@ import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.exception.FileException;
-import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.team.exception.TeamExceptionType;
+import com.opus.opus.modules.team.exception.TeamMemberException;
+import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -1656,6 +1660,109 @@ public class ContestApiDocsTest extends RestDocsTest {
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description(
                                         String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 대시보드 요약을 조회한다.")
+    void 팀_대시보드_요약을_조회한다() throws Exception {
+        loginMember();
+        final TeamDashboardSummaryResponse response = new TeamDashboardSummaryResponse(
+                3L,
+                LocalDateTime.of(2026, 7, 10, 23, 59, 59),
+                2L,
+                "발표 자료 형식을 통일해주세요."
+        );
+
+        when(contestQueryService.getTeamDashboardSummary(any(), any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/summary", 1L, 1L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-team-dashboard-summary",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("pendingSubmissionCount", "아직 제출하지 않은 미제출 항목 수"),
+                                dateTimeFieldWithPath("nearestDeadline", "가장 가까운 마감 일시 (미제출 항목 없으면 null)").optional(),
+                                numberFieldWithPath("unreadFeedbackCount", "읽지 않은 피드백 수"),
+                                stringFieldWithPath("latestFeedbackPreview", "가장 최근 피드백 미리보기 (없으면 null)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회로 팀 대시보드 요약을 조회하면 404를 반환한다.")
+    void 존재하지_않는_대회로_팀_대시보드_요약_조회_실패() throws Exception {
+        loginMember();
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getTeamDashboardSummary(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/summary", 999L, 1L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-dashboard-summary-fail-contest-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID"),
+                                parameterWithName("teamId").description("팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 팀으로 팀 대시보드 요약을 조회하면 404를 반환한다.")
+    void 존재하지_않는_팀으로_팀_대시보드_요약_조회_실패() throws Exception {
+        loginMember();
+        willThrow(new TeamException(TeamExceptionType.NOT_FOUND_TEAM))
+                .given(contestQueryService)
+                .getTeamDashboardSummary(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/summary", 1L, 999L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-dashboard-summary-fail-team-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("존재하지 않는 팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 소속되지 않은 팀의 대시보드 요약을 조회하면 404를 반환한다.")
+    void 소속되지_않은_팀_대시보드_요약_조회_실패() throws Exception {
+        loginMember();
+        willThrow(new TeamMemberException(TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM))
+                .given(contestQueryService)
+                .getTeamDashboardSummary(any(), any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/summary", 1L, 2L)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-team-dashboard-summary-fail-not-team-member",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("소속되지 않은 팀 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "member"))
                         )
                 ));
     }
