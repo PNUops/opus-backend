@@ -95,11 +95,15 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
 
         final ContestSubmissionItem midItem = saveItem("중간발표 자료", SubmissionVisibility.PUBLIC);
         final ContestSubmissionItem finalItem = saveItem("최종발표 자료", SubmissionVisibility.PUBLIC);
-        final ContestSubmissionItem privateItem = saveItem("비공개 자료", SubmissionVisibility.STAFF);
+        final ContestSubmissionItem staffItem = saveItem("심사용 자료", SubmissionVisibility.STAFF);
+        final ContestSubmissionItem memberItem = saveItem("회원 공개 자료", SubmissionVisibility.MEMBER);
+        final ContestSubmissionItem teamItem = saveItem("팀 내부 자료", SubmissionVisibility.TEAM);
 
         reviewedSubmission = contestSubmissionRepository.save(createSubmission(developTeam.getId(), midItem));
         pendingSubmission = contestSubmissionRepository.save(createSubmission(developTeam.getId(), finalItem));
-        contestSubmissionRepository.save(createSubmission(developTeam.getId(), privateItem));
+        contestSubmissionRepository.save(createSubmission(developTeam.getId(), staffItem));
+        contestSubmissionRepository.save(createSubmission(developTeam.getId(), memberItem));
+        contestSubmissionRepository.save(createSubmission(developTeam.getId(), teamItem));
 
         contestSubmissionFeedbackRepository.save(createFeedback(reviewedSubmission, professor.getId()));
         saveFile(reviewedSubmission.getId(), "중간발표.pdf", 13002342L);
@@ -112,13 +116,13 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
         final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(contest.getId(), professor);
 
         assertThat(response.assignedTeamCount()).isEqualTo(2);
-        assertThat(response.pendingFeedbackCount()).isEqualTo(1);
+        assertThat(response.pendingFeedbackCount()).isEqualTo(3);
 
         final MentorProjectResponse develop = findProject(response, developTeam.getId());
         assertThat(develop.projectName()).isEqualTo("옵스 프로젝트");
         assertThat(develop.trackName()).isEqualTo(track.getTrackName());
         assertThat(develop.roleType()).isEqualTo(ROLE_교수.name());
-        assertThat(develop.pendingFeedbackCount()).isEqualTo(1);
+        assertThat(develop.pendingFeedbackCount()).isEqualTo(3);
 
         final MentorProjectResponse planning = findProject(response, planningTeam.getId());
         assertThat(planning.pendingFeedbackCount()).isEqualTo(0);
@@ -145,23 +149,36 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 담당 팀의 공개 제출물과 피드백 상태를 조회한다.")
-    void 담당_팀의_공개_제출물과_피드백_상태를_조회한다() {
+    @DisplayName("[성공] 담당 팀의 열람 가능한 제출물과 피드백 상태를 조회한다.")
+    void 담당_팀의_열람_가능한_제출물과_피드백_상태를_조회한다() {
         final TeamSubmissionsResponse response =
                 contestMentorQueryService.getTeamSubmissions(contest.getId(), developTeam.getId(), professor);
 
         assertThat(response.teamId()).isEqualTo(developTeam.getId());
         assertThat(response.trackName()).isEqualTo(track.getTrackName());
-        assertThat(response.pendingFeedbackCount()).isEqualTo(1);
+        assertThat(response.pendingFeedbackCount()).isEqualTo(3);
         assertThat(response.submissions())
                 .extracting(MentorSubmissionResponse::feedbackStatus)
-                .containsExactly(FeedbackStatus.COMPLETED, FeedbackStatus.PENDING);
+                .containsExactly(FeedbackStatus.COMPLETED, FeedbackStatus.PENDING,
+                        FeedbackStatus.PENDING, FeedbackStatus.PENDING);
 
         final MentorSubmissionResponse reviewed = response.submissions().get(0);
         assertThat(reviewed.submissionItemName()).isEqualTo("중간발표 자료");
         assertThat(reviewed.files())
                 .extracting(ContestSubmissionFileResponse::fileName, ContestSubmissionFileResponse::fileSize)
                 .containsExactly(tuple("중간발표.pdf", 13002342L));
+    }
+
+    @Test
+    @DisplayName("[성공] 관계자 조회 목록은 PUBLIC·MEMBER·STAFF 제출물을 포함하고 TEAM 제출물은 제외한다.")
+    void 관계자_조회_목록은_TEAM_제출물을_제외한다() {
+        final TeamSubmissionsResponse response =
+                contestMentorQueryService.getTeamSubmissions(contest.getId(), developTeam.getId(), professor);
+
+        assertThat(response.submissions())
+                .extracting(MentorSubmissionResponse::submissionItemName)
+                .containsExactly("중간발표 자료", "최종발표 자료", "심사용 자료", "회원 공개 자료")
+                .doesNotContain("팀 내부 자료");
     }
 
     @Test

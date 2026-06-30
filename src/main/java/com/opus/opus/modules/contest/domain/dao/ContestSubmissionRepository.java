@@ -45,19 +45,22 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             """)
     List<DownloadSubmissionRow> findDownloadSubmissions(@Param("contestId") Long contestId);
 
-    // 멘토 조회용: 팀의 공개(PUBLIC) 제출물을 제출 항목과 함께 조회한다.
+    // 관계자(지도교수·외부멘토) 조회용: 팀의 제출물 중 관계자가 열람 가능한(TEAM 제외) 제출물을 제출 항목과 함께 조회한다.
     @Query("""
             SELECT s
             FROM ContestSubmission s
             JOIN FETCH s.submissionItem item
             WHERE s.teamId = :teamId
               AND item.contest.id = :contestId
-              AND item.visibility = com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC
+              AND item.visibility IN (
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC,
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.MEMBER,
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.STAFF)
             ORDER BY item.id
             """)
-    List<ContestSubmission> findPublicSubmissionsByTeam(Long contestId, Long teamId);
+    List<ContestSubmission> findStaffViewableSubmissionsByTeam(Long contestId, Long teamId);
 
-    // 멘토 조회용: 담당 팀들의 공개(PUBLIC) 제출물 중 해당 멘토가 아직 피드백하지 않은 건수를 팀별로 집계한다.
+    // 관계자 조회용: 담당 팀들의 열람 가능한(TEAM 제외) 제출물 중 해당 관계자가 아직 피드백하지 않은 건수를 팀별로 집계한다.
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.TeamPendingFeedbackResult(
                    s.teamId, SUM(CASE WHEN f.id IS NULL THEN 1L ELSE 0L END))
@@ -65,7 +68,10 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             JOIN s.submissionItem item
             LEFT JOIN ContestSubmissionFeedback f ON f.submission = s AND f.memberId = :memberId
             WHERE item.contest.id = :contestId
-              AND item.visibility = com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC
+              AND item.visibility IN (
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC,
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.MEMBER,
+                    com.opus.opus.modules.contest.domain.SubmissionVisibility.STAFF)
               AND s.teamId IN :teamIds
             GROUP BY s.teamId
             """)

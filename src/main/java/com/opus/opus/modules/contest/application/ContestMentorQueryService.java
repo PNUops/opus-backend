@@ -80,7 +80,8 @@ public class ContestMentorQueryService {
 
         final String trackName = trackNameMap(contestId).get(team.getTrackId());
 
-        final List<ContestSubmission> submissions = contestSubmissionRepository.findPublicSubmissionsByTeam(contestId, teamId);
+        final List<ContestSubmission> submissions =
+                contestSubmissionRepository.findStaffViewableSubmissionsByTeam(contestId, teamId);
         if (submissions.isEmpty()) {
             return TeamSubmissionsResponse.of(team, trackName, List.of());
         }
