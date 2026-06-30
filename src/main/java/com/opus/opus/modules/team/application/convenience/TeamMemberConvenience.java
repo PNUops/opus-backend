@@ -50,6 +50,10 @@ public class TeamMemberConvenience {
                 .orElseThrow(() -> new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
     }
 
+    public boolean isTeamMember(final Long teamId, final Long memberId) {
+        return teamMemberRepository.existsByTeamIdAndMemberId(teamId, memberId);
+    }
+
 
     public void validateTeamMemberUnlessAdmin(final Long teamId, final Member member) {
         if (!member.isAdmin()) {

@@ -3,13 +3,13 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestMemberConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
-import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
@@ -38,6 +38,7 @@ public class ContestMentorQueryService {
 
     private final ContestConvenience contestConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
+    private final ContestMemberConvenience contestMemberConvenience;
     private final ContestMemberRepository contestMemberRepository;
     private final ContestSubmissionRepository contestSubmissionRepository;
     private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
@@ -99,9 +100,7 @@ public class ContestMentorQueryService {
     }
 
     private void validateAssignedTeam(final Long contestId, final Long memberId, final Long teamId) {
-        final ContestMember contestMember = contestMemberRepository.findByContestIdAndMemberId(contestId, memberId)
-                .orElseThrow(() -> new ContestMemberException(NOT_ASSIGNED_TEAM));
-        if (!contestMember.getTeamIds().contains(teamId)) {
+        if (!contestMemberConvenience.isAssignedTeam(contestId, memberId, teamId)) {
             throw new ContestMemberException(NOT_ASSIGNED_TEAM);
         }
     }
