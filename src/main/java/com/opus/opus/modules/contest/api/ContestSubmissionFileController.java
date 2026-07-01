@@ -51,6 +51,18 @@ public class ContestSubmissionFileController {
                 .body(submissionDownload.body());
     }
 
+    @GetMapping("/{submissionId}/files")
+    public ResponseEntity<StreamingResponseBody> downloadSubmissionFiles(
+            @PathVariable final Long contestId,
+            @PathVariable final Long submissionId
+    ) {
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateSubmissionDownload(contestId, submissionId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, FileDownloadUtil.attachmentHeader(download.fileName()))
+                .body(download.body());
+    }
+
     @GetMapping("/{submissionId}/files/{fileId}")
     public ResponseEntity<Resource> downloadSubmissionFile(
             @PathVariable final Long contestId,

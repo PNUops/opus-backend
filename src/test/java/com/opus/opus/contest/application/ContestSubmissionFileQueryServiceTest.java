@@ -250,6 +250,70 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 제출물의 모든 파일을 팀명 zip으로 담되 파일을 루트에 둔다.")
+    void 제출물의_모든_파일을_zip_루트에_담는다() throws Exception {
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateSubmissionDownload(
+                contest.getId(), submissionAi1.getId());
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        download.body().writeTo(out);
+
+        assertThat(download.fileName()).startsWith("AI팀1_").endsWith(".zip");
+        assertThat(readEntryNames(out.toByteArray()))
+                .containsExactlyInAnyOrder("발표자료.pdf", "보고서.pdf");
+    }
+
+    @Test
+    @DisplayName("[성공] 경로 탈출 문자가 섞인 파일명은 무해화되어 zip 엔트리에 담긴다.")
+    void 경로_탈출_파일명은_무해화되어_담긴다() throws Exception {
+        final ContestSubmission submission = saveSubmission(
+                teamRepository.save(buildTeam(trackAi.getId(), "무해화팀")).getId());
+        saveFile(submission.getId(), "../../../etc/passwd", 100L, 0);
+
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateSubmissionDownload(
+                contest.getId(), submission.getId());
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        download.body().writeTo(out);
+
+        final List<String> names = readEntryNames(out.toByteArray());
+        assertThat(names).containsExactly("passwd");
+        assertThat(names).noneMatch(name -> name.contains(".."));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물은 일괄 다운로드할 수 없다.")
+    void 존재하지_않는_제출물은_일괄_다운로드할_수_없다() {
+        assertThatThrownBy(() -> contestSubmissionFileQueryService.generateSubmissionDownload(
+                contest.getId(), 99999L))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 제출물은 일괄 다운로드할 수 없다.")
+    void 존재하지_않는_대회의_제출물은_일괄_다운로드할_수_없다() {
+        assertThatThrownBy(() -> contestSubmissionFileQueryService.generateSubmissionDownload(
+                99999L, submissionAi1.getId()))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회에 속한 제출물은 일괄 다운로드할 수 없다.")
+    void 다른_대회에_속한_제출물은_일괄_다운로드할_수_없다() {
+        final Contest otherContest = contestRepository.save(ContestFixture.createContest());
+        final ContestSubmissionItem otherItem = submissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(otherContest));
+        final ContestSubmission otherSubmission = saveSubmission(
+                teamRepository.save(buildTeam(trackAi.getId(), "타대회팀")).getId(), otherItem);
+        saveFile(otherSubmission.getId(), "발표자료.pdf", 100L, 0);
+
+        assertThatThrownBy(() -> contestSubmissionFileQueryService.generateSubmissionDownload(
+                contest.getId(), otherSubmission.getId()))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
+    }
+
+    @Test
     @DisplayName("[실패] 대상에 해당하는 제출이 없으면 예외가 발생한다.")
     void 대상에_해당하는_제출이_없으면_예외가_발생한다() {
         final SubmissionDownloadRequest request = new SubmissionDownloadRequest(List.of(new DownloadTargetRequest(item.getId(), 99999L)));

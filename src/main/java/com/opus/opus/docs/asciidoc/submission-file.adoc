@@ -98,6 +98,39 @@ include::{snippets}/download-submissions-fail-no-submissions/http-response.adoc[
 
 ====
 
+== `GET`: 제출 파일 일괄 다운로드 (zip)
+
+특정 제출물에 딸린 모든 파일을 하나의 zip으로 묶어 내려줍니다. 파일은 zip 최상위(루트)에 담기며, zip 파일명은 `{팀명}_{날짜}.zip` 형식입니다.
+
+.Path Parameters
+include::{snippets}/download-submission-files/path-parameters.adoc[]
+
+.HTTP Request Headers
+include::{snippets}/download-submission-files/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/download-submission-files/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/download-submission-files/http-response.adoc[]
+
+.Response Headers
+include::{snippets}/download-submission-files/response-headers.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/download-submission-files-fail-submission-not-found/http-request.adoc[]
+
+include::{snippets}/download-submission-files-fail-submission-not-found/http-response.adoc[]
+
+====
+
 == `GET`: 제출 파일 개별 다운로드
 
 제출물 상세에서 파일을 하나씩 내려받습니다.

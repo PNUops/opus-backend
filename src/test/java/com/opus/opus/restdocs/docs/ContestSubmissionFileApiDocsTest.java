@@ -114,6 +114,47 @@ public class ContestSubmissionFileApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[성공] 제출물의 파일을 zip으로 일괄 다운로드한다.")
+    void 제출물의_파일을_zip으로_일괄_다운로드한다() throws Exception {
+        final StreamingResponseBody body = outputStream -> outputStream.write("zip-binary".getBytes());
+        when(contestSubmissionFileQueryService.generateSubmissionDownload(any(), any()))
+                .thenReturn(new SubmissionDownload("AI스타트업_20260701.zip", body));
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/files", 1, 12)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("download-submission-files",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출 ID")
+                        ),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("application/zip"),
+                                headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"...zip\"")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출물의 파일 일괄 다운로드 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출물의_파일_일괄_다운로드_시_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_SUBMISSION))
+                .given(contestSubmissionFileQueryService).generateSubmissionDownload(any(), any());
+
+        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/files", 1, 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-submission-files-fail-submission-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("존재하지 않는 제출 ID")
+                        ),
+                        requestHeaders(headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)"))
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 제출 파일을 개별 다운로드한다.")
     void 제출_파일을_개별_다운로드한다() throws Exception {
         when(contestSubmissionFileQueryService.downloadSubmissionFile(any(), any(), any()))
