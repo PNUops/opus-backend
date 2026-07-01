@@ -15,21 +15,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/contests/{contestId}")
+@RequestMapping("/contests")
 @Secured({"ROLE_교수", "ROLE_외부멘토"})
 public class ContestMentorController {
 
     private final ContestMentorQueryService contestMentorQueryService;
 
-    @GetMapping("/mentor/projects")
+    @GetMapping("/mentors/me/projects")
     public ResponseEntity<MentorProjectsResponse> getMentorProjects(
-            @PathVariable final Long contestId,
             @LoginMember final Member member
     ) {
-        return ResponseEntity.ok(contestMentorQueryService.getMentorProjects(contestId, member));
+        return ResponseEntity.ok(contestMentorQueryService.getMentorProjects(member));
     }
 
-    @GetMapping("/teams/{teamId}/submissions")
+    @GetMapping("/{contestId}/teams/{teamId}/submissions")
     public ResponseEntity<TeamSubmissionsResponse> getTeamSubmissions(
             @PathVariable final Long contestId,
             @PathVariable final Long teamId,

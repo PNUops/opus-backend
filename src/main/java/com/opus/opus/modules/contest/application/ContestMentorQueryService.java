@@ -10,6 +10,7 @@ import com.opus.opus.modules.contest.application.dto.response.MentorProjectRespo
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
+import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
@@ -45,32 +46,37 @@ public class ContestMentorQueryService {
     private final TeamConvenience teamConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
 
-    public MentorProjectsResponse getMentorProjects(final Long contestId, final Member mentor) {
-        contestConvenience.validateExistContest(contestId);
-
-        final List<Long> teamIds = contestMemberRepository.findByContestIdAndMemberId(contestId, mentor.getId())
-                .map(contestMember -> List.copyOf(contestMember.getTeamIds()))
-                .orElseGet(List::of);
-        if (teamIds.isEmpty()) {
-            return new MentorProjectsResponse(0, 0L, List.of());
-        }
-
-        final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
-        final Map<Long, String> trackNames = trackNameMap(contestId);
-        final Map<Long, Long> pendingCounts = pendingFeedbackCountsByTeam(contestId, mentor.getId(), teamIds);
+    public MentorProjectsResponse getMentorProjects(final Member mentor) {
         final String roleType = mentor.getStaffRoleName();
 
-        final List<MentorProjectResponse> projects = teamIds.stream()
-                .map(teams::get)
-                .filter(Objects::nonNull)
-                .map(team -> MentorProjectResponse.of(team, trackNames.get(team.getTrackId()), roleType,
-                        pendingCounts.getOrDefault(team.getId(), 0L)))
+        final List<MentorProjectResponse> projects = contestMemberRepository.findAllByMemberId(mentor.getId()).stream()
+                .flatMap(contestMember -> projectsOf(contestMember, mentor.getId(), roleType).stream())
                 .toList();
 
         final long totalPendingCount = projects.stream()
                 .mapToLong(MentorProjectResponse::pendingFeedbackCount)
                 .sum();
         return new MentorProjectsResponse(projects.size(), totalPendingCount, projects);
+    }
+
+    private List<MentorProjectResponse> projectsOf(final ContestMember contestMember, final Long memberId,
+                                                   final String roleType) {
+        final List<Long> teamIds = List.copyOf(contestMember.getTeamIds());
+        if (teamIds.isEmpty()) {
+            return List.of();
+        }
+
+        final Long contestId = contestMember.getContest().getId();
+        final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
+        final Map<Long, String> trackNames = trackNameMap(contestId);
+        final Map<Long, Long> pendingCounts = pendingFeedbackCountsByTeam(contestId, memberId, teamIds);
+
+        return teamIds.stream()
+                .map(teams::get)
+                .filter(Objects::nonNull)
+                .map(team -> MentorProjectResponse.of(team, trackNames.get(team.getTrackId()), roleType,
+                        pendingCounts.getOrDefault(team.getId(), 0L)))
+                .toList();
     }
 
     public TeamSubmissionsResponse getTeamSubmissions(final Long contestId, final Long teamId, final Member mentor) {

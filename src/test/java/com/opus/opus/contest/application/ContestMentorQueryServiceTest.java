@@ -4,7 +4,6 @@ import static com.opus.opus.contest.ContestMemberFixture.createContestMember;
 import static com.opus.opus.contest.ContestSubmissionFeedbackFixture.createFeedback;
 import static com.opus.opus.contest.ContestSubmissionFixture.createSubmission;
 import static com.opus.opus.member.MemberFixture.createMemberWithRole;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
@@ -34,7 +33,6 @@ import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackReposit
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
-import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestMemberException;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.file.domain.FileDocument;
@@ -113,7 +111,7 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 담당 프로젝트 목록과 통계를 조회한다.")
     void 담당_프로젝트_목록과_통계를_조회한다() {
-        final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(contest.getId(), professor);
+        final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(professor);
 
         assertThat(response.assignedTeamCount()).isEqualTo(2);
         assertThat(response.pendingFeedbackCount()).isEqualTo(3);
@@ -133,7 +131,7 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
     void 배정되지_않은_멘토는_빈_목록을_반환한다() {
         final Member unassigned = memberRepository.save(createMemberWithRole("이멘토", 2, ROLE_외부멘토));
 
-        final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(contest.getId(), unassigned);
+        final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(unassigned);
 
         assertThat(response.assignedTeamCount()).isEqualTo(0);
         assertThat(response.pendingFeedbackCount()).isEqualTo(0);
@@ -141,11 +139,29 @@ public class ContestMentorQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 존재하지 않는 대회의 담당 프로젝트는 조회할 수 없다.")
-    void 존재하지_않는_대회의_담당_프로젝트는_조회할_수_없다() {
-        assertThatThrownBy(() -> contestMentorQueryService.getMentorProjects(999L, professor))
-                .isInstanceOf(ContestException.class)
-                .hasMessage(NOT_FOUND_CONTEST.errorMessage());
+    @DisplayName("[성공] 여러 대회에 배정된 멘토는 모든 대회의 담당 프로젝트를 합산해 조회한다.")
+    void 여러_대회에_배정된_멘토는_모든_대회의_프로젝트를_합산한다() {
+        final Contest contest2 = contestRepository.save(ContestFixture.createContest());
+        final ContestTrack track2 = contestTrackRepository.save(ContestTrackFixture.createTrack(contest2));
+        final Team team2 = teamRepository.save(Team.builder()
+                .teamName("2대회팀")
+                .projectName("두번째 프로젝트")
+                .contestId(contest2.getId())
+                .trackId(track2.getId())
+                .itemOrder(1)
+                .build());
+        contestMemberRepository.save(createContestMember(contest2, professor.getId(), List.of(team2.getId())));
+
+        final MentorProjectsResponse response = contestMentorQueryService.getMentorProjects(professor);
+
+        assertThat(response.assignedTeamCount()).isEqualTo(3);
+        assertThat(response.pendingFeedbackCount()).isEqualTo(3);
+        assertThat(response.projects()).extracting(MentorProjectResponse::teamId)
+                .contains(developTeam.getId(), planningTeam.getId(), team2.getId());
+
+        final MentorProjectResponse project2 = findProject(response, team2.getId());
+        assertThat(project2.trackName()).isEqualTo(track2.getTrackName());
+        assertThat(project2.pendingFeedbackCount()).isEqualTo(0);
     }
 
     @Test

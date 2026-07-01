@@ -16,14 +16,11 @@ link:./opus.html[API 목록으로 돌아가기]
 
 == `GET`: 담당 프로젝트 목록 조회
 
-로그인한 교수/외부멘토 본인에게 배정된 담당 프로젝트(팀) 목록을 조회한다. +
+로그인한 교수/외부멘토 본인이 배정된 모든 대회(종료된 대회 포함)의 담당 프로젝트(팀) 목록을 조회한다. +
 상단 통계(담당 팀 수, 검토 대기 건수)와 프로젝트별 피드백 대기 건수를 함께 반환한다.
 
 .HTTP Request Headers
 include::{snippets}/get-mentor-projects/request-headers.adoc[]
-
-.Path Parameters
-include::{snippets}/get-mentor-projects/path-parameters.adoc[]
 
 .HTTP Request
 include::{snippets}/get-mentor-projects/http-request.adoc[]
