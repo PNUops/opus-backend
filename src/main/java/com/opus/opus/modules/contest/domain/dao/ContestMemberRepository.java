@@ -9,6 +9,8 @@ public interface ContestMemberRepository extends JpaRepository<ContestMember, Lo
 
     List<ContestMember> findAllByContestId(final Long contestId);
 
+    List<ContestMember> findAllByMemberId(final Long memberId);
+
     boolean existsByContestIdAndMemberId(final Long contestId, final Long memberId);
 
     Optional<ContestMember> findByIdAndContestId(final Long id, final Long contestId);

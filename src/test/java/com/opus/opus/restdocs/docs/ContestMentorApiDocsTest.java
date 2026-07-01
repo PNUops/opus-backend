@@ -48,15 +48,12 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                 new MentorProjectResponse(11L, "보안팀2", "보안 프로젝트", "융합트랙", "ROLE_교수", 0L)
         ));
 
-        when(contestMentorQueryService.getMentorProjects(any(), any())).thenReturn(response);
+        when(contestMentorQueryService.getMentorProjects(any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/{contestId}/mentor/projects", 1)
+        mockMvc.perform(get("/contests/mentors/me/projects")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-mentor-projects",
-                        pathParameters(
-                                parameterWithName("contestId").description("대회 ID")
-                        ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수/외부멘토)")
                         ),
