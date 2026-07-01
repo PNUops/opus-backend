@@ -263,6 +263,23 @@ public class ContestSubmissionFileQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 경로 탈출 문자가 섞인 파일명은 무해화되어 zip 엔트리에 담긴다.")
+    void 경로_탈출_파일명은_무해화되어_담긴다() throws Exception {
+        final ContestSubmission submission = saveSubmission(
+                teamRepository.save(buildTeam(trackAi.getId(), "무해화팀")).getId());
+        saveFile(submission.getId(), "../../../etc/passwd", 100L, 0);
+
+        final SubmissionDownload download = contestSubmissionFileQueryService.generateSubmissionDownload(
+                contest.getId(), submission.getId());
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        download.body().writeTo(out);
+
+        final List<String> names = readEntryNames(out.toByteArray());
+        assertThat(names).containsExactly("passwd");
+        assertThat(names).noneMatch(name -> name.contains(".."));
+    }
+
+    @Test
     @DisplayName("[실패] 존재하지 않는 제출물은 일괄 다운로드할 수 없다.")
     void 존재하지_않는_제출물은_일괄_다운로드할_수_없다() {
         assertThatThrownBy(() -> contestSubmissionFileQueryService.generateSubmissionDownload(

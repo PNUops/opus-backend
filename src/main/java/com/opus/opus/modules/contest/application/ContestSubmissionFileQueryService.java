@@ -61,7 +61,7 @@ public class ContestSubmissionFileQueryService {
         final String teamName = teamConvenience.getValidateExistTeam(submission.getTeamId()).getTeamName();
 
         return new SubmissionDownload(generateZipFileName(teamName),
-                buildZipFileBody(files, SubmissionFileInfo::fileName));
+                buildZipFileBody(files, file -> sanitizeEntryName(file.fileName())));
     }
 
     public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionItemId, final Long trackId) {
@@ -94,7 +94,8 @@ public class ContestSubmissionFileQueryService {
         }
 
         return new SubmissionDownload(generateZipFileName(contest.getContestName()),
-                buildZipFileBody(files, file -> teamNameBySubmissionId.get(file.submissionId()) + "/" + file.fileName()));
+                buildZipFileBody(files, file -> sanitizeEntryName(teamNameBySubmissionId.get(file.submissionId()))
+                        + "/" + sanitizeEntryName(file.fileName())));
     }
 
     private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
@@ -128,6 +129,20 @@ public class ContestSubmissionFileQueryService {
                 }
             }
         };
+    }
+
+    // zip slip 방지: 업로드 원본 파일명/팀명이 "../", 절대경로("/..."), "C:\..." 같은 경로 요소를 담고 있으면
+    // 압축 해제 시 대상 디렉토리 밖으로 파일이 쓰일 수 있으므로, 경로 구분자를 제거하고 마지막 이름 성분만 남긴다.
+    private String sanitizeEntryName(final String rawName) {
+        if (rawName == null || rawName.isBlank()) {
+            return "unnamed";
+        }
+        final String withoutDirectory = rawName.replace('\\', '/');
+        final String baseName = withoutDirectory.substring(withoutDirectory.lastIndexOf('/') + 1).trim();
+        if (baseName.isEmpty() || baseName.equals(".") || baseName.equals("..")) {
+            return "unnamed";
+        }
+        return baseName;
     }
 
     // 만약에 같은 폴더에 동일 파일명이 들어오면 ZipException(duplicate entry)으로 다운로드가 깨지므로
