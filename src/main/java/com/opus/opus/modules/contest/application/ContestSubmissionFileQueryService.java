@@ -8,6 +8,7 @@ import com.opus.opus.modules.contest.application.dto.response.DownloadTargetResp
 import com.opus.opus.modules.contest.application.dto.response.DownloadTargetsResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionDownload;
 import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.dao.DownloadSubmissionRow;
 import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.exception.ContestException;
@@ -16,6 +17,7 @@ import com.opus.opus.modules.file.application.FileDocumentQueryService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.application.dto.DocumentFileDownload;
 import com.opus.opus.modules.file.domain.dao.SubmissionFileInfo;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -23,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -40,6 +43,7 @@ public class ContestSubmissionFileQueryService {
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final FileDocumentConvenience fileDocumentConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
+    private final TeamConvenience teamConvenience;
 
     public DocumentFileDownload downloadSubmissionFile(final Long contestId, final Long submissionId, final Long fileId) {
         contestConvenience.validateExistContest(contestId);
@@ -47,6 +51,17 @@ public class ContestSubmissionFileQueryService {
         fileDocumentConvenience.validateFileBelongsToSubmission(submissionId, fileId);
 
         return fileDocumentQueryService.download(fileId);
+    }
+
+    public SubmissionDownload generateSubmissionDownload(final Long contestId, final Long submissionId) {
+        contestConvenience.validateExistContest(contestId);
+        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionInContest(contestId, submissionId);
+
+        final List<SubmissionFileInfo> files = fileDocumentQueryService.findFilesBySubmissionIds(List.of(submissionId));
+        final String teamName = teamConvenience.getValidateExistTeam(submission.getTeamId()).getTeamName();
+
+        return new SubmissionDownload(generateZipFileName(teamName),
+                buildZipFileBody(files, SubmissionFileInfo::fileName));
     }
 
     public DownloadTargetsResponse getDownloadTargets(final Long contestId, final Long submissionItemId, final Long trackId) {
@@ -78,7 +93,8 @@ public class ContestSubmissionFileQueryService {
             throw new ContestException(ContestExceptionType.NO_SUBMISSIONS_TO_DOWNLOAD);
         }
 
-        return new SubmissionDownload(generateZipFileName(contest), buildZipFileBody(files, teamNameBySubmissionId));
+        return new SubmissionDownload(generateZipFileName(contest.getContestName()),
+                buildZipFileBody(files, file -> teamNameBySubmissionId.get(file.submissionId()) + "/" + file.fileName()));
     }
 
     private DownloadTargetResponse toDownloadTargetResponse(final DownloadTargetResult result) {
@@ -98,13 +114,12 @@ public class ContestSubmissionFileQueryService {
     }
 
     private StreamingResponseBody buildZipFileBody(final List<SubmissionFileInfo> files,
-                                                   final Map<Long, String> teamNameBySubmissionId) {
+                                                   final Function<SubmissionFileInfo, String> entryNameResolver) {
         return outputStream -> {
             final Set<String> usedEntryNames = new HashSet<>();
             try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
                 for (final SubmissionFileInfo file : files) {
-                    final String entryName = deduplicateEntryName(usedEntryNames,
-                            teamNameBySubmissionId.get(file.submissionId()) + "/" + file.fileName());
+                    final String entryName = deduplicateEntryName(usedEntryNames, entryNameResolver.apply(file));
                     zipOutputStream.putNextEntry(new ZipEntry(entryName));
                     try (InputStream inputStream = fileDocumentQueryService.openStream(file.fileDocumentId())) {
                         inputStream.transferTo(zipOutputStream);
@@ -133,9 +148,8 @@ public class ContestSubmissionFileQueryService {
         return candidate;
     }
 
-    private String generateZipFileName(final Contest contest) {
+    private String generateZipFileName(final String name) {
         final String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        final String contestName = contest.getContestName().replaceAll("\\s+", "");
-        return "%s_%s.zip".formatted(contestName, date);
+        return "%s_%s.zip".formatted(name.replaceAll("\\s+", ""), date);
     }
 }
