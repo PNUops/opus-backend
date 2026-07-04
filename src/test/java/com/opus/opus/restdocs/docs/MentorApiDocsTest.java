@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFileResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorContestResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
-import com.opus.opus.modules.contest.application.dto.response.MentorProjectsResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.MentorSubmissionResponse.FeedbackStatus;
 import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
@@ -27,7 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 
-public class ContestMentorApiDocsTest extends RestDocsTest {
+public class MentorApiDocsTest extends RestDocsTest {
 
     private static final String MENTOR_TOKEN = "Bearer mentor.access.token";
 
@@ -41,32 +41,62 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[성공] 멘토가 담당 프로젝트 목록을 조회한다.")
-    void 멘토가_담당_프로젝트_목록을_조회한다() throws Exception {
-        final MentorProjectsResponse response = new MentorProjectsResponse(2, 5L, List.of(
-                new MentorProjectResponse(10L, "AI팀1", "AI 프로젝트", "융합트랙", "ROLE_교수", 5L),
-                new MentorProjectResponse(11L, "보안팀2", "보안 프로젝트", "융합트랙", "ROLE_교수", 0L)
-        ));
+    @DisplayName("[성공] 멘토가 담당 대회 목록을 조회한다.")
+    void 멘토가_담당_대회_목록을_조회한다() throws Exception {
+        final List<MentorContestResponse> response = List.of(
+                new MentorContestResponse(1L, "땡땡 대회", "대회 카테고리", List.of("융합트랙", "창업트랙"), 5L, 10),
+                new MentorContestResponse(2L, "해커톤", "해커톤 카테고리", List.of("보안트랙"), 2L, 4)
+        );
 
-        when(contestMentorQueryService.getMentorProjects(any())).thenReturn(response);
+        when(mentorQueryService.getMentorContests(any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/mentors/me/projects")
+        mockMvc.perform(get("/mentors/me/contests")
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isOk())
-                .andDo(document("get-mentor-projects",
+                .andDo(document("get-mentor-contests",
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수/외부멘토)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
                         ),
                         responseFields(
-                                numberFieldWithPath("assignedTeamCount", "담당 팀 수"),
-                                numberFieldWithPath("pendingFeedbackCount", "전체 피드백 대기 건수"),
-                                arrayFieldWithPath("projects", "담당 프로젝트 목록"),
-                                numberFieldWithPath("projects[].teamId", "팀 ID"),
-                                stringFieldWithPath("projects[].teamName", "팀명"),
-                                stringFieldWithPath("projects[].projectName", "프로젝트명"),
-                                stringFieldWithPath("projects[].trackName", "분과(트랙)명 (분과 미지정 시 null)"),
-                                stringFieldWithPath("projects[].roleType", "역할 (MemberRoleType)"),
-                                numberFieldWithPath("projects[].pendingFeedbackCount", "이 팀의 피드백 대기 건수")
+                                arrayFieldWithPath("[]", "담당 대회 목록"),
+                                numberFieldWithPath("[].contestId", "대회 ID"),
+                                stringFieldWithPath("[].contestName", "대회명"),
+                                stringFieldWithPath("[].categoryName", "대회 카테고리명"),
+                                arrayFieldWithPath("[].assignedTrackNames", "담당 팀들이 속한 분과(트랙)명 목록"),
+                                numberFieldWithPath("[].totalPendingFeedbackCount", "해당 대회의 검토 대기 건수 합계"),
+                                numberFieldWithPath("[].totalAssignedTeamCount", "해당 대회의 담당 팀 수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 멘토가 선택한 대회의 담당 팀 목록을 조회한다.")
+    void 멘토가_선택한_대회의_담당_팀_목록을_조회한다() throws Exception {
+        final List<MentorProjectResponse> response = List.of(
+                new MentorProjectResponse(10L, "AI팀1", "AI 프로젝트", "융합트랙", "ROLE_외부멘토", 5L),
+                new MentorProjectResponse(11L, "보안팀2", "보안 프로젝트", "융합트랙", "ROLE_외부멘토", 0L)
+        );
+
+        when(mentorQueryService.getMentorContestTeams(any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/mentors/me/contests/{contestId}/teams", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-mentor-contest-teams",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("[]", "담당 팀(프로젝트) 목록"),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                stringFieldWithPath("[].teamName", "팀명"),
+                                stringFieldWithPath("[].projectName", "프로젝트명"),
+                                stringFieldWithPath("[].trackName", "분과(트랙)명 (분과 미지정 시 null)"),
+                                stringFieldWithPath("[].roleType", "역할 (MemberRoleType)"),
+                                numberFieldWithPath("[].pendingFeedbackCount", "이 팀의 피드백 대기 건수")
                         )
                 ));
     }
@@ -82,9 +112,9 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                                 List.of(new ContestSubmissionFileResponse(205L, "AI프로젝트_AI팀1_최종발표자료.pptx", 13002342L)))
                 ));
 
-        when(contestMentorQueryService.getTeamSubmissions(any(), any(), any())).thenReturn(response);
+        when(mentorQueryService.getTeamSubmissions(any(), any(), any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submissions", 1, 10)
+        mockMvc.perform(get("/mentors/me/contests/{contestId}/teams/{teamId}/submissions", 1, 10)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-mentor-team-submissions",
@@ -93,7 +123,7 @@ public class ContestMentorApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수/외부멘토)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
                         ),
                         responseFields(
                                 numberFieldWithPath("teamId", "팀 ID"),
