@@ -1,7 +1,6 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
-import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -16,7 +15,6 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestTrack;
-import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.TeamPendingFeedbackResult;
@@ -44,23 +42,21 @@ public class MentorQueryService {
     private final ContestCategoryConvenience contestCategoryConvenience;
     private final ContestTrackConvenience contestTrackConvenience;
     private final ContestMemberConvenience contestMemberConvenience;
-    private final ContestMemberRepository contestMemberRepository;
     private final ContestSubmissionRepository contestSubmissionRepository;
     private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
     private final TeamConvenience teamConvenience;
     private final FileDocumentQueryService fileDocumentQueryService;
 
     public List<MentorContestResponse> getMentorContests(final Member mentor) {
-        return contestMemberRepository.findAllByMemberId(mentor.getId()).stream()
+        return contestMemberConvenience.getAssignedContestMembers(mentor.getId()).stream()
                 .map(contestMember -> buildMentorContestResponse(contestMember, mentor.getId()))
                 .toList();
     }
 
     public List<MentorProjectResponse> getMentorContestTeams(final Long contestId, final Member mentor) {
         contestConvenience.validateExistContest(contestId);
-        final ContestMember contestMember = contestMemberRepository
-                .findByContestIdAndMemberId(contestId, mentor.getId())
-                .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));
+        final ContestMember contestMember =
+                contestMemberConvenience.getValidateExistContestMember(contestId, mentor.getId());
 
         return buildMentorProjectResponses(contestMember, mentor.getId(), mentor.getStaffRoleName());
     }
@@ -105,7 +101,9 @@ public class MentorQueryService {
 
         final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
         final Map<Long, String> trackNames = trackNameMap(contest.getId());
-        final List<String> assignedTrackNames = teams.values().stream()
+        final List<String> assignedTrackNames = teamIds.stream()
+                .map(teams::get)
+                .filter(Objects::nonNull)
                 .map(team -> trackNames.get(team.getTrackId()))
                 .filter(Objects::nonNull)
                 .distinct()
