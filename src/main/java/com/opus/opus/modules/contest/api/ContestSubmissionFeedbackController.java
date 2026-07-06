@@ -38,7 +38,7 @@ public class ContestSubmissionFeedbackController {
     private final ContestSubmissionFeedbackQueryService contestSubmissionFeedbackQueryService;
 
     @PutMapping
-    @Secured("ROLE_외부멘토")
+    @Secured({"ROLE_외부멘토", "ROLE_교수"})
     public ResponseEntity<Void> saveFeedback(
             @PathVariable final Long contestId,
             @PathVariable final Long submissionId,
@@ -51,7 +51,7 @@ public class ContestSubmissionFeedbackController {
     }
 
     @GetMapping("/me")
-    @Secured("ROLE_외부멘토")
+    @Secured({"ROLE_외부멘토", "ROLE_교수"})
     public ResponseEntity<ContestSubmissionMyFeedbackResponse> getFeedback(
             @PathVariable final Long contestId,
             @PathVariable final Long submissionId,

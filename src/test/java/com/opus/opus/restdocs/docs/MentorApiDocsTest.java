@@ -55,7 +55,7 @@ public class MentorApiDocsTest extends RestDocsTest {
                 .andExpect(status().isOk())
                 .andDo(document("get-mentor-contests",
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토/교수)")
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "담당 대회 목록"),
@@ -87,7 +87,7 @@ public class MentorApiDocsTest extends RestDocsTest {
                                 parameterWithName("contestId").description("대회 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토/교수)")
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "담당 팀(프로젝트) 목록"),
@@ -123,7 +123,7 @@ public class MentorApiDocsTest extends RestDocsTest {
                                 parameterWithName("teamId").description("팀 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토)")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (외부멘토/교수)")
                         ),
                         responseFields(
                                 numberFieldWithPath("teamId", "팀 ID"),
