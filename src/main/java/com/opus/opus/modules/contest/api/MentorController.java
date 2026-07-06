@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/mentors")
-@Secured("ROLE_외부멘토")
+@Secured({"ROLE_외부멘토", "ROLE_교수"})
 public class MentorController {
 
     private final MentorQueryService mentorQueryService;
