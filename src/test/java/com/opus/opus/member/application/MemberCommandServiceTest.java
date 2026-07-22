@@ -32,6 +32,7 @@ import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
@@ -40,7 +41,9 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import org.springframework.mock.web.MockMultipartFile;
@@ -69,6 +72,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private FileImageRepository fileImageRepository;
+
+    @Autowired
+    private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
 
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
@@ -505,11 +511,35 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 관리자 강제 탈퇴 시 해당 회원은 DB에서 조회되지 않는다.")
     void 관리자_강제_탈퇴_시_해당_회원은_DB에서_조회되지_않는다() {
+        // given
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.FRAUDULENT_USE, "테스트 사유");
+
         // when
-        memberCommandService.withdrawByAdmin(teamLeader.getId());
+        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
 
         // then
         assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 탈퇴 사유가 저장된다.")
+    void 관리자_강제_탈퇴_시_탈퇴_사유가_저장된다() {
+        // given
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.DUPLICATE_ACCOUNT, "동일 학번 중복 가입");
+
+        // when
+        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
+
+        // then
+        assertThat(memberWithdrawalHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.DUPLICATE_ACCOUNT);
+                    assertThat(history.getDetail()).isEqualTo("동일 학번 중복 가입");
+                });
     }
 
     @Test
@@ -517,11 +547,14 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_회원을_강제_탈퇴하면_예외가_발생한다() {
         // given
         final Long nonExistentId = 999999L;
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.FRAUDULENT_USE, "테스트 사유");
 
         // when & then
-        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(nonExistentId))
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(nonExistentId, request))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+        assertThat(memberWithdrawalHistoryRepository.count()).isZero();
     }
 
     @Test

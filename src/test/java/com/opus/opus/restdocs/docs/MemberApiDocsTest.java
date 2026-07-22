@@ -42,6 +42,7 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -59,6 +60,7 @@ import com.opus.opus.modules.member.application.dto.response.MyLikePreviewRespon
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
@@ -632,11 +634,15 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
     void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
         // Given
-        doNothing().when(memberCommandService).withdrawByAdmin(any());
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
+        doNothing().when(memberCommandService).withdrawByAdmin(any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 1L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent())
                 .andDo(document("admin-withdraw-member",
                         requestHeaders(
@@ -645,6 +651,10 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         pathParameters(
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("detail", "기타 사항").optional()
                         )
                 ));
     }
@@ -653,12 +663,16 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 404를 반환한다.")
     void 존재하지_않는_회원을_강제_탈퇴하면_에러를_반환한다() throws Exception {
         // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
         willThrow(new MemberException(NOT_FOUND_MEMBER))
-                .given(memberCommandService).withdrawByAdmin(any());
+                .given(memberCommandService).withdrawByAdmin(any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 999L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andDo(document("admin-withdraw-member-fail-not-found",
                         requestHeaders(
@@ -667,6 +681,39 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         pathParameters(
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("detail", "기타 사항").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 기타 사항이 500자를 초과하면 400을 반환한다.")
+    void 기타사항이_500자를_초과하면_400_에러를_반환한다() throws Exception {
+        // Given
+        final String tooLongDetail = "a".repeat(501);
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.FRAUDULENT_USE, tooLongDetail);
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-invalid-detail",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("detail", "기타 사항 (500자 초과)").optional()
                         )
                 ));
     }
