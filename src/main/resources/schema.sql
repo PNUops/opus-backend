@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS `file_feedback`;
 DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
 DROP TABLE IF EXISTS `notification`;
+DROP TABLE IF EXISTS `member_withdrawal_history`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest`;
@@ -291,6 +292,16 @@ CREATE TABLE `notification` (
   `redirect_url` varchar(255) DEFAULT NULL,
   `is_read` bit(1) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `member_withdrawal_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `member_id` bigint NOT NULL,
+  `reason` enum('FRAUDULENT_USE','DUPLICATE_ACCOUNT') NOT NULL,
+  `detail` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
