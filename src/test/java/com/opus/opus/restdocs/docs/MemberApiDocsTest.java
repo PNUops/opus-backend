@@ -719,6 +719,33 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 탈퇴 사유가 없으면 400을 반환한다.")
+    void 탈퇴_사유가_없으면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(null, "사유 누락 테스트");
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-missing-reason",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (누락, 검증 실패 유도)").optional(),
+                                stringFieldWithPath("detail", "기타 사항").optional()
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 나의 프로젝트 목록을 조회할 수 있다.")
     void 나의_프로젝트_목록을_조회할_수_있다() throws Exception {
         final List<MyProjectResponse> responses = List.of(
