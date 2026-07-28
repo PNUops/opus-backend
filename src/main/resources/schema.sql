@@ -302,7 +302,8 @@ CREATE TABLE `member_withdrawal_history` (
   `member_id` bigint NOT NULL,
   `reason` enum('FRAUDULENT_USE','DUPLICATE_ACCOUNT','ETC') NOT NULL,
   `detail` varchar(500) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_member_withdrawal_history_member_id` (`member_id`)
 );
 
 CREATE TABLE `notice` (
