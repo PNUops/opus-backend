@@ -543,6 +543,26 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 ETC 사유도 저장된다.")
+    void 관리자_강제_탈퇴_시_ETC_사유도_저장된다() {
+        // given
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.ETC, "기타 사유");
+
+        // when
+        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
+
+        // then
+        assertThat(memberWithdrawalHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.ETC);
+                    assertThat(history.getDetail()).isEqualTo("기타 사유");
+                });
+    }
+
+    @Test
     @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 예외가 발생한다.")
     void 존재하지_않는_회원을_강제_탈퇴하면_예외가_발생한다() {
         // given

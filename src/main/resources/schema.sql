@@ -300,7 +300,7 @@ CREATE TABLE `member_withdrawal_history` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `member_id` bigint NOT NULL,
-  `reason` enum('FRAUDULENT_USE','DUPLICATE_ACCOUNT') NOT NULL,
+  `reason` enum('FRAUDULENT_USE','DUPLICATE_ACCOUNT','ETC') NOT NULL,
   `detail` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );

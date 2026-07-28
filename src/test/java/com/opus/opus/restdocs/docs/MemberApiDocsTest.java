@@ -653,7 +653,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항").optional()
                         )
                 ));
@@ -683,7 +683,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항").optional()
                         )
                 ));
@@ -712,7 +712,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항 (500자 초과)").optional()
                         )
                 ));
