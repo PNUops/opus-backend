@@ -14,6 +14,7 @@ import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateReque
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
@@ -181,8 +182,9 @@ public class MemberController {
 
     @Secured("ROLE_관리자")
     @DeleteMapping("/admin/members/{memberId}")
-    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId) {
-        memberCommandService.withdrawByAdmin(memberId);
+    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId,
+                                                  @Valid @RequestBody final ForceDeleteMemberRequest request) {
+        memberCommandService.withdrawByAdmin(memberId, request);
         return ResponseEntity.noContent().build();
     }
 

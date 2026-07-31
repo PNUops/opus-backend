@@ -25,18 +25,16 @@ public class ContestTeamSubmissionController {
     private final ContestSubmissionQueryService contestSubmissionQueryService;
 
     @GetMapping("/summary")
-    public ResponseEntity<TeamSubmissionSummaryResponse> getSubmissionSummary(
-            @PathVariable final Long contestId,
-            @PathVariable final Long teamId,
-            @LoginMember final Member member) {
+    public ResponseEntity<TeamSubmissionSummaryResponse> getSubmissionSummary(@PathVariable final Long contestId,
+                                                                              @PathVariable final Long teamId,
+                                                                              @LoginMember final Member member) {
         return ResponseEntity.ok(contestSubmissionQueryService.getTeamSubmissionSummary(contestId, teamId, member));
     }
 
     @GetMapping("/timeline")
-    public ResponseEntity<List<ContestSubmissionTimelineResponse>> getSubmissionTimeline(
-            @PathVariable final Long contestId,
-            @PathVariable final Long teamId,
-            @LoginMember final Member member) {
+    public ResponseEntity<List<ContestSubmissionTimelineResponse>> getSubmissionTimeline(@PathVariable final Long contestId,
+                                                                                         @PathVariable final Long teamId,
+                                                                                         @LoginMember final Member member) {
         return ResponseEntity.ok(contestSubmissionQueryService.getSubmissionTimeline(contestId, teamId, member));
     }
 }
