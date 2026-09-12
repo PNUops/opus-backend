@@ -72,4 +72,12 @@ public class ContestConvenience {
     public long countAllContests() {
         return contestRepository.count();
     }
+
+    public List<Contest> getContestsOfCategory(final Long categoryId) {
+        return contestRepository.findAllByCategoryId(categoryId);
+    }
+
+    public long countContestsOfCategory(final Long categoryId) {
+        return contestRepository.countByCategoryId(categoryId);
+    }
 }
