@@ -19,4 +19,12 @@ public class ContestFixture {
                 .itemOrder(1)
                 .build();
     }
+
+    public static Contest createContestWithCategoryIdAndName(final Long categoryId, final String contestName) {
+        return Contest.builder()
+                .contestName(contestName)
+                .categoryId(categoryId)
+                .itemOrder(1)
+                .build();
+    }
 }

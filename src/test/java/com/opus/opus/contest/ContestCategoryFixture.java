@@ -10,4 +10,11 @@ public class ContestCategoryFixture {
                 .itemOrder(1)
                 .build();
     }
+
+    public static ContestCategory createContestCategoryWithName(final String categoryName) {
+        return ContestCategory.builder()
+                .categoryName(categoryName)
+                .itemOrder(1)
+                .build();
+    }
 }
