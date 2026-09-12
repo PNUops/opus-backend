@@ -17,6 +17,8 @@ DROP TABLE IF EXISTS `member_roles`;
 DROP TABLE IF EXISTS `staff_info`;
 DROP TABLE IF EXISTS `team`;
 DROP TABLE IF EXISTS `contest_sort`;
+DROP TABLE IF EXISTS `category_contest_sort`;
+DROP TABLE IF EXISTS `sidebar_category_sort`;
 DROP TABLE IF EXISTS `contest_track`;
 DROP TABLE IF EXISTS `contest_template`;
 DROP TABLE IF EXISTS `contest_award`;
@@ -39,6 +41,7 @@ CREATE TABLE `contest` (
   `contest_name` varchar(255) NOT NULL,
   `is_current` bit(1) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
+  `item_order` int NOT NULL DEFAULT 0,
   `max_votes_limit` int NOT NULL,
   `vote_end_at` datetime(6) NOT NULL,
   `vote_start_at` datetime(6) NOT NULL,
@@ -62,6 +65,7 @@ CREATE TABLE `contest_category` (
   `updated_at` datetime(6) DEFAULT NULL,
   `category_name` varchar(255) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
+  `item_order` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 );
 
@@ -179,6 +183,24 @@ CREATE TABLE `contest_sort` (
   `contest_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_contest_id` (`contest_id`)
+);
+
+CREATE TABLE `sidebar_category_sort` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `mode` enum('ASC','DESC','CUSTOM') NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `category_contest_sort` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `mode` enum('ASC','DESC','CUSTOM') NOT NULL,
+  `category_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_category_id` (`category_id`)
 );
 
 CREATE TABLE `file` (

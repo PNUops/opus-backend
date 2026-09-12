@@ -17,6 +17,10 @@ public interface ContestRepository extends JpaRepository<Contest, Long> {
 
     boolean existsByContestName(final String contestName);
 
+    long countByCategoryId(final Long categoryId);
+
+    List<Contest> findAllByCategoryId(final Long categoryId);
+
     List<Contest> findAllByIsCurrentTrue();
 
     @Lock(PESSIMISTIC_WRITE)
