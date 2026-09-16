@@ -45,10 +45,27 @@ include::{snippets}/create-team-comment-fail-not-found/http-response.adoc[]
 
 ====
 
+.❌ Case 2: 교수/외부멘토가 아닌 회원의 팀 피드백(`visibility: TEAM`) 작성
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-team-comment-fail-not-staff/http-request.adoc[]
+
+include::{snippets}/create-team-comment-fail-not-staff/http-response.adoc[]
+
+====
+
 == `GET`: 팀 댓글 목록 조회
+
+NOTE: `visibility` 가 `TEAM` 인 댓글(교수/외부멘토의 팀 피드백)은 해당 팀의 구성원, 관리자, 작성자 본인에게만 목록에 포함됩니다.
 
 .Path Parameters
 include::{snippets}/get-team-comments/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/get-team-comments/query-parameters.adoc[]
 
 .HTTP Request Headers
 include::{snippets}/get-team-comments/request-headers.adoc[]
