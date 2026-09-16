@@ -1,6 +1,11 @@
 package com.opus.opus.team.application;
 
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -48,18 +53,62 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     void setUp() {
         team = teamRepository.save(TeamFixture.createTeam());
         member = memberRepository.save(MemberFixture.createMember());
-        commentCreateRequest = new TeamCommentCreateRequest(commentDescription);
+        commentCreateRequest = new TeamCommentCreateRequest(commentDescription, PUBLIC);
     }
 
     @Test
     @DisplayName("[성공] 팀 댓글이 정상적으로 등록된다.")
     void 팀_댓글이_정상적으로_등록된다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
 
         final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         assertThat(savedComment.getDescription()).isEqualTo(commentCreateRequest.description());
         assertThat(savedComment.getMemberId()).isEqualTo(member.getId());
         assertThat(savedComment.getTeam().getId()).isEqualTo(team.getId());
+        assertThat(savedComment.getVisibility()).isEqualTo(PUBLIC);
+    }
+
+    @Test
+    @DisplayName("[성공] visibility를 지정하지 않으면 공개 댓글로 등록된다.")
+    void visibility를_지정하지_않으면_공개_댓글로_등록된다() {
+        teamCommentCommandService.createComment(team.getId(), member, commentDescription, null);
+
+        final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        assertThat(savedComment.getVisibility()).isEqualTo(PUBLIC);
+    }
+
+    @Test
+    @DisplayName("[성공] 교수는 팀 피드백을 등록할 수 있다.")
+    void 교수는_팀_피드백을_등록할_수_있다() {
+        final Member professor = memberRepository.save(MemberFixture.createMemberWithRole("교수", 1, ROLE_교수));
+
+        teamCommentCommandService.createComment(team.getId(), professor, commentDescription, TEAM);
+
+        final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        assertThat(savedComment.getMemberId()).isEqualTo(professor.getId());
+        assertThat(savedComment.getVisibility()).isEqualTo(TEAM);
+    }
+
+    @Test
+    @DisplayName("[성공] 외부멘토는 팀 피드백을 등록할 수 있다.")
+    void 외부멘토는_팀_피드백을_등록할_수_있다() {
+        final Member mentor = memberRepository.save(MemberFixture.createMemberWithRole("외부멘토", 2, ROLE_외부멘토));
+
+        teamCommentCommandService.createComment(team.getId(), mentor, commentDescription, TEAM);
+
+        final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        assertThat(savedComment.getMemberId()).isEqualTo(mentor.getId());
+        assertThat(savedComment.getVisibility()).isEqualTo(TEAM);
+    }
+
+    @Test
+    @DisplayName("[실패] 교수 또는 외부멘토가 아닌 회원은 팀 피드백을 등록할 수 없다.")
+    void 교수_또는_외부멘토가_아닌_회원은_팀_피드백을_등록할_수_없다() {
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.createComment(team.getId(), member, commentDescription, TEAM);
+        }).isInstanceOf(TeamCommentException.class).hasMessage(NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT.errorMessage());
+
+        assertThat(teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId())).isEmpty();
     }
 
     @Test
@@ -68,14 +117,14 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
         final Long invalidTeamId = 999L;
 
         assertThatThrownBy(() -> {
-            teamCommentCommandService.createComment(invalidTeamId, member.getId(), commentCreateRequest.description());
+            teamCommentCommandService.createComment(invalidTeamId, member, commentCreateRequest.description(), commentCreateRequest.visibility());
         }).isInstanceOf(TeamException.class).hasMessage(NOT_FOUND_TEAM.errorMessage());
     }
 
     @Test
     @DisplayName("[성공] 댓글이 정상적으로 수정된다.")
     void 댓글이_정상적으로_수정된다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final TeamCommentUpdateRequest updateRequest = new TeamCommentUpdateRequest(updatedCommentDescription);
 
@@ -100,7 +149,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 본인이 작성하지 않은 댓글은 수정할 수 없다.")
     void 본인이_작성하지_않은_댓글은_수정할_수_없다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
@@ -114,7 +163,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 다른 팀의 댓글은 수정할 수 없다.")
     void 다른_팀의_댓글은_수정할_수_없다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
 
@@ -129,7 +178,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 댓글이 정상적으로 삭제된다.")
     void 댓글이_정상적으로_삭제된다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
 
         teamCommentCommandService.deleteComment(team.getId(), comment.getId(), member.getId());
@@ -140,7 +189,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 다른 팀의 댓글은 삭제할 수 없다.")
     void 다른_팀의_댓글은_삭제할_수_없다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Team otherTeam = teamRepository.save(TeamFixture.createTeam());
 
@@ -163,7 +212,7 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 본인이 작성하지 않은 댓글은 삭제할 수 없다.")
     void 본인이_작성하지_않은_댓글은_삭제할_수_없다() {
-        teamCommentCommandService.createComment(team.getId(), member.getId(), commentCreateRequest.description());
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
         final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
         final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
