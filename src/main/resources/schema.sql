@@ -341,6 +341,7 @@ CREATE TABLE `team_comment` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `description` varchar(255) NOT NULL,
+  `visibility` enum('PUBLIC','TEAM') NOT NULL DEFAULT 'PUBLIC',
   `is_deleted` bit(1) NOT NULL,
   `member_id` bigint NOT NULL,
   `team_id` bigint NOT NULL,
