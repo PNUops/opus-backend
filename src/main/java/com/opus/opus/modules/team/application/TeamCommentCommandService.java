@@ -1,14 +1,19 @@
 package com.opus.opus.modules.team.application;
 
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 
+import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notification.application.event.TeamCommentNotificationEvent;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamComment;
+import com.opus.opus.modules.team.domain.TeamCommentVisibility;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.exception.TeamCommentException;
 import java.util.List;
@@ -28,18 +33,22 @@ public class TeamCommentCommandService {
     private final TeamMemberConvenience teamMemberConvenience;
     private final ApplicationEventPublisher eventPublisher;
 
-    public void createComment(final Long teamId, final Long memberId, final String description) {
+    public void createComment(final Long teamId, final Member member, final String description,
+                              final TeamCommentVisibility visibility) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
+        final TeamCommentVisibility commentVisibility = visibility != null ? visibility : PUBLIC;
+        validateTeamOnlyCommentWriter(commentVisibility, member);
 
         teamCommentRepository.save(TeamComment.builder()
                 .description(description)
-                .memberId(memberId)
+                .memberId(member.getId())
                 .team(team)
+                .visibility(commentVisibility)
                 .build());
 
         final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
                 .stream()
-                .filter(id -> !id.equals(memberId))
+                .filter(id -> !id.equals(member.getId()))
                 .toList();
         final String teamDisplayName = team.getTeamName() != null ? team.getTeamName() : team.getProjectName();
         eventPublisher.publishEvent(new TeamCommentNotificationEvent(memberIds, teamId, teamDisplayName));
@@ -65,6 +74,12 @@ public class TeamCommentCommandService {
         teamCommentRepository.delete(comment);
     }
 
+    private void validateTeamOnlyCommentWriter(final TeamCommentVisibility visibility, final Member member) {
+        if (visibility == TEAM && !member.hasStaffRole()) {
+            throw new TeamCommentException(NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT);
+        }
+    }
+
     private void isMine(final TeamComment comment, final Long memberId) {
         if (!comment.isMine(memberId)) {
             throw new TeamCommentException(NOT_OWNER_COMMENT);
@@ -81,4 +96,3 @@ public class TeamCommentCommandService {
         }
     }
 }
-

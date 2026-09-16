@@ -37,15 +37,16 @@ public class TeamCommentController {
             @Valid @RequestBody final TeamCommentCreateRequest request,
             @LoginMember final Member member
     ) {
-        teamCommentCommandService.createComment(teamId, member.getId(), request.description());
+        teamCommentCommandService.createComment(teamId, member, request.description(), request.visibility());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
     public ResponseEntity<List<TeamCommentResponse>> getTeamComments(
-            @PathVariable final Long teamId
+            @PathVariable final Long teamId,
+            @LoginMember final Member member
     ) {
-        List<TeamCommentResponse> response = teamCommentQueryService.getComments(teamId);
+        List<TeamCommentResponse> response = teamCommentQueryService.getComments(teamId, member);
         return ResponseEntity.ok(response);
     }
 
