@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -44,9 +45,10 @@ public class TeamCommentController {
     @GetMapping
     public ResponseEntity<List<TeamCommentResponse>> getTeamComments(
             @PathVariable final Long teamId,
+            @RequestParam(required = false) final String visibility,
             @LoginMember final Member member
     ) {
-        List<TeamCommentResponse> response = teamCommentQueryService.getComments(teamId, member);
+        List<TeamCommentResponse> response = teamCommentQueryService.getComments(teamId, member, visibility);
         return ResponseEntity.ok(response);
     }
 
