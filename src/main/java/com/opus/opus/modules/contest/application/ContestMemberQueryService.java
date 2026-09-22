@@ -16,7 +16,6 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsRes
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
-import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
@@ -80,7 +79,7 @@ public class ContestMemberQueryService {
         final Team team = teamConvenience.getValidateTeamInContest(teamId, contestId);
         validateAssignedTeam(contestId, mentor.getId(), teamId);
 
-        final String trackName = trackNameMap(contestId).get(team.getTrackId());
+        final String trackName = contestTrackConvenience.getTrackNameMap(contestId).get(team.getTrackId());
 
         final List<ContestSubmission> submissions =
                 contestSubmissionRepository.findStaffViewableSubmissionsByTeam(contestId, teamId);
@@ -197,7 +196,7 @@ public class ContestMemberQueryService {
         }
 
         final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
-        final Map<Long, String> trackNames = trackNameMap(contest.getId());
+        final Map<Long, String> trackNames = contestTrackConvenience.getTrackNameMap(contest.getId());
         final List<String> assignedTrackNames = teamIds.stream()
                 .map(teams::get)
                 .filter(Objects::nonNull)
@@ -222,7 +221,7 @@ public class ContestMemberQueryService {
 
         final Long contestId = contestMember.getContest().getId();
         final Map<Long, Team> teams = teamConvenience.getTeamsByIds(teamIds);
-        final Map<Long, String> trackNames = trackNameMap(contestId);
+        final Map<Long, String> trackNames = contestTrackConvenience.getTrackNameMap(contestId);
         final Map<Long, Long> pendingCounts = pendingFeedbackCountsByTeam(contestId, memberId, teamIds);
 
         return teamIds.stream()
@@ -237,11 +236,6 @@ public class ContestMemberQueryService {
         if (!contestMemberConvenience.isAssignedTeam(contestId, memberId, teamId)) {
             throw new ContestMemberException(NOT_ASSIGNED_TEAM);
         }
-    }
-
-    private Map<Long, String> trackNameMap(final Long contestId) {
-        return contestTrackConvenience.getValidateExistTracks(contestId).stream()
-                .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
     }
 
     private Map<Long, Long> pendingFeedbackCountsByTeam(final Long contestId, final Long memberId,

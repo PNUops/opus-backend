@@ -28,7 +28,6 @@ import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.contest.domain.ContestTemplate;
-import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -226,9 +224,7 @@ public class ContestQueryService {
         contestConvenience.getValidateExistContest(contestId);
 
         final List<Team> teamList = teamConvenience.getTeamsOfContest(contestId);
-        final Map<Long, String> trackNameMap = contestTrackConvenience.getValidateExistTracks(contestId)
-                .stream()
-                .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
+        final Map<Long, String> trackNameMap = contestTrackConvenience.getTrackNameMap(contestId);
 
         return teamList.stream()
                 .map(team -> ContestSubmissionResponse.from(team, trackNameMap.get(team.getTrackId())))
