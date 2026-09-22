@@ -8,6 +8,8 @@ import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.contest.exception.ContestTrackException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,5 +39,10 @@ public class ContestTrackConvenience {
 
     public List<ContestTrack> getValidateExistTracks(final Long contestId) {
         return contestTrackRepository.findAllByContestId(contestId);
+    }
+
+    public Map<Long, String> getTrackNameMap(final Long contestId) {
+        return getValidateExistTracks(contestId).stream()
+                .collect(Collectors.toMap(ContestTrack::getId, ContestTrack::getTrackName));
     }
 }
