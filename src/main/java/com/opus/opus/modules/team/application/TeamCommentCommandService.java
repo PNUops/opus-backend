@@ -1,7 +1,6 @@
 package com.opus.opus.modules.team.application;
 
-import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
-import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_LENGTH_EXCEEDED;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
@@ -36,15 +35,16 @@ public class TeamCommentCommandService {
     public void createComment(final Long teamId, final Member member, final String description,
                               final TeamCommentVisibility visibility) {
         final Team team = teamConvenience.getValidateExistTeam(teamId);
-        final TeamCommentVisibility commentVisibility = visibility != null ? visibility : PUBLIC;
-        validateTeamOnlyCommentWriter(commentVisibility, member);
-
-        teamCommentRepository.save(TeamComment.builder()
+        final TeamComment comment = TeamComment.builder()
                 .description(description)
                 .memberId(member.getId())
                 .team(team)
-                .visibility(commentVisibility)
-                .build());
+                .visibility(visibility)
+                .build();
+        validateTeamOnlyCommentWriter(comment, member);
+        validateDescriptionLength(comment, description);
+
+        teamCommentRepository.save(comment);
 
         final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
                 .stream()
@@ -60,6 +60,7 @@ public class TeamCommentCommandService {
 
         validateCommentBelongsToTeam(comment, teamId);
         isMine(comment, memberId);
+        validateDescriptionLength(comment, newDescription);
 
         comment.updateDescription(newDescription);
     }
@@ -74,9 +75,16 @@ public class TeamCommentCommandService {
         teamCommentRepository.delete(comment);
     }
 
-    private void validateTeamOnlyCommentWriter(final TeamCommentVisibility visibility, final Member member) {
-        if (visibility == TEAM && !member.hasStaffRole()) {
+    private void validateTeamOnlyCommentWriter(final TeamComment comment, final Member member) {
+        if (!comment.isPublic() && !member.hasStaffRole()) {
             throw new TeamCommentException(NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT);
+        }
+    }
+
+    private void validateDescriptionLength(final TeamComment comment, final String description) {
+        if (comment.isDescriptionLengthExceeded(description)) {
+            final String message = String.format(COMMENT_LENGTH_EXCEEDED.errorMessage(), comment.getMaxDescriptionLength());
+            throw new TeamCommentException(COMMENT_LENGTH_EXCEEDED, message);
         }
     }
 
