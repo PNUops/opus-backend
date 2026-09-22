@@ -206,6 +206,21 @@ public class ContestMemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 외부멘토도 담당 대회 목록을 조회한다.")
+    void 외부멘토도_담당_대회_목록을_조회한다() {
+        final List<MentorContestResponse> contests = contestMemberQueryService.getMentorContests(mentor);
+
+        assertThat(contests).hasSize(1);
+
+        final MentorContestResponse response = contests.get(0);
+        assertThat(response.contestId()).isEqualTo(contest.getId());
+        assertThat(response.categoryName()).isEqualTo(category.getCategoryName());
+        assertThat(response.assignedTrackNames()).containsExactly(track.getTrackName());
+        assertThat(response.totalPendingFeedbackCount()).isEqualTo(4);
+        assertThat(response.totalAssignedTeamCount()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("[성공] 배정되지 않은 멘토는 빈 대회 목록을 반환한다.")
     void 배정되지_않은_멘토는_빈_대회_목록을_반환한다() {
         final Member unassigned = memberRepository.save(createMemberWithRole("박멘토", 3, ROLE_외부멘토));
@@ -257,6 +272,20 @@ public class ContestMemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 외부멘토가 조회하면 담당 팀의 roleType이 외부멘토로 내려간다.")
+    void 외부멘토가_조회하면_담당_팀의_roleType이_외부멘토로_내려간다() {
+        final List<MentorProjectResponse> teams =
+                contestMemberQueryService.getMentorContestTeams(contest.getId(), mentor);
+
+        assertThat(teams).hasSize(1);
+
+        final MentorProjectResponse develop = findProject(teams, developTeam.getId());
+        assertThat(develop.trackName()).isEqualTo(track.getTrackName());
+        assertThat(develop.roleType()).isEqualTo(ROLE_외부멘토.name());
+        assertThat(develop.pendingFeedbackCount()).isEqualTo(4);
+    }
+
+    @Test
     @DisplayName("[실패] 존재하지 않는 대회의 담당 팀 목록은 조회할 수 없다.")
     void 존재하지_않는_대회의_담당_팀_목록은_조회할_수_없다() {
         assertThatThrownBy(() -> contestMemberQueryService.getMentorContestTeams(-1L, professor))
@@ -293,6 +322,21 @@ public class ContestMemberQueryServiceTest extends IntegrationTest {
         assertThat(reviewed.files())
                 .extracting(ContestSubmissionFileResponse::fileName, ContestSubmissionFileResponse::fileSize)
                 .containsExactly(tuple("중간발표.pdf", 13002342L));
+    }
+
+    @Test
+    @DisplayName("[성공] 외부멘토는 본인이 남긴 피드백을 기준으로 검토 상태를 조회한다.")
+    void 외부멘토는_본인이_남긴_피드백을_기준으로_검토_상태를_조회한다() {
+        final TeamSubmissionsResponse response =
+                contestMemberQueryService.getTeamSubmissions(contest.getId(), developTeam.getId(), mentor);
+
+        assertThat(response.teamId()).isEqualTo(developTeam.getId());
+        assertThat(response.trackName()).isEqualTo(track.getTrackName());
+        assertThat(response.pendingFeedbackCount()).isEqualTo(4);
+        assertThat(response.submissions())
+                .extracting(MentorSubmissionResponse::feedbackStatus)
+                .containsExactly(FeedbackStatus.PENDING, FeedbackStatus.PENDING,
+                        FeedbackStatus.PENDING, FeedbackStatus.PENDING);
     }
 
     @Test
