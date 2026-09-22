@@ -3,6 +3,7 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_LENGTH_EXCEEDED;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -135,6 +136,34 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 공개 범위의 최대 글자 수를 초과한 댓글 등록 시 400 에러를 반환한다.")
+    void 공개_범위의_최대_글자_수를_초과한_댓글_등록_시_에러를_반환한다() throws Exception {
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("a".repeat(256), PUBLIC);
+
+        willThrow(new TeamCommentException(COMMENT_LENGTH_EXCEEDED, "댓글은 최대 255자까지 작성할 수 있습니다."))
+                .given(teamCommentCommandService)
+                .createComment(any(), any(), any(), any());
+
+        mockMvc.perform(post("/teams/{teamId}/comments", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-team-comment-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("teamId").description("댓글을 등록할 팀의 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("description", "댓글 내용 (PUBLIC: 최대 255자, TEAM: 최대 3000자)"),
+                                stringFieldWithPath("visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 팀 피드백)").optional()
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 팀의 댓글 목록을 정상적으로 조회할 수 있다.")
     void 팀의_댓글_목록을_정상적으로_조회할_수_있다() throws Exception {
         final LocalDateTime now = LocalDateTime.of(2026, 9, 30, 10, 0, 0);
@@ -225,6 +254,34 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("description", "수정할 댓글 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 공개 범위의 최대 글자 수를 초과한 댓글 수정 시 400 에러를 반환한다.")
+    void 공개_범위의_최대_글자_수를_초과한_댓글_수정_시_에러를_반환한다() throws Exception {
+        final TeamCommentUpdateRequest request = new TeamCommentUpdateRequest("a".repeat(256));
+
+        willThrow(new TeamCommentException(COMMENT_LENGTH_EXCEEDED, "댓글은 최대 255자까지 작성할 수 있습니다."))
+                .given(teamCommentCommandService)
+                .updateComment(any(), any(), any(), any());
+
+        mockMvc.perform(patch("/teams/{teamId}/comments/{commentId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-team-comment-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("commentId").description("수정할 댓글 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("description", "수정할 댓글 내용 (댓글의 공개 범위 기준 PUBLIC: 최대 255자, TEAM: 최대 3000자)")
                         )
                 ));
     }

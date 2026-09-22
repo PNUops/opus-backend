@@ -4,6 +4,7 @@ import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_LENGTH_EXCEEDED;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
@@ -122,6 +123,45 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[실패] 공개 댓글은 255자를 초과하면 등록할 수 없다.")
+    void 공개_댓글은_255자를_초과하면_등록할_수_없다() {
+        final String tooLongDescription = "a".repeat(256);
+
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.createComment(team.getId(), member, tooLongDescription, PUBLIC);
+        }).isInstanceOf(TeamCommentException.class)
+                .hasMessage(String.format(COMMENT_LENGTH_EXCEEDED.errorMessage(), 255));
+
+        assertThat(teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 팀 피드백은 3000자까지 등록할 수 있다.")
+    void 팀_피드백은_3000자까지_등록할_수_있다() {
+        final Member professor = memberRepository.save(MemberFixture.createMemberWithRole("교수", 1, ROLE_교수));
+        final String maxLengthDescription = "a".repeat(3000);
+
+        teamCommentCommandService.createComment(team.getId(), professor, maxLengthDescription, TEAM);
+
+        final TeamComment savedComment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        assertThat(savedComment.getDescription()).hasSize(3000);
+    }
+
+    @Test
+    @DisplayName("[실패] 팀 피드백은 3000자를 초과하면 등록할 수 없다.")
+    void 팀_피드백은_3000자를_초과하면_등록할_수_없다() {
+        final Member professor = memberRepository.save(MemberFixture.createMemberWithRole("교수", 1, ROLE_교수));
+        final String tooLongDescription = "a".repeat(3001);
+
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.createComment(team.getId(), professor, tooLongDescription, TEAM);
+        }).isInstanceOf(TeamCommentException.class)
+                .hasMessage(String.format(COMMENT_LENGTH_EXCEEDED.errorMessage(), 3000));
+
+        assertThat(teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId())).isEmpty();
+    }
+
+    @Test
     @DisplayName("[성공] 댓글이 정상적으로 수정된다.")
     void 댓글이_정상적으로_수정된다() {
         teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
@@ -173,6 +213,22 @@ public class TeamCommentCommandServiceTest extends IntegrationTest {
             teamCommentCommandService.updateComment(otherTeam.getId(), comment.getId(), member.getId(), updateRequest.description());
         }).isInstanceOf(TeamCommentException.class)
                 .hasMessage(COMMENT_NOT_BELONG_TO_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 공개 댓글은 255자를 초과하는 내용으로 수정할 수 없다.")
+    void 공개_댓글은_255자를_초과하는_내용으로_수정할_수_없다() {
+        teamCommentCommandService.createComment(team.getId(), member, commentCreateRequest.description(), commentCreateRequest.visibility());
+        final TeamComment comment = teamCommentRepository.findAllByTeamIdOrderByIdDesc(team.getId()).get(0);
+        final String tooLongDescription = "a".repeat(256);
+
+        assertThatThrownBy(() -> {
+            teamCommentCommandService.updateComment(team.getId(), comment.getId(), member.getId(), tooLongDescription);
+        }).isInstanceOf(TeamCommentException.class)
+                .hasMessage(String.format(COMMENT_LENGTH_EXCEEDED.errorMessage(), 255));
+
+        final TeamComment unchangedComment = teamCommentRepository.findById(comment.getId()).orElseThrow();
+        assertThat(unchangedComment.getDescription()).isEqualTo(commentCreateRequest.description());
     }
 
     @Test
