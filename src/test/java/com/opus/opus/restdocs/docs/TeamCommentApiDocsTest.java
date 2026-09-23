@@ -3,7 +3,6 @@ package com.opus.opus.restdocs.docs;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
 import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
-import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_LENGTH_EXCEEDED;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
@@ -136,13 +135,9 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 공개 범위의 최대 글자 수를 초과한 댓글 등록 시 400 에러를 반환한다.")
-    void 공개_범위의_최대_글자_수를_초과한_댓글_등록_시_에러를_반환한다() throws Exception {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("a".repeat(256), PUBLIC);
-
-        willThrow(new TeamCommentException(COMMENT_LENGTH_EXCEEDED, "댓글은 최대 255자까지 작성할 수 있습니다."))
-                .given(teamCommentCommandService)
-                .createComment(any(), any(), any(), any());
+    @DisplayName("[실패] 댓글 내용이 3000자를 초과하면 댓글 등록 시 400 에러를 반환한다.")
+    void 댓글_내용이_3000자를_초과하면_댓글_등록_시_400_에러를_반환한다() throws Exception {
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("a".repeat(3001), PUBLIC);
 
         mockMvc.perform(post("/teams/{teamId}/comments", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -157,7 +152,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
                         ),
                         requestFields(
-                                stringFieldWithPath("description", "댓글 내용 (PUBLIC: 최대 255자, TEAM: 최대 3000자)"),
+                                stringFieldWithPath("description", "댓글 내용 (3000자 초과)"),
                                 stringFieldWithPath("visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 팀 피드백)").optional()
                         )
                 ));
@@ -259,13 +254,9 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 공개 범위의 최대 글자 수를 초과한 댓글 수정 시 400 에러를 반환한다.")
-    void 공개_범위의_최대_글자_수를_초과한_댓글_수정_시_에러를_반환한다() throws Exception {
-        final TeamCommentUpdateRequest request = new TeamCommentUpdateRequest("a".repeat(256));
-
-        willThrow(new TeamCommentException(COMMENT_LENGTH_EXCEEDED, "댓글은 최대 255자까지 작성할 수 있습니다."))
-                .given(teamCommentCommandService)
-                .updateComment(any(), any(), any(), any());
+    @DisplayName("[실패] 댓글 내용이 3000자를 초과하면 댓글 수정 시 400 에러를 반환한다.")
+    void 댓글_내용이_3000자를_초과하면_댓글_수정_시_400_에러를_반환한다() throws Exception {
+        final TeamCommentUpdateRequest request = new TeamCommentUpdateRequest("a".repeat(3001));
 
         mockMvc.perform(patch("/teams/{teamId}/comments/{commentId}", 1, 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -281,7 +272,7 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
                         ),
                         requestFields(
-                                stringFieldWithPath("description", "수정할 댓글 내용 (댓글의 공개 범위 기준 PUBLIC: 최대 255자, TEAM: 최대 3000자)")
+                                stringFieldWithPath("description", "수정할 댓글 내용 (3000자 초과)")
                         )
                 ));
     }
