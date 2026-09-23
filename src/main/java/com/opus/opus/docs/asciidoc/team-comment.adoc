@@ -57,7 +57,7 @@ include::{snippets}/create-team-comment-fail-not-staff/http-response.adoc[]
 
 ====
 
-.❌ Case 3: 공개 범위별 최대 글자 수 초과 (`PUBLIC`: 255자, `TEAM`: 3000자)
+.❌ Case 3: 댓글 내용 3000자 초과
 
 [%collapsible]
 
@@ -122,7 +122,7 @@ include::{snippets}/update-team-comment-fail-not-owner/http-response.adoc[]
 
 ====
 
-.❌ Case 2: 공개 범위별 최대 글자 수 초과 (`PUBLIC`: 255자, `TEAM`: 3000자)
+.❌ Case 2: 댓글 내용 3000자 초과
 
 [%collapsible]
 
