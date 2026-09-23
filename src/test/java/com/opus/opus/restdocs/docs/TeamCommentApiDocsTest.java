@@ -1,5 +1,9 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.PUBLIC;
+import static com.opus.opus.modules.team.domain.TeamCommentVisibility.TEAM;
+import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_OWNER_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamExceptionType.NOT_FOUND_TEAM;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,6 +21,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,6 +33,7 @@ import com.opus.opus.modules.team.application.dto.response.TeamCommentResponse;
 import com.opus.opus.modules.team.exception.TeamCommentException;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,9 +55,9 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 유효한 요청이면 팀 댓글이 정상적으로 등록된다.")
     void 유효한_요청이면_팀_댓글이_정상적으로_등록된다() throws Exception {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("정말 멋진 프로젝트네요!");
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("정말 멋진 프로젝트네요!", PUBLIC);
 
-        doNothing().when(teamCommentCommandService).createComment(any(), any(), any());
+        doNothing().when(teamCommentCommandService).createComment(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/comments", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -66,7 +72,8 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
                         ),
                         requestFields(
-                                stringFieldWithPath("description", "댓글 내용")
+                                stringFieldWithPath("description", "댓글 내용"),
+                                stringFieldWithPath("visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 교수/외부멘토의 팀 피드백 — 팀 구성원/관리자/작성자만 조회, 미지정 시 PUBLIC)").optional()
                         )
                 ));
     }
@@ -74,11 +81,11 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 팀에 댓글 등록 시 404 에러를 반환한다.")
     void 존재하지_않는_팀에_댓글_등록_시_에러를_반환한다() throws Exception {
-        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("정말 멋진 프로젝트네요!");
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("정말 멋진 프로젝트네요!", PUBLIC);
 
         willThrow(new TeamException(NOT_FOUND_TEAM))
                 .given(teamCommentCommandService)
-                .createComment(any(), any(), any());
+                .createComment(any(), any(), any(), any());
 
         mockMvc.perform(post("/teams/{teamId}/comments", 999)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
@@ -93,7 +100,60 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
                         ),
                         requestFields(
-                                stringFieldWithPath("description", "댓글 내용")
+                                stringFieldWithPath("description", "댓글 내용"),
+                                stringFieldWithPath("visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 교수/외부멘토의 팀 피드백 — 팀 구성원/관리자/작성자만 조회, 미지정 시 PUBLIC)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 교수 또는 외부멘토가 아닌 회원이 팀 피드백 등록 시 403 에러를 반환한다.")
+    void 교수_또는_외부멘토가_아닌_회원이_팀_피드백_등록_시_에러를_반환한다() throws Exception {
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("발표 흐름이 명확해서 좋았습니다.", TEAM);
+
+        willThrow(new TeamCommentException(NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT))
+                .given(teamCommentCommandService)
+                .createComment(any(), any(), any(), any());
+
+        mockMvc.perform(post("/teams/{teamId}/comments", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andDo(document("create-team-comment-fail-not-staff",
+                        pathParameters(
+                                parameterWithName("teamId").description("댓글을 등록할 팀의 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("description", "댓글 내용"),
+                                stringFieldWithPath("visibility", "공개 범위 (TEAM: 팀 피드백)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 댓글 내용이 3000자를 초과하면 댓글 등록 시 400 에러를 반환한다.")
+    void 댓글_내용이_3000자를_초과하면_댓글_등록_시_400_에러를_반환한다() throws Exception {
+        final TeamCommentCreateRequest request = new TeamCommentCreateRequest("a".repeat(3001), PUBLIC);
+
+        mockMvc.perform(post("/teams/{teamId}/comments", 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-team-comment-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("teamId").description("댓글을 등록할 팀의 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("description", "댓글 내용 (3000자 초과)"),
+                                stringFieldWithPath("visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 팀 피드백)").optional()
                         )
                 ));
     }
@@ -101,12 +161,14 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[성공] 팀의 댓글 목록을 정상적으로 조회할 수 있다.")
     void 팀의_댓글_목록을_정상적으로_조회할_수_있다() throws Exception {
+        final LocalDateTime now = LocalDateTime.of(2026, 9, 30, 10, 0, 0);
         final List<TeamCommentResponse> responses = List.of(
-                new TeamCommentResponse(1L, "정말 멋진 프로젝트네요!", 1L, "이옵스", 1L),
-                new TeamCommentResponse(2L, "고생하셨습니다!", 2L, "김옵스", 1L)
+                new TeamCommentResponse(2L, "발표 흐름이 명확해서 좋았습니다. 시장 분석 근거를 보완해 보세요.", TEAM, 2L, "김교수",
+                        ROLE_교수.name(), 1L, now, now),
+                new TeamCommentResponse(1L, "정말 멋진 프로젝트네요!", PUBLIC, 1L, "이옵스", null, 1L, now, now)
         );
 
-        when(teamCommentQueryService.getComments(any())).thenReturn(responses);
+        when(teamCommentQueryService.getComments(any(), any(), any())).thenReturn(responses);
 
         mockMvc.perform(get("/teams/{teamId}/comments", 1)
                         .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
@@ -115,16 +177,24 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                         pathParameters(
                                 parameterWithName("teamId").description("댓글을 조회할 팀의 ID")
                         ),
+                        queryParameters(
+                                parameterWithName("visibility").optional()
+                                        .description("공개 범위 필터 (PUBLIC / TEAM, 미지정 시 전체)")
+                        ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
                         ),
                         responseFields(
-                                arrayFieldWithPath("[]", "댓글 목록"),
+                                arrayFieldWithPath("[]", "댓글 목록 (TEAM 팀 피드백은 팀 구성원/관리자/작성자에게만 포함)"),
                                 numberFieldWithPath("[].commentId", "댓글 ID"),
                                 stringFieldWithPath("[].description", "댓글 내용"),
+                                stringFieldWithPath("[].visibility", "공개 범위 (PUBLIC: 공개 댓글, TEAM: 팀 피드백)"),
                                 numberFieldWithPath("[].memberId", "작성자 ID"),
                                 stringFieldWithPath("[].memberName", "작성자 이름"),
-                                numberFieldWithPath("[].teamId", "팀 ID")
+                                stringFieldWithPath("[].memberRoleType", "작성자 역할 (교수/외부멘토만, 그 외 null)").optional(),
+                                numberFieldWithPath("[].teamId", "팀 ID"),
+                                dateTimeFieldWithPath("[].createdAt", "작성 일시"),
+                                dateTimeFieldWithPath("[].updatedAt", "수정 일시")
                         )
                 ));
     }
@@ -179,6 +249,30 @@ public class TeamCommentApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("description", "수정할 댓글 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 댓글 내용이 3000자를 초과하면 댓글 수정 시 400 에러를 반환한다.")
+    void 댓글_내용이_3000자를_초과하면_댓글_수정_시_400_에러를_반환한다() throws Exception {
+        final TeamCommentUpdateRequest request = new TeamCommentUpdateRequest("a".repeat(3001));
+
+        mockMvc.perform(patch("/teams/{teamId}/comments/{commentId}", 1, 1)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-team-comment-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("commentId").description("수정할 댓글 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("description", "수정할 댓글 내용 (3000자 초과)")
                         )
                 ));
     }
