@@ -1,6 +1,5 @@
 package com.opus.opus.modules.team.application;
 
-import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_LENGTH_EXCEEDED;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.COMMENT_NOT_BELONG_TO_TEAM;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT;
 import static com.opus.opus.modules.team.exception.TeamCommentExceptionType.NOT_FOUND_COMMENT;
@@ -42,7 +41,6 @@ public class TeamCommentCommandService {
                 .visibility(visibility)
                 .build();
         validateTeamOnlyCommentWriter(comment, member);
-        validateDescriptionLength(comment, description);
 
         teamCommentRepository.save(comment);
 
@@ -60,7 +58,6 @@ public class TeamCommentCommandService {
 
         validateCommentBelongsToTeam(comment, teamId);
         isMine(comment, memberId);
-        validateDescriptionLength(comment, newDescription);
 
         comment.updateDescription(newDescription);
     }
@@ -78,13 +75,6 @@ public class TeamCommentCommandService {
     private void validateTeamOnlyCommentWriter(final TeamComment comment, final Member member) {
         if (!comment.isPublic() && !member.hasStaffRole()) {
             throw new TeamCommentException(NOT_ALLOWED_TO_WRITE_TEAM_ONLY_COMMENT);
-        }
-    }
-
-    private void validateDescriptionLength(final TeamComment comment, final String description) {
-        if (comment.isDescriptionLengthExceeded(description)) {
-            final String message = String.format(COMMENT_LENGTH_EXCEEDED.errorMessage(), comment.getMaxDescriptionLength());
-            throw new TeamCommentException(COMMENT_LENGTH_EXCEEDED, message);
         }
     }
 

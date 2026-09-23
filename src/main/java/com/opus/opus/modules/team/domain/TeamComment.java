@@ -26,14 +26,13 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE team_comment SET is_deleted = true where id = ?")
 public class TeamComment extends BaseEntity {
 
-    private static final int MAX_PUBLIC_DESCRIPTION_LENGTH = 255;
-    private static final int MAX_TEAM_DESCRIPTION_LENGTH = 3000;
+    private static final int MAX_DESCRIPTION_LENGTH = 3000;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = MAX_TEAM_DESCRIPTION_LENGTH)
+    @Column(nullable = false, length = MAX_DESCRIPTION_LENGTH)
     private String description;
 
     @Column(nullable = false)
@@ -70,13 +69,5 @@ public class TeamComment extends BaseEntity {
 
     public boolean isPublic() {
         return visibility == TeamCommentVisibility.PUBLIC;
-    }
-
-    public boolean isDescriptionLengthExceeded(final String description) {
-        return description.length() > getMaxDescriptionLength();
-    }
-
-    public int getMaxDescriptionLength() {
-        return isPublic() ? MAX_PUBLIC_DESCRIPTION_LENGTH : MAX_TEAM_DESCRIPTION_LENGTH;
     }
 }
