@@ -114,9 +114,11 @@ public class ContestCommandService {
     public ContestResponse createContest(final ContestRequest request) {
         contestConvenience.validateDuplicateContestName(request.contestName());
         ContestCategory contestCategory = contestCategoryConvenience.getValidateExistCategory(request.categoryId());
+        final int itemOrder = (int) contestConvenience.countContestsOfCategory(request.categoryId()) + 1;
         final Contest contest = Contest.builder()
                 .contestName(request.contestName())
                 .categoryId(request.categoryId())
+                .itemOrder(itemOrder)
                 .build();
         contestRepository.save(contest);
 
@@ -138,7 +140,16 @@ public class ContestCommandService {
             contestConvenience.validateDuplicateContestName(request.contestName());
         }
 
+        final boolean categoryChanged = !contest.getCategoryId().equals(request.categoryId());
+        final int newItemOrder = categoryChanged
+                ? (int) contestConvenience.countContestsOfCategory(request.categoryId()) + 1
+                : contest.getItemOrder();
+
         contest.updateContest(request.categoryId(), request.contestName());
+
+        if (categoryChanged) {
+            contest.updateItemOrder(newItemOrder);
+        }
     }
 
     public void deleteContest(final Long contestId) {

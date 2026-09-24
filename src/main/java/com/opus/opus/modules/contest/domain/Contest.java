@@ -49,11 +49,14 @@ public class Contest extends BaseEntity {
     @Column(nullable = false)
     private Integer maxVotesLimit;
 
+    @Column(nullable = false)
+    private Integer itemOrder;
+
     @OneToMany(mappedBy = "contest")
     private final List<ContestAward> contestAwards = new ArrayList<>();
 
     @Builder
-    private Contest(final String contestName, final Long categoryId) {
+    private Contest(final String contestName, final Long categoryId, final Integer itemOrder) {
         this.contestName = contestName;
         this.categoryId = categoryId;
         this.isCurrent = false;
@@ -61,6 +64,7 @@ public class Contest extends BaseEntity {
         this.voteStartAt = LocalDateTime.now();
         this.voteEndAt = LocalDateTime.now();
         this.maxVotesLimit = 0;
+        this.itemOrder = itemOrder;
     }
 
     public void updateIsCurrent(final Boolean isCurrent) {
@@ -70,6 +74,10 @@ public class Contest extends BaseEntity {
     public void updateContest(final Long categoryId, final String contestName) {
         this.categoryId = categoryId;
         this.contestName = contestName;
+    }
+
+    public void updateItemOrder(final Integer itemOrder) {
+        this.itemOrder = itemOrder;
     }
 
     public void updateMaxVotesLimit(final Integer maxVotesLimit) {
