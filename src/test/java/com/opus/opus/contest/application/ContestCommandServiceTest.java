@@ -295,6 +295,41 @@ public class ContestCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 대회를 삭제한 뒤 생성하면 itemOrder가 충돌하지 않는다.")
+    void 대회를_삭제한_뒤_생성하면_itemOrder가_충돌하지_않는다() {
+        final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        final var first = contestCommandService.createContest(new ContestRequest("대회 A", category.getId()));
+        contestCommandService.createContest(new ContestRequest("대회 B", category.getId()));
+        final Contest contestA = contestRepository.findById(first.contestId()).orElseThrow();
+
+        contestCommandService.deleteContest(contestA.getId());
+        final var third = contestCommandService.createContest(new ContestRequest("대회 C", category.getId()));
+
+        final Contest contestC = contestRepository.findById(third.contestId()).orElseThrow();
+        final List<Integer> itemOrders = contestRepository.findAllByCategoryId(category.getId()).stream()
+                .map(Contest::getItemOrder)
+                .toList();
+        assertThat(itemOrders).doesNotHaveDuplicates();
+        assertThat(contestC.getItemOrder()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 대회를 다른 카테고리로 이동하면 원래 카테고리의 빈자리가 재배치된다.")
+    void 대회를_다른_카테고리로_이동하면_원래_카테고리의_빈자리가_재배치된다() {
+        final ContestCategory oldCategory = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        final ContestCategory newCategory = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        final var first = contestCommandService.createContest(new ContestRequest("대회 A", oldCategory.getId()));
+        final var second = contestCommandService.createContest(new ContestRequest("대회 B", oldCategory.getId()));
+        final Contest movingContest = contestRepository.findById(first.contestId()).orElseThrow();
+
+        contestCommandService.updateContest(movingContest.getId(),
+                new ContestRequest(movingContest.getContestName(), newCategory.getId()));
+
+        final Contest remainingContest = contestRepository.findById(second.contestId()).orElseThrow();
+        assertThat(remainingContest.getItemOrder()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("[성공] 대회의 카테고리가 변경되지 않으면 itemOrder는 유지된다.")
     void 대회의_카테고리가_변경되지_않으면_itemOrder는_유지된다() {
         final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());

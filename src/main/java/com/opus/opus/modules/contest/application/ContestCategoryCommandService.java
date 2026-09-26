@@ -53,7 +53,7 @@ public class ContestCategoryCommandService {
 
     public void createCategory(final ContestCategoryRequest request) {
         contestCategoryConvenience.validateDuplicateCategoryName(request.categoryName());
-        final int itemOrder = (int) contestCategoryRepository.count() + 1;
+        final int itemOrder = contestCategoryRepository.findMaxItemOrder() + 1;
         final ContestCategory contestCategory = ContestCategory.builder()
                 .categoryName(request.categoryName())
                 .itemOrder(itemOrder)
@@ -72,9 +72,11 @@ public class ContestCategoryCommandService {
     public void deleteCategory(final Long categoryId) {
         final ContestCategory contestCategory = contestCategoryConvenience.getValidateExistCategory(categoryId);
         contestConvenience.validateAllContestsDeletedInCategory(categoryId);
+        final int deletedOrder = contestCategory.getItemOrder();
         categoryContestSortRepository.findByCategoryId(categoryId)
                 .ifPresent(categoryContestSortRepository::delete);
         contestCategoryRepository.delete(contestCategory);
+        contestCategoryRepository.updateItemOrderAfterDeletion(deletedOrder);
     }
 
     public void updateCategorySort(final SidebarCategorySortRequest request) {

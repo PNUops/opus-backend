@@ -76,6 +76,24 @@ public class ContestCategoryCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 카테고리를 삭제한 뒤 생성하면 itemOrder가 충돌하지 않는다.")
+    void 카테고리를_삭제한_뒤_생성하면_itemOrder가_충돌하지_않는다() {
+        contestCategoryCommandService.createCategory(new ContestCategoryRequest("카테고리 A"));
+        contestCategoryCommandService.createCategory(new ContestCategoryRequest("카테고리 B"));
+        final ContestCategory categoryA = contestCategoryRepository.findAll().stream()
+                .filter(category -> category.getCategoryName().equals("카테고리 A"))
+                .findFirst().orElseThrow();
+
+        contestCategoryCommandService.deleteCategory(categoryA.getId());
+        contestCategoryCommandService.createCategory(new ContestCategoryRequest("카테고리 C"));
+
+        final List<Integer> itemOrders = contestCategoryRepository.findAll().stream()
+                .map(ContestCategory::getItemOrder)
+                .toList();
+        assertThat(itemOrders).doesNotHaveDuplicates();
+    }
+
+    @Test
     @DisplayName("[성공] 카테고리 정렬 모드를 변경하면 모드가 반영된다.")
     void 카테고리_정렬_모드를_변경하면_모드가_반영된다() {
         contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(CUSTOM));

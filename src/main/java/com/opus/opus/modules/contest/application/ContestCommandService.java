@@ -114,7 +114,7 @@ public class ContestCommandService {
     public ContestResponse createContest(final ContestRequest request) {
         contestConvenience.validateDuplicateContestName(request.contestName());
         ContestCategory contestCategory = contestCategoryConvenience.getValidateExistCategory(request.categoryId());
-        final int itemOrder = (int) contestConvenience.countContestsOfCategory(request.categoryId()) + 1;
+        final int itemOrder = contestRepository.findMaxItemOrderByCategoryId(request.categoryId()) + 1;
         final Contest contest = Contest.builder()
                 .contestName(request.contestName())
                 .categoryId(request.categoryId())
@@ -141,20 +141,25 @@ public class ContestCommandService {
         }
 
         final boolean categoryChanged = !contest.getCategoryId().equals(request.categoryId());
+        final Long oldCategoryId = contest.getCategoryId();
+        final int oldItemOrder = contest.getItemOrder();
         final int newItemOrder = categoryChanged
-                ? (int) contestConvenience.countContestsOfCategory(request.categoryId()) + 1
+                ? contestRepository.findMaxItemOrderByCategoryId(request.categoryId()) + 1
                 : contest.getItemOrder();
 
         contest.updateContest(request.categoryId(), request.contestName());
 
         if (categoryChanged) {
             contest.updateItemOrder(newItemOrder);
+            contestRepository.updateItemOrderAfterDeletion(oldCategoryId, oldItemOrder);
         }
     }
 
     public void deleteContest(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
         teamConvenience.validateAllTeamsDeletedInContest(contestId);
+        final Long categoryId = contest.getCategoryId();
+        final int deletedOrder = contest.getItemOrder();
 
         // 연관 데이터 삭제
         fileImageCommandService.deleteIfExists(contestId, CONTEST, BANNER);
@@ -166,6 +171,7 @@ public class ContestCommandService {
         contestTemplateRepository.findByContestId(contestId).ifPresent(contestTemplateRepository::delete);
 
         contestRepository.delete(contest);
+        contestRepository.updateItemOrderAfterDeletion(categoryId, deletedOrder);
     }
 
     public ContestCurrentToggleResponse toggleCurrent(final Long contestId, final Boolean isCurrent) {
