@@ -190,7 +190,9 @@ CREATE TABLE `sidebar_category_sort` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `mode` enum('ASC','DESC','CUSTOM') NOT NULL,
-  PRIMARY KEY (`id`)
+  `singleton_guard` tinyint NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sidebar_category_sort_singleton` (`singleton_guard`)
 );
 
 CREATE TABLE `category_contest_sort` (

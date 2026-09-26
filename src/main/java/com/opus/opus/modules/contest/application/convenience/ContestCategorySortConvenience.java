@@ -18,6 +18,7 @@ public class ContestCategorySortConvenience {
 
     private final SidebarCategorySortRepository sidebarCategorySortRepository;
     private final CategoryContestSortRepository categoryContestSortRepository;
+    private final SidebarCategorySortInitializer sidebarCategorySortInitializer;
 
     @Transactional(readOnly = true)
     public SidebarSortType getCategorySortMode() {
@@ -35,8 +36,8 @@ public class ContestCategorySortConvenience {
 
     @Transactional
     public SidebarCategorySort getOrCreateSidebarCategorySort() {
-        return sidebarCategorySortRepository.findFirstByOrderByIdAsc()
-                .orElseGet(() -> sidebarCategorySortRepository.save(SidebarCategorySort.createDefault()));
+        sidebarCategorySortInitializer.ensureExists();
+        return sidebarCategorySortRepository.findFirstByOrderByIdAsc().orElseThrow();
     }
 
     @Transactional
