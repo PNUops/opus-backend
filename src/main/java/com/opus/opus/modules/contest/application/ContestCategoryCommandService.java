@@ -9,8 +9,10 @@ import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionTy
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.INVALID_CATEGORY_CONTEST_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.INVALID_CATEGORY_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.INVALID_CATEGORY_SORT_CUSTOM_REQUEST;
-import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NOT_EXIST_CATEGORY_IN_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NOT_FOUND_CATEGORY;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NOT_EXIST_CONTEST_IN_CATEGORY;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NULL_VALUE_IN_CATEGORY_CONTEST_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NULL_VALUE_IN_CATEGORY_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE_CATEGORY_SORT;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE_CONTEST_SORT;
 import static java.util.function.Function.identity;
@@ -85,6 +87,7 @@ public class ContestCategoryCommandService {
     }
 
     public void updateCategorySortCustom(final List<SidebarCategorySortCustomRequest> requests) {
+        validateNoNullFieldsInCategorySortRequest(requests);
         final SidebarCategorySort sort = contestCategorySortConvenience.getOrCreateSidebarCategorySort();
         checkCustomSort(sort.getMode(), ONLY_CUSTOM_MODE_CAN_CHANGE_CATEGORY_SORT);
         validateDuplicateCategoryIds(requests);
@@ -105,6 +108,7 @@ public class ContestCategoryCommandService {
 
     public void updateContestSortInCategoryCustom(final Long categoryId,
                                                    final List<CategoryContestSortCustomRequest> requests) {
+        validateNoNullFieldsInContestSortRequest(requests);
         final ContestCategory category = contestCategoryConvenience.getValidateExistCategory(categoryId);
         final CategoryContestSort sort = contestCategorySortConvenience.getOrCreateCategoryContestSort(category);
         checkCustomSort(sort.getMode(), ONLY_CUSTOM_MODE_CAN_CHANGE_CONTEST_SORT);
@@ -121,6 +125,14 @@ public class ContestCategoryCommandService {
     private void checkCustomSort(final SidebarSortType mode, final ContestCategoryExceptionType exceptionType) {
         if (mode != CUSTOM) {
             throw new ContestCategoryException(exceptionType);
+        }
+    }
+
+    private void validateNoNullFieldsInCategorySortRequest(final List<SidebarCategorySortCustomRequest> requests) {
+        final boolean hasNullField = requests.stream()
+                .anyMatch(r -> r.categoryId() == null || r.itemOrder() == null);
+        if (hasNullField) {
+            throw new ContestCategoryException(NULL_VALUE_IN_CATEGORY_SORT_REQUEST);
         }
     }
 
@@ -161,9 +173,17 @@ public class ContestCategoryCommandService {
         for (final SidebarCategorySortCustomRequest r : requests) {
             final ContestCategory category = categoryMap.get(r.categoryId());
             if (category == null) {
-                throw new ContestCategoryException(NOT_EXIST_CATEGORY_IN_SORT_REQUEST);
+                throw new ContestCategoryException(NOT_FOUND_CATEGORY);
             }
             category.updateItemOrder(r.itemOrder());
+        }
+    }
+
+    private void validateNoNullFieldsInContestSortRequest(final List<CategoryContestSortCustomRequest> requests) {
+        final boolean hasNullField = requests.stream()
+                .anyMatch(r -> r.contestId() == null || r.itemOrder() == null);
+        if (hasNullField) {
+            throw new ContestCategoryException(NULL_VALUE_IN_CATEGORY_CONTEST_SORT_REQUEST);
         }
     }
 

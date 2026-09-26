@@ -13,6 +13,8 @@ import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionTy
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.INVALID_CATEGORY_ITEM_ORDER;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.INVALID_CATEGORY_SORT_CUSTOM_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NOT_EXIST_CONTEST_IN_CATEGORY;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NULL_VALUE_IN_CATEGORY_CONTEST_SORT_REQUEST;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NULL_VALUE_IN_CATEGORY_SORT_REQUEST;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE_CATEGORY_SORT;
 import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE_CONTEST_SORT;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -131,6 +133,19 @@ public class ContestCategoryCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[실패] itemOrder가 null이면 카테고리 수동 정렬은 실패한다.")
+    void itemOrder가_null이면_카테고리_수동_정렬은_실패한다() {
+        contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(CUSTOM));
+        final ContestCategory categoryOne = contestCategoryRepository.save(createContestCategory());
+        final List<SidebarCategorySortCustomRequest> requests = List.of(
+                new SidebarCategorySortCustomRequest(categoryOne.getId(), null));
+
+        assertThatThrownBy(() -> contestCategoryCommandService.updateCategorySortCustom(requests))
+                .isInstanceOf(ContestCategoryException.class)
+                .hasMessage(NULL_VALUE_IN_CATEGORY_SORT_REQUEST.errorMessage());
+    }
+
+    @Test
     @DisplayName("[실패] 중복 categoryId가 있다면 카테고리 수동 정렬은 실패한다.")
     void 중복_categoryId가_있다면_카테고리_수동_정렬은_실패한다() {
         contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(CUSTOM));
@@ -229,6 +244,21 @@ public class ContestCategoryCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> contestCategoryCommandService.updateContestSortInCategoryCustom(category.getId(), requests))
                 .isInstanceOf(ContestCategoryException.class)
                 .hasMessage(ONLY_CUSTOM_MODE_CAN_CHANGE_CONTEST_SORT.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] itemOrder가 null이면 카테고리 내 대회 수동 정렬은 실패한다.")
+    void itemOrder가_null이면_카테고리_내_대회_수동_정렬은_실패한다() {
+        final ContestCategory category = contestCategoryRepository.save(createContestCategory());
+        contestCategoryCommandService.updateContestSortInCategory(category.getId(),
+                new CategoryContestSortRequest(CUSTOM));
+        final Contest contestOne = contestRepository.save(createContestWithCategoryId(category.getId()));
+        final List<CategoryContestSortCustomRequest> requests = List.of(
+                new CategoryContestSortCustomRequest(contestOne.getId(), null));
+
+        assertThatThrownBy(() -> contestCategoryCommandService.updateContestSortInCategoryCustom(category.getId(), requests))
+                .isInstanceOf(ContestCategoryException.class)
+                .hasMessage(NULL_VALUE_IN_CATEGORY_CONTEST_SORT_REQUEST.errorMessage());
     }
 
     @Test
