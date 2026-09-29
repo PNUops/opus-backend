@@ -39,6 +39,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.AfterTransaction;
 
 public class ContestCategoryCommandServiceTest extends IntegrationTest {
 
@@ -52,6 +53,11 @@ public class ContestCategoryCommandServiceTest extends IntegrationTest {
     private SidebarCategorySortRepository sidebarCategorySortRepository;
     @Autowired
     private CategoryContestSortRepository categoryContestSortRepository;
+
+    @AfterTransaction
+    void 테스트에서_커밋된_사이드바_정렬_설정을_정리한다() {
+        sidebarCategorySortRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("[성공] 카테고리를 생성하면 itemOrder와 기본 카테고리 내 대회 정렬(ASC)이 함께 생성된다.")

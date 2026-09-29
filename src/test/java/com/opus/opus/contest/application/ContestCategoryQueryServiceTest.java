@@ -18,11 +18,13 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.SidebarCategorySortRepository;
 import com.opus.opus.modules.contest.exception.ContestCategoryException;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.AfterTransaction;
 
 public class ContestCategoryQueryServiceTest extends IntegrationTest {
 
@@ -37,6 +39,14 @@ public class ContestCategoryQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private ContestRepository contestRepository;
+
+    @Autowired
+    private SidebarCategorySortRepository sidebarCategorySortRepository;
+
+    @AfterTransaction
+    void 테스트에서_커밋된_사이드바_정렬_설정을_정리한다() {
+        sidebarCategorySortRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("[성공] 카테고리가 없으면 빈 리스트를 반환한다.")

@@ -15,6 +15,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.context.transaction.AfterTransaction;
+import org.springframework.test.context.transaction.BeforeTransaction;
 
 public class ContestCategorySortConvenienceTest extends IntegrationTest {
 
@@ -22,6 +24,16 @@ public class ContestCategorySortConvenienceTest extends IntegrationTest {
     private ContestCategorySortConvenience contestCategorySortConvenience;
     @Autowired
     private SidebarCategorySortRepository sidebarCategorySortRepository;
+
+    @BeforeTransaction
+    void 커밋된_사이드바_정렬_설정을_정리한다() {
+        sidebarCategorySortRepository.deleteAllInBatch();
+    }
+
+    @AfterTransaction
+    void 테스트에서_커밋된_사이드바_정렬_설정을_정리한다() {
+        sidebarCategorySortRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("[성공] sidebar_category_sort는 유니크 제약으로 두 번째 행 저장이 실패한다.")
