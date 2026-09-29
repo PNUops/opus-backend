@@ -25,7 +25,7 @@ public class ContestSubmissionItemFixture {
 
     public static ContestSubmissionItem createSubmissionItem(final Contest contest, final ContestTrack contestTrack) {
         return createSubmissionItem(contest, contestTrack, "발표자료",
-                LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59));
+                LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(7));
     }
 
     public static ContestSubmissionItem createSubmissionItem(final Contest contest, final ContestTrack contestTrack,

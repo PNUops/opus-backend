@@ -1,20 +1,30 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.modules.contest.domain.SidebarSortType.CUSTOM;
+import static com.opus.opus.modules.contest.domain.SidebarSortType.DESC;
+import static com.opus.opus.modules.contest.exception.ContestCategoryExceptionType.NOT_FOUND_CATEGORY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.contest.ContestCategoryFixture;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.helper.IntegrationTest;
+import com.opus.opus.modules.contest.application.ContestCategoryCommandService;
 import com.opus.opus.modules.contest.application.ContestCategoryQueryService;
+import com.opus.opus.modules.contest.application.dto.request.CategoryContestSortRequest;
+import com.opus.opus.modules.contest.application.dto.request.SidebarCategorySortRequest;
 import com.opus.opus.modules.contest.application.dto.response.SidebarResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.contest.domain.dao.SidebarCategorySortRepository;
+import com.opus.opus.modules.contest.exception.ContestCategoryException;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.AfterTransaction;
 
 public class ContestCategoryQueryServiceTest extends IntegrationTest {
 
@@ -22,10 +32,21 @@ public class ContestCategoryQueryServiceTest extends IntegrationTest {
     private ContestCategoryQueryService contestCategoryQueryService;
 
     @Autowired
+    private ContestCategoryCommandService contestCategoryCommandService;
+
+    @Autowired
     private ContestCategoryRepository contestCategoryRepository;
 
     @Autowired
     private ContestRepository contestRepository;
+
+    @Autowired
+    private SidebarCategorySortRepository sidebarCategorySortRepository;
+
+    @AfterTransaction
+    void 테스트에서_커밋된_사이드바_정렬_설정을_정리한다() {
+        sidebarCategorySortRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("[성공] 카테고리가 없으면 빈 리스트를 반환한다.")
@@ -44,6 +65,16 @@ public class ContestCategoryQueryServiceTest extends IntegrationTest {
 
         assertThat(response).hasSize(1);
         assertThat(response.get(0).contests()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 categoryId로 카테고리 내 대회 정렬 모드를 조회하면 예외가 발생한다.")
+    void 존재하지_않는_categoryId로_대회_정렬_모드를_조회하면_예외가_발생한다() {
+        final Long invalidCategoryId = 999L;
+
+        assertThatThrownBy(() -> contestCategoryQueryService.getContestSortInCategory(invalidCategoryId))
+                .isInstanceOf(ContestCategoryException.class)
+                .hasMessage(NOT_FOUND_CATEGORY.errorMessage());
     }
 
     @Test
@@ -81,5 +112,137 @@ public class ContestCategoryQueryServiceTest extends IntegrationTest {
 
         assertThat(responseA.contests()).hasSize(2);
         assertThat(responseB.contests()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 정렬 기본값(ASC)이면 카테고리명 오름차순으로 정렬된다.")
+    void 카테고리_기본값_ASC면_이름_오름차순으로_정렬된다() {
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("다카테고리"));
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("가카테고리"));
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("나카테고리"));
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response).extracting(SidebarResponse::categoryName)
+                .containsExactly("가카테고리", "나카테고리", "다카테고리");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 정렬이 DESC면 카테고리명 내림차순으로 정렬된다.")
+    void 카테고리_정렬이_DESC면_이름_내림차순으로_정렬된다() {
+        contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(DESC));
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("다카테고리"));
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("가카테고리"));
+        contestCategoryRepository.save(ContestCategoryFixture.createContestCategoryWithName("나카테고리"));
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response).extracting(SidebarResponse::categoryName)
+                .containsExactly("다카테고리", "나카테고리", "가카테고리");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 정렬이 CUSTOM이면 itemOrder 순으로 정렬된다.")
+    void 카테고리_정렬이_CUSTOM이면_itemOrder_순으로_정렬된다() {
+        contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(CUSTOM));
+        final ContestCategory categoryLast = contestCategoryRepository.save(
+                ContestCategoryFixture.createContestCategoryWithName("가카테고리"));
+        final ContestCategory categoryFirst = contestCategoryRepository.save(
+                ContestCategoryFixture.createContestCategoryWithName("나카테고리"));
+        categoryLast.updateItemOrder(2);
+        categoryFirst.updateItemOrder(1);
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response).extracting(SidebarResponse::categoryName)
+                .containsExactly("나카테고리", "가카테고리");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 정렬이 CUSTOM이고 itemOrder가 동률이면 반복 조회해도 순서가 항상 같다.")
+    void 카테고리_정렬이_CUSTOM이고_itemOrder가_동률이면_순서가_항상_같다() {
+        contestCategoryCommandService.updateCategorySort(new SidebarCategorySortRequest(CUSTOM));
+        final ContestCategory categoryA = contestCategoryRepository.save(
+                ContestCategoryFixture.createContestCategoryWithName("가카테고리"));
+        final ContestCategory categoryB = contestCategoryRepository.save(
+                ContestCategoryFixture.createContestCategoryWithName("나카테고리"));
+        categoryA.updateItemOrder(1);
+        categoryB.updateItemOrder(1);
+
+        final List<SidebarResponse> firstCall = contestCategoryQueryService.getSidebar();
+        final List<SidebarResponse> secondCall = contestCategoryQueryService.getSidebar();
+
+        assertThat(firstCall).extracting(SidebarResponse::categoryId)
+                .containsExactly(categoryA.getId(), categoryB.getId());
+        assertThat(secondCall).extracting(SidebarResponse::categoryId)
+                .containsExactly(categoryA.getId(), categoryB.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 내 대회 정렬 기본값(ASC)이면 대회명 오름차순으로 정렬된다.")
+    void 카테고리_내_대회_기본값_ASC면_이름_오름차순으로_정렬된다() {
+        final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "다대회"));
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "가대회"));
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "나대회"));
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response.get(0).contests()).extracting(SidebarResponse.ContestItem::contestName)
+                .containsExactly("가대회", "나대회", "다대회");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 내 대회 정렬이 DESC면 대회명 내림차순으로 정렬된다.")
+    void 카테고리_내_대회_정렬이_DESC면_이름_내림차순으로_정렬된다() {
+        final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        contestCategoryCommandService.updateContestSortInCategory(category.getId(), new CategoryContestSortRequest(DESC));
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "다대회"));
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "가대회"));
+        contestRepository.save(ContestFixture.createContestWithCategoryIdAndName(category.getId(), "나대회"));
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response.get(0).contests()).extracting(SidebarResponse.ContestItem::contestName)
+                .containsExactly("다대회", "나대회", "가대회");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 내 대회 정렬이 CUSTOM이면 itemOrder 순으로 정렬된다.")
+    void 카테고리_내_대회_정렬이_CUSTOM이면_itemOrder_순으로_정렬된다() {
+        final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        contestCategoryCommandService.updateContestSortInCategory(category.getId(), new CategoryContestSortRequest(CUSTOM));
+        final Contest contestLast = contestRepository.save(
+                ContestFixture.createContestWithCategoryIdAndName(category.getId(), "가대회"));
+        final Contest contestFirst = contestRepository.save(
+                ContestFixture.createContestWithCategoryIdAndName(category.getId(), "나대회"));
+        contestLast.updateItemOrder(2);
+        contestFirst.updateItemOrder(1);
+
+        final List<SidebarResponse> response = contestCategoryQueryService.getSidebar();
+
+        assertThat(response.get(0).contests()).extracting(SidebarResponse.ContestItem::contestName)
+                .containsExactly("나대회", "가대회");
+    }
+
+    @Test
+    @DisplayName("[성공] 카테고리 내 대회 정렬이 CUSTOM이고 itemOrder가 동률이면 반복 조회해도 순서가 항상 같다.")
+    void 카테고리_내_대회_정렬이_CUSTOM이고_itemOrder가_동률이면_순서가_항상_같다() {
+        final ContestCategory category = contestCategoryRepository.save(ContestCategoryFixture.createContestCategory());
+        contestCategoryCommandService.updateContestSortInCategory(category.getId(), new CategoryContestSortRequest(CUSTOM));
+        final Contest contestA = contestRepository.save(
+                ContestFixture.createContestWithCategoryIdAndName(category.getId(), "가대회"));
+        final Contest contestB = contestRepository.save(
+                ContestFixture.createContestWithCategoryIdAndName(category.getId(), "나대회"));
+        contestA.updateItemOrder(1);
+        contestB.updateItemOrder(1);
+
+        final List<SidebarResponse> firstCall = contestCategoryQueryService.getSidebar();
+        final List<SidebarResponse> secondCall = contestCategoryQueryService.getSidebar();
+
+        assertThat(firstCall.get(0).contests()).extracting(SidebarResponse.ContestItem::contestId)
+                .containsExactly(contestA.getId(), contestB.getId());
+        assertThat(secondCall.get(0).contests()).extracting(SidebarResponse.ContestItem::contestId)
+                .containsExactly(contestA.getId(), contestB.getId());
     }
 }

@@ -29,13 +29,21 @@ public class ContestCategory extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
+    @Column(nullable = false)
+    private Integer itemOrder;
+
     @Builder
-    private ContestCategory(final String categoryName) {
+    private ContestCategory(final String categoryName, final Integer itemOrder) {
         this.categoryName = categoryName;
         this.isDeleted = false;
+        this.itemOrder = itemOrder;
     }
 
     public void updateCategory(final String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public void updateItemOrder(final Integer itemOrder) {
+        this.itemOrder = itemOrder;
     }
 }

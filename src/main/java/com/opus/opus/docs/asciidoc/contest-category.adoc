@@ -90,7 +90,7 @@ include::{snippets}/get-all-contest-category/response-fields.adoc[]
 
 == `GET`: 메인페이지 사이드바 조회
 
-NOTE: 모든 카테고리를 대회 목록과 함께 반환합니다. 대회가 없는 카테고리는 `contests` 가 빈 배열로 반환됩니다.
+NOTE: 모든 카테고리를 대회 목록과 함께 반환합니다. 대회가 없는 카테고리는 `contests` 가 빈 배열로 반환됩니다. 카테고리 순서는 카테고리 정렬 모드에 따라, 각 카테고리 내 대회 순서는 해당 카테고리의 대회 정렬 모드에 따라 정렬됩니다.
 
 .HTTP Request
 include::{snippets}/get-sidebar/http-request.adoc[]
@@ -100,3 +100,132 @@ include::{snippets}/get-sidebar/http-response.adoc[]
 
 .Response Body's Fields
 include::{snippets}/get-sidebar/response-fields.adoc[]
+
+== `PUT`: 카테고리 정렬 모드 변경
+
+NOTE: 사이드바에 표시되는 카테고리 순서의 정렬 모드입니다. `ASC`(카테고리 이름 오름차순), `DESC`(카테고리 이름 내림차순), `CUSTOM`(수동 지정 순서) 중 하나입니다.
+
+.HTTP Request Headers
+include::{snippets}/update-category-sort/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-category-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-category-sort/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-category-sort/request-fields.adoc[]
+
+== `GET`: 카테고리 정렬 모드 조회
+
+.HTTP Request Headers
+include::{snippets}/get-category-sort/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-category-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-category-sort/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-category-sort/response-fields.adoc[]
+
+== `PUT`: 카테고리 수동 정렬 순서 저장
+
+NOTE: `CUSTOM` 모드일 때만 사용할 수 있습니다. 전체 카테고리를 빠짐없이 담아 요청해야 합니다.
+
+.HTTP Request Headers
+include::{snippets}/update-category-sort-custom/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/update-category-sort-custom/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-category-sort-custom/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-category-sort-custom/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: CUSTOM 모드가 아닌 상태에서 요청
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-category-sort-custom-fail-mode/http-request.adoc[]
+
+include::{snippets}/update-category-sort-custom-fail-mode/http-response.adoc[]
+
+====
+
+== `PUT`: 카테고리 내 대회 정렬 모드 변경
+
+NOTE: 특정 카테고리에 속한 대회들의 사이드바 표시 순서 정렬 모드입니다. `ASC`(대회 이름 오름차순), `DESC`(대회 이름 내림차순), `CUSTOM`(수동 지정 순서) 중 하나입니다.
+
+.HTTP Request Headers
+include::{snippets}/update-category-contest-sort/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-category-contest-sort/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-category-contest-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-category-contest-sort/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-category-contest-sort/request-fields.adoc[]
+
+== `GET`: 카테고리 내 대회 정렬 모드 조회
+
+.HTTP Request Headers
+include::{snippets}/get-category-contest-sort/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/get-category-contest-sort/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/get-category-contest-sort/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-category-contest-sort/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/get-category-contest-sort/response-fields.adoc[]
+
+== `PUT`: 카테고리 내 대회 수동 정렬 순서 저장
+
+NOTE: `CUSTOM` 모드일 때만 사용할 수 있습니다. 해당 카테고리에 속한 대회를 빠짐없이 담아 요청해야 합니다.
+
+.HTTP Request Headers
+include::{snippets}/update-category-contest-sort-custom/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/update-category-contest-sort-custom/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/update-category-contest-sort-custom/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/update-category-contest-sort-custom/http-response.adoc[]
+
+.Request Fields
+include::{snippets}/update-category-contest-sort-custom/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: CUSTOM 모드가 아닌 상태에서 요청
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-category-contest-sort-custom-fail-mode/http-request.adoc[]
+
+include::{snippets}/update-category-contest-sort-custom-fail-mode/http-response.adoc[]
+
+====

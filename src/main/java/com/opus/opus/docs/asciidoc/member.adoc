@@ -466,6 +466,9 @@ include::{snippets}/admin-withdraw-member/request-headers.adoc[]
 .Path Parameters
 include::{snippets}/admin-withdraw-member/path-parameters.adoc[]
 
+.Request Fields
+include::{snippets}/admin-withdraw-member/request-fields.adoc[]
+
 === ⚠️ 실패 케이스
 
 .❌ Case 1: 존재하지 않는 회원 ID
@@ -479,6 +482,34 @@ include::{snippets}/admin-withdraw-member-fail-not-found/http-request.adoc[]
 include::{snippets}/admin-withdraw-member-fail-not-found/http-response.adoc[]
 
 include::{snippets}/admin-withdraw-member-fail-not-found/path-parameters.adoc[]
+
+====
+
+.❌ Case 2: 기타 사항이 500자를 초과함
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-invalid-detail/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-invalid-detail/http-response.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-invalid-detail/request-fields.adoc[]
+
+====
+
+.❌ Case 3: 탈퇴 사유가 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-missing-reason/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-missing-reason/http-response.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-missing-reason/request-fields.adoc[]
 
 ====
 

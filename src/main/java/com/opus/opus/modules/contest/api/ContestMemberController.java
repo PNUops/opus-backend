@@ -1,10 +1,15 @@
 package com.opus.opus.modules.contest.api;
 
+import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.contest.application.ContestMemberCommandService;
 import com.opus.opus.modules.contest.application.ContestMemberQueryService;
 import com.opus.opus.modules.contest.application.dto.request.StaffBatchAssignRequest;
 import com.opus.opus.modules.contest.application.dto.request.StaffTeamUpdateRequest;
 import com.opus.opus.modules.contest.application.dto.response.ContestStaffResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorContestResponse;
+import com.opus.opus.modules.contest.application.dto.response.MentorProjectResponse;
+import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionsResponse;
+import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,21 +23,19 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/contests/{contestId}/staff")
 public class ContestMemberController {
 
     private final ContestMemberQueryService contestMemberQueryService;
     private final ContestMemberCommandService contestMemberCommandService;
 
     @Secured("ROLE_관리자")
-    @GetMapping
+    @GetMapping("/contests/{contestId}/staff")
     public ResponseEntity<List<ContestStaffResponse>> getAssignedStaff(@PathVariable final Long contestId,
                                                                        @RequestParam(required = false) final String memberType,
                                                                        @RequestParam(required = false) final String search) {
@@ -40,7 +43,7 @@ public class ContestMemberController {
     }
 
     @Secured("ROLE_관리자")
-    @PostMapping("/batch")
+    @PostMapping("/contests/{contestId}/staff/batch")
     public ResponseEntity<Void> assignStaff(@PathVariable final Long contestId,
                                             @Valid @RequestBody final StaffBatchAssignRequest request) {
         contestMemberCommandService.assignStaff(contestId, request);
@@ -48,7 +51,7 @@ public class ContestMemberController {
     }
 
     @Secured("ROLE_관리자")
-    @PatchMapping("/{contestMemberId}")
+    @PatchMapping("/contests/{contestId}/staff/{contestMemberId}")
     public ResponseEntity<Void> updateAssignedTeams(@PathVariable final Long contestId,
                                                     @PathVariable final Long contestMemberId,
                                                     @Valid @RequestBody final StaffTeamUpdateRequest request) {
@@ -57,10 +60,37 @@ public class ContestMemberController {
     }
 
     @Secured("ROLE_관리자")
-    @DeleteMapping("/{contestMemberId}")
+    @DeleteMapping("/contests/{contestId}/staff/{contestMemberId}")
     public ResponseEntity<Void> deleteAssignment(@PathVariable final Long contestId,
                                                  @PathVariable final Long contestMemberId) {
         contestMemberCommandService.deleteAssignment(contestId, contestMemberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured({"ROLE_외부멘토", "ROLE_교수"})
+    @GetMapping("/mentors/me/contests")
+    public ResponseEntity<List<MentorContestResponse>> getMentorContests(
+            @LoginMember final Member member
+    ) {
+        return ResponseEntity.ok(contestMemberQueryService.getMentorContests(member));
+    }
+
+    @Secured({"ROLE_외부멘토", "ROLE_교수"})
+    @GetMapping("/mentors/me/contests/{contestId}/teams")
+    public ResponseEntity<List<MentorProjectResponse>> getMentorContestTeams(
+            @PathVariable final Long contestId,
+            @LoginMember final Member member
+    ) {
+        return ResponseEntity.ok(contestMemberQueryService.getMentorContestTeams(contestId, member));
+    }
+
+    @Secured({"ROLE_외부멘토", "ROLE_교수"})
+    @GetMapping("/mentors/me/contests/{contestId}/teams/{teamId}/submissions")
+    public ResponseEntity<TeamSubmissionsResponse> getTeamSubmissions(
+            @PathVariable final Long contestId,
+            @PathVariable final Long teamId,
+            @LoginMember final Member member
+    ) {
+        return ResponseEntity.ok(contestMemberQueryService.getTeamSubmissions(contestId, teamId, member));
     }
 }

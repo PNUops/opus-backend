@@ -21,6 +21,7 @@ import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
+import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -31,8 +32,10 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
 import com.opus.opus.modules.member.domain.StaffInfo;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
@@ -55,6 +58,7 @@ public class MemberCommandService {
 
     private final MemberRepository memberRepository;
     private final StaffInfoRepository staffInfoRepository;
+    private final MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -326,8 +330,15 @@ public class MemberCommandService {
         deleteMember(member);
     }
 
-    public void withdrawByAdmin(final Long memberId) {
+    public void withdrawByAdmin(final Long memberId, final ForceDeleteMemberRequest request) {
         final Member member = memberConvenience.getValidateExistMember(memberId);
+        memberWithdrawalHistoryRepository.save(
+                MemberWithdrawalHistory.builder()
+                        .memberId(member.getId())
+                        .reason(request.reason())
+                        .detail(request.detail())
+                        .build()
+        );
         deleteMember(member);
     }
 
