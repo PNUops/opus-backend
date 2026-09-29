@@ -8,6 +8,7 @@ public class ContestFixture {
         return Contest.builder()
                 .contestName("제 1회 테스트 대회")
                 .categoryId(1L)
+                .itemOrder(1)
                 .build();
     }
 
@@ -15,6 +16,15 @@ public class ContestFixture {
         return Contest.builder()
                 .contestName("테스트 대회")
                 .categoryId(categoryId)
+                .itemOrder(1)
+                .build();
+    }
+
+    public static Contest createContestWithCategoryIdAndName(final Long categoryId, final String contestName) {
+        return Contest.builder()
+                .contestName(contestName)
+                .categoryId(categoryId)
+                .itemOrder(1)
                 .build();
     }
 }
