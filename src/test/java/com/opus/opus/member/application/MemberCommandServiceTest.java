@@ -34,6 +34,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequ
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
@@ -617,5 +618,29 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
         assertThat(updatedMember.getIsProfilePublic()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[성공] 마이페이지에서 비밀번호 변경 시 새 비밀번호가 인코딩되어 저장된다.")
+    void 마이페이지에서_비밀번호_변경_시_새_비밀번호가_인코딩되어_저장된다() {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest("123456789", "qwer123!");
+
+        memberCommandService.updatePasswordInMyPage(teamLeader, request);
+
+        final Member updatedMember = memberRepository.findById(teamLeader.getId()).orElseThrow();
+        assertThat(updatedMember.getPassword()).isNotEqualTo(request.newPassword());
+        assertThat(passwordEncoder.matches(request.newPassword(), updatedMember.getPassword())).isTrue();
+    }
+
+    @Test
+    @DisplayName("[성공] 마이페이지에서 비밀번호 변경 후 새 비밀번호로 로그인 할 수 있다.")
+    void 마이페이지에서_비밀번호_변경_후_새_비밀번호로_로그인_할_수_있다() {
+        final PasswordUpdateMyPageRequest request = new PasswordUpdateMyPageRequest("123456789", "qwer123!");
+
+        memberCommandService.updatePasswordInMyPage(teamLeader, request);
+
+        final SignInResponse response = memberCommandService.signIn(
+                new SignInRequest(teamLeader.getEmail(), request.newPassword()));
+        assertThat(response.memberId()).isEqualTo(teamLeader.getId());
     }
 }
