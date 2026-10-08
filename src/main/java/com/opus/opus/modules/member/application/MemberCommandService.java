@@ -179,7 +179,7 @@ public class MemberCommandService {
     public void updatePasswordInMyPage(final Member member, final PasswordUpdateMyPageRequest request) {
         checkCorrectPassword(member.getPassword(), request.password());
         checkEqualPassword(request.newPassword(), member);
-        member.updatePassword(request.newPassword());
+        member.updatePassword(passwordEncoder.encode(request.newPassword()));
     }
 
     private void verifyVerifiedKey(final String verifiedKey) {
