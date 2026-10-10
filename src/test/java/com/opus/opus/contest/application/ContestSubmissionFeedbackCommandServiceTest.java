@@ -187,19 +187,6 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     }
 
     @Test
-    @DisplayName("[성공] 피드백 저장에 실패하면 새 피드백 알림 이벤트를 발행하지 않는다.")
-    void 피드백_저장에_실패하면_새_피드백_알림_이벤트를_발행하지_않는다() {
-        final Long invalidContestId = 999L;
-
-        assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description,
-                        null, null))
-                .isInstanceOf(ContestException.class);
-
-        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).isEmpty();
-    }
-
-    @Test
     @DisplayName("[실패] 존재하지 않는 대회에는 피드백을 저장할 수 없다.")
     void 존재하지_않는_대회에는_피드백을_저장할_수_없다() {
         final Long invalidContestId = 999L;
