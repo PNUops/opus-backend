@@ -33,6 +33,10 @@ public class ContestSubmissionFeedbackConvenience {
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
+    public boolean isFeedbackWritten(final Long submissionId, final Long memberId) {
+        return contestSubmissionFeedbackRepository.existsBySubmissionIdAndMemberId(submissionId, memberId);
+    }
+
     @Transactional
     public ContestSubmissionFeedback upsertFeedback(final ContestSubmission submission, final Long memberId, final String description) {
         return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submission.getId(), memberId)

@@ -5,11 +5,14 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionCo
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
+import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +27,7 @@ public class ContestSubmissionFeedbackCommandService {
     private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
     private final FileFeedbackCommandService fileFeedbackCommandService;
     private final TeamMemberConvenience teamMemberConvenience;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void saveFeedback(final Long contestId, final Long submissionId, final Long memberId,
                              final String description, final List<MultipartFile> files,
@@ -31,10 +35,15 @@ public class ContestSubmissionFeedbackCommandService {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
 
+        final boolean isNewFeedback = !contestSubmissionFeedbackConvenience.isFeedbackWritten(submissionId, memberId);
         final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.upsertFeedback(submission, memberId, description);
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());
+
+        if (isNewFeedback) {
+            publishFeedbackNotification(contestId, submission);
+        }
     }
 
     public void markFeedbackAsRead(final Long contestId, final Long submissionId, final Long feedbackId,
@@ -45,5 +54,12 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
         feedback.markAsRead();
+    }
+
+    private void publishFeedbackNotification(final Long contestId, final ContestSubmission submission) {
+        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
+        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(submission.getTeamId());
+        eventPublisher.publishEvent(new SubmissionFeedbackNotificationEvent(memberIds, contestId,
+                submission.getTeamId(), submission.getId(), submissionItem.getId(), submissionItem.getName()));
     }
 }
