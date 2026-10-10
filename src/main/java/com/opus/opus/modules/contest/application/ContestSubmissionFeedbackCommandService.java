@@ -36,16 +36,13 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(
                 contestId, submissionId);
 
-        final boolean isNewFeedback = !contestSubmissionFeedbackConvenience.isFeedbackWritten(submissionId, memberId);
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.upsertFeedback(submission,
-                memberId, description);
+        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.findFeedback(submissionId,
+                        memberId)
+                .map(existing -> updateFeedback(existing, description))
+                .orElseGet(() -> createFeedback(contestId, submission, memberId, description));
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());
-
-        if (isNewFeedback) {
-            publishFeedbackNotification(contestId, submission);
-        }
     }
 
     public void markFeedbackAsRead(final Long contestId, final Long submissionId, final Long feedbackId,
@@ -56,6 +53,20 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
         feedback.markAsRead();
+    }
+
+    private ContestSubmissionFeedback updateFeedback(final ContestSubmissionFeedback feedback,
+                                                     final String description) {
+        feedback.updateDescription(description);
+        return feedback;
+    }
+
+    private ContestSubmissionFeedback createFeedback(final Long contestId, final ContestSubmission submission,
+                                                     final Long memberId, final String description) {
+        final ContestSubmissionFeedback feedback =
+                contestSubmissionFeedbackConvenience.createFeedback(submission, memberId, description);
+        publishFeedbackNotification(contestId, submission);
+        return feedback;
     }
 
     private void publishFeedbackNotification(final Long contestId, final ContestSubmission submission) {

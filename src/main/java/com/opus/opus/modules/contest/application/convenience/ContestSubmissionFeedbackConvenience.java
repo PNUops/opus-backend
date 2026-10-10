@@ -7,6 +7,7 @@ import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,22 +34,17 @@ public class ContestSubmissionFeedbackConvenience {
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public boolean isFeedbackWritten(final Long submissionId, final Long memberId) {
-        return contestSubmissionFeedbackRepository.existsBySubmissionIdAndMemberId(submissionId, memberId);
+    public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionId, final Long memberId) {
+        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId);
     }
 
     @Transactional
-    public ContestSubmissionFeedback upsertFeedback(final ContestSubmission submission, final Long memberId,
+    public ContestSubmissionFeedback createFeedback(final ContestSubmission submission, final Long memberId,
                                                     final String description) {
-        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submission.getId(), memberId)
-                .map(existing -> {
-                    existing.updateDescription(description);
-                    return existing;
-                })
-                .orElseGet(() -> contestSubmissionFeedbackRepository.save(ContestSubmissionFeedback.builder()
-                        .description(description)
-                        .memberId(memberId)
-                        .submission(submission)
-                        .build()));
+        return contestSubmissionFeedbackRepository.save(ContestSubmissionFeedback.builder()
+                .description(description)
+                .memberId(memberId)
+                .submission(submission)
+                .build());
     }
 }

@@ -13,8 +13,6 @@ public interface ContestSubmissionFeedbackRepository extends JpaRepository<Conte
 
     Optional<ContestSubmissionFeedback> findBySubmissionIdAndMemberId(Long submissionId, Long memberId);
 
-    boolean existsBySubmissionIdAndMemberId(Long submissionId, Long memberId);
-
     long countBySubmission_TeamIdAndIsReadFalse(Long teamId);
 
     Optional<ContestSubmissionFeedback> findTopBySubmission_TeamIdOrderByCreatedAtDesc(Long teamId);
