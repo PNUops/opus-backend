@@ -61,20 +61,8 @@ public class ContestSubmissionCommandService {
 
         validateSubmission(contestId, team, submissionItem, files, member);
 
-        final ContestSubmission submission = contestSubmissionRepository.save(ContestSubmission.builder()
-                .teamId(teamId)
-                .firstSubmittedAt(LocalDateTime.now())
-                .submissionItem(submissionItem)
-                .build());
-        fileDocumentCommandService.storeDocumentFiles(submission.getId(), files);
-
-        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
-                .stream()
-                .filter(id -> !id.equals(member.getId()))
-                .toList();
-        eventPublisher.publishEvent(new SubmissionCompletedNotificationEvent(memberIds, contestId, teamId,
-                submission.getId(), submissionItem.getId(), submissionItem.getName()));
-
+        final ContestSubmission submission = saveSubmission(teamId, submissionItem, files);
+        publishSubmissionCompletedNotification(contestId, submission, member);
         return new SubmissionCreateResponse(submission.getId());
     }
 
@@ -198,4 +186,29 @@ public class ContestSubmissionCommandService {
         }
     }
 
+    private ContestSubmission saveSubmission(final Long teamId, final ContestSubmissionItem submissionItem,
+                                             final List<MultipartFile> files) {
+        final ContestSubmission submission = contestSubmissionRepository.save(ContestSubmission.builder()
+                .teamId(teamId)
+                .firstSubmittedAt(LocalDateTime.now())
+                .submissionItem(submissionItem)
+                .build());
+        fileDocumentCommandService.storeDocumentFiles(submission.getId(), files);
+        return submission;
+    }
+
+    private void publishSubmissionCompletedNotification(final Long contestId, final ContestSubmission submission,
+                                                        final Member submitter) {
+        final ContestSubmissionItem submissionItem = submission.getSubmissionItem();
+        final List<Long> memberIds = findTeamMemberIdsExceptSubmitter(submission.getTeamId(), submitter);
+        eventPublisher.publishEvent(new SubmissionCompletedNotificationEvent(memberIds, contestId,
+                submission.getTeamId(), submission.getId(), submissionItem.getId(), submissionItem.getName()));
+    }
+
+    private List<Long> findTeamMemberIdsExceptSubmitter(final Long teamId, final Member submitter) {
+        return teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
+                .stream()
+                .filter(id -> !id.equals(submitter.getId()))
+                .toList();
+    }
 }
