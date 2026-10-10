@@ -178,7 +178,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 제출에 실패하면 제출 완료 알림 이벤트를 발행하지 않는다.")
+    @DisplayName("[실패] 제출에 실패하면 제출 완료 알림 이벤트를 발행하지 않는다.")
     void 제출에_실패하면_제출_완료_알림_이벤트를_발행하지_않는다() {
         contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
 
