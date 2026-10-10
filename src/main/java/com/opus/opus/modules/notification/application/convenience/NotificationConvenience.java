@@ -6,10 +6,13 @@ import static com.opus.opus.modules.notification.domain.NotificationType.TEAM;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_AWARDS;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_COMMENT;
 
+import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
+import com.opus.opus.modules.notification.application.event.StaffPosition;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -56,8 +59,64 @@ public class NotificationConvenience {
                 toSubmissionRedirectUrl(contestId, teamId, submissionItemId));
     }
 
+    public void sendStaffAssignedNotifications(final Long contestId, final Long staffId, final String staffName,
+                                               final StaffPosition position, final List<StaffAssignmentTeam> teams) {
+        final List<Notification> notifications = teams.stream()
+                .flatMap(team -> toStaffAssignedNotifications(contestId, staffId, staffName, position, team))
+                .toList();
+        notificationRepository.saveAll(notifications);
+    }
+
+    public void sendStaffUnassignedNotifications(final Long contestId, final Long staffId, final String staffName,
+                                                 final StaffPosition position, final List<StaffAssignmentTeam> teams) {
+        final List<Notification> notifications = teams.stream()
+                .flatMap(team -> toStaffUnassignedNotifications(contestId, staffId, staffName, position, team))
+                .toList();
+        notificationRepository.saveAll(notifications);
+    }
+
+    private Stream<Notification> toStaffAssignedNotifications(final Long contestId, final Long staffId,
+                                                              final String staffName, final StaffPosition position,
+                                                              final StaffAssignmentTeam team) {
+        final NotificationType type = position.getAssignedType();
+        final String title = position.getPositionName() + " 지정 알림";
+        final String change = position.getPositionName() + "로 지정되었습니다.";
+        return Stream.concat(
+                toNotifications(team.memberIds(), type, title,
+                        staffName + " " + position.getHonorific() + "이 " + change,
+                        team.teamId(), toTeamDashboardUrl(contestId, team.teamId())).stream(),
+                Stream.of(toNotification(staffId, type, title, team.teamDisplayName() + " 팀의 " + change,
+                        team.teamId(), toAdvisorActivityUrl(contestId))));
+    }
+
+    private Stream<Notification> toStaffUnassignedNotifications(final Long contestId, final Long staffId,
+                                                                final String staffName, final StaffPosition position,
+                                                                final StaffAssignmentTeam team) {
+        final NotificationType type = position.getUnassignedType();
+        final String title = position.getPositionName() + " 해제 알림";
+        final String change = position.getPositionName() + "에서 해제되었습니다.";
+        return Stream.concat(
+                toNotifications(team.memberIds(), type, title,
+                        staffName + " " + position.getHonorific() + "이 " + change,
+                        team.teamId(), toTeamDashboardUrl(contestId, team.teamId())).stream(),
+                Stream.of(toNotification(staffId, type, title, team.teamDisplayName() + " 팀의 " + change,
+                        team.teamId(), toProjectDetailUrl(contestId, team.teamId()))));
+    }
+
     private String toSubmissionRedirectUrl(final Long contestId, final Long teamId, final Long submissionItemId) {
         return "/me/contests/" + contestId + "/teams/" + teamId + "/submissions?submissionItemId=" + submissionItemId;
+    }
+
+    private String toTeamDashboardUrl(final Long contestId, final Long teamId) {
+        return "/me/contests/" + contestId + "/teams/" + teamId + "/dashboard";
+    }
+
+    private String toAdvisorActivityUrl(final Long contestId) {
+        return "/me/advisor-activity/contests/" + contestId;
+    }
+
+    private String toProjectDetailUrl(final Long contestId, final Long teamId) {
+        return "/contest/" + contestId + "/teams/view/" + teamId;
     }
 
     private void save(final List<Long> memberIds, final NotificationType type,
@@ -66,16 +125,27 @@ public class NotificationConvenience {
         if (memberIds.isEmpty()) {
             return;
         }
-        final List<Notification> notifications = memberIds.stream()
-                .map(memberId -> Notification.builder()
-                        .memberId(memberId)
-                        .type(type)
-                        .title(title)
-                        .content(content)
-                        .targetId(targetId)
-                        .redirectUrl(redirectUrl)
-                        .build())
+        notificationRepository.saveAll(toNotifications(memberIds, type, title, content, targetId, redirectUrl));
+    }
+
+    private List<Notification> toNotifications(final List<Long> memberIds, final NotificationType type,
+                                               final String title, final String content,
+                                               final Long targetId, final String redirectUrl) {
+        return memberIds.stream()
+                .map(memberId -> toNotification(memberId, type, title, content, targetId, redirectUrl))
                 .toList();
-        notificationRepository.saveAll(notifications);
+    }
+
+    private Notification toNotification(final Long memberId, final NotificationType type,
+                                        final String title, final String content,
+                                        final Long targetId, final String redirectUrl) {
+        return Notification.builder()
+                .memberId(memberId)
+                .type(type)
+                .title(title)
+                .content(content)
+                .targetId(targetId)
+                .redirectUrl(redirectUrl)
+                .build();
     }
 }

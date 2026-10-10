@@ -65,4 +65,24 @@ public class NotificationEventListener {
             log.error("새 피드백 알림 전송 실패 - submissionId: {}", event.submissionId(), e);
         }
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleStaffAssignedNotification(final StaffAssignedNotificationEvent event) {
+        try {
+            notificationConvenience.sendStaffAssignedNotifications(
+                    event.contestId(), event.staffId(), event.staffName(), event.position(), event.teams());
+        } catch (Exception e) {
+            log.error("{} 지정 알림 전송 실패 - staffId: {}", event.position().getPositionName(), event.staffId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleStaffUnassignedNotification(final StaffUnassignedNotificationEvent event) {
+        try {
+            notificationConvenience.sendStaffUnassignedNotifications(
+                    event.contestId(), event.staffId(), event.staffName(), event.position(), event.teams());
+        } catch (Exception e) {
+            log.error("{} 해제 알림 전송 실패 - staffId: {}", event.position().getPositionName(), event.staffId(), e);
+        }
+    }
 }
