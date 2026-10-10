@@ -22,12 +22,14 @@ import com.opus.opus.modules.file.application.FileDocumentCommandService;
 import com.opus.opus.modules.file.application.convenience.FileDocumentConvenience;
 import com.opus.opus.modules.file.domain.File;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.notification.application.event.SubmissionCompletedNotificationEvent;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.domain.Team;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +49,7 @@ public class ContestSubmissionCommandService {
     private final FileDocumentConvenience fileDocumentConvenience;
 
     private final FileDocumentCommandService fileDocumentCommandService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SubmissionCreateResponse createSubmission(final Long contestId, final Long submissionItemId,
                                                      final Long teamId, final List<MultipartFile> files,
@@ -64,6 +67,13 @@ public class ContestSubmissionCommandService {
                 .submissionItem(submissionItem)
                 .build());
         fileDocumentCommandService.storeDocumentFiles(submission.getId(), files);
+
+        final List<Long> memberIds = teamMemberConvenience.findRealMemberIdsByTeamId(teamId)
+                .stream()
+                .filter(id -> !id.equals(member.getId()))
+                .toList();
+        eventPublisher.publishEvent(new SubmissionCompletedNotificationEvent(memberIds, contestId, teamId,
+                submission.getId(), submissionItem.getId(), submissionItem.getName()));
 
         return new SubmissionCreateResponse(submission.getId());
     }
