@@ -10,10 +10,11 @@ import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
 public class NotificationConvenience {
 
