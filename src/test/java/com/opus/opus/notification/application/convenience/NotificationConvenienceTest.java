@@ -7,6 +7,8 @@ import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.notification.application.convenience.NotificationConvenience;
+import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
+import com.opus.opus.modules.notification.application.event.StaffPosition;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
@@ -38,6 +40,9 @@ public class NotificationConvenienceTest extends IntegrationTest {
     private static final Long SUBMISSION_ITEM_ID = 20L;
     private static final String SUBMISSION_ITEM_NAME = "중간보고서";
     private static final String SUBMISSION_REDIRECT_URL = "/me/contests/1/teams/1/submissions?submissionItemId=20";
+    private static final Long STAFF_ID = 100L;
+    private static final String STAFF_NAME = "김교수";
+    private static final String TEAM_DASHBOARD_URL = "/me/contests/1/teams/1/dashboard";
 
     @BeforeTransaction
     void 커밋된_알림을_정리한다() {
@@ -158,10 +163,98 @@ public class NotificationConvenienceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 지도교수 지정 알림이 팀원과 지정된 교수에게 생성된다.")
+    void 지도교수_지정_알림이_팀원과_지정된_교수에게_생성된다() {
+        notificationConvenience.sendStaffAssignedNotifications(
+                CONTEST_ID, STAFF_ID, STAFF_NAME, StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam()));
+
+        final Notification memberNotification = getOnlyNotification(member1.getId());
+        assertThat(memberNotification.getType()).isEqualTo(NotificationType.ADVISOR_ASSIGNED);
+        assertThat(memberNotification.getTitle()).isEqualTo("지도교수 지정 알림");
+        assertThat(memberNotification.getContent()).isEqualTo("김교수 교수님이 지도교수로 지정되었습니다.");
+        assertThat(memberNotification.getTargetId()).isEqualTo(TEAM_ID);
+        assertThat(memberNotification.getRedirectUrl()).isEqualTo(TEAM_DASHBOARD_URL);
+
+        final Notification staffNotification = getOnlyNotification(STAFF_ID);
+        assertThat(staffNotification.getType()).isEqualTo(NotificationType.ADVISOR_ASSIGNED);
+        assertThat(staffNotification.getContent()).isEqualTo("테스트팀 팀의 지도교수로 지정되었습니다.");
+        assertThat(staffNotification.getTargetId()).isEqualTo(TEAM_ID);
+        assertThat(staffNotification.getRedirectUrl()).isEqualTo("/me/advisor-activity/contests/1");
+    }
+
+    @Test
+    @DisplayName("[성공] 지도교수 해제 알림이 팀원과 해제된 교수에게 생성된다.")
+    void 지도교수_해제_알림이_팀원과_해제된_교수에게_생성된다() {
+        notificationConvenience.sendStaffUnassignedNotifications(
+                CONTEST_ID, STAFF_ID, STAFF_NAME, StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam()));
+
+        final Notification memberNotification = getOnlyNotification(member1.getId());
+        assertThat(memberNotification.getType()).isEqualTo(NotificationType.ADVISOR_UNASSIGNED);
+        assertThat(memberNotification.getTitle()).isEqualTo("지도교수 해제 알림");
+        assertThat(memberNotification.getContent()).isEqualTo("김교수 교수님이 지도교수에서 해제되었습니다.");
+        assertThat(memberNotification.getRedirectUrl()).isEqualTo(TEAM_DASHBOARD_URL);
+
+        final Notification staffNotification = getOnlyNotification(STAFF_ID);
+        assertThat(staffNotification.getContent()).isEqualTo("테스트팀 팀의 지도교수에서 해제되었습니다.");
+        assertThat(staffNotification.getRedirectUrl()).isEqualTo("/contest/1/teams/view/1");
+    }
+
+    @Test
+    @DisplayName("[성공] 멘토 지정 알림이 멘토 문구로 생성된다.")
+    void 멘토_지정_알림이_멘토_문구로_생성된다() {
+        notificationConvenience.sendStaffAssignedNotifications(
+                CONTEST_ID, STAFF_ID, "박멘토", StaffPosition.MENTOR, List.of(createStaffAssignmentTeam()));
+
+        final Notification memberNotification = getOnlyNotification(member1.getId());
+        assertThat(memberNotification.getType()).isEqualTo(NotificationType.MENTOR_ASSIGNED);
+        assertThat(memberNotification.getTitle()).isEqualTo("멘토 지정 알림");
+        assertThat(memberNotification.getContent()).isEqualTo("박멘토 멘토님이 멘토로 지정되었습니다.");
+        assertThat(getOnlyNotification(STAFF_ID).getContent()).isEqualTo("테스트팀 팀의 멘토로 지정되었습니다.");
+    }
+
+    @Test
+    @DisplayName("[성공] 멘토 해제 알림이 멘토 문구로 생성된다.")
+    void 멘토_해제_알림이_멘토_문구로_생성된다() {
+        notificationConvenience.sendStaffUnassignedNotifications(
+                CONTEST_ID, STAFF_ID, "박멘토", StaffPosition.MENTOR, List.of(createStaffAssignmentTeam()));
+
+        final Notification memberNotification = getOnlyNotification(member1.getId());
+        assertThat(memberNotification.getType()).isEqualTo(NotificationType.MENTOR_UNASSIGNED);
+        assertThat(memberNotification.getTitle()).isEqualTo("멘토 해제 알림");
+        assertThat(memberNotification.getContent()).isEqualTo("박멘토 멘토님이 멘토에서 해제되었습니다.");
+        assertThat(getOnlyNotification(STAFF_ID).getContent()).isEqualTo("테스트팀 팀의 멘토에서 해제되었습니다.");
+    }
+
+    @Test
+    @DisplayName("[성공] 여러 팀에 지정되면 교수는 팀마다 알림을 받는다.")
+    void 여러_팀에_지정되면_교수는_팀마다_알림을_받는다() {
+        final StaffAssignmentTeam otherTeam = new StaffAssignmentTeam(2L, "다른팀", List.of(member2.getId()));
+
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, STAFF_ID, STAFF_NAME,
+                StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam(), otherTeam));
+
+        assertThat(notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(STAFF_ID))
+                .extracting(Notification::getTargetId)
+                .containsExactlyInAnyOrder(TEAM_ID, 2L);
+        assertThat(notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(member2.getId())).hasSize(1);
+    }
+
+    @Test
     @DisplayName("[성공] 알림 대상 회원이 없으면 알림이 생성되지 않는다.")
     void 알림_대상_회원이_없으면_알림이_생성되지_않는다() {
         notificationConvenience.sendTeamMemberJoinNotifications(List.of(), TEAM_ID, TEAM_DISPLAY_NAME);
 
         assertThat(notificationRepository.findAll()).isEmpty();
+    }
+
+    private StaffAssignmentTeam createStaffAssignmentTeam() {
+        return new StaffAssignmentTeam(TEAM_ID, TEAM_DISPLAY_NAME, List.of(member1.getId()));
+    }
+
+    private Notification getOnlyNotification(final Long memberId) {
+        final List<Notification> notifications = notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(
+                memberId);
+        assertThat(notifications).hasSize(1);
+        return notifications.get(0);
     }
 }
