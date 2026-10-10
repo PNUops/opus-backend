@@ -373,7 +373,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         final FileDocument target = saveFileDocument(submission.getId(), 1, "삭제대상.pdf");
         saveFileDocument(submission.getId(), 2, "유지.pdf");
 
-        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(), member);
+        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(),
+                member);
 
         verify(fileDocumentCommandService).deleteDocumentFile(target.getId());
         assertThat(contestSubmissionRepository.findById(submission.getId())).isPresent();
@@ -386,7 +387,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
                 ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
         final FileDocument target = saveFileDocument(submission.getId(), 1, "마지막.pdf");
 
-        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(), member);
+        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(),
+                member);
 
         verify(fileDocumentCommandService).deleteDocumentFile(target.getId());
         assertThat(contestSubmissionRepository.findById(submission.getId())).isEmpty();

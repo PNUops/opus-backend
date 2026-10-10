@@ -92,7 +92,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @Test
     @DisplayName("[성공] 본인 피드백이 없으면 새로 생성된다.")
     void 본인_피드백이_없으면_새로_생성된다() {
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
 
         final List<ContestSubmissionFeedback> feedbacks =
                 feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId());
@@ -105,7 +106,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @Test
     @DisplayName("[성공] 본인 피드백이 이미 있으면 새 행을 만들지 않고 같은 행을 수정한다.")
     void 본인_피드백이_이미_있으면_같은_행을_수정한다() {
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
         final Long feedbackId =
                 feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId()).get(0).getId();
 
@@ -124,7 +126,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     void 같은_제출물에_서로_다른_멘토는_각자의_피드백을_가진다() {
         final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
         feedbackCommandService.saveFeedback(
                 contest.getId(), submission.getId(), otherMember.getId(), updatedDescription, null, null);
 
@@ -142,7 +145,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                 .build());
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
 
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
 
         final List<SubmissionFeedbackNotificationEvent> events =
                 applicationEvents.stream(SubmissionFeedbackNotificationEvent.class).toList();
@@ -159,7 +163,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @DisplayName("[성공] 기존 피드백을 수정하면 새 피드백 알림 이벤트를 발행하지 않는다.")
     void 기존_피드백을_수정하면_새_피드백_알림_이벤트를_발행하지_않는다() {
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
 
         feedbackCommandService.saveFeedback(
                 contest.getId(), submission.getId(), mentor.getId(), updatedDescription, null, null);
@@ -173,7 +178,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
         final Member otherMentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(4));
 
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
         feedbackCommandService.saveFeedback(
                 contest.getId(), submission.getId(), otherMentor.getId(), updatedDescription, null, null);
 
@@ -186,7 +192,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidContestId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description,
+                        null, null))
                 .isInstanceOf(ContestException.class);
 
         assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).isEmpty();
@@ -198,7 +205,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidContestId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description,
+                        null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
@@ -209,7 +217,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidSubmissionId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description,
+                        null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
@@ -220,7 +229,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(),
+                        description, null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
@@ -231,7 +241,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final ContestSubmissionFeedback feedback =
                 feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
 
-        feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), member);
+        feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(),
+                member);
 
         final ContestSubmissionFeedback updated = feedbackRepository.findById(feedback.getId()).orElseThrow();
         assertThat(updated.getIsRead()).isTrue();
@@ -245,7 +256,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
 
         assertThatThrownBy(() ->
-                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), outsider))
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(),
+                        team.getId(), outsider))
                 .isInstanceOf(TeamMemberException.class)
                 .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
                         .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
@@ -257,7 +269,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidFeedbackId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), invalidFeedbackId, team.getId(), member))
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), invalidFeedbackId,
+                        team.getId(), member))
                 .isInstanceOf(ContestSubmissionFeedbackException.class)
                 .satisfies(e -> assertThat(((ContestSubmissionFeedbackException) e).exceptionType())
                         .isEqualTo(NOT_FOUND_FEEDBACK));

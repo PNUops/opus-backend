@@ -33,10 +33,12 @@ public class ContestSubmissionFeedbackCommandService {
                              final String description, final List<MultipartFile> files,
                              final List<Long> removeFileIds) {
         contestConvenience.validateExistContest(contestId);
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(
+                contestId, submissionId);
 
         final boolean isNewFeedback = !contestSubmissionFeedbackConvenience.isFeedbackWritten(submissionId, memberId);
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.upsertFeedback(submission, memberId, description);
+        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.upsertFeedback(submission,
+                memberId, description);
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());

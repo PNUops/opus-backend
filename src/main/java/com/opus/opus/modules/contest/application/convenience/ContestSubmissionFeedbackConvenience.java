@@ -38,7 +38,8 @@ public class ContestSubmissionFeedbackConvenience {
     }
 
     @Transactional
-    public ContestSubmissionFeedback upsertFeedback(final ContestSubmission submission, final Long memberId, final String description) {
+    public ContestSubmissionFeedback upsertFeedback(final ContestSubmission submission, final Long memberId,
+                                                    final String description) {
         return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submission.getId(), memberId)
                 .map(existing -> {
                     existing.updateDescription(description);
