@@ -27,6 +27,7 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
@@ -39,7 +40,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
+@RecordApplicationEvents
 public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest {
 
     @Autowired
@@ -59,9 +63,12 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     private TeamMemberRepository teamMemberRepository;
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private ApplicationEvents applicationEvents;
 
     private Contest contest;
     private Team team;
+    private ContestSubmissionItem submissionItem;
     private ContestSubmission submission;
     private Member member;
 
@@ -71,8 +78,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @BeforeEach
     void setUp() {
         contest = contestRepository.save(ContestFixture.createContest());
-        final ContestSubmissionItem submissionItem =
-                submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        submissionItem = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
         member = memberRepository.save(MemberFixture.createMember());
@@ -86,7 +92,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @Test
     @DisplayName("[성공] 본인 피드백이 없으면 새로 생성된다.")
     void 본인_피드백이_없으면_새로_생성된다() {
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
 
         final List<ContestSubmissionFeedback> feedbacks =
                 feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId());
@@ -99,7 +106,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @Test
     @DisplayName("[성공] 본인 피드백이 이미 있으면 새 행을 만들지 않고 같은 행을 수정한다.")
     void 본인_피드백이_이미_있으면_같은_행을_수정한다() {
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
         final Long feedbackId =
                 feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId()).get(0).getId();
 
@@ -118,11 +126,64 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     void 같은_제출물에_서로_다른_멘토는_각자의_피드백을_가진다() {
         final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
 
-        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null, null);
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
+                null);
         feedbackCommandService.saveFeedback(
                 contest.getId(), submission.getId(), otherMember.getId(), updatedDescription, null, null);
 
         assertThat(feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId())).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 피드백을 처음 작성하면 팀원 전원에게 새 피드백 알림 이벤트를 발행한다.")
+    void 피드백을_처음_작성하면_팀원_전원에게_새_피드백_알림_이벤트를_발행한다() {
+        final Member teammate = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(teammate.getId())
+                .team(team)
+                .roles(Set.of(ROLE_팀원))
+                .build());
+        final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
+
+        final List<SubmissionFeedbackNotificationEvent> events =
+                applicationEvents.stream(SubmissionFeedbackNotificationEvent.class).toList();
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).memberIds()).containsExactlyInAnyOrder(member.getId(), teammate.getId());
+        assertThat(events.get(0).contestId()).isEqualTo(contest.getId());
+        assertThat(events.get(0).teamId()).isEqualTo(team.getId());
+        assertThat(events.get(0).submissionId()).isEqualTo(submission.getId());
+        assertThat(events.get(0).submissionItemId()).isEqualTo(submissionItem.getId());
+        assertThat(events.get(0).submissionItemName()).isEqualTo(submissionItem.getName());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 피드백을 수정하면 새 피드백 알림 이벤트를 발행하지 않는다.")
+    void 기존_피드백을_수정하면_새_피드백_알림_이벤트를_발행하지_않는다() {
+        final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
+
+        feedbackCommandService.saveFeedback(
+                contest.getId(), submission.getId(), mentor.getId(), updatedDescription, null, null);
+
+        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 다른 멘토가 같은 제출물에 처음 작성하면 새 피드백 알림 이벤트를 다시 발행한다.")
+    void 다른_멘토가_같은_제출물에_처음_작성하면_새_피드백_알림_이벤트를_다시_발행한다() {
+        final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+        final Member otherMentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(4));
+
+        feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
+                null);
+        feedbackCommandService.saveFeedback(
+                contest.getId(), submission.getId(), otherMentor.getId(), updatedDescription, null, null);
+
+        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).hasSize(2);
     }
 
     @Test
@@ -131,7 +192,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidContestId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(invalidContestId, submission.getId(), member.getId(), description,
+                        null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_CONTEST.errorMessage());
     }
@@ -142,7 +204,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidSubmissionId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(contest.getId(), invalidSubmissionId, member.getId(), description,
+                        null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_FOUND_SUBMISSION.errorMessage());
     }
@@ -153,7 +216,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(1L));
 
         assertThatThrownBy(() ->
-                feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(), description, null, null))
+                feedbackCommandService.saveFeedback(otherContest.getId(), submission.getId(), member.getId(),
+                        description, null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
     }
@@ -164,7 +228,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final ContestSubmissionFeedback feedback =
                 feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
 
-        feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), member);
+        feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(),
+                member);
 
         final ContestSubmissionFeedback updated = feedbackRepository.findById(feedback.getId()).orElseThrow();
         assertThat(updated.getIsRead()).isTrue();
@@ -178,7 +243,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
 
         assertThatThrownBy(() ->
-                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(), team.getId(), outsider))
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), feedback.getId(),
+                        team.getId(), outsider))
                 .isInstanceOf(TeamMemberException.class)
                 .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
                         .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
@@ -190,7 +256,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
         final Long invalidFeedbackId = 999L;
 
         assertThatThrownBy(() ->
-                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), invalidFeedbackId, team.getId(), member))
+                feedbackCommandService.markFeedbackAsRead(contest.getId(), submission.getId(), invalidFeedbackId,
+                        team.getId(), member))
                 .isInstanceOf(ContestSubmissionFeedbackException.class)
                 .satisfies(e -> assertThat(((ContestSubmissionFeedbackException) e).exceptionType())
                         .isEqualTo(NOT_FOUND_FEEDBACK));

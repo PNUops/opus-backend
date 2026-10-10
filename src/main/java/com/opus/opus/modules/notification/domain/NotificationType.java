@@ -4,5 +4,7 @@ public enum NotificationType {
 
     TEAM,
     TEAM_COMMENT,
-    TEAM_AWARDS
+    TEAM_AWARDS,
+    SUBMISSION_COMPLETED,
+    SUBMISSION_FEEDBACK
 }

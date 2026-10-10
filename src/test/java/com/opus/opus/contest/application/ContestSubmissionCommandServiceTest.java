@@ -7,6 +7,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMI
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_REQUIRED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_SIZE_EXCEEDED;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_PERIOD_ENDED;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -37,6 +38,7 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.notification.application.event.SubmissionCompletedNotificationEvent;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
@@ -53,7 +55,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
+@RecordApplicationEvents
 public class ContestSubmissionCommandServiceTest extends IntegrationTest {
 
     @Autowired
@@ -75,6 +80,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
     private FileDocumentRepository fileDocumentRepository;
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private ApplicationEvents applicationEvents;
 
     private Contest contest;
     private Team team;
@@ -120,6 +127,66 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         assertThat(contestSubmissionRepository.findById(response.submissionId())).isPresent();
         verify(fileDocumentCommandService)
                 .storeDocumentFiles(eq(response.submissionId()), anyList());
+    }
+
+    @Test
+    @DisplayName("[성공] 제출하면 제출자를 제외한 팀원에게 제출 완료 알림 이벤트를 발행한다.")
+    void 제출하면_제출자를_제외한_팀원에게_제출_완료_알림_이벤트를_발행한다() {
+        final Member teammate = saveTeamMember(team, 5);
+
+        final SubmissionCreateResponse response = contestSubmissionCommandService.createSubmission(
+                contest.getId(), submissionItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), member);
+
+        final List<SubmissionCompletedNotificationEvent> events =
+                applicationEvents.stream(SubmissionCompletedNotificationEvent.class).toList();
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).memberIds()).containsExactly(teammate.getId());
+        assertThat(events.get(0).contestId()).isEqualTo(contest.getId());
+        assertThat(events.get(0).teamId()).isEqualTo(team.getId());
+        assertThat(events.get(0).submissionId()).isEqualTo(response.submissionId());
+        assertThat(events.get(0).submissionItemId()).isEqualTo(submissionItem.getId());
+        assertThat(events.get(0).submissionItemName()).isEqualTo(submissionItem.getName());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 대신 제출하면 팀원 전원에게 제출 완료 알림 이벤트를 발행한다.")
+    void 관리자가_대신_제출하면_팀원_전원에게_제출_완료_알림_이벤트를_발행한다() {
+        final Member teammate = saveTeamMember(team, 5);
+        final Member admin = memberRepository.save(MemberFixture.createMemberWithRole("관리자", 6, ROLE_관리자));
+
+        contestSubmissionCommandService.createSubmission(
+                contest.getId(), submissionItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), admin);
+
+        final List<SubmissionCompletedNotificationEvent> events =
+                applicationEvents.stream(SubmissionCompletedNotificationEvent.class).toList();
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).memberIds()).containsExactlyInAnyOrder(member.getId(), teammate.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 마감 후 지각 제출이 허용되면 제출 완료 알림 이벤트를 발행한다.")
+    void 마감_후_지각_제출이_허용되면_제출_완료_알림_이벤트를_발행한다() {
+        saveTeamMember(team, 5);
+        final ContestSubmissionItem lateItem = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItemWithDeadline(
+                        contest, LocalDateTime.now().minusDays(1), true));
+
+        contestSubmissionCommandService.createSubmission(
+                contest.getId(), lateItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), member);
+
+        assertThat(applicationEvents.stream(SubmissionCompletedNotificationEvent.class)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("[실패] 제출에 실패하면 제출 완료 알림 이벤트를 발행하지 않는다.")
+    void 제출에_실패하면_제출_완료_알림_이벤트를_발행하지_않는다() {
+        contestSubmissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
+
+        assertThatThrownBy(() -> contestSubmissionCommandService.createSubmission(
+                contest.getId(), submissionItem.getId(), team.getId(), List.of(pdf("발표자료.pdf")), member))
+                .isInstanceOf(ContestException.class);
+
+        assertThat(applicationEvents.stream(SubmissionCompletedNotificationEvent.class)).isEmpty();
     }
 
     @Test
@@ -234,6 +301,16 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         assertThat(response.submissionId()).isNotNull();
     }
 
+    private Member saveTeamMember(final Team newTeam, final int uniqueNum) {
+        final Member teammate = memberRepository.save(MemberFixture.createMemberWithUniqueNum(uniqueNum));
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(teammate.getId())
+                .team(newTeam)
+                .roles(Set.of(TeamMemberRoleType.ROLE_팀원))
+                .build());
+        return teammate;
+    }
+
     private Member saveTeamLeader(final Team newTeam, final int uniqueNum) {
         final Member leader = memberRepository.save(MemberFixture.createMemberWithUniqueNum(uniqueNum));
         teamMemberRepository.save(TeamMember.builder()
@@ -256,6 +333,20 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
                 contest.getId(), submission.getId(), List.of(pdf("추가.pdf")), member);
 
         verify(fileDocumentCommandService).storeDocumentFiles(eq(submission.getId()), anyList());
+    }
+
+    @Test
+    @DisplayName("[성공] 기존 제출에 파일을 추가하면 제출 완료 알림 이벤트를 발행하지 않는다.")
+    void 파일을_추가하면_제출_완료_알림_이벤트를_발행하지_않는다() {
+        saveTeamMember(team, 5);
+        final ContestSubmission submission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
+        saveFileDocument(submission.getId(), 1, "기존1.pdf");
+
+        contestSubmissionCommandService.addSubmissionFiles(
+                contest.getId(), submission.getId(), List.of(pdf("추가.pdf")), member);
+
+        assertThat(applicationEvents.stream(SubmissionCompletedNotificationEvent.class)).isEmpty();
     }
 
     @Test
@@ -282,7 +373,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
         final FileDocument target = saveFileDocument(submission.getId(), 1, "삭제대상.pdf");
         saveFileDocument(submission.getId(), 2, "유지.pdf");
 
-        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(), member);
+        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(),
+                member);
 
         verify(fileDocumentCommandService).deleteDocumentFile(target.getId());
         assertThat(contestSubmissionRepository.findById(submission.getId())).isPresent();
@@ -295,7 +387,8 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
                 ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
         final FileDocument target = saveFileDocument(submission.getId(), 1, "마지막.pdf");
 
-        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(), member);
+        contestSubmissionCommandService.deleteSubmissionFile(contest.getId(), submission.getId(), target.getId(),
+                member);
 
         verify(fileDocumentCommandService).deleteDocumentFile(target.getId());
         assertThat(contestSubmissionRepository.findById(submission.getId())).isEmpty();
