@@ -15,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.transaction.AfterTransaction;
+import org.springframework.test.context.transaction.BeforeTransaction;
 
 public class NotificationConvenienceTest extends IntegrationTest {
 
@@ -31,6 +33,16 @@ public class NotificationConvenienceTest extends IntegrationTest {
     private Member member2;
     private static final Long TEAM_ID = 1L;
     private static final String TEAM_DISPLAY_NAME = "테스트팀";
+
+    @BeforeTransaction
+    void 커밋된_알림을_정리한다() {
+        notificationRepository.deleteAllInBatch();
+    }
+
+    @AfterTransaction
+    void 테스트에서_커밋된_알림을_정리한다() {
+        notificationRepository.deleteAllInBatch();
+    }
 
     @BeforeEach
     void setUp() {
