@@ -43,4 +43,26 @@ public class NotificationEventListener {
             log.error("팀 수상 알림 전송 실패 - teamId: {}", event.teamId(), e);
         }
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionCompletedNotification(final SubmissionCompletedNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionCompletedNotifications(
+                    event.memberIds(), event.contestId(), event.teamId(), event.submissionId(),
+                    event.submissionItemId(), event.submissionItemName());
+        } catch (Exception e) {
+            log.error("제출 완료 알림 전송 실패 - submissionId: {}", event.submissionId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionFeedbackNotification(final SubmissionFeedbackNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionFeedbackNotifications(
+                    event.memberIds(), event.contestId(), event.teamId(), event.submissionId(),
+                    event.submissionItemId(), event.submissionItemName());
+        } catch (Exception e) {
+            log.error("새 피드백 알림 전송 실패 - submissionId: {}", event.submissionId(), e);
+        }
+    }
 }
