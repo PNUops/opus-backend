@@ -46,7 +46,13 @@ public class NotificationApiDocsTest extends RestDocsTest {
                 new NotificationResponse(1L, "팀 알림 제목입니다.", "팀 알림 내용입니다.", NotificationType.TEAM, 1L,
                         "/teams/1", false, now()),
                 new NotificationResponse(2L, "팀 댓글 알림 제목입니다.", "팀 댓글 알림 내용입니다.", NotificationType.TEAM_COMMENT, 1L,
-                        "/teams/1", false, now())
+                        "/teams/1", false, now()),
+                new NotificationResponse(3L, "제출 완료 알림", "중간보고서 제출이 완료되었습니다.",
+                        NotificationType.SUBMISSION_COMPLETED, 10L,
+                        "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now()),
+                new NotificationResponse(4L, "새 피드백 알림", "중간보고서에 새로운 피드백이 등록되었습니다.",
+                        NotificationType.SUBMISSION_FEEDBACK, 10L,
+                        "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now())
         );
 
         when(notificationQueryService.getNotifications(any())).thenReturn(responses);
@@ -63,8 +69,9 @@ public class NotificationApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("[].id", "알림 ID"),
                                 stringFieldWithPath("[].title", "알림 제목"),
                                 stringFieldWithPath("[].content", "알림 내용"),
-                                stringFieldWithPath("[].targetType", "알림 타입 (TEAM, TEAM_COMMENT, TEAM_AWARDS)"),
-                                numberFieldWithPath("[].targetId", "알림 대상 ID"),
+                                stringFieldWithPath("[].targetType",
+                                        "알림 타입 (TEAM, TEAM_COMMENT, TEAM_AWARDS, SUBMISSION_COMPLETED, SUBMISSION_FEEDBACK)"),
+                                numberFieldWithPath("[].targetId", "알림 대상 ID (팀 알림은 팀 ID, 제출물 알림은 제출물 ID)"),
                                 stringFieldWithPath("[].redirectUrl", "이동 URL"),
                                 booleanFieldWithPath("[].isRead", "읽음 여부"),
                                 dateTimeFieldWithPath("[].createdAt", "알림 생성 시각")
