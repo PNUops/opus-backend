@@ -40,4 +40,11 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
 
     @Query("SELECT DISTINCT tm.memberId FROM TeamMember tm JOIN Member m ON m.id = tm.memberId WHERE tm.team.id = :teamId AND m.isFake = false AND m.isDeleted = false")
     List<Long> findRealMemberIdsByTeamId(final Long teamId);
+
+    @Query("""
+            SELECT DISTINCT new com.opus.opus.modules.team.domain.dao.TeamMemberIdResult(tm.team.id, tm.memberId)
+            FROM TeamMember tm JOIN Member m ON m.id = tm.memberId
+            WHERE tm.team.id IN :teamIds AND m.isFake = false AND m.isDeleted = false
+            """)
+    List<TeamMemberIdResult> findRealMemberIdsByTeamIds(final List<Long> teamIds);
 }
