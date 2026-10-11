@@ -56,7 +56,10 @@ public class NotificationApiDocsTest extends RestDocsTest {
                 new NotificationResponse(5L, "지도교수 지정 알림", "김교수 교수님이 지도교수로 지정되었습니다.",
                         NotificationType.ADVISOR_ASSIGNED, 1L, "/me/contests/1/teams/1/dashboard", false, now()),
                 new NotificationResponse(6L, "멘토 해제 알림", "팀 옵스 팀의 멘토에서 해제되었습니다.",
-                        NotificationType.MENTOR_UNASSIGNED, 1L, "/contest/1/teams/view/1", false, now())
+                        NotificationType.MENTOR_UNASSIGNED, 1L, "/contest/1/teams/view/1", false, now()),
+                new NotificationResponse(7L, "제출 마감 알림", "중간보고서 제출 마감이 3일 남았습니다.",
+                        NotificationType.SUBMISSION_DEADLINE, 20L,
+                        "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now())
         );
 
         when(notificationQueryService.getNotifications(any())).thenReturn(responses);
@@ -75,8 +78,11 @@ public class NotificationApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].content", "알림 내용"),
                                 stringFieldWithPath("[].targetType",
                                         "알림 타입 (TEAM, TEAM_COMMENT, TEAM_AWARDS, SUBMISSION_COMPLETED, SUBMISSION_FEEDBACK, "
-                                                + "ADVISOR_ASSIGNED, ADVISOR_UNASSIGNED, MENTOR_ASSIGNED, MENTOR_UNASSIGNED)"),
-                                numberFieldWithPath("[].targetId", "알림 대상 ID (팀 알림은 팀 ID, 제출물 알림은 제출물 ID)"),
+                                                + "SUBMISSION_DEADLINE, ADVISOR_ASSIGNED, ADVISOR_UNASSIGNED, MENTOR_ASSIGNED, "
+                                                + "MENTOR_UNASSIGNED)"),
+                                numberFieldWithPath("[].targetId",
+                                        "알림 대상 ID (팀, 지도교수, 멘토 알림은 팀 ID, 제출 완료, 새 피드백 알림은 제출물 ID, "
+                                                + "제출 마감 알림은 제출 항목 ID)"),
                                 stringFieldWithPath("[].redirectUrl", "이동 URL"),
                                 booleanFieldWithPath("[].isRead", "읽음 여부"),
                                 dateTimeFieldWithPath("[].createdAt", "알림 생성 시각")
