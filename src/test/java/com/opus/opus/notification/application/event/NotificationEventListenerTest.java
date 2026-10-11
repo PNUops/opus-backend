@@ -155,4 +155,21 @@ public class NotificationEventListenerTest extends IntegrationTest {
         assertThat(notifications).extracting(Notification::getType)
                 .containsOnly(NotificationType.SUBMISSION_DEADLINE);
     }
+
+    @Test
+    @DisplayName("[성공] 읽기 전용 트랜잭션에서 발행한 제출 마감 이벤트도 커밋되면 제출 마감 알림이 저장된다.")
+    void 읽기_전용_트랜잭션에서_발행한_제출_마감_이벤트도_커밋되면_제출_마감_알림이_저장된다() {
+        final TransactionTemplate readOnlyTransactionTemplate =
+                new TransactionTemplate(transactionTemplate.getTransactionManager());
+        readOnlyTransactionTemplate.setReadOnly(true);
+
+        readOnlyTransactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(
+                new SubmissionDeadlineNotificationEvent(CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 1,
+                        List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(MEMBER_ID_1, MEMBER_ID_2))))));
+
+        final List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).hasSize(2);
+        assertThat(notifications).extracting(Notification::getType)
+                .containsOnly(NotificationType.SUBMISSION_DEADLINE);
+    }
 }
