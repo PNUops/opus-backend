@@ -8,6 +8,8 @@ import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
 import com.opus.opus.modules.notification.application.event.StaffPosition;
 import com.opus.opus.modules.notification.application.event.StaffUnassignedNotificationEvent;
 import com.opus.opus.modules.notification.application.event.SubmissionCompletedNotificationEvent;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineNotificationEvent;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTeam;
 import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
 import com.opus.opus.modules.notification.application.event.TeamCommentNotificationEvent;
 import com.opus.opus.modules.notification.domain.Notification;
@@ -139,5 +141,18 @@ public class NotificationEventListenerTest extends IntegrationTest {
                 .containsExactlyInAnyOrder(MEMBER_ID_1, MEMBER_ID_2, STAFF_ID);
         assertThat(notifications).extracting(Notification::getType)
                 .containsOnly(NotificationType.MENTOR_UNASSIGNED);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 마감 이벤트를 발행한 트랜잭션이 커밋되면 제출 마감 알림이 저장된다.")
+    void 제출_마감_이벤트를_발행한_트랜잭션이_커밋되면_제출_마감_알림이_저장된다() {
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(
+                new SubmissionDeadlineNotificationEvent(CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 1,
+                        List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(MEMBER_ID_1, MEMBER_ID_2))))));
+
+        final List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).hasSize(2);
+        assertThat(notifications).extracting(Notification::getType)
+                .containsOnly(NotificationType.SUBMISSION_DEADLINE);
     }
 }
