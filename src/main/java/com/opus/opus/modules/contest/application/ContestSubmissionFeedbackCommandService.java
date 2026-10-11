@@ -36,10 +36,7 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(
                 contestId, submissionId);
 
-        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience.findFeedback(submissionId,
-                        memberId)
-                .map(existing -> updateFeedback(existing, description))
-                .orElseGet(() -> createFeedback(contestId, submission, memberId, description));
+        final ContestSubmissionFeedback feedback = upsertFeedback(contestId, submission, memberId, description);
 
         fileFeedbackCommandService.deleteFeedbackFiles(removeFileIds, feedback.getId());
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());
@@ -53,6 +50,13 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
         feedback.markAsRead();
+    }
+
+    private ContestSubmissionFeedback upsertFeedback(final Long contestId, final ContestSubmission submission,
+                                                     final Long memberId, final String description) {
+        return contestSubmissionFeedbackConvenience.findFeedback(submission.getId(), memberId)
+                .map(existing -> updateFeedback(existing, description))
+                .orElseGet(() -> createFeedback(contestId, submission, memberId, description));
     }
 
     private ContestSubmissionFeedback updateFeedback(final ContestSubmissionFeedback feedback,

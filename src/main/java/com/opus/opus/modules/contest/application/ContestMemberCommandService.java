@@ -139,9 +139,14 @@ public class ContestMemberCommandService {
             return;
         }
         final List<StaffAssignmentTeam> teams = toStaffAssignmentTeams(teamIds);
-        memberConvenience.getMembersByIds(staffIds).values().forEach(staff -> toStaffPositions(staff).forEach(
-                position -> eventPublisher.publishEvent(new StaffAssignedNotificationEvent(
-                        contestId, staff.getId(), staff.getName(), position, teams))));
+        memberConvenience.getMembersByIds(staffIds).values()
+                .forEach(staff -> publishStaffAssignedNotification(contestId, staff, teams));
+    }
+
+    private void publishStaffAssignedNotification(final Long contestId, final Member staff,
+                                                  final List<StaffAssignmentTeam> teams) {
+        toStaffPositions(staff).forEach(position -> eventPublisher.publishEvent(
+                new StaffAssignedNotificationEvent(contestId, staff.getId(), staff.getName(), position, teams)));
     }
 
     private void publishStaffUnassignedNotifications(final Long contestId, final List<Long> staffIds,
@@ -150,15 +155,21 @@ public class ContestMemberCommandService {
             return;
         }
         final List<StaffAssignmentTeam> teams = toStaffAssignmentTeams(teamIds);
-        memberConvenience.getMembersByIds(staffIds).values().forEach(staff -> toStaffPositions(staff).forEach(
-                position -> eventPublisher.publishEvent(new StaffUnassignedNotificationEvent(
-                        contestId, staff.getId(), staff.getName(), position, teams))));
+        memberConvenience.getMembersByIds(staffIds).values()
+                .forEach(staff -> publishStaffUnassignedNotification(contestId, staff, teams));
+    }
+
+    private void publishStaffUnassignedNotification(final Long contestId, final Member staff,
+                                                    final List<StaffAssignmentTeam> teams) {
+        toStaffPositions(staff).forEach(position -> eventPublisher.publishEvent(
+                new StaffUnassignedNotificationEvent(contestId, staff.getId(), staff.getName(), position, teams)));
     }
 
     private List<StaffAssignmentTeam> toStaffAssignmentTeams(final List<Long> teamIds) {
+        final Map<Long, List<Long>> memberIdsByTeamId = teamMemberConvenience.findRealMemberIdsByTeamIds(teamIds);
         return teamConvenience.getTeamsByIds(teamIds).values().stream()
                 .map(team -> new StaffAssignmentTeam(team.getId(), toTeamDisplayName(team),
-                        teamMemberConvenience.findRealMemberIdsByTeamId(team.getId())))
+                        memberIdsByTeamId.getOrDefault(team.getId(), List.of())))
                 .toList();
     }
 
