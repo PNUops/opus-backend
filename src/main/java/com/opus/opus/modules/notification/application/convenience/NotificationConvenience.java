@@ -66,8 +66,7 @@ public class NotificationConvenience {
                                                     final List<SubmissionDeadlineTeam> teams) {
         final String content = submissionItemName + " 제출 마감이 " + daysLeft + "일 남았습니다.";
         final List<Notification> notifications = teams.stream()
-                .flatMap(team -> toNotifications(team.memberIds(), SUBMISSION_DEADLINE, "제출 마감 알림", content,
-                        submissionItemId, toSubmissionRedirectUrl(contestId, team.teamId(), submissionItemId)).stream())
+                .flatMap(team -> toSubmissionDeadlineNotifications(contestId, submissionItemId, content, team))
                 .toList();
         notificationRepository.saveAll(notifications);
     }
@@ -86,6 +85,13 @@ public class NotificationConvenience {
                 .flatMap(team -> toStaffUnassignedNotifications(contestId, staffId, staffName, position, team))
                 .toList();
         notificationRepository.saveAll(notifications);
+    }
+
+    private Stream<Notification> toSubmissionDeadlineNotifications(final Long contestId, final Long submissionItemId,
+                                                                   final String content,
+                                                                   final SubmissionDeadlineTeam team) {
+        return toNotifications(team.memberIds(), SUBMISSION_DEADLINE, "제출 마감 알림", content, submissionItemId,
+                toSubmissionRedirectUrl(contestId, team.teamId(), submissionItemId)).stream();
     }
 
     private Stream<Notification> toStaffAssignedNotifications(final Long contestId, final Long staffId,
