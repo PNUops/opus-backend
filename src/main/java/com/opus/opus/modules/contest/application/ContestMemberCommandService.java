@@ -156,9 +156,10 @@ public class ContestMemberCommandService {
     }
 
     private List<StaffAssignmentTeam> toStaffAssignmentTeams(final List<Long> teamIds) {
+        final Map<Long, List<Long>> memberIdsByTeamId = teamMemberConvenience.findRealMemberIdsByTeamIds(teamIds);
         return teamConvenience.getTeamsByIds(teamIds).values().stream()
                 .map(team -> new StaffAssignmentTeam(team.getId(), toTeamDisplayName(team),
-                        teamMemberConvenience.findRealMemberIdsByTeamId(team.getId())))
+                        memberIdsByTeamId.getOrDefault(team.getId(), List.of())))
                 .toList();
     }
 
