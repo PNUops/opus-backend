@@ -337,7 +337,7 @@ public class ContestSubmissionCommandServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 기존 제출에 파일을 추가하면 제출 완료 알림 이벤트를 발행하지 않는다.")
-    void 파일을_추가하면_제출_완료_알림_이벤트를_발행하지_않는다() {
+    void 기존_제출에_파일을_추가하면_제출_완료_알림_이벤트를_발행하지_않는다() {
         saveTeamMember(team, 5);
         final ContestSubmission submission = contestSubmissionRepository.save(
                 ContestSubmissionFixture.createSubmission(team.getId(), submissionItem));
