@@ -67,6 +67,16 @@ public class NotificationEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionDeadlineNotification(final SubmissionDeadlineNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionDeadlineNotifications(event.contestId(), event.submissionItemId(),
+                    event.submissionItemName(), event.daysLeft(), event.teams());
+        } catch (Exception e) {
+            log.error("제출 마감 알림 전송 실패 - submissionItemId: {}", event.submissionItemId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleStaffAssignedNotification(final StaffAssignedNotificationEvent event) {
         try {
             notificationConvenience.sendStaffAssignedNotifications(

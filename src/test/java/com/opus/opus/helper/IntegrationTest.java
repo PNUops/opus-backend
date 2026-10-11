@@ -21,7 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 @Transactional
-@SpringBootTest
+@SpringBootTest(properties = "scheduler.submission-deadline.enabled=false")
 @AutoConfigureMockMvc
 public abstract class IntegrationTest extends ApiTestHelper {
 

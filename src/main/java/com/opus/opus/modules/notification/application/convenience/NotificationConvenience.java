@@ -1,6 +1,7 @@
 package com.opus.opus.modules.notification.application.convenience;
 
 import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_COMPLETED;
+import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_DEADLINE;
 import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_FEEDBACK;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_AWARDS;
@@ -8,6 +9,7 @@ import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_CO
 
 import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
 import com.opus.opus.modules.notification.application.event.StaffPosition;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTeam;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
@@ -57,6 +59,17 @@ public class NotificationConvenience {
         save(memberIds, SUBMISSION_FEEDBACK, "새 피드백 알림",
                 submissionItemName + "에 새로운 피드백이 등록되었습니다.", submissionId,
                 toSubmissionRedirectUrl(contestId, teamId, submissionItemId));
+    }
+
+    public void sendSubmissionDeadlineNotifications(final Long contestId, final Long submissionItemId,
+                                                    final String submissionItemName, final int daysLeft,
+                                                    final List<SubmissionDeadlineTeam> teams) {
+        final String content = submissionItemName + " 제출 마감이 " + daysLeft + "일 남았습니다.";
+        final List<Notification> notifications = teams.stream()
+                .flatMap(team -> toNotifications(team.memberIds(), SUBMISSION_DEADLINE, "제출 마감 알림", content,
+                        submissionItemId, toSubmissionRedirectUrl(contestId, team.teamId(), submissionItemId)).stream())
+                .toList();
+        notificationRepository.saveAll(notifications);
     }
 
     public void sendStaffAssignedNotifications(final Long contestId, final Long staffId, final String staffName,

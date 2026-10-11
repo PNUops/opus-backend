@@ -5,15 +5,20 @@ import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀장;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.NOT_TEAM_LEADER;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_ALREADY_EXISTS;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.TeamMemberRoleType;
+import com.opus.opus.modules.team.domain.dao.TeamMemberIdResult;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -96,5 +101,10 @@ public class TeamMemberConvenience {
 
     public List<Long> findRealMemberIdsByTeamId(final Long teamId) {
         return teamMemberRepository.findRealMemberIdsByTeamId(teamId);
+    }
+
+    public Map<Long, List<Long>> findRealMemberIdsByTeamIds(final List<Long> teamIds) {
+        return teamMemberRepository.findRealMemberIdsByTeamIds(teamIds).stream()
+                .collect(groupingBy(TeamMemberIdResult::teamId, mapping(TeamMemberIdResult::memberId, toList())));
     }
 }

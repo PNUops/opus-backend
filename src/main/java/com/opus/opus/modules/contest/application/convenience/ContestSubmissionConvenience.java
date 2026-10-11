@@ -116,4 +116,9 @@ public class ContestSubmissionConvenience {
                                                                final Long trackId) {
         return contestSubmissionRepository.findSubmissionSummary(contestId, submissionItemId, trackId);
     }
+
+    public List<Long> findNotSubmittedTeamIds(final ContestSubmissionItem submissionItem) {
+        return contestSubmissionRepository.findNotSubmittedTeamIds(
+                submissionItem.getContest().getId(), submissionItem.getTrackId(), submissionItem.getId());
+    }
 }
