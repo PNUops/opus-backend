@@ -13,6 +13,8 @@ import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTe
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
 public class NotificationConvenience {
+
+    private static final DateTimeFormatter DEADLINE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일 HH:mm");
 
     private final NotificationRepository notificationRepository;
 
@@ -63,8 +67,10 @@ public class NotificationConvenience {
 
     public void sendSubmissionDeadlineNotifications(final Long contestId, final Long submissionItemId,
                                                     final String submissionItemName, final int daysLeft,
+                                                    final LocalDateTime endAt,
                                                     final List<SubmissionDeadlineTeam> teams) {
-        final String content = submissionItemName + " 제출 마감이 " + daysLeft + "일 남았습니다.";
+        final String content = submissionItemName + " 제출 마감이 " + daysLeft + "일 남았습니다. ("
+                + endAt.format(DEADLINE_FORMATTER) + ")";
         final List<Notification> notifications = teams.stream()
                 .flatMap(team -> toSubmissionDeadlineNotifications(contestId, submissionItemId, content, team))
                 .toList();

@@ -1,5 +1,6 @@
 package com.opus.opus.modules.notification.application.event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record SubmissionDeadlineNotificationEvent(
@@ -7,6 +8,7 @@ public record SubmissionDeadlineNotificationEvent(
         Long submissionItemId,
         String submissionItemName,
         int daysLeft,
+        LocalDateTime endAt,
         List<SubmissionDeadlineTeam> teams
 ) {
 }

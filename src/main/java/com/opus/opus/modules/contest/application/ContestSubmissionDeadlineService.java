@@ -44,7 +44,7 @@ public class ContestSubmissionDeadlineService {
             return;
         }
         eventPublisher.publishEvent(new SubmissionDeadlineNotificationEvent(submissionItem.getContest().getId(),
-                submissionItem.getId(), submissionItem.getName(), daysLeft, teams));
+                submissionItem.getId(), submissionItem.getName(), daysLeft, submissionItem.getEndAt(), teams));
     }
 
     private List<SubmissionDeadlineTeam> findNotSubmittedTeams(final ContestSubmissionItem submissionItem) {
