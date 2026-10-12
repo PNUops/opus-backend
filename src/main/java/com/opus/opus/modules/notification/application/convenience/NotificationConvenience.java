@@ -86,7 +86,7 @@ public class NotificationConvenience {
                         staffName + " " + position.getHonorific() + "이 " + change,
                         team.teamId(), toTeamDashboardUrl(contestId, team.teamId())).stream(),
                 Stream.of(toNotification(staffId, type, title, team.teamDisplayName() + " 팀의 " + change,
-                        team.teamId(), toAdvisorActivityUrl(contestId))));
+                        team.teamId(), toAdvisorActivityUrl(contestId, team.teamId()))));
     }
 
     private Stream<Notification> toStaffUnassignedNotifications(final Long contestId, final Long staffId,
@@ -111,8 +111,8 @@ public class NotificationConvenience {
         return "/me/contests/" + contestId + "/teams/" + teamId + "/dashboard";
     }
 
-    private String toAdvisorActivityUrl(final Long contestId) {
-        return "/me/advisor-activity/contests/" + contestId;
+    private String toAdvisorActivityUrl(final Long contestId, final Long teamId) {
+        return "/me/advisor-activity/contests/" + contestId + "?teamId=" + teamId;
     }
 
     private String toProjectDetailUrl(final Long contestId, final Long teamId) {

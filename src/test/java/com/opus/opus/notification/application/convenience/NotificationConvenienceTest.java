@@ -179,7 +179,7 @@ public class NotificationConvenienceTest extends IntegrationTest {
         assertThat(staffNotification.getType()).isEqualTo(NotificationType.ADVISOR_ASSIGNED);
         assertThat(staffNotification.getContent()).isEqualTo("테스트팀 팀의 지도교수로 지정되었습니다.");
         assertThat(staffNotification.getTargetId()).isEqualTo(TEAM_ID);
-        assertThat(staffNotification.getRedirectUrl()).isEqualTo("/me/advisor-activity/contests/1");
+        assertThat(staffNotification.getRedirectUrl()).isEqualTo("/me/advisor-activity/contests/1?teamId=1");
     }
 
     @Test
