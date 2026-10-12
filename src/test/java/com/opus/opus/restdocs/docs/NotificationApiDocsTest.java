@@ -57,7 +57,7 @@ public class NotificationApiDocsTest extends RestDocsTest {
                         NotificationType.ADVISOR_ASSIGNED, 1L, "/me/contests/1/teams/1/dashboard", false, now()),
                 new NotificationResponse(6L, "멘토 해제 알림", "팀 옵스 팀의 멘토에서 해제되었습니다.",
                         NotificationType.MENTOR_UNASSIGNED, 1L, "/contest/1/teams/view/1", false, now()),
-                new NotificationResponse(7L, "제출 마감 알림", "중간보고서 제출 마감이 3일 남았습니다.",
+                new NotificationResponse(7L, "제출 마감 알림", "중간보고서 제출 마감이 3일 남았습니다. (10월 14일 23:59)",
                         NotificationType.SUBMISSION_DEADLINE, 20L,
                         "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now())
         );

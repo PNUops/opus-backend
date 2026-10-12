@@ -92,6 +92,7 @@ public class ContestSubmissionDeadlineServiceTest extends IntegrationTest {
         assertThat(event.contestId()).isEqualTo(contest.getId());
         assertThat(event.submissionItemName()).isEqualTo(submissionItem.getName());
         assertThat(event.daysLeft()).isEqualTo(3);
+        assertThat(event.endAt()).isEqualTo(submissionItem.getEndAt());
         assertThat(event.teams()).extracting(SubmissionDeadlineTeam::teamId, SubmissionDeadlineTeam::memberIds)
                 .containsExactlyInAnyOrder(
                         tuple(teamA.getId(), List.of(memberA.getId())),

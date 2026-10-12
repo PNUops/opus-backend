@@ -13,6 +13,7 @@ import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTe
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,7 @@ public class NotificationConvenienceTest extends IntegrationTest {
     private static final Long SUBMISSION_ID = 10L;
     private static final Long SUBMISSION_ITEM_ID = 20L;
     private static final String SUBMISSION_ITEM_NAME = "중간보고서";
+    private static final LocalDateTime END_AT = LocalDateTime.of(2026, 10, 14, 23, 59);
     private static final String SUBMISSION_REDIRECT_URL = "/me/contests/1/teams/1/submissions?submissionItemId=20";
     private static final Long STAFF_ID = 100L;
     private static final String STAFF_NAME = "김교수";
@@ -172,12 +174,12 @@ public class NotificationConvenienceTest extends IntegrationTest {
                 new SubmissionDeadlineTeam(2L, List.of(member2.getId())));
 
         notificationConvenience.sendSubmissionDeadlineNotifications(
-                CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 3, teams);
+                CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 3, END_AT, teams);
 
         final Notification member1Notification = getOnlyNotification(member1.getId());
         assertThat(member1Notification.getType()).isEqualTo(NotificationType.SUBMISSION_DEADLINE);
         assertThat(member1Notification.getTitle()).isEqualTo("제출 마감 알림");
-        assertThat(member1Notification.getContent()).isEqualTo("중간보고서 제출 마감이 3일 남았습니다.");
+        assertThat(member1Notification.getContent()).isEqualTo("중간보고서 제출 마감이 3일 남았습니다. (10월 14일 23:59)");
         assertThat(member1Notification.getTargetId()).isEqualTo(SUBMISSION_ITEM_ID);
         assertThat(member1Notification.getRedirectUrl()).isEqualTo(SUBMISSION_REDIRECT_URL);
         assertThat(getOnlyNotification(member2.getId()).getRedirectUrl())
@@ -188,9 +190,11 @@ public class NotificationConvenienceTest extends IntegrationTest {
     @DisplayName("[성공] 제출 마감 하루 전 알림은 남은 일수가 1일로 생성된다.")
     void 제출_마감_하루_전_알림은_남은_일수가_1일로_생성된다() {
         notificationConvenience.sendSubmissionDeadlineNotifications(CONTEST_ID, SUBMISSION_ITEM_ID,
-                SUBMISSION_ITEM_NAME, 1, List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(member1.getId()))));
+                SUBMISSION_ITEM_NAME, 1, END_AT,
+                List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(member1.getId()))));
 
-        assertThat(getOnlyNotification(member1.getId()).getContent()).isEqualTo("중간보고서 제출 마감이 1일 남았습니다.");
+        assertThat(getOnlyNotification(member1.getId()).getContent())
+                .isEqualTo("중간보고서 제출 마감이 1일 남았습니다. (10월 14일 23:59)");
     }
 
     @Test
