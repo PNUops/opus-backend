@@ -251,6 +251,7 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
                         tuple(mentor.getId(), StaffPosition.MENTOR));
         assertThat(events).allSatisfy(event -> {
             assertThat(event.contestId()).isEqualTo(contest.getId());
+            assertThat(event.contestName()).isEqualTo(contest.getContestName());
             assertThat(event.teams()).extracting(StaffAssignmentTeam::teamId, StaffAssignmentTeam::memberIds)
                     .containsExactlyInAnyOrder(
                             tuple(teamA.getId(), List.of(teammate.getId())),
@@ -286,6 +287,7 @@ public class ContestMemberCommandServiceTest extends IntegrationTest {
         final List<StaffAssignedNotificationEvent> assignedEvents =
                 applicationEvents.stream(StaffAssignedNotificationEvent.class).toList();
         assertThat(assignedEvents).hasSize(1);
+        assertThat(assignedEvents.get(0).contestName()).isEqualTo(contest.getContestName());
         assertThat(assignedEvents.get(0).teams()).extracting(StaffAssignmentTeam::teamId)
                 .containsExactly(teamB.getId());
 

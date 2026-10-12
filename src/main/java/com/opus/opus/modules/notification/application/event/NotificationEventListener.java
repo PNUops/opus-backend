@@ -79,8 +79,8 @@ public class NotificationEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleStaffAssignedNotification(final StaffAssignedNotificationEvent event) {
         try {
-            notificationConvenience.sendStaffAssignedNotifications(
-                    event.contestId(), event.staffId(), event.staffName(), event.position(), event.teams());
+            notificationConvenience.sendStaffAssignedNotifications(event.contestId(), event.contestName(),
+                    event.staffId(), event.staffName(), event.position(), event.teams());
         } catch (Exception e) {
             log.error("{} 지정 알림 전송 실패 - staffId: {}", event.position().getPositionName(), event.staffId(), e);
         }

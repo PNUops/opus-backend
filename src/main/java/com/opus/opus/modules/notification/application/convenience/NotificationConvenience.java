@@ -71,12 +71,14 @@ public class NotificationConvenience {
         notificationRepository.saveAll(notifications);
     }
 
-    public void sendStaffAssignedNotifications(final Long contestId, final Long staffId, final String staffName,
-                                               final StaffPosition position, final List<StaffAssignmentTeam> teams) {
-        final List<Notification> notifications = teams.stream()
-                .flatMap(team -> toStaffAssignedNotifications(contestId, staffId, staffName, position, team))
-                .toList();
-        notificationRepository.saveAll(notifications);
+    public void sendStaffAssignedNotifications(final Long contestId, final String contestName, final Long staffId,
+                                               final String staffName, final StaffPosition position,
+                                               final List<StaffAssignmentTeam> teams) {
+        final Stream<Notification> teamMemberNotifications = teams.stream()
+                .flatMap(team -> toTeamMemberAssignedNotifications(contestId, staffName, position, team));
+        final Notification staffNotification =
+                toStaffAssignedNotification(contestId, contestName, staffId, position, teams);
+        notificationRepository.saveAll(Stream.concat(teamMemberNotifications, Stream.of(staffNotification)).toList());
     }
 
     public void sendStaffUnassignedNotifications(final Long contestId, final Long staffId, final String staffName,
@@ -94,18 +96,52 @@ public class NotificationConvenience {
                 toSubmissionRedirectUrl(contestId, team.teamId(), submissionItemId)).stream();
     }
 
-    private Stream<Notification> toStaffAssignedNotifications(final Long contestId, final Long staffId,
-                                                              final String staffName, final StaffPosition position,
-                                                              final StaffAssignmentTeam team) {
-        final NotificationType type = position.getAssignedType();
-        final String title = position.getPositionName() + " 지정 알림";
-        final String change = position.getPositionName() + "로 지정되었습니다.";
-        return Stream.concat(
-                toNotifications(team.memberIds(), type, title,
-                        staffName + " " + position.getHonorific() + "이 " + change,
-                        team.teamId(), toTeamDashboardUrl(contestId, team.teamId())).stream(),
-                Stream.of(toNotification(staffId, type, title, team.teamDisplayName() + " 팀의 " + change,
-                        team.teamId(), toAdvisorActivityUrl(contestId))));
+    private Stream<Notification> toTeamMemberAssignedNotifications(final Long contestId, final String staffName,
+                                                                   final StaffPosition position,
+                                                                   final StaffAssignmentTeam team) {
+        return toNotifications(team.memberIds(), position.getAssignedType(), toAssignedTitle(position),
+                staffName + " " + position.getHonorific() + "이 " + toAssignedChange(position),
+                team.teamId(), toTeamDashboardUrl(contestId, team.teamId())).stream();
+    }
+
+    private Notification toStaffAssignedNotification(final Long contestId, final String contestName,
+                                                     final Long staffId, final StaffPosition position,
+                                                     final List<StaffAssignmentTeam> teams) {
+        if (teams.size() == 1) {
+            return toSingleTeamStaffAssignedNotification(contestId, staffId, position, teams.get(0));
+        }
+        return toMultiTeamStaffAssignedNotification(contestId, contestName, staffId, position, teams);
+    }
+
+    private Notification toSingleTeamStaffAssignedNotification(final Long contestId, final Long staffId,
+                                                               final StaffPosition position,
+                                                               final StaffAssignmentTeam team) {
+        return toNotification(staffId, position.getAssignedType(), toAssignedTitle(position),
+                team.teamDisplayName() + " 팀의 " + toAssignedChange(position),
+                team.teamId(), toAdvisorActivityUrl(contestId, team.teamId()));
+    }
+
+    private Notification toMultiTeamStaffAssignedNotification(final Long contestId, final String contestName,
+                                                              final Long staffId, final StaffPosition position,
+                                                              final List<StaffAssignmentTeam> teams) {
+        return toNotification(staffId, position.getAssignedType(), toAssignedTitle(position),
+                "「" + contestName + "」 대회에서 " + teams.size() + "개 팀의 " + toAssignedChange(position),
+                findSmallestTeamId(teams), toAdvisorActivityUrl(contestId));
+    }
+
+    private Long findSmallestTeamId(final List<StaffAssignmentTeam> teams) {
+        return teams.stream()
+                .map(StaffAssignmentTeam::teamId)
+                .min(Long::compare)
+                .orElseThrow();
+    }
+
+    private String toAssignedTitle(final StaffPosition position) {
+        return position.getPositionName() + " 지정 알림";
+    }
+
+    private String toAssignedChange(final StaffPosition position) {
+        return position.getPositionName() + "로 지정되었습니다.";
     }
 
     private Stream<Notification> toStaffUnassignedNotifications(final Long contestId, final Long staffId,
@@ -132,6 +168,10 @@ public class NotificationConvenience {
 
     private String toAdvisorActivityUrl(final Long contestId) {
         return "/me/advisor-activity/contests/" + contestId;
+    }
+
+    private String toAdvisorActivityUrl(final Long contestId, final Long teamId) {
+        return toAdvisorActivityUrl(contestId) + "?teamId=" + teamId;
     }
 
     private String toProjectDetailUrl(final Long contestId, final Long teamId) {

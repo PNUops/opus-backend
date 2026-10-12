@@ -4,6 +4,7 @@ import java.util.List;
 
 public record StaffAssignedNotificationEvent(
         Long contestId,
+        String contestName,
         Long staffId,
         String staffName,
         StaffPosition position,

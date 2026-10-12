@@ -51,17 +51,17 @@ public class ContestMemberCommandService {
         teamConvenience.validateTeamsInContest(contestId, request.teamIds());
         validateNotAlreadyAssigned(contestId, request.memberIds());
         saveAssignments(contest, request);
-        publishStaffAssignedNotifications(contestId, request.memberIds(), request.teamIds());
+        publishStaffAssignedNotifications(contest, request.memberIds(), request.teamIds());
     }
 
     public void updateAssignedTeams(final Long contestId, final Long contestMemberId,
                                     final StaffTeamUpdateRequest request) {
-        contestConvenience.validateExistContest(contestId);
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
         final ContestMember contestMember = getContestMember(contestId, contestMemberId);
         teamConvenience.validateTeamsInContest(contestId, request.addTeamIds());
         final Set<Long> previousTeamIds = Set.copyOf(contestMember.getTeamIds());
         contestMember.updateTeams(request.addTeamIds(), request.deleteTeamIds());
-        publishAssignedTeamsChangedNotifications(contestId, contestMember, previousTeamIds);
+        publishAssignedTeamsChangedNotifications(contest, contestMember, previousTeamIds);
     }
 
     public void deleteAssignment(final Long contestId, final Long contestMemberId) {
@@ -120,7 +120,7 @@ public class ContestMemberCommandService {
                 .build();
     }
 
-    private void publishAssignedTeamsChangedNotifications(final Long contestId, final ContestMember contestMember,
+    private void publishAssignedTeamsChangedNotifications(final Contest contest, final ContestMember contestMember,
                                                           final Set<Long> previousTeamIds) {
         final Set<Long> currentTeamIds = contestMember.getTeamIds();
         final List<Long> addedTeamIds = currentTeamIds.stream()
@@ -129,24 +129,25 @@ public class ContestMemberCommandService {
         final List<Long> removedTeamIds = previousTeamIds.stream()
                 .filter(teamId -> !currentTeamIds.contains(teamId))
                 .toList();
-        publishStaffAssignedNotifications(contestId, List.of(contestMember.getMemberId()), addedTeamIds);
-        publishStaffUnassignedNotifications(contestId, List.of(contestMember.getMemberId()), removedTeamIds);
+        publishStaffAssignedNotifications(contest, List.of(contestMember.getMemberId()), addedTeamIds);
+        publishStaffUnassignedNotifications(contest.getId(), List.of(contestMember.getMemberId()), removedTeamIds);
     }
 
-    private void publishStaffAssignedNotifications(final Long contestId, final List<Long> staffIds,
+    private void publishStaffAssignedNotifications(final Contest contest, final List<Long> staffIds,
                                                    final List<Long> teamIds) {
         if (teamIds.isEmpty()) {
             return;
         }
         final List<StaffAssignmentTeam> teams = toStaffAssignmentTeams(teamIds);
         memberConvenience.getMembersByIds(staffIds).values()
-                .forEach(staff -> publishStaffAssignedNotification(contestId, staff, teams));
+                .forEach(staff -> publishStaffAssignedNotification(contest, staff, teams));
     }
 
-    private void publishStaffAssignedNotification(final Long contestId, final Member staff,
+    private void publishStaffAssignedNotification(final Contest contest, final Member staff,
                                                   final List<StaffAssignmentTeam> teams) {
         toStaffPositions(staff).forEach(position -> eventPublisher.publishEvent(
-                new StaffAssignedNotificationEvent(contestId, staff.getId(), staff.getName(), position, teams)));
+                new StaffAssignedNotificationEvent(contest.getId(), contest.getContestName(), staff.getId(),
+                        staff.getName(), position, teams)));
     }
 
     private void publishStaffUnassignedNotifications(final Long contestId, final List<Long> staffIds,
