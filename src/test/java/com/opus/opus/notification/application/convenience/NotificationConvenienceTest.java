@@ -36,6 +36,7 @@ public class NotificationConvenienceTest extends IntegrationTest {
     private static final Long TEAM_ID = 1L;
     private static final String TEAM_DISPLAY_NAME = "테스트팀";
     private static final Long CONTEST_ID = 1L;
+    private static final String CONTEST_NAME = "테스트대회";
     private static final Long SUBMISSION_ID = 10L;
     private static final Long SUBMISSION_ITEM_ID = 20L;
     private static final String SUBMISSION_ITEM_NAME = "중간보고서";
@@ -165,8 +166,8 @@ public class NotificationConvenienceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 지도교수 지정 알림이 팀원과 지정된 교수에게 생성된다.")
     void 지도교수_지정_알림이_팀원과_지정된_교수에게_생성된다() {
-        notificationConvenience.sendStaffAssignedNotifications(
-                CONTEST_ID, STAFF_ID, STAFF_NAME, StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam()));
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, CONTEST_NAME, STAFF_ID, STAFF_NAME,
+                StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam()));
 
         final Notification memberNotification = getOnlyNotification(member1.getId());
         assertThat(memberNotification.getType()).isEqualTo(NotificationType.ADVISOR_ASSIGNED);
@@ -202,8 +203,8 @@ public class NotificationConvenienceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 멘토 지정 알림이 멘토 문구로 생성된다.")
     void 멘토_지정_알림이_멘토_문구로_생성된다() {
-        notificationConvenience.sendStaffAssignedNotifications(
-                CONTEST_ID, STAFF_ID, "박멘토", StaffPosition.MENTOR, List.of(createStaffAssignmentTeam()));
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, CONTEST_NAME, STAFF_ID, "박멘토",
+                StaffPosition.MENTOR, List.of(createStaffAssignmentTeam()));
 
         final Notification memberNotification = getOnlyNotification(member1.getId());
         assertThat(memberNotification.getType()).isEqualTo(NotificationType.MENTOR_ASSIGNED);
@@ -226,17 +227,44 @@ public class NotificationConvenienceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 여러 팀에 지정되면 교수는 팀마다 알림을 받는다.")
-    void 여러_팀에_지정되면_교수는_팀마다_알림을_받는다() {
+    @DisplayName("[성공] 여러 팀에 지정되면 교수는 요약 알림 1건을 받는다.")
+    void 여러_팀에_지정되면_교수는_요약_알림_1건을_받는다() {
         final StaffAssignmentTeam otherTeam = new StaffAssignmentTeam(2L, "다른팀", List.of(member2.getId()));
 
-        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, STAFF_ID, STAFF_NAME,
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, CONTEST_NAME, STAFF_ID, STAFF_NAME,
+                StaffPosition.ADVISOR, List.of(otherTeam, createStaffAssignmentTeam()));
+
+        final Notification staffNotification = getOnlyNotification(STAFF_ID);
+        assertThat(staffNotification.getType()).isEqualTo(NotificationType.ADVISOR_ASSIGNED);
+        assertThat(staffNotification.getTitle()).isEqualTo("지도교수 지정 알림");
+        assertThat(staffNotification.getContent()).isEqualTo("「테스트대회」 대회에서 2개 팀의 지도교수로 지정되었습니다.");
+        assertThat(staffNotification.getTargetId()).isEqualTo(TEAM_ID);
+        assertThat(staffNotification.getRedirectUrl()).isEqualTo("/me/advisor-activity/contests/1");
+    }
+
+    @Test
+    @DisplayName("[성공] 여러 팀에 지정되어도 팀원은 팀마다 지정 알림을 받는다.")
+    void 여러_팀에_지정되어도_팀원은_팀마다_지정_알림을_받는다() {
+        final StaffAssignmentTeam otherTeam = new StaffAssignmentTeam(2L, "다른팀", List.of(member2.getId()));
+
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, CONTEST_NAME, STAFF_ID, STAFF_NAME,
                 StaffPosition.ADVISOR, List.of(createStaffAssignmentTeam(), otherTeam));
 
-        assertThat(notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(STAFF_ID))
-                .extracting(Notification::getTargetId)
-                .containsExactlyInAnyOrder(TEAM_ID, 2L);
-        assertThat(notificationRepository.findTop20ByMemberIdOrderByCreatedAtDesc(member2.getId())).hasSize(1);
+        assertThat(getOnlyNotification(member1.getId()).getTargetId()).isEqualTo(TEAM_ID);
+        assertThat(getOnlyNotification(member2.getId()).getTargetId()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("[성공] 여러 팀에 지정되면 멘토는 멘토 문구로 요약 알림을 받는다.")
+    void 여러_팀에_지정되면_멘토는_멘토_문구로_요약_알림을_받는다() {
+        final StaffAssignmentTeam otherTeam = new StaffAssignmentTeam(2L, "다른팀", List.of(member2.getId()));
+
+        notificationConvenience.sendStaffAssignedNotifications(CONTEST_ID, CONTEST_NAME, STAFF_ID, "박멘토",
+                StaffPosition.MENTOR, List.of(createStaffAssignmentTeam(), otherTeam));
+
+        final Notification staffNotification = getOnlyNotification(STAFF_ID);
+        assertThat(staffNotification.getTitle()).isEqualTo("멘토 지정 알림");
+        assertThat(staffNotification.getContent()).isEqualTo("「테스트대회」 대회에서 2개 팀의 멘토로 지정되었습니다.");
     }
 
     @Test

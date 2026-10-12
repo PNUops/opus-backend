@@ -41,6 +41,7 @@ public class NotificationEventListenerTest extends IntegrationTest {
     private static final Long TEAM_ID = 1L;
     private static final String TEAM_DISPLAY_NAME = "테스트팀";
     private static final Long CONTEST_ID = 1L;
+    private static final String CONTEST_NAME = "테스트대회";
     private static final Long SUBMISSION_ID = 10L;
     private static final Long SUBMISSION_ITEM_ID = 20L;
     private static final String SUBMISSION_ITEM_NAME = "중간보고서";
@@ -113,7 +114,8 @@ public class NotificationEventListenerTest extends IntegrationTest {
     @DisplayName("[성공] 지정 이벤트를 발행한 트랜잭션이 커밋되면 팀원과 교수에게 지정 알림이 저장된다.")
     void 지정_이벤트를_발행한_트랜잭션이_커밋되면_팀원과_교수에게_지정_알림이_저장된다() {
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(
-                new StaffAssignedNotificationEvent(CONTEST_ID, STAFF_ID, STAFF_NAME, StaffPosition.ADVISOR,
+                new StaffAssignedNotificationEvent(CONTEST_ID, CONTEST_NAME, STAFF_ID, STAFF_NAME,
+                        StaffPosition.ADVISOR,
                         List.of(new StaffAssignmentTeam(TEAM_ID, TEAM_DISPLAY_NAME,
                                 List.of(MEMBER_ID_1, MEMBER_ID_2))))));
 
