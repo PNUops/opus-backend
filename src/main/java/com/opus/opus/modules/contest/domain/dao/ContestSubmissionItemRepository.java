@@ -12,11 +12,17 @@ public interface ContestSubmissionItemRepository extends JpaRepository<ContestSu
     List<ContestSubmissionItem> findAllByContestIdOrderByUpdatedAtDesc(final Long contestId);
 
     @Query("SELECT i FROM ContestSubmissionItem i WHERE i.contest.id = :contestId AND i.endAt > :now AND (i.contestTrack IS NULL OR i.contestTrack.id = :trackId)")
-    List<ContestSubmissionItem> findFutureItemsByContestAndTrack(@Param("contestId") Long contestId, @Param("trackId") Long trackId, @Param("now") LocalDateTime now);
+    List<ContestSubmissionItem> findFutureItemsByContestAndTrack(@Param("contestId") Long contestId,
+                                                                 @Param("trackId") Long trackId,
+                                                                 @Param("now") LocalDateTime now);
 
     @Query("SELECT i FROM ContestSubmissionItem i WHERE i.contest.id = :contestId AND i.endAt > :now AND i.contestTrack IS NULL")
-    List<ContestSubmissionItem> findFutureCommonItemsByContest(@Param("contestId") Long contestId, @Param("now") LocalDateTime now);
+    List<ContestSubmissionItem> findFutureCommonItemsByContest(@Param("contestId") Long contestId,
+                                                               @Param("now") LocalDateTime now);
 
     @Query("SELECT COUNT(i) FROM ContestSubmissionItem i WHERE i.contest.id = :contestId AND (i.contestTrack IS NULL OR i.contestTrack.id = :trackId)")
     long countByContestAndTrack(@Param("contestId") Long contestId, @Param("trackId") Long trackId);
+
+    List<ContestSubmissionItem> findAllByEndAtGreaterThanEqualAndEndAtLessThan(final LocalDateTime start,
+                                                                               final LocalDateTime end);
 }

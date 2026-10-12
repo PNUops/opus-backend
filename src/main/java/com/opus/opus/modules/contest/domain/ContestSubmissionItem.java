@@ -108,6 +108,10 @@ public class ContestSubmissionItem extends BaseEntity {
         return contestTrack == null || contestTrack.getId().equals(trackId);
     }
 
+    public Long getTrackId() {
+        return contestTrack != null ? contestTrack.getId() : null;
+    }
+
     public String getTrackName() {
         return contestTrack != null ? contestTrack.getTrackName() : null;
     }
