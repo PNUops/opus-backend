@@ -52,7 +52,11 @@ public class NotificationApiDocsTest extends RestDocsTest {
                         "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now()),
                 new NotificationResponse(4L, "새 피드백 알림", "중간보고서에 새로운 피드백이 등록되었습니다.",
                         NotificationType.SUBMISSION_FEEDBACK, 10L,
-                        "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now())
+                        "/me/contests/1/teams/1/submissions?submissionItemId=20", false, now()),
+                new NotificationResponse(5L, "지도교수 지정 알림", "김교수 교수님이 지도교수로 지정되었습니다.",
+                        NotificationType.ADVISOR_ASSIGNED, 1L, "/me/contests/1/teams/1/dashboard", false, now()),
+                new NotificationResponse(6L, "멘토 해제 알림", "팀 옵스 팀의 멘토에서 해제되었습니다.",
+                        NotificationType.MENTOR_UNASSIGNED, 1L, "/contest/1/teams/view/1", false, now())
         );
 
         when(notificationQueryService.getNotifications(any())).thenReturn(responses);
@@ -70,7 +74,8 @@ public class NotificationApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].title", "알림 제목"),
                                 stringFieldWithPath("[].content", "알림 내용"),
                                 stringFieldWithPath("[].targetType",
-                                        "알림 타입 (TEAM, TEAM_COMMENT, TEAM_AWARDS, SUBMISSION_COMPLETED, SUBMISSION_FEEDBACK)"),
+                                        "알림 타입 (TEAM, TEAM_COMMENT, TEAM_AWARDS, SUBMISSION_COMPLETED, SUBMISSION_FEEDBACK, "
+                                                + "ADVISOR_ASSIGNED, ADVISOR_UNASSIGNED, MENTOR_ASSIGNED, MENTOR_UNASSIGNED)"),
                                 numberFieldWithPath("[].targetId", "알림 대상 ID (팀 알림은 팀 ID, 제출물 알림은 제출물 ID)"),
                                 stringFieldWithPath("[].redirectUrl", "이동 URL"),
                                 booleanFieldWithPath("[].isRead", "읽음 여부"),

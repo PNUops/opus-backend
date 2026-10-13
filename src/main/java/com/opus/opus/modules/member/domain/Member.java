@@ -144,6 +144,14 @@ public class Member extends BaseEntity {
         return roles.contains(MemberRoleType.ROLE_학생);
     }
 
+    public boolean isProfessor() {
+        return roles.contains(MemberRoleType.ROLE_교수);
+    }
+
+    public boolean isExternalMentor() {
+        return roles.contains(MemberRoleType.ROLE_외부멘토);
+    }
+
     public void updateGithubUrl(final String githubUrl) {
         this.githubUrl = githubUrl;
     }
