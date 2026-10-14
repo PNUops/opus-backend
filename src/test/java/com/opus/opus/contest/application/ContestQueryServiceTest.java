@@ -4,6 +4,8 @@ import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.contest.domain.SortType.CUSTOM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestTemplateExceptionType.NOT_FOUND_TEMPLATE;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static com.opus.opus.team.TeamFixture.createTeamWithContestId;
@@ -25,6 +27,7 @@ import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestQueryService;
+import com.opus.opus.modules.contest.application.dto.response.AdmissionYearResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
@@ -40,6 +43,7 @@ import com.opus.opus.modules.contest.application.dto.response.TrackRankingRespon
 import com.opus.opus.modules.contest.application.dto.response.TrackVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoterRoleResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
@@ -458,6 +462,30 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 투표 리포트에서 대표 역할별 투표자 구성을 조회하고 탈퇴한 투표자는 역할 없이 집계된다.")
+    void 투표_리포트에서_대표_역할별_투표자_구성을_조회하고_탈퇴한_투표자는_역할_없이_집계된다() {
+        final Member student = memberRepository.save(MemberFixture.createMemberWithRole("학생", 1, ROLE_학생));
+        final Member withdrawnStudent = memberRepository.save(MemberFixture.createMemberWithRole("탈퇴", 2, ROLE_학생));
+        final Member professor = memberRepository.save(MemberFixture.createMemberWithRole("교수", 3, ROLE_교수));
+        teamVoteRepository.save(createTeamVote(team, student.getId()));
+        teamVoteRepository.save(createTeamVote(team, withdrawnStudent.getId()));
+        teamVoteRepository.save(createTeamVote(team, professor.getId()));
+        memberRepository.delete(withdrawnStudent);
+        entityManager.flush();
+        entityManager.clear();
+
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contest.getId());
+
+        assertThat(response.voterRoles())
+                .extracting(VoterRoleResponse::role, VoterRoleResponse::voterCount, VoterRoleResponse::ratio)
+                .containsExactly(
+                        tuple("ROLE_학생", 1L, 33.3),
+                        tuple("ROLE_교수", 1L, 33.3),
+                        tuple(null, 1L, 33.3)
+                );
+    }
+
+    @Test
     @DisplayName("[성공] 투표 리포트에서 분과별 팀 수와 득표 수를 조회할 수 있다.")
     void 투표_리포트에서_분과별_팀_수와_득표_수를_조회할_수_있다() {
         final ContestTrack track = contestTrackRepository.save(ContestTrackFixture.createTrack(contest));
@@ -476,6 +504,64 @@ public class ContestQueryServiceTest extends IntegrationTest {
                 .containsExactly(
                         tuple(track.getTrackName(), 2, 3L, 1.5),
                         tuple(null, 1, 0L, 0.0)
+                );
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 리포트에서 입학연도별 투표자 구성을 조회하고 학번이 없는 투표자는 따로 집계된다.")
+    void 투표_리포트에서_입학연도별_투표자_구성을_조회하고_학번이_없는_투표자는_따로_집계된다() {
+        final Member student2021 = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("202112345@pusan.ac.kr", ROLE_학생));
+        final Member otherStudent2021 = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("202154321@pusan.ac.kr", ROLE_학생));
+        final Member student2023 = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("202312345@pusan.ac.kr", ROLE_학생));
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("professor@pusan.ac.kr", ROLE_교수));
+        teamVoteRepository.save(createTeamVote(team, student2021.getId()));
+        teamVoteRepository.save(createTeamVote(team, otherStudent2021.getId()));
+        teamVoteRepository.save(createTeamVote(team, student2023.getId()));
+        teamVoteRepository.save(createTeamVote(team, professor.getId()));
+
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contest.getId());
+
+        assertThat(response.admissionYears())
+                .extracting(AdmissionYearResponse::admissionYear, AdmissionYearResponse::voterCount,
+                        AdmissionYearResponse::ratio)
+                .containsExactly(
+                        tuple(2021, 2L, 50.0),
+                        tuple(2023, 1L, 25.0),
+                        tuple(null, 1L, 25.0)
+                );
+    }
+
+    @Test
+    @DisplayName("[성공] 투표 리포트에서 학번이 없거나 4자리 미만이거나 탈퇴한 투표자는 입학연도 없이 집계된다.")
+    void 투표_리포트에서_학번이_없거나_4자리_미만이거나_탈퇴한_투표자는_입학연도_없이_집계된다() {
+        final Member student2022 = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("202212345@pusan.ac.kr", ROLE_학생));
+        final Member shortStudentIdMember = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("123@pusan.ac.kr", ROLE_학생));
+        final Member socialMember = memberRepository.save(
+                MemberFixture.createSocialMember("social@gmail.com", "google-social-id"));
+        final Member withdrawnStudent = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("202112345@pusan.ac.kr", ROLE_학생));
+        teamVoteRepository.save(createTeamVote(team, student2022.getId()));
+        teamVoteRepository.save(createTeamVote(team, shortStudentIdMember.getId()));
+        teamVoteRepository.save(createTeamVote(team, socialMember.getId()));
+        teamVoteRepository.save(createTeamVote(team, withdrawnStudent.getId()));
+        memberRepository.delete(withdrawnStudent);
+        entityManager.flush();
+        entityManager.clear();
+
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contest.getId());
+
+        assertThat(response.admissionYears())
+                .extracting(AdmissionYearResponse::admissionYear, AdmissionYearResponse::voterCount,
+                        AdmissionYearResponse::ratio)
+                .containsExactly(
+                        tuple(2022, 1L, 25.0),
+                        tuple(null, 3L, 75.0)
                 );
     }
 
@@ -528,9 +614,11 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThat(response.dailyVotes())
                 .extracting(DailyVoteResponse::voteCount)
                 .containsOnly(0L);
+        assertThat(response.voterRoles()).isEmpty();
         assertThat(response.trackTopRankings())
                 .flatExtracting(TrackRankingResponse::rankings)
                 .isEmpty();
+        assertThat(response.admissionYears()).isEmpty();
         assertThat(response.voteUsages())
                 .extracting(VoteUsageResponse::voterCount)
                 .containsOnly(0L);
