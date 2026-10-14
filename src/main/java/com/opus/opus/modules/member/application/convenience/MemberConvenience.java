@@ -167,7 +167,7 @@ public class MemberConvenience {
     }
 
     public Map<Long, Member> getMembersByIds(final List<Long> memberIds) {
-        return memberRepository.findAllById(memberIds)
+        return memberRepository.findAllByIdIn(memberIds)
                 .stream()
                 .collect(toMap(
                         Member::getId,
