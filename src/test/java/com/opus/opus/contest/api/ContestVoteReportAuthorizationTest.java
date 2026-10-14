@@ -30,6 +30,7 @@ import org.springframework.web.context.WebApplicationContext;
 public class ContestVoteReportAuthorizationTest extends IntegrationTest {
 
     private static final String VOTE_REPORT_URL = "/contests/{contestId}/votes/report";
+    private static final String VOTE_REPORT_PDF_URL = "/contests/{contestId}/votes/report/pdf";
 
     @Autowired
     private WebApplicationContext context;
@@ -80,6 +81,29 @@ public class ContestVoteReportAuthorizationTest extends IntegrationTest {
     @DisplayName("[실패] 로그인하지 않으면 투표 리포트 조회 시 401 에러를 반환한다.")
     void 로그인하지_않으면_투표_리포트_조회_시_401_에러를_반환한다() throws Exception {
         securedMockMvc.perform(get(VOTE_REPORT_URL, contest.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자는 투표 결과 PDF를 다운로드할 수 있다.")
+    void 관리자는_투표_결과_PDF를_다운로드할_수_있다() throws Exception {
+        securedMockMvc.perform(get(VOTE_REPORT_PDF_URL, contest.getId())
+                        .header(HttpHeaders.AUTHORIZATION, adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 아니면 투표 결과 PDF 다운로드 시 403 에러를 반환한다.")
+    void 관리자가_아니면_투표_결과_PDF_다운로드_시_403_에러를_반환한다() throws Exception {
+        securedMockMvc.perform(get(VOTE_REPORT_PDF_URL, contest.getId())
+                        .header(HttpHeaders.AUTHORIZATION, studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("[실패] 로그인하지 않으면 투표 결과 PDF 다운로드 시 401 에러를 반환한다.")
+    void 로그인하지_않으면_투표_결과_PDF_다운로드_시_401_에러를_반환한다() throws Exception {
+        securedMockMvc.perform(get(VOTE_REPORT_PDF_URL, contest.getId()))
                 .andExpect(status().isUnauthorized());
     }
 
