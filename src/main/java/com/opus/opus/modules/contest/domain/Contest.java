@@ -89,6 +89,10 @@ public class Contest extends BaseEntity {
         return !now.isBefore(voteStartAt) && !now.isAfter(voteEndAt);
     }
 
+    public boolean isVoteEnded() {
+        return LocalDateTime.now().isAfter(voteEndAt);
+    }
+
     public void updateVotePeriod(final LocalDateTime voteStartAt, final LocalDateTime voteEndAt) {
         this.voteStartAt = voteStartAt;
         this.voteEndAt = voteEndAt;
