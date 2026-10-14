@@ -15,6 +15,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSortConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTemplateConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestTrackConvenience;
+import com.opus.opus.modules.contest.application.dto.response.AdmissionYearResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestCurrentResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestResponse;
@@ -33,6 +34,7 @@ import com.opus.opus.modules.contest.application.dto.response.TrackRankingRespon
 import com.opus.opus.modules.contest.application.dto.response.TrackVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
 import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoterRoleResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
@@ -49,6 +51,7 @@ import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.team.application.convenience.TeamContestAwardConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamLikeConvenience;
@@ -65,13 +68,16 @@ import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -247,6 +253,8 @@ public class ContestQueryService {
 
         final Map<Long, Long> voteCountByVoter = voteRecords.stream()
                 .collect(groupingBy(VoteRecordResult::memberId, counting()));
+        final Collection<Member> voters = memberConvenience.getMembersByIds(new ArrayList<>(voteCountByVoter.keySet()))
+                .values();
         final long totalVotes = voteRecords.size();
         final long totalVoters = voteCountByVoter.size();
         final int zeroVoteTeamCount = (int) rankings.stream()
@@ -274,6 +282,8 @@ public class ContestQueryService {
                 aggregateDailyVotes(voteRecords, firstHour.toLocalDate(), lastHour.toLocalDate()),
                 aggregateVoteUsages(voteCountByVoter, contest.getMaxVotesLimit()),
                 aggregateHourlyVotes(voteRecords, firstHour, lastHour),
+                aggregateVoterRoles(voters, totalVoters),
+                aggregateAdmissionYears(voters, totalVoters),
                 aggregateTrackVotes(rankingResultsByTrack),
                 aggregateTrackTopRankings(rankingResultsByTrack),
                 rankings
@@ -358,6 +368,52 @@ public class ContestQueryService {
                     cumulativeVoterCount));
         }
         return responses;
+    }
+
+    // 탈퇴 회원은 역할 정보가 함께 삭제되어 대표 역할을 알 수 없다.
+    // 탈퇴 회원의 표도 순위·합계에 포함되므로, 역할을 알 수 없는 투표자는 role null로 따로 세어 합계를 맞춘다.
+    private List<VoterRoleResponse> aggregateVoterRoles(final Collection<Member> voters, final long totalVoters) {
+        final Map<MemberRoleType, Long> voterCountByRole = voters.stream()
+                .map(Member::getPrimaryRole)
+                .filter(Objects::nonNull)
+                .collect(groupingBy(Function.identity(), () -> new EnumMap<>(MemberRoleType.class), counting()));
+
+        final List<VoterRoleResponse> responses = new ArrayList<>(voterCountByRole.entrySet().stream()
+                .map(entry -> new VoterRoleResponse(entry.getKey().name(), entry.getValue(),
+                        calculateRatio(entry.getValue(), totalVoters)))
+                .toList());
+        final long unknownRoleVoterCount = totalVoters - sumCounts(voterCountByRole);
+        if (unknownRoleVoterCount > 0) {
+            responses.add(new VoterRoleResponse(null, unknownRoleVoterCount,
+                    calculateRatio(unknownRoleVoterCount, totalVoters)));
+        }
+        return responses;
+    }
+
+    // 학번이 없는 투표자(교수·직원 등)와 탈퇴한 투표자는 admissionYear null로 따로 센다.
+    private List<AdmissionYearResponse> aggregateAdmissionYears(final Collection<Member> voters,
+                                                                final long totalVoters) {
+        final Map<Integer, Long> voterCountByAdmissionYear = voters.stream()
+                .map(Member::extractAdmissionYear)
+                .filter(Objects::nonNull)
+                .collect(groupingBy(Function.identity(), TreeMap::new, counting()));
+
+        final List<AdmissionYearResponse> responses = new ArrayList<>(voterCountByAdmissionYear.entrySet().stream()
+                .map(entry -> new AdmissionYearResponse(entry.getKey(), entry.getValue(),
+                        calculateRatio(entry.getValue(), totalVoters)))
+                .toList());
+        final long unknownAdmissionYearVoterCount = totalVoters - sumCounts(voterCountByAdmissionYear);
+        if (unknownAdmissionYearVoterCount > 0) {
+            responses.add(new AdmissionYearResponse(null, unknownAdmissionYearVoterCount,
+                    calculateRatio(unknownAdmissionYearVoterCount, totalVoters)));
+        }
+        return responses;
+    }
+
+    private long sumCounts(final Map<?, Long> countMap) {
+        return countMap.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
     }
 
     // 분과가 없는 팀(trackName null)도 하나의 묶음으로 집계하기 위해 null 키를 허용하는 LinkedHashMap을 쓴다.

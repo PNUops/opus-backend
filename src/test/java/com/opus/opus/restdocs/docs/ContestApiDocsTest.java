@@ -71,11 +71,13 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItem
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.AdmissionYearResponse;
 import com.opus.opus.modules.contest.application.dto.response.DailyVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.HourlyVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.TrackRankingResponse;
 import com.opus.opus.modules.contest.application.dto.response.TrackVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoterRoleResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.file.exception.FileException;
@@ -910,6 +912,16 @@ public class ContestApiDocsTest extends RestDocsTest {
                         new HourlyVoteResponse(LocalDateTime.of(2026, 9, 30, 1, 0), 13L, 14L)
                 ),
                 List.of(
+                        new VoterRoleResponse("ROLE_학생", 320L, 94.4),
+                        new VoterRoleResponse("ROLE_교수", 17L, 5.0),
+                        new VoterRoleResponse(null, 2L, 0.6)
+                ),
+                List.of(
+                        new AdmissionYearResponse(2021, 120L, 35.4),
+                        new AdmissionYearResponse(2022, 200L, 59.0),
+                        new AdmissionYearResponse(null, 19L, 5.6)
+                ),
+                List.of(
                         new TrackVoteResponse("AI 트랙", 20, 250L, 12.5),
                         new TrackVoteResponse("웹 트랙", 26, 227L, 8.7)
                 ),
@@ -969,6 +981,14 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 dateTimeFieldWithPath("hourlyVotes[].hour", "시간대 시작 시각"),
                                 numberFieldWithPath("hourlyVotes[].voteCount", "해당 시간대의 투표 수"),
                                 numberFieldWithPath("hourlyVotes[].cumulativeVoterCount", "해당 시간대까지의 누적 투표자 수"),
+                                arrayFieldWithPath("voterRoles", "대표 역할별 투표자 구성"),
+                                stringFieldWithPath("voterRoles[].role", "대표 역할 (탈퇴 등으로 역할을 알 수 없으면 null)").optional(),
+                                numberFieldWithPath("voterRoles[].voterCount", "투표자 수"),
+                                numberFieldWithPath("voterRoles[].ratio", "전체 투표자 대비 비율 (%)"),
+                                arrayFieldWithPath("admissionYears", "입학연도(학번 앞 4자리)별 투표자 구성 (연도 오름차순)"),
+                                numberFieldWithPath("admissionYears[].admissionYear", "입학연도 (학번이 없거나 탈퇴한 투표자는 null)").optional(),
+                                numberFieldWithPath("admissionYears[].voterCount", "투표자 수"),
+                                numberFieldWithPath("admissionYears[].ratio", "전체 투표자 대비 비율 (%)"),
                                 arrayFieldWithPath("trackVotes", "분과별 득표 (득표 수 내림차순)"),
                                 stringFieldWithPath("trackVotes[].trackName", "분과명 (분과가 없는 팀은 null)").optional(),
                                 numberFieldWithPath("trackVotes[].teamCount", "분과 팀 수"),

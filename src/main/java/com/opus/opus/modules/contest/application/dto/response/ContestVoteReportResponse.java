@@ -20,6 +20,8 @@ public record ContestVoteReportResponse(
         List<DailyVoteResponse> dailyVotes,
         List<VoteUsageResponse> voteUsages,
         List<HourlyVoteResponse> hourlyVotes,
+        List<VoterRoleResponse> voterRoles,
+        List<AdmissionYearResponse> admissionYears,
         List<TrackVoteResponse> trackVotes,
         List<TrackRankingResponse> trackTopRankings,
         List<ContestRankingResponse> rankings
