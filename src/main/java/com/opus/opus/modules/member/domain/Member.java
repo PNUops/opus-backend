@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,6 +32,8 @@ import org.hibernate.annotations.SQLRestriction;
 public class Member extends BaseEntity {
 
     private static final int MAX_ROLE_NAME_LENGTH = 20;
+    private static final Pattern STUDENT_ID_PATTERN = Pattern.compile("^\\d{4}\\d*$");
+    private static final int ADMISSION_YEAR_LENGTH = 4;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -142,6 +145,14 @@ public class Member extends BaseEntity {
 
     public boolean isStudent() {
         return roles.contains(MemberRoleType.ROLE_학생);
+    }
+
+    // 학번 앞 4자리를 입학연도로 본다. (예: 202312345 → 2023) 학번이 없거나 숫자 형식이 아니면 null
+    public Integer extractAdmissionYear() {
+        if (studentId == null || !STUDENT_ID_PATTERN.matcher(studentId).matches()) {
+            return null;
+        }
+        return Integer.parseInt(studentId.substring(0, ADMISSION_YEAR_LENGTH));
     }
 
     public void updateGithubUrl(final String githubUrl) {
