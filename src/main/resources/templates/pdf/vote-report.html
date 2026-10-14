@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${report.contestName()} + ' 온라인 투표 결과'">온라인 투표 결과</title>
+    <style th:inline="css">
+        @page {
+            size: A4 landscape;
+            margin: 16mm 14mm 14mm 14mm;
+            @top-center { content: element(header); width: 100%; }
+            @bottom-center { content: element(footer); width: 100%; }
+        }
+
+        body { font-family: /*[[${fontFamily}]]*/ sans-serif; font-size: 8.5pt; line-height: 1.4; color: #222; margin: 0; }
+
+        .running { width: 100%; font-size: 7.5pt; color: #444; }
+        .running td.right { text-align: right; }
+        #header { position: running(header); border-bottom: 1px solid #111; padding-bottom: 4px; }
+        #footer { position: running(footer); border-top: 1px solid #111; padding-top: 4px; }
+        .page-number { font-weight: bold; color: #111; }
+        .page-number::after { content: counter(page, decimal-leading-zero); }
+
+        h1 { font-size: 19pt; line-height: 1.25; font-weight: bold; margin: 2mm 0 1.5mm 0; color: #111; }
+        .subtitle { color: #555; font-size: 9pt; margin-bottom: 4mm; }
+        h2 { page-break-after: avoid; font-size: 11pt; line-height: 1.3; font-weight: bold; margin: 0 0 2mm 0; padding-bottom: 1.5mm; border-bottom: 1px solid #111; color: #111; }
+        h3 { font-size: 8.5pt; font-weight: bold; margin: 0 0 1.5mm 0; color: #111; }
+
+        table { border-collapse: collapse; width: 100%; }
+        .kpi { border-top: 1px solid #111; border-bottom: 1px solid #ccc; margin-bottom: 3mm; }
+        .kpi td { width: 20%; padding: 2.5mm 3mm; vertical-align: top; border-left: 1px solid #ddd; }
+        .kpi td.first { border-left: none; padding-left: 0; }
+        .kpi .label { font-size: 7.5pt; color: #444; }
+        .kpi .value { font-size: 18pt; line-height: 1.2; font-weight: bold; color: #111; margin: 1mm 0; }
+        .kpi .unit { font-size: 9pt; font-weight: bold; }
+        .kpi .sub { font-size: 7pt; color: #666; }
+
+        .left-column { width: 36%; padding-right: 6mm; border-right: 1px solid #ddd; vertical-align: top; }
+        .right-column { padding-left: 6mm; vertical-align: top; }
+
+        .list td { padding: 1.1mm 1mm; border-bottom: 1px solid #e5e5e5; }
+        .list td.num { text-align: right; white-space: nowrap; }
+        .list th { text-align: left; font-weight: bold; font-size: 7.5pt; color: #444; padding: 1.1mm 1mm; border-bottom: 1px solid #999; }
+        .list th.num { text-align: right; }
+        .half { width: 50%; vertical-align: top; }
+        .half.left { padding-right: 4mm; }
+        .half.right { padding-left: 4mm; }
+        .section { margin-bottom: 5mm; }
+        .empty { color: #888; padding: 2mm 0; }
+
+        .legend { font-size: 7pt; color: #444; margin-bottom: 1.5mm; }
+        .legend-bar { display: inline-block; width: 7px; height: 7px; background: #6e6e7a; margin-right: 2px; }
+        .legend-area { display: inline-block; width: 7px; height: 7px; background: #dcdce3; margin: 0 2px 0 8px; }
+        .chart { position: relative; height: 62mm; margin: 4mm 9mm 0 8mm; border-bottom: 1px solid #999; }
+        .grid { position: absolute; left: 0; right: 0; border-top: 1px dotted #ddd; }
+        .axis-left { position: absolute; left: -8mm; width: 7mm; text-align: right; font-size: 6.5pt; color: #666; }
+        .axis-right { position: absolute; right: -9mm; width: 8mm; text-align: left; font-size: 6.5pt; color: #666; }
+        .area { position: absolute; bottom: 0; background: #dcdce3; }
+        .bar { position: absolute; bottom: 0; background: #6e6e7a; }
+        .ticks { position: relative; height: 8mm; margin: 0 9mm 0 8mm; }
+        .tick { position: absolute; top: 0.8mm; font-size: 6.5pt; color: #666; }
+        .tick .date { font-weight: bold; color: #222; }
+
+        .page-break { page-break-before: always; }
+        .ranking { -fs-table-paginate: paginate; }
+        .ranking thead { display: table-header-group; }
+        .ranking tr { page-break-inside: avoid; }
+        .rank { width: 10mm; }
+        .track-ranking { float: left; width: 48%; margin-bottom: 4mm; page-break-inside: avoid; }
+        .track-ranking.row-start { clear: left; }
+        .track-ranking.row-end { margin-left: 4%; }
+        .clear { clear: both; }
+        .track-ranking table { table-layout: fixed; }
+        .track-ranking td.rank { width: 12mm; }
+        .track-ranking td.team { width: 30%; }
+        .track-ranking td.num { width: 16mm; }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <table class="running">
+        <tr>
+            <td th:text="${report.contestName()} + ' · 온라인 투표 최종 결과'">대회 · 온라인 투표 최종 결과</td>
+            <td class="right">투표 통계</td>
+        </tr>
+    </table>
+</div>
+<div id="footer">
+    <table class="running">
+        <tr>
+            <td th:text="'SW성과관리시스템 · 투표 마감(' + ${#temporals.format(report.aggregatedAt(), 'MM.dd HH:mm')} + ') 기준'">SW성과관리시스템</td>
+            <td class="right"><span class="page-number"></span></td>
+        </tr>
+    </table>
+</div>
+
+<h1 th:text="${report.contestName()} + ' 온라인 투표 결과'">대회 온라인 투표 결과</h1>
+<div class="subtitle" th:text="'투표 마감(' + ${#temporals.format(report.aggregatedAt(), 'MM.dd HH:mm')} + ') 기준'">투표 마감 기준</div>
+
+<table class="kpi">
+    <tr>
+        <td class="first">
+            <div class="label">투표 참여자</div>
+            <div class="value"><span th:text="${#numbers.formatInteger(report.totalVoters(), 1, 'COMMA')}">0</span><span class="unit">명</span></div>
+            <div class="sub" th:text="'투표 기간 ' + ${#temporals.format(report.voteStartAt(), 'MM.dd HH:mm')} + ' ~ ' + ${#temporals.format(report.voteEndAt(), 'MM.dd HH:mm')}">투표 기간</div>
+        </td>
+        <td>
+            <div class="label">총 투표 수</div>
+            <div class="value"><span th:text="${#numbers.formatInteger(report.totalVotes(), 1, 'COMMA')}">0</span><span class="unit">표</span></div>
+            <div class="sub" th:text="'1인 최대 ' + ${report.maxVotesLimit()} + '표'">1인 최대</div>
+        </td>
+        <td>
+            <div class="label">1인당 평균</div>
+            <div class="value"><span th:text="${report.averageVotesPerVoter()}">0</span><span class="unit">표</span></div>
+            <div class="sub" th:text="${report.maxVotesLimit()} + '표 모두 사용 ' + ${fullVoteUsageVoterCount} + '명'">모두 사용</div>
+        </td>
+        <td>
+            <div class="label">참여 팀</div>
+            <div class="value"><span th:text="${report.teamCount()}">0</span><span class="unit">팀</span></div>
+            <div class="sub" th:text="'팀당 평균 ' + ${report.averageVotesPerTeam()} + '표'">팀당 평균</div>
+        </td>
+        <td>
+            <div class="label">득표 없는 팀</div>
+            <div class="value"><span th:text="${report.zeroVoteTeamCount()}">0</span><span class="unit">팀</span></div>
+            <div class="sub" th:text="'전체 ' + ${report.teamCount()} + '팀 중'">전체 팀 중</div>
+        </td>
+    </tr>
+</table>
+
+<table class="layout">
+    <tr>
+        <td class="left-column">
+            <h2>투표 참여</h2>
+            <table>
+                <tr>
+                    <td class="half left">
+                        <h3>일자별 투표</h3>
+                        <table class="list">
+                            <tr th:each="daily : ${report.dailyVotes()}">
+                                <td th:text="${#temporals.format(daily.date(), 'M.d')}">날짜</td>
+                                <td class="num" th:text="${daily.voterCount()} + '명 (' + ${daily.voteCount()} + '표)'">0명</td>
+                            </tr>
+                        </table>
+                        <div class="empty" th:if="${report.dailyVotes().isEmpty()}">투표 없음</div>
+                    </td>
+                    <td class="half right">
+                        <h3>투표권 사용</h3>
+                        <table class="list">
+                            <tr th:each="usage : ${report.voteUsages()}">
+                                <td th:text="${usage.usedVotes()} + '표 사용'">사용</td>
+                                <td class="num" th:text="${usage.voterCount()} + '명 (' + ${usage.ratio()} + '%)'">0명</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td class="right-column">
+            <h2>시간대별 투표 수와 누적 투표자</h2>
+            <div class="legend">
+                <span class="legend-bar"></span>시간당 투표 수(왼쪽 축)
+                <span class="legend-area"></span>누적 투표자(오른쪽 축)
+            </div>
+            <div class="chart">
+                <div class="grid" style="bottom: 25%;"></div>
+                <div class="grid" style="bottom: 50%;"></div>
+                <div class="grid" style="bottom: 75%;"></div>
+                <div class="grid" style="bottom: 100%;"></div>
+                <div class="axis-left" style="bottom: -1.2mm;">0</div>
+                <div class="axis-left" style="bottom: 48%;" th:text="${chartMaxVotes / 2}">0</div>
+                <div class="axis-left" style="bottom: 98%;" th:text="${chartMaxVotes}">0</div>
+                <div class="axis-right" style="bottom: -1.2mm;">0</div>
+                <div class="axis-right" style="bottom: 48%;" th:text="${chartMaxVoters / 2}">0</div>
+                <div class="axis-right" style="bottom: 98%;" th:text="${chartMaxVoters}">0</div>
+
+                <th:block th:each="hourly, stat : ${report.hourlyVotes()}">
+                    <div class="area" th:if="${hourly.cumulativeVoterCount() > 0}"
+                         th:style="|left: ${stat.index * 100.0 / stat.size}%; width: ${100.0 / stat.size}%; height: ${hourly.cumulativeVoterCount() * 100.0 / chartMaxVoters}%;|"></div>
+                </th:block>
+                <th:block th:each="hourly, stat : ${report.hourlyVotes()}">
+                    <div class="bar" th:if="${hourly.voteCount() > 0}"
+                         th:style="|left: ${(stat.index + 0.15) * 100.0 / stat.size}%; width: ${70.0 / stat.size}%; height: ${hourly.voteCount() * 100.0 / chartMaxVotes}%;|"></div>
+                </th:block>
+            </div>
+            <div class="ticks">
+                <th:block th:each="hourly, stat : ${report.hourlyVotes()}">
+                    <div class="tick" th:if="${tickIndexes.contains(stat.index)}"
+                         th:style="|left: ${stat.index * 100.0 / stat.size}%;|">
+                        <th:block th:if="${tickStepHours &lt; 24}">
+                            <div th:text="${hourly.hour().getHour()} + '시'">0시</div>
+                            <div class="date" th:if="${hourly.hour().getHour() == 0 or stat.first}"
+                                 th:text="${#temporals.format(hourly.hour(), 'M.d')}">날짜</div>
+                        </th:block>
+                        <div class="date" th:if="${tickStepHours &gt;= 24}"
+                             th:text="${#temporals.format(hourly.hour(), 'M.d')}">날짜</div>
+                    </div>
+                </th:block>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<div class="page-break">
+    <table>
+        <tr>
+            <td class="half left">
+                <h2>역할별 투표자</h2>
+                <table class="list">
+                    <tr th:each="voterRole : ${report.voterRoles()}">
+                        <td th:text="${voterRole.role() == null ? '알 수 없음(탈퇴 회원)' : #strings.replace(voterRole.role(), 'ROLE_', '')}">역할</td>
+                        <td class="num" th:text="${voterRole.voterCount()} + '명 (' + ${voterRole.ratio()} + '%)'">0명</td>
+                    </tr>
+                </table>
+                <div class="empty" th:if="${report.voterRoles().isEmpty()}">투표자 없음</div>
+            </td>
+            <td class="half right">
+                <h2>입학연도별 투표자</h2>
+                <table class="list">
+                    <tr th:each="admissionYear : ${report.admissionYears()}">
+                        <td th:text="${admissionYear.admissionYear() == null ? '학번 없음(교직원·탈퇴 등)' : admissionYear.admissionYear() + '학번'}">학번</td>
+                        <td class="num" th:text="${admissionYear.voterCount()} + '명 (' + ${admissionYear.ratio()} + '%)'">0명</td>
+                    </tr>
+                </table>
+                <div class="empty" th:if="${report.admissionYears().isEmpty()}">투표자 없음</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="page-break">
+    <div class="section">
+        <h2>분과별 득표</h2>
+        <table class="list">
+            <tr>
+                <th>분과</th>
+                <th class="num">팀 수</th>
+                <th class="num">득표</th>
+                <th class="num">팀당 평균</th>
+            </tr>
+            <tr th:each="trackVote : ${report.trackVotes()}">
+                <td th:text="${trackVote.trackName() == null ? '분과 없음' : trackVote.trackName()}">분과</td>
+                <td class="num" th:text="${trackVote.teamCount()} + '팀'">0팀</td>
+                <td class="num" th:text="${trackVote.voteCount()} + '표'">0표</td>
+                <td class="num" th:text="${trackVote.averageVotesPerTeam()} + '표'">0표</td>
+            </tr>
+        </table>
+        <div class="empty" th:if="${report.trackVotes().isEmpty()}">팀 없음</div>
+    </div>
+    <div class="section">
+        <h2>분과별 1~3위</h2>
+        <div class="track-ranking" th:each="trackRanking, stat : ${report.trackTopRankings()}"
+             th:classappend="${stat.odd} ? 'row-start' : 'row-end'">
+            <h3 th:text="${trackRanking.trackName() == null ? '분과 없음' : trackRanking.trackName()}">분과</h3>
+            <table class="list" th:unless="${trackRanking.rankings().isEmpty()}">
+                <tr th:each="ranking : ${trackRanking.rankings()}">
+                    <td class="rank" th:text="${ranking.rank()} + '위'">1위</td>
+                    <td class="team" th:text="${ranking.teamName()}">팀명</td>
+                    <td th:text="${ranking.projectName()}">프로젝트명</td>
+                    <td class="num" th:text="${ranking.voteCount()} + '표'">0표</td>
+                </tr>
+            </table>
+            <div class="empty" th:if="${trackRanking.rankings().isEmpty()}">득표한 팀 없음</div>
+        </div>
+        <div class="clear"></div>
+        <div class="empty" th:if="${report.trackTopRankings().isEmpty()}">팀 없음</div>
+    </div>
+</div>
+
+<div class="page-break">
+    <h2>팀별 득표 순위</h2>
+    <table class="list ranking">
+        <thead>
+        <tr>
+            <th class="rank">순위</th>
+            <th>팀명</th>
+            <th>프로젝트명</th>
+            <th>분과</th>
+            <th class="num">득표</th>
+            <th class="num">비율</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ranking : ${report.rankings()}">
+            <td class="rank" th:text="${ranking.rank()}">1</td>
+            <td th:text="${ranking.teamName()}">팀명</td>
+            <td th:text="${ranking.projectName()}">프로젝트명</td>
+            <td th:text="${ranking.trackName() == null ? '-' : ranking.trackName()}">분과</td>
+            <td class="num" th:text="${ranking.voteCount()} + '표'">0표</td>
+            <td class="num"
+                th:text="${report.totalVotes() == 0 ? '0.0%' : #numbers.formatDecimal(ranking.voteCount() * 100.0 / report.totalVotes(), 1, 1) + '%'}">0%</td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="empty" th:if="${report.rankings().isEmpty()}">팀 없음</div>
+</div>
+
+</body>
+</html>
