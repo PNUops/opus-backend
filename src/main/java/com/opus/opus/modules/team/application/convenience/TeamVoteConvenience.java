@@ -6,6 +6,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
+import com.opus.opus.modules.team.domain.dao.VoteRecordResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +29,10 @@ public class TeamVoteConvenience {
 
     public VoteStatisticsResult getVoteStaticsResult(final Long contestId) {
         return teamVoteRepository.countVoteStatisticsByContest(contestId);
+    }
+
+    public List<VoteRecordResult> getVoteRecords(final Long contestId) {
+        return teamVoteRepository.findVoteRecordsByContestId(contestId);
     }
 
     public long countMemberVotesInContest(final Long memberId, final Long contestId) {
