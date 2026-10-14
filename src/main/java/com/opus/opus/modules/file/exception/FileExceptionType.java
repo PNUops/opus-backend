@@ -12,6 +12,7 @@ public enum FileExceptionType implements BaseExceptionType {
     NOT_WEBP_CONVERTED(HttpStatus.ACCEPTED, "이미지 변환중 입니다"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다"),
     SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다"),
+    PDF_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PDF 생성에 실패했습니다"),
     DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다"),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "업로드할 파일이 비어 있거나 존재하지 않습니다"),
     EXCEED_FEEDBACK_FILE_LIMIT(HttpStatus.BAD_REQUEST, "피드백 첨부파일은 최대 5개까지 첨부할 수 있습니다"),
