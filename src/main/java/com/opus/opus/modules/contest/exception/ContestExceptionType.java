@@ -34,6 +34,7 @@ public enum ContestExceptionType implements BaseExceptionType {
     INVALID_CONTEST_SORT_CUSTOM_REQUEST(HttpStatus.BAD_REQUEST, "저장된 팀 개수와 request의 팀 개수가 다릅니다"),
     NOT_ALLOWED_DURING_VOTING_PERIOD(HttpStatus.BAD_REQUEST, "현재 투표 기간이므로 해당 작업을 수행할 수 없습니다."),
     NOT_VOTE_PERIOD_NOW(HttpStatus.BAD_REQUEST, "지금은 투표 기간이 아닙니다."),
+    VOTE_NOT_ENDED(HttpStatus.BAD_REQUEST, "투표가 마감된 후에 투표 결과 PDF를 내보낼 수 있습니다."),
     INVALID_ITEM_ORDER(HttpStatus.BAD_REQUEST, "적절하지 않은 itemOrder입니다.(최대 팀 개수보다 초과된 itemOrder)"),
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, ".xlsx 파일만 업로드 가능합니다."),
     EMPTY_TEAM_DATA(HttpStatus.BAD_REQUEST, "등록할 팀 데이터가 없습니다."),
