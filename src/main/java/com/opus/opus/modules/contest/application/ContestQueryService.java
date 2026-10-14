@@ -246,6 +246,11 @@ public class ContestQueryService {
 
     public ContestVoteReportResponse getVoteReport(final Long contestId) {
         final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        return getVoteReport(contest);
+    }
+
+    // 이미 조회·검증한 대회가 있으면 재검증 없이 이 버전을 쓴다. (ContestConvenience.validateVotingPeriod(Contest)와 같은 방식)
+    public ContestVoteReportResponse getVoteReport(final Contest contest) {
         final List<VoteRecordResult> voteRecords = teamVoteConvenience.getVoteRecords(contest.getId());
         final List<TeamRankingResult> rankingResults = teamConvenience.getTeamRankingResults(contest.getId());
         final List<ContestRankingResponse> rankings = applyRanking(rankingResults);
