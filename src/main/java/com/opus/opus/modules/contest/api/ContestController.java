@@ -24,6 +24,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionS
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteReportResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
@@ -210,6 +211,13 @@ public class ContestController {
     @GetMapping("/contests/{contestId}/votes/statistics")
     public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
         final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/contests/{contestId}/votes/report")
+    public ResponseEntity<ContestVoteReportResponse> getVoteReport(@PathVariable final Long contestId) {
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contestId);
         return ResponseEntity.ok(response);
     }
 
