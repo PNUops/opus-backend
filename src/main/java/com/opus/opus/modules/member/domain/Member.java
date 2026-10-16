@@ -128,6 +128,12 @@ public class Member extends BaseEntity {
                 .orElse(null);
     }
 
+    // 관리자 화면에서는 계정당 하나의 OPUS 역할만 사용하므로 기존 역할을 모두 대체한다.
+    // 생성 시 불변 Set이 주입될 수 있어 컬렉션을 수정하지 않고 새 Set으로 교체한다.
+    public void changeRole(final MemberRoleType role) {
+        this.roles = new HashSet<>(Set.of(role));
+    }
+
     public boolean hasStaffRole() {
         return roles.stream().anyMatch(MemberRoleType::isStaff);
     }
