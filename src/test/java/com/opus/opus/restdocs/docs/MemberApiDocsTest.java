@@ -1,7 +1,10 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
@@ -712,6 +715,84 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 탈퇴한 회원을 강제 탈퇴하면 409를 반환한다.")
+    void 이미_탈퇴한_회원을_강제_탈퇴하면_409_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, null);
+        willThrow(new MemberException(ALREADY_WITHDRAWN_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("admin-withdraw-member-fail-already-withdrawn",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("이미 탈퇴한 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인을 강제 탈퇴하면 400을 반환한다.")
+    void 관리자가_본인을_강제_탈퇴하면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.USER_REQUEST, null);
+        willThrow(new MemberException(CANNOT_WITHDRAW_SELF))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-self",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("요청한 관리자 본인의 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 활성 관리자를 강제 탈퇴하면 400을 반환한다.")
+    void 마지막_활성_관리자를_강제_탈퇴하면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
+        willThrow(new MemberException(LAST_ADMIN_PROTECTED))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-last-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("마지막 활성 관리자의 회원 ID")
                         )
                 ));
     }

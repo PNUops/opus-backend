@@ -529,6 +529,42 @@ include::{snippets}/admin-withdraw-member-fail-missing-etc-detail/request-fields
 
 ====
 
+.❌ Case 5: 이미 탈퇴한 회원
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-already-withdrawn/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-already-withdrawn/http-response.adoc[]
+
+====
+
+.❌ Case 6: 관리자 본인 탈퇴
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-self/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-self/http-response.adoc[]
+
+====
+
+.❌ Case 7: 마지막 활성 관리자 탈퇴
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-last-admin/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-last-admin/http-response.adoc[]
+
+====
+
 == `GET`: 회원 검색
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 이메일 앞부분 일치로 검색하며(대소문자 무시)

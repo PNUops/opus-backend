@@ -5,7 +5,10 @@ import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
@@ -622,6 +625,72 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
         assertThat(memberWithdrawalHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[성공] 활성 관리자가 2명 이상이면 다른 관리자를 강제 탈퇴시킬 수 있다.")
+    void 활성_관리자가_2명_이상이면_다른_관리자를_강제_탈퇴시킬_수_있다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
+
+        // when
+        memberCommandService.withdrawByAdmin(admin.getId(), otherAdmin.getId(), request);
+
+        // then
+        assertThat(memberRepository.findById(otherAdmin.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인을 강제 탈퇴하면 예외가 발생한다.")
+    void 관리자가_본인을_강제_탈퇴하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.USER_REQUEST, null);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(admin.getId(), admin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_WITHDRAW_SELF.errorMessage());
+        assertThat(memberRepository.findById(admin.getId())).isPresent();
+        assertThat(memberWithdrawalHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 활성 관리자를 강제 탈퇴하면 예외가 발생한다.")
+    void 마지막_활성_관리자를_강제_탈퇴하면_예외가_발생한다() {
+        // given
+        // 다른 관리자가 먼저 탈퇴 처리되어 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
+        final Member lastAdmin = saveAdmin();
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(teamLeader.getId(), lastAdmin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(LAST_ADMIN_PROTECTED.errorMessage());
+        assertThat(memberRepository.findById(lastAdmin.getId())).isPresent();
+        assertThat(memberWithdrawalHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 탈퇴한 회원을 강제 탈퇴하면 예외가 발생하고 이력이 추가되지 않는다.")
+    void 이미_탈퇴한_회원을_강제_탈퇴하면_예외가_발생하고_이력이_추가되지_않는다() {
+        // given
+        final Member admin = saveAdmin();
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.DUPLICATE_ACCOUNT, null);
+        memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ALREADY_WITHDRAWN_MEMBER.errorMessage());
+        assertThat(memberWithdrawalHistoryRepository.count()).isEqualTo(1);
     }
 
     @Test

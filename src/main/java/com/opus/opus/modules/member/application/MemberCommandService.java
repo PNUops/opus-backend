@@ -2,13 +2,18 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
@@ -338,7 +343,12 @@ public class MemberCommandService {
     }
 
     public void withdrawByAdmin(final Long adminId, final Long memberId, final ForceDeleteMemberRequest request) {
-        final Member member = memberConvenience.getValidateExistMember(memberId);
+        validateNotSelfWithdrawal(adminId, memberId);
+        // 관리자끼리 동시에 서로를 탈퇴시켜 활성 관리자가 0명이 되지 않도록, 활성 관리자 행을 먼저 잠근 뒤 대상 행을 잠근다.
+        final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        final Member member = getWithdrawableMemberForUpdate(memberId);
+        validateNotLastAdmin(member, activeAdmins);
+
         memberWithdrawalHistoryRepository.save(
                 MemberWithdrawalHistory.builder()
                         .memberId(member.getId())
@@ -348,6 +358,27 @@ public class MemberCommandService {
                         .build()
         );
         deleteMember(member);
+    }
+
+    private void validateNotSelfWithdrawal(final Long adminId, final Long memberId) {
+        if (adminId.equals(memberId)) {
+            throw new MemberException(CANNOT_WITHDRAW_SELF);
+        }
+    }
+
+    private Member getWithdrawableMemberForUpdate(final Long memberId) {
+        return memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> {
+                    final boolean isWithdrawn = !memberConvenience.findAllByIdIncludingDeleted(List.of(memberId))
+                            .isEmpty();
+                    return new MemberException(isWithdrawn ? ALREADY_WITHDRAWN_MEMBER : NOT_FOUND_MEMBER);
+                });
+    }
+
+    private void validateNotLastAdmin(final Member member, final List<Member> activeAdmins) {
+        if (member.isAdmin() && activeAdmins.size() <= 1) {
+            throw new MemberException(LAST_ADMIN_PROTECTED);
+        }
     }
 
     private void deleteMember(final Member member) {

@@ -4,9 +4,11 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.SocialType;
 import java.util.List;
+import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,6 +26,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> searchByEmailPrefix(@Param("keyword") String keyword,
                                      @Param("roleType") MemberRoleType roleType,
                                      Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM Member m WHERE m.id = :id")
+    Optional<Member> findByIdForUpdate(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM Member m WHERE :role MEMBER OF m.roles AND m.isFake = false ORDER BY m.id")
+    List<Member> findAllByRoleForUpdate(@Param("role") MemberRoleType role);
 
     Optional<Member> findByEmail(final String email);
 
