@@ -441,6 +441,8 @@ include::{snippets}/delete-member-profile-image/request-headers.adoc[]
 
 == `DELETE`: 회원 탈퇴
 
+NOTE: 탈퇴 이력이 `USER_REQUEST`(사용자 요청) 사유로 기록됩니다.
+
 .HTTP Request
 include::{snippets}/withdraw-member/http-request.adoc[]
 
@@ -452,7 +454,7 @@ include::{snippets}/withdraw-member/request-headers.adoc[]
 
 == `DELETE`: 관리자 강제 회원 탈퇴
 
-NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다.
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 탈퇴 이력에 수행 관리자가 함께 기록됩니다.
 
 .HTTP Request
 include::{snippets}/admin-withdraw-member/http-request.adoc[]
@@ -510,6 +512,20 @@ include::{snippets}/admin-withdraw-member-fail-missing-reason/http-request.adoc[
 include::{snippets}/admin-withdraw-member-fail-missing-reason/http-response.adoc[]
 
 include::{snippets}/admin-withdraw-member-fail-missing-reason/request-fields.adoc[]
+
+====
+
+.❌ Case 4: 기타 사유 선택 시 상세 사유가 없음
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-withdraw-member-fail-missing-etc-detail/http-request.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-missing-etc-detail/http-response.adoc[]
+
+include::{snippets}/admin-withdraw-member-fail-missing-etc-detail/request-fields.adoc[]
 
 ====
 

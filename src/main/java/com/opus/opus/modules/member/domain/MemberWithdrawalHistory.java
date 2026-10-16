@@ -28,10 +28,15 @@ public class MemberWithdrawalHistory extends BaseEntity {
 
     private String detail;
 
+    // 본인 탈퇴인 경우 null
+    private Long adminId;
+
     @Builder
-    private MemberWithdrawalHistory(final Long memberId, final MemberWithdrawalReason reason, final String detail) {
+    private MemberWithdrawalHistory(final Long memberId, final MemberWithdrawalReason reason, final String detail,
+                                    final Long adminId) {
         this.memberId = memberId;
         this.reason = reason;
         this.detail = detail;
+        this.adminId = adminId;
     }
 }

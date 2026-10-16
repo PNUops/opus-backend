@@ -636,7 +636,7 @@ public class MemberApiDocsTest extends RestDocsTest {
         // Given
         final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
                 MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
-        doNothing().when(memberCommandService).withdrawByAdmin(any(), any());
+        doNothing().when(memberCommandService).withdrawByAdmin(any(), any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 1L)
@@ -653,8 +653,35 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
-                                stringFieldWithPath("detail", "기타 사항").optional()
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
+                                stringFieldWithPath("detail", "상세 사유 (최대 500자, ETC 선택 시 필수)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 기타 사유를 선택하고 상세 사유가 없으면 400을 반환한다.")
+    void 기타_사유를_선택하고_상세_사유가_없으면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(MemberWithdrawalReason.ETC, " ");
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-missing-etc-detail",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (ETC)"),
+                                stringFieldWithPath("detail", "상세 사유 (공백, 검증 실패 유도)").optional()
                         )
                 ));
     }
@@ -666,7 +693,7 @@ public class MemberApiDocsTest extends RestDocsTest {
         final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
                 MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
         willThrow(new MemberException(NOT_FOUND_MEMBER))
-                .given(memberCommandService).withdrawByAdmin(any(), any());
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 999L)
@@ -683,7 +710,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항").optional()
                         )
                 ));
@@ -712,7 +739,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항 (500자 초과)").optional()
                         )
                 ));

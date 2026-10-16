@@ -1,6 +1,7 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
@@ -53,6 +54,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.test.util.AopTestUtils;
@@ -97,6 +100,10 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final EmailAuthConfirmRequest emailAuthConfirmRequest = new EmailAuthConfirmRequest(emailAuthRequest.email(),
                 authRedisUtil.get("signup:email:auth:" + emailAuthRequest.email()));
         memberCommandService.confirmSignUpEmailAuth(emailAuthConfirmRequest);
+    }
+
+    private Member saveAdmin() {
+        return memberRepository.save(MemberFixture.createMemberWithRole("관리자", 1, ROLE_관리자));
     }
 
     @Test
@@ -510,28 +517,47 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 본인 탈퇴 시 사용자 요청 사유로 탈퇴 이력이 저장된다.")
+    void 본인_탈퇴_시_사용자_요청_사유로_탈퇴_이력이_저장된다() {
+        // when
+        memberCommandService.withdraw(teamLeader);
+
+        // then
+        assertThat(memberWithdrawalHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.USER_REQUEST);
+                    assertThat(history.getDetail()).isNull();
+                    assertThat(history.getAdminId()).isNull();
+                });
+    }
+
+    @Test
     @DisplayName("[성공] 관리자 강제 탈퇴 시 해당 회원은 DB에서 조회되지 않는다.")
     void 관리자_강제_탈퇴_시_해당_회원은_DB에서_조회되지_않는다() {
         // given
+        final Member admin = saveAdmin();
         final ForceDeleteMemberRequest request =
                 new ForceDeleteMemberRequest(MemberWithdrawalReason.FRAUDULENT_USE, "테스트 사유");
 
         // when
-        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
+        memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request);
 
         // then
         assertThat(memberRepository.findById(teamLeader.getId())).isEmpty();
     }
 
     @Test
-    @DisplayName("[성공] 관리자 강제 탈퇴 시 탈퇴 사유가 저장된다.")
-    void 관리자_강제_탈퇴_시_탈퇴_사유가_저장된다() {
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 탈퇴 사유와 수행 관리자가 저장된다.")
+    void 관리자_강제_탈퇴_시_탈퇴_사유와_수행_관리자가_저장된다() {
         // given
+        final Member admin = saveAdmin();
         final ForceDeleteMemberRequest request =
                 new ForceDeleteMemberRequest(MemberWithdrawalReason.DUPLICATE_ACCOUNT, "동일 학번 중복 가입");
 
         // when
-        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
+        memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request);
 
         // then
         assertThat(memberWithdrawalHistoryRepository.findAll())
@@ -540,18 +566,37 @@ public class MemberCommandServiceTest extends IntegrationTest {
                     assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
                     assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.DUPLICATE_ACCOUNT);
                     assertThat(history.getDetail()).isEqualTo("동일 학번 중복 가입");
+                    assertThat(history.getAdminId()).isEqualTo(admin.getId());
                 });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MemberWithdrawalReason.class, names = {"USER_REQUEST", "OPERATIONAL_CLEANUP"})
+    @DisplayName("[성공] 관리자 강제 탈퇴 시 사용자 요청·운영상 정리 사유도 저장된다.")
+    void 관리자_강제_탈퇴_시_사용자_요청_운영상_정리_사유도_저장된다(final MemberWithdrawalReason reason) {
+        // given
+        final Member admin = saveAdmin();
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(reason, null);
+
+        // when
+        memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request);
+
+        // then
+        assertThat(memberWithdrawalHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> assertThat(history.getReason()).isEqualTo(reason));
     }
 
     @Test
     @DisplayName("[성공] 관리자 강제 탈퇴 시 ETC 사유도 저장된다.")
     void 관리자_강제_탈퇴_시_ETC_사유도_저장된다() {
         // given
+        final Member admin = saveAdmin();
         final ForceDeleteMemberRequest request =
                 new ForceDeleteMemberRequest(MemberWithdrawalReason.ETC, "기타 사유");
 
         // when
-        memberCommandService.withdrawByAdmin(teamLeader.getId(), request);
+        memberCommandService.withdrawByAdmin(admin.getId(), teamLeader.getId(), request);
 
         // then
         assertThat(memberWithdrawalHistoryRepository.findAll())
@@ -567,12 +612,13 @@ public class MemberCommandServiceTest extends IntegrationTest {
     @DisplayName("[실패] 존재하지 않는 회원을 강제 탈퇴하면 예외가 발생한다.")
     void 존재하지_않는_회원을_강제_탈퇴하면_예외가_발생한다() {
         // given
+        final Member admin = saveAdmin();
         final Long nonExistentId = 999999L;
         final ForceDeleteMemberRequest request =
                 new ForceDeleteMemberRequest(MemberWithdrawalReason.FRAUDULENT_USE, "테스트 사유");
 
         // when & then
-        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(nonExistentId, request))
+        assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(admin.getId(), nonExistentId, request))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
         assertThat(memberWithdrawalHistoryRepository.count()).isZero();

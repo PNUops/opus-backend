@@ -33,6 +33,7 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
+import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.StaffInfo;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
@@ -327,16 +328,23 @@ public class MemberCommandService {
     }
 
     public void withdraw(final Member member) {
+        memberWithdrawalHistoryRepository.save(
+                MemberWithdrawalHistory.builder()
+                        .memberId(member.getId())
+                        .reason(MemberWithdrawalReason.USER_REQUEST)
+                        .build()
+        );
         deleteMember(member);
     }
 
-    public void withdrawByAdmin(final Long memberId, final ForceDeleteMemberRequest request) {
+    public void withdrawByAdmin(final Long adminId, final Long memberId, final ForceDeleteMemberRequest request) {
         final Member member = memberConvenience.getValidateExistMember(memberId);
         memberWithdrawalHistoryRepository.save(
                 MemberWithdrawalHistory.builder()
                         .memberId(member.getId())
                         .reason(request.reason())
                         .detail(request.detail())
+                        .adminId(adminId)
                         .build()
         );
         deleteMember(member);

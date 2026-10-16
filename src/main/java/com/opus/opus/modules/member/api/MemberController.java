@@ -182,9 +182,10 @@ public class MemberController {
 
     @Secured("ROLE_관리자")
     @DeleteMapping("/admin/members/{memberId}")
-    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId,
+    public ResponseEntity<Void> forceDeleteMember(@LoginMember final Member admin,
+                                                  @PathVariable final Long memberId,
                                                   @Valid @RequestBody final ForceDeleteMemberRequest request) {
-        memberCommandService.withdrawByAdmin(memberId, request);
+        memberCommandService.withdrawByAdmin(admin.getId(), memberId, request);
         return ResponseEntity.noContent().build();
     }
 
