@@ -669,6 +669,52 @@ include::{snippets}/admin-get-member-summary/request-headers.adoc[]
 .Response Body's Fields
 include::{snippets}/admin-get-member-summary/response-fields.adoc[]
 
+== `GET`: 관리자 탈퇴 내역 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 탈퇴 회원의 탈퇴 사유·상세 사유·처리 시각·수행 관리자를 반환합니다.
+본인 탈퇴는 `processedBy`가 `null`이며, 탈퇴 이력 저장 도입 이전에 탈퇴한 회원은 `reason`·`detail`·`withdrawnAt`·`processedBy`가 모두 `null`입니다.
+
+.HTTP Request
+include::{snippets}/admin-get-member-withdrawal/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-get-member-withdrawal/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-get-member-withdrawal/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-get-member-withdrawal/path-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-get-member-withdrawal/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 탈퇴하지 않은 회원
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-member-withdrawal-fail-not-withdrawn/http-request.adoc[]
+
+include::{snippets}/admin-get-member-withdrawal-fail-not-withdrawn/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 회원
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-member-withdrawal-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-get-member-withdrawal-fail-not-found/http-response.adoc[]
+
+====
+
 == `GET`: 계정 정보 조회
 
 .HTTP Request

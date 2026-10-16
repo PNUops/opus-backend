@@ -30,6 +30,7 @@ import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
@@ -212,6 +213,12 @@ public class MemberController {
     @GetMapping("/admin/members/summary")
     public ResponseEntity<AdminMemberSummaryResponse> getAdminMemberSummary() {
         return ResponseEntity.ok(memberQueryService.getAdminMemberSummary());
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/{memberId}/withdrawal")
+    public ResponseEntity<MemberWithdrawalResponse> getWithdrawal(@PathVariable final Long memberId) {
+        return ResponseEntity.ok(memberQueryService.getWithdrawal(memberId));
     }
 
     @GetMapping("/members/me/projects")

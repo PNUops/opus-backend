@@ -9,6 +9,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
@@ -57,6 +58,7 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
@@ -1244,6 +1246,82 @@ public class MemberApiDocsTest extends RestDocsTest {
                         responseFields(
                                 numberFieldWithPath("activeCount", "활동 사용자 수 (임시 계정 제외)"),
                                 numberFieldWithPath("withdrawnCount", "탈퇴 사용자 수 (임시 계정 제외)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 탈퇴 회원의 탈퇴 내역을 조회한다.")
+    void 관리자가_탈퇴_회원의_탈퇴_내역을_조회한다() throws Exception {
+        final MemberWithdrawalResponse response = new MemberWithdrawalResponse(
+                3L, "홍길동", null, "gildong@pusan.ac.kr",
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, "동일인 중복 가입 확인",
+                LocalDateTime.of(2026, 10, 10, 18, 8),
+                new MemberWithdrawalResponse.ProcessedAdmin(1L, "관리자"));
+        when(memberQueryService.getWithdrawal(any())).thenReturn(response);
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 3L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-member-withdrawal",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴 회원 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("memberId", "회원 ID"),
+                                stringFieldWithPath("name", "회원 이름"),
+                                stringFieldWithPath("studentId", "학번 (미입력 시 null)").optional(),
+                                stringFieldWithPath("email", "회원 이메일"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타). 탈퇴 이력이 없으면 null").optional(),
+                                stringFieldWithPath("detail", "상세 사유 (내부 운영 메모)").optional(),
+                                dateTimeFieldWithPath("withdrawnAt", "탈퇴 처리 시각. 탈퇴 이력이 없으면 null").optional(),
+                                subsectionFieldWithPath("processedBy", "수행 관리자. 본인 탈퇴이거나 탈퇴 이력이 없으면 null").optional(),
+                                numberFieldWithPath("processedBy.memberId", "수행 관리자 회원 ID").optional(),
+                                stringFieldWithPath("processedBy.name", "수행 관리자 이름").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴하지 않은 회원의 탈퇴 내역을 조회하면 400을 반환한다.")
+    void 탈퇴하지_않은_회원의_탈퇴_내역을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_WITHDRAWN_MEMBER))
+                .given(memberQueryService).getWithdrawal(any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-member-withdrawal-fail-not-withdrawn",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴하지 않은 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 탈퇴 내역을 조회하면 404를 반환한다.")
+    void 존재하지_않는_회원의_탈퇴_내역을_조회하면_404_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberQueryService).getWithdrawal(any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-get-member-withdrawal-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         )
                 ));
     }

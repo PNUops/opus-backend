@@ -6,6 +6,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -39,11 +40,15 @@ import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberStatus;
+import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
+import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -80,6 +85,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
     @Autowired
     private ContestRepository contestRepository;
     @Autowired
@@ -626,5 +633,94 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         assertThat(after.activeCount() - before.activeCount()).isEqualTo(2);
         assertThat(after.withdrawnCount() - before.withdrawnCount()).isEqualTo(1);
+    }
+
+    private void saveWithdrawalHistory(final Member member, final MemberWithdrawalReason reason, final String detail,
+                                       final Long adminId) {
+        memberWithdrawalHistoryRepository.save(MemberWithdrawalHistory.builder()
+                .memberId(member.getId())
+                .reason(reason)
+                .detail(detail)
+                .adminId(adminId)
+                .build());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 탈퇴시킨 회원의 탈퇴 내역을 조회하면 사유·메모·처리 시각·수행 관리자가 반환된다.")
+    void 관리자가_탈퇴시킨_회원의_탈퇴_내역을_조회하면_사유_메모_처리_시각_수행_관리자가_반환된다() {
+        final Member admin = saveMember("acctwdadmin@pusan.ac.kr", MemberRoleType.ROLE_관리자);
+        final Member withdrawn = saveWithdrawnMember("acctwd1@pusan.ac.kr");
+        saveWithdrawalHistory(withdrawn, MemberWithdrawalReason.DUPLICATE_ACCOUNT, "동일 학번 중복 가입", admin.getId());
+
+        final MemberWithdrawalResponse response = memberQueryService.getWithdrawal(withdrawn.getId());
+
+        assertThat(response.memberId()).isEqualTo(withdrawn.getId());
+        assertThat(response.name()).isEqualTo(withdrawn.getName());
+        assertThat(response.studentId()).isEqualTo(withdrawn.getStudentId());
+        assertThat(response.email()).isEqualTo(withdrawn.getEmail());
+        assertThat(response.reason()).isEqualTo(MemberWithdrawalReason.DUPLICATE_ACCOUNT);
+        assertThat(response.detail()).isEqualTo("동일 학번 중복 가입");
+        assertThat(response.withdrawnAt()).isNotNull();
+        assertThat(response.processedBy())
+                .isEqualTo(new MemberWithdrawalResponse.ProcessedAdmin(admin.getId(), admin.getName()));
+    }
+
+    @Test
+    @DisplayName("[성공] 본인 탈퇴 회원의 탈퇴 내역은 수행 관리자 없이 반환된다.")
+    void 본인_탈퇴_회원의_탈퇴_내역은_수행_관리자_없이_반환된다() {
+        final Member withdrawn = saveWithdrawnMember("acctwd2@pusan.ac.kr");
+        saveWithdrawalHistory(withdrawn, MemberWithdrawalReason.USER_REQUEST, null, null);
+
+        final MemberWithdrawalResponse response = memberQueryService.getWithdrawal(withdrawn.getId());
+
+        assertThat(response.reason()).isEqualTo(MemberWithdrawalReason.USER_REQUEST);
+        assertThat(response.withdrawnAt()).isNotNull();
+        assertThat(response.processedBy()).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 탈퇴 이력이 없는 탈퇴 회원은 회원 정보만 반환되고 사유·시각·수행 관리자는 null이다.")
+    void 탈퇴_이력이_없는_탈퇴_회원은_회원_정보만_반환되고_사유_시각_수행_관리자는_null이다() {
+        final Member withdrawn = saveWithdrawnMember("acctwd3@pusan.ac.kr");
+
+        final MemberWithdrawalResponse response = memberQueryService.getWithdrawal(withdrawn.getId());
+
+        assertThat(response.memberId()).isEqualTo(withdrawn.getId());
+        assertThat(response.email()).isEqualTo(withdrawn.getEmail());
+        assertThat(response.reason()).isNull();
+        assertThat(response.detail()).isNull();
+        assertThat(response.withdrawnAt()).isNull();
+        assertThat(response.processedBy()).isNull();
+    }
+
+    @Test
+    @DisplayName("[성공] 수행 관리자가 이후 탈퇴했어도 탈퇴 내역에 수행 관리자 이름이 반환된다.")
+    void 수행_관리자가_이후_탈퇴했어도_탈퇴_내역에_수행_관리자_이름이_반환된다() {
+        final Member admin = saveWithdrawnMember("acctwdadmin2@pusan.ac.kr");
+        final Member withdrawn = saveWithdrawnMember("acctwd4@pusan.ac.kr");
+        saveWithdrawalHistory(withdrawn, MemberWithdrawalReason.FRAUDULENT_USE, "부정 이용", admin.getId());
+
+        final MemberWithdrawalResponse response = memberQueryService.getWithdrawal(withdrawn.getId());
+
+        assertThat(response.processedBy())
+                .isEqualTo(new MemberWithdrawalResponse.ProcessedAdmin(admin.getId(), admin.getName()));
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴하지 않은 회원의 탈퇴 내역을 조회하면 예외가 발생한다.")
+    void 탈퇴하지_않은_회원의_탈퇴_내역을_조회하면_예외가_발생한다() {
+        final Member active = saveMember("acctwd5@pusan.ac.kr", MemberRoleType.ROLE_학생);
+
+        assertThatThrownBy(() -> memberQueryService.getWithdrawal(active.getId()))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_WITHDRAWN_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 탈퇴 내역을 조회하면 예외가 발생한다.")
+    void 존재하지_않는_회원의_탈퇴_내역을_조회하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getWithdrawal(999999L))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }
 }
