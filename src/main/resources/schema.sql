@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS `file`;
 DROP TABLE IF EXISTS `notice`;
 DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `member_withdrawal_history`;
+DROP TABLE IF EXISTS `member_role_change_history`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest`;
@@ -329,6 +330,18 @@ CREATE TABLE `member_withdrawal_history` (
   `admin_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_member_withdrawal_history_member_id` (`member_id`)
+);
+
+CREATE TABLE `member_role_change_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `member_id` bigint NOT NULL,
+  `admin_id` bigint NOT NULL,
+  `before_role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
+  `after_role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_member_role_change_history_member_id` (`member_id`)
 );
 
 CREATE TABLE `notice` (

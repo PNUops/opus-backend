@@ -2,16 +2,25 @@ package com.opus.opus.member.application;
 
 import static com.opus.opus.member.MemberFixture.createMemberWithUniqueNum;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
@@ -37,6 +46,7 @@ import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
@@ -49,9 +59,11 @@ import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
+import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import org.springframework.mock.web.MockMultipartFile;
+import jakarta.persistence.EntityManager;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -82,6 +94,12 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
+
+    @Autowired
+    private MemberRoleChangeHistoryRepository memberRoleChangeHistoryRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private Member teamLeader;
     private EmailAuthRequest emailAuthRequest;
@@ -757,5 +775,179 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final SignInResponse response = memberCommandService.signIn(
                 new SignInRequest(teamLeader.getEmail(), request.newPassword()));
         assertThat(response.memberId()).isEqualTo(teamLeader.getId());
+    }
+
+    private Member reloadMember(final Long memberId) {
+        entityManager.flush();
+        entityManager.clear();
+        return memberRepository.findById(memberId).orElseThrow();
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 OPUS 역할을 변경하면 역할이 교체되고 변경 이력이 저장된다.")
+    void 관리자가_회원의_OPUS_역할을_변경하면_역할이_교체되고_변경_이력이_저장된다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+
+        // then
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
+        assertThat(memberRoleChangeHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getAdminId()).isEqualTo(admin.getId());
+                    assertThat(history.getBeforeRole()).isEqualTo(ROLE_학생);
+                    assertThat(history.getAfterRole()).isEqualTo(ROLE_교수);
+                    assertThat(history.getCreatedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 역할이 여러 개인 회원의 역할을 변경하면 선택한 역할 하나만 남는다.")
+    void 역할이_여러_개인_회원의_역할을_변경하면_선택한_역할_하나만_남는다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member multiRoleMember = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("multirole@pusan.ac.kr", ROLE_학생, ROLE_외부멘토));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), multiRoleMember.getId(), request);
+
+        // then
+        assertThat(reloadMember(multiRoleMember.getId()).getRoles()).containsExactly(ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[성공] 활성 관리자가 2명 이상이면 다른 관리자의 관리자 권한을 해제할 수 있다.")
+    void 활성_관리자가_2명_이상이면_다른_관리자의_관리자_권한을_해제할_수_있다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_학생);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), otherAdmin.getId(), request);
+
+        // then
+        assertThat(reloadMember(otherAdmin.getId()).getRoles()).containsExactly(ROLE_학생);
+    }
+
+    @Test
+    @DisplayName("[실패] 요청한 현재 역할이 실제 역할과 다르면 예외가 발생하고 역할이 변경되지 않는다.")
+    void 요청한_현재_역할이_실제_역할과_다르면_예외가_발생하고_역할이_변경되지_않는다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_CONFLICT.errorMessage());
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
+        assertThat(memberRoleChangeHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 현재 역할과 같은 역할로 변경하면 예외가 발생한다.")
+    void 현재_역할과_같은_역할로_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_학생);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(SAME_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자 화면에서 지정할 수 없는 역할(직원)로 변경하면 예외가 발생한다.")
+    void 관리자_화면에서_지정할_수_없는_역할로_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_직원);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 예외가 발생한다.")
+    void 관리자가_본인의_역할을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_학생);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), admin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_CHANGE_OWN_ROLE.errorMessage());
+        assertThat(reloadMember(admin.getId()).getRoles()).containsExactly(ROLE_관리자);
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 활성 관리자의 관리자 권한을 해제하면 예외가 발생한다.")
+    void 마지막_활성_관리자의_관리자_권한을_해제하면_예외가_발생한다() {
+        // given
+        // 다른 관리자가 먼저 권한을 해제해 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
+        final Member lastAdmin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(teamLeader.getId(), lastAdmin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(LAST_ADMIN_PROTECTED.errorMessage());
+        assertThat(reloadMember(lastAdmin.getId()).getRoles()).containsExactly(ROLE_관리자);
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 예외가 발생한다.")
+    void 탈퇴한_회원의_역할을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        memberCommandService.withdraw(teamLeader);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(WITHDRAWN_MEMBER_NOT_MODIFIABLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 역할을 변경하면 예외가 발생한다.")
+    void 임시_계정의_역할을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member fakeMember = MemberFixture.createMemberWithEmailAndRole("fakerole@pusan.ac.kr", ROLE_학생);
+        fakeMember.markAsFakeMember();
+        memberRepository.save(fakeMember);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), fakeMember.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(FAKE_MEMBER_NOT_MANAGEABLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할을 변경하면 예외가 발생한다.")
+    void 존재하지_않는_회원의_역할을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), 999999L, request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }
 }

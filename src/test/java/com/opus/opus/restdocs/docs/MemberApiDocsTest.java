@@ -5,10 +5,16 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
@@ -48,6 +54,7 @@ import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -75,6 +82,7 @@ import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.member.exception.MemberExceptionType;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -91,6 +99,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.mock.web.MockMultipartFile;
 
 public class MemberApiDocsTest extends RestDocsTest {
@@ -800,6 +809,148 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         pathParameters(
                                 parameterWithName("memberId").description("마지막 활성 관리자의 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 OPUS 역할을 변경한다.")
+    void 관리자가_회원의_OPUS_역할을_변경한다() throws Exception {
+        // Given
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(
+                MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수);
+        doNothing().when(memberCommandService).changeRole(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-change-member-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("역할을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("currentRole", "화면에서 확인한 회원의 현재 역할. 서버의 최신 역할과 다르면 409"),
+                                stringFieldWithPath("newRole", "변경할 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토, ROLE_관리자)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 회원의 현재 역할이 이미 변경되었으면 409를 반환한다.")
+    void 회원의_현재_역할이_이미_변경되었으면_409_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-conflict", ROLE_CHANGE_CONFLICT,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isConflict(), "현재 역할이 이미 변경된 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 400을 반환한다.")
+    void 관리자가_본인의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-self", CANNOT_CHANGE_OWN_ROLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_학생),
+                status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 활성 관리자의 관리자 권한을 해제하면 400을 반환한다.")
+    void 마지막_활성_관리자의_관리자_권한을_해제하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-last-admin", LAST_ADMIN_PROTECTED,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "마지막 활성 관리자의 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 지정할 수 없는 역할로 변경하면 400을 반환한다.")
+    void 지정할_수_없는_역할로_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-assignable", NOT_ASSIGNABLE_ROLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_직원),
+                status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 현재 역할과 같은 역할로 변경하면 400을 반환한다.")
+    void 현재_역할과_같은_역할로_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-same-role", SAME_ROLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_학생),
+                status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 400을 반환한다.")
+    void 탈퇴한_회원의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-withdrawn", WITHDRAWN_MEMBER_NOT_MODIFIABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "탈퇴한 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 역할을 변경하면 400을 반환한다.")
+    void 임시_계정의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-fake-member", FAKE_MEMBER_NOT_MANAGEABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "임시 계정 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할을 변경하면 404를 반환한다.")
+    void 존재하지_않는_회원의_역할을_변경하면_404_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-found", NOT_FOUND_MEMBER,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isNotFound(), "존재하지 않는 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 변경할 역할이 없으면 400을 반환한다.")
+    void 변경할_역할이_없으면_400_에러를_반환한다() throws Exception {
+        // Given
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, null);
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-change-member-role-fail-missing-new-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("역할을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("currentRole", "회원의 현재 역할"),
+                                stringFieldWithPath("newRole", "변경할 역할 (누락, 검증 실패 유도)").optional()
+                        )
+                ));
+    }
+
+    private void documentRoleChangeFailure(final String identifier, final MemberExceptionType exceptionType,
+                                           final MemberRoleChangeRequest request, final ResultMatcher expectedStatus,
+                                           final String memberIdDescription) throws Exception {
+        willThrow(new MemberException(exceptionType))
+                .given(memberCommandService).changeRole(any(), any(), any());
+
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(expectedStatus)
+                .andDo(document(identifier,
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description(memberIdDescription)
                         )
                 ));
     }

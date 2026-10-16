@@ -565,6 +565,135 @@ include::{snippets}/admin-withdraw-member-fail-last-admin/http-response.adoc[]
 
 ====
 
+== `PATCH`: 관리자 회원 OPUS 역할 변경
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 회원의 OPUS 전역 역할을 하나로 교체하고 변경 이력(변경 전·후 역할, 수행 관리자, 시각)을 기록합니다.
+대회별 심사위원·지도교수·멘토 배정은 이 API로 변경하지 않으며, 역할 변경 시 기존 대회 배정은 그대로 유지됩니다.
+
+.HTTP Request
+include::{snippets}/admin-change-member-role/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-change-member-role/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-change-member-role/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-change-member-role/path-parameters.adoc[]
+
+.Request Fields
+include::{snippets}/admin-change-member-role/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 회원의 현재 역할이 이미 변경됨 (409)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-conflict/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-conflict/http-response.adoc[]
+
+====
+
+.❌ Case 2: 관리자 본인의 역할 변경
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-self/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-self/http-response.adoc[]
+
+====
+
+.❌ Case 3: 마지막 활성 관리자의 관리자 권한 해제
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-last-admin/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-last-admin/http-response.adoc[]
+
+====
+
+.❌ Case 4: 지정할 수 없는 역할 (ROLE_직원)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-not-assignable/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-not-assignable/http-response.adoc[]
+
+====
+
+.❌ Case 5: 현재 역할과 같은 역할로 변경
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-same-role/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-same-role/http-response.adoc[]
+
+====
+
+.❌ Case 6: 탈퇴한 회원
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-withdrawn/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-withdrawn/http-response.adoc[]
+
+====
+
+.❌ Case 7: 임시 계정
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-fake-member/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-fake-member/http-response.adoc[]
+
+====
+
+.❌ Case 8: 존재하지 않는 회원 ID (404)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 9: 변경할 역할 누락
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-missing-new-role/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-missing-new-role/http-response.adoc[]
+
+====
 == `GET`: 회원 검색
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 이메일 앞부분 일치로 검색하며(대소문자 무시)
