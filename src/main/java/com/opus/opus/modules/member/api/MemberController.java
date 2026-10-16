@@ -21,6 +21,8 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -195,6 +197,21 @@ public class MemberController {
             @RequestParam(required = false) final String keyword,
             @RequestParam(required = false) final String roleType) {
         return ResponseEntity.ok(memberQueryService.getMembersByKeyword(keyword, roleType));
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members")
+    public ResponseEntity<Page<AdminMemberResponse>> getAdminMembers(
+            @RequestParam(required = false) final String keyword, @RequestParam(required = false) final String roleType,
+            @RequestParam(required = false) final String status, @RequestParam(defaultValue = "0") final int page,
+            @RequestParam(defaultValue = "20") final int size) {
+        return ResponseEntity.ok(memberQueryService.getAdminMembers(keyword, roleType, status, page, size));
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/summary")
+    public ResponseEntity<AdminMemberSummaryResponse> getAdminMemberSummary() {
+        return ResponseEntity.ok(memberQueryService.getAdminMemberSummary());
     }
 
     @GetMapping("/members/me/projects")

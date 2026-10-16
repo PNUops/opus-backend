@@ -8,6 +8,7 @@ import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImage;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
 import static java.util.stream.Collectors.groupingBy;
@@ -18,6 +19,8 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
@@ -26,6 +29,7 @@ import com.opus.opus.modules.member.application.dto.response.MemberSearchRespons
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberStatus;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -113,6 +117,34 @@ public class MemberQueryService {
         return memberRepository.searchByEmailPrefix(escapeLikePattern(keyword), parsedRoleType, pageable).stream()
                 .map(MemberSearchResponse::from)
                 .toList();
+    }
+
+    public Page<AdminMemberResponse> getAdminMembers(final String keyword, final String roleType, final String status,
+                                                     final int page, final int size) {
+        final MemberRoleType parsedRoleType = parseRoleType(roleType);
+        final Boolean isDeleted = parseIsDeleted(status);
+        final String escapedKeyword = (keyword == null || keyword.isBlank()) ? null : escapeLikePattern(keyword.strip());
+        final String roleName = parsedRoleType == null ? null : parsedRoleType.name();
+        return memberRepository.findAdminMembers(escapedKeyword, roleName, isDeleted, PageRequest.of(page, size))
+                .map(AdminMemberResponse::from);
+    }
+
+    public AdminMemberSummaryResponse getAdminMemberSummary() {
+        return new AdminMemberSummaryResponse(
+                memberRepository.countNonFakeMembersByIsDeleted(false),
+                memberRepository.countNonFakeMembersByIsDeleted(true)
+        );
+    }
+
+    private Boolean parseIsDeleted(final String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return MemberStatus.valueOf(status) == MemberStatus.WITHDRAWN;
+        } catch (final IllegalArgumentException e) {
+            throw new MemberException(INVALID_MEMBER_STATUS);
+        }
     }
 
     // keyword에 포함된 LIKE 와일드카드(%, _)와 ESCAPE 문자(\)를 이스케이프해 리터럴 접두사 매칭을 보장한다.

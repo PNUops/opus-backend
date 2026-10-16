@@ -602,6 +602,73 @@ include::{snippets}/admin-search-members-fail-invalid-role/query-parameters.adoc
 
 ====
 
+== `GET`: 관리자 일반 회원 목록 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 탈퇴 회원을 포함하고 임시 계정은 제외하며, 가입일 최신순으로 반환합니다.
+`keyword`는 이름·학번·이메일에 부분 일치(대소문자 무시)하는 회원을 찾습니다.
+탈퇴 회원은 탈퇴 시 역할이 삭제되어 `roleType`이 `null`이며, `roleType` 필터에 걸리지 않습니다.
+
+.HTTP Request
+include::{snippets}/admin-get-members/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-get-members/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-get-members/request-headers.adoc[]
+
+.Query Parameters
+include::{snippets}/admin-get-members/query-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-get-members/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 유효하지 않은 계정 상태 값
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-members-fail-invalid-status/http-request.adoc[]
+
+include::{snippets}/admin-get-members-fail-invalid-status/http-response.adoc[]
+
+include::{snippets}/admin-get-members-fail-invalid-status/query-parameters.adoc[]
+
+====
+
+.❌ Case 2: 유효하지 않은 역할 값
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-members-fail-invalid-role/http-request.adoc[]
+
+include::{snippets}/admin-get-members-fail-invalid-role/http-response.adoc[]
+
+include::{snippets}/admin-get-members-fail-invalid-role/query-parameters.adoc[]
+
+====
+
+== `GET`: 관리자 회원 요약 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 임시 계정을 제외한 활동·탈퇴 회원 수를 반환합니다.
+
+.HTTP Request
+include::{snippets}/admin-get-member-summary/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-get-member-summary/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-get-member-summary/request-headers.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-get-member-summary/response-fields.adoc[]
+
 == `GET`: 계정 정보 조회
 
 .HTTP Request

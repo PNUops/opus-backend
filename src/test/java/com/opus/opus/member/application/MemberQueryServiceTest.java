@@ -3,10 +3,12 @@ package com.opus.opus.member.application;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.BDDMockito.given;
 
 import com.opus.opus.contest.ContestCategoryFixture;
@@ -30,6 +32,8 @@ import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
@@ -38,6 +42,7 @@ import com.opus.opus.modules.member.application.dto.response.MemberSearchRespons
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberStatus;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -476,5 +481,150 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_학생);
+    }
+
+    private Member saveMember(final String email, final MemberRoleType role) {
+        return memberRepository.save(MemberFixture.createMemberWithEmailAndRole(email, role));
+    }
+
+    private Member saveWithdrawnMember(final String email) {
+        final Member withdrawn = saveMember(email, MemberRoleType.ROLE_학생);
+        memberRepository.flush();
+        memberRepository.delete(withdrawn);
+        memberRepository.flush();
+        return withdrawn;
+    }
+
+    private Member saveFakeMember(final String email) {
+        final Member fake = MemberFixture.createMemberWithEmailAndRole(email, MemberRoleType.ROLE_학생);
+        fake.markAsFakeMember();
+        return memberRepository.save(fake);
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 회원 목록은 탈퇴 회원을 포함하고 임시 계정을 제외하며 최신 가입순으로 반환된다.")
+    void 관리자_회원_목록은_탈퇴_회원을_포함하고_임시_계정을_제외하며_최신_가입순으로_반환된다() {
+        final Member active = saveMember("acctall1@pusan.ac.kr", MemberRoleType.ROLE_교수);
+        final Member withdrawn = saveWithdrawnMember("acctall2@pusan.ac.kr");
+        saveFakeMember("acctall3@pusan.ac.kr");
+
+        final Page<AdminMemberResponse> result = memberQueryService.getAdminMembers("acctall", null, null, 0, 20);
+
+        // 탈퇴(soft delete) 시 Hibernate가 member_roles 행을 삭제하므로 탈퇴 회원의 역할은 null이다.
+        assertThat(result.getContent())
+                .extracting(AdminMemberResponse::memberId, AdminMemberResponse::status, AdminMemberResponse::roleType)
+                .containsExactly(
+                        tuple(withdrawn.getId(), MemberStatus.WITHDRAWN, null),
+                        tuple(active.getId(), MemberStatus.ACTIVE, MemberRoleType.ROLE_교수)
+                );
+        assertThat(result.getContent().get(1))
+                .satisfies(response -> {
+                    assertThat(response.name()).isEqualTo(active.getName());
+                    assertThat(response.studentId()).isEqualTo(active.getStudentId());
+                    assertThat(response.email()).isEqualTo(active.getEmail());
+                    assertThat(response.createdAt()).isNotNull();
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 계정 상태 필터를 지정하면 해당 상태의 회원만 조회된다.")
+    void 계정_상태_필터를_지정하면_해당_상태의_회원만_조회된다() {
+        final Member active = saveMember("acctstatus1@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        final Member withdrawn = saveWithdrawnMember("acctstatus2@pusan.ac.kr");
+
+        assertThat(memberQueryService.getAdminMembers("acctstatus", null, "ACTIVE", 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(active.getId());
+        assertThat(memberQueryService.getAdminMembers("acctstatus", null, "WITHDRAWN", 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(withdrawn.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 회원 목록에서 역할 필터를 지정하면 해당 역할의 회원만 조회된다.")
+    void 관리자_회원_목록에서_역할_필터를_지정하면_해당_역할의_회원만_조회된다() {
+        saveMember("acctrole1@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        final Member professor = saveMember("acctrole2@pusan.ac.kr", MemberRoleType.ROLE_교수);
+
+        final Page<AdminMemberResponse> result = memberQueryService.getAdminMembers("acctrole", "ROLE_교수", null, 0, 20);
+
+        assertThat(result.getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(professor.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 키워드는 이름·학번·이메일 중 하나에 부분 일치하면 조회되며 대소문자를 구분하지 않는다.")
+    void 키워드는_이름_학번_이메일_중_하나에_부분_일치하면_조회되며_대소문자를_구분하지_않는다() {
+        final Member byName = memberRepository.save(
+                MemberFixture.createMemberWithRole("계정관리목록홍길동", 71, MemberRoleType.ROLE_학생));
+        final Member byEmail = saveMember("acctkeyword@pusan.ac.kr", MemberRoleType.ROLE_학생);
+
+        assertThat(memberQueryService.getAdminMembers("목록홍길", null, null, 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(byName.getId());
+        assertThat(memberQueryService.getAdminMembers(byName.getStudentId(), null, null, 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(byName.getId());
+        assertThat(memberQueryService.getAdminMembers("CTKEYWORD@PUSAN", null, null, 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(byEmail.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 회원 목록 키워드의 LIKE 와일드카드(_, %)는 리터럴로 취급된다.")
+    void 관리자_회원_목록_키워드의_LIKE_와일드카드는_리터럴로_취급된다() {
+        saveMember("acctwild@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        final Member underscore = saveMember("acct_wild@pusan.ac.kr", MemberRoleType.ROLE_학생);
+
+        assertThat(memberQueryService.getAdminMembers("acct%wild", null, null, 0, 20).getContent()).isEmpty();
+        assertThat(memberQueryService.getAdminMembers("acct_wild", null, null, 0, 20).getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(underscore.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 회원 목록은 페이지 단위로 조회된다.")
+    void 관리자_회원_목록은_페이지_단위로_조회된다() {
+        final Member oldest = saveMember("acctpage1@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        saveMember("acctpage2@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        saveMember("acctpage3@pusan.ac.kr", MemberRoleType.ROLE_학생);
+
+        final Page<AdminMemberResponse> firstPage = memberQueryService.getAdminMembers("acctpage", null, null, 0, 2);
+        final Page<AdminMemberResponse> secondPage = memberQueryService.getAdminMembers("acctpage", null, null, 1, 2);
+
+        assertThat(firstPage.getContent()).hasSize(2);
+        assertThat(firstPage.getTotalElements()).isEqualTo(3);
+        assertThat(firstPage.getTotalPages()).isEqualTo(2);
+        assertThat(secondPage.getContent())
+                .extracting(AdminMemberResponse::memberId)
+                .containsExactly(oldest.getId());
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 역할 또는 계정 상태로 관리자 회원 목록을 조회하면 예외가 발생한다.")
+    void 유효하지_않은_역할_또는_계정_상태로_관리자_회원_목록을_조회하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getAdminMembers(null, "ROLE_없음", null, 0, 20))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(INVALID_ROLE_TYPE.errorMessage());
+        assertThatThrownBy(() -> memberQueryService.getAdminMembers(null, null, "DELETED", 0, 20))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(INVALID_MEMBER_STATUS.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 회원 요약은 임시 계정을 제외한 활동·탈퇴 회원 수를 반환한다.")
+    void 회원_요약은_임시_계정을_제외한_활동_탈퇴_회원_수를_반환한다() {
+        final AdminMemberSummaryResponse before = memberQueryService.getAdminMemberSummary();
+
+        saveMember("acctsummary1@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        saveMember("acctsummary2@pusan.ac.kr", MemberRoleType.ROLE_교수);
+        saveWithdrawnMember("acctsummary3@pusan.ac.kr");
+        saveFakeMember("acctsummary4@pusan.ac.kr");
+
+        final AdminMemberSummaryResponse after = memberQueryService.getAdminMemberSummary();
+
+        assertThat(after.activeCount() - before.activeCount()).isEqualTo(2);
+        assertThat(after.withdrawnCount() - before.withdrawnCount()).isEqualTo(1);
     }
 }

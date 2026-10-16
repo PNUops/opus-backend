@@ -12,6 +12,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOU
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static java.time.LocalDateTime.of;
@@ -54,6 +55,8 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
@@ -63,6 +66,7 @@ import com.opus.opus.modules.member.application.dto.response.MyLikePreviewRespon
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
@@ -73,6 +77,7 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSummaryRespons
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -1124,6 +1129,121 @@ public class MemberApiDocsTest extends RestDocsTest {
                         queryParameters(
                                 parameterWithName("keyword").description("검색할 이메일").optional(),
                                 parameterWithName("roleType").description("유효하지 않은 역할 값").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 일반 회원 목록을 조회한다.")
+    void 관리자가_일반_회원_목록을_조회한다() throws Exception {
+        final List<AdminMemberResponse> content = List.of(
+                new AdminMemberResponse(3L, "김철수", "202412345", "chulsoo@pusan.ac.kr",
+                        MemberRoleType.ROLE_학생, MemberStatus.ACTIVE, LocalDateTime.of(2026, 4, 24, 10, 0)),
+                new AdminMemberResponse(1L, "홍길동", null, "gildong@pusan.ac.kr",
+                        null, MemberStatus.WITHDRAWN, LocalDateTime.of(2026, 3, 9, 9, 30))
+        );
+        final Page<AdminMemberResponse> page = new PageImpl<>(content, PageRequest.of(0, 20), 2);
+        when(memberQueryService.getAdminMembers(any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("keyword", "pusan")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-members",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("keyword").description("이름·학번·이메일 부분 일치 검색어 (대소문자 무시). 미지정 시 전체").optional(),
+                                parameterWithName("roleType").description("OPUS 역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional(),
+                                parameterWithName("status").description("계정 상태 필터 (ACTIVE, WITHDRAWN). 미지정 시 전체").optional(),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작, 기본값 0)").optional(),
+                                parameterWithName("size").description("페이지 크기 (기본값 20)").optional()
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("content[]", "회원 목록 (가입일 최신순, 임시 계정 제외)"),
+                                numberFieldWithPath("content[].memberId", "회원 ID"),
+                                stringFieldWithPath("content[].name", "회원 이름"),
+                                stringFieldWithPath("content[].studentId", "학번 (소셜 가입 후 미입력 시 null)").optional(),
+                                stringFieldWithPath("content[].email", "회원 이메일"),
+                                stringFieldWithPath("content[].roleType", "OPUS 전역 역할 (탈퇴 회원은 역할이 삭제되어 null)").optional(),
+                                stringFieldWithPath("content[].status", "계정 상태 (ACTIVE: 활성, WITHDRAWN: 탈퇴)"),
+                                dateTimeFieldWithPath("content[].createdAt", "가입일시"),
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 계정 상태로 회원 목록을 조회하면 400을 반환한다.")
+    void 유효하지_않은_계정_상태로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_MEMBER_STATUS))
+                .given(memberQueryService).getAdminMembers(any(), any(), any(), anyInt(), anyInt());
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("status", "DELETED"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-status",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("status").description("유효하지 않은 계정 상태 값")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 역할로 회원 목록을 조회하면 400을 반환한다.")
+    void 유효하지_않은_역할로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_ROLE_TYPE))
+                .given(memberQueryService).getAdminMembers(any(), any(), any(), anyInt(), anyInt());
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("roleType", "ROLE_없음"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("roleType").description("유효하지 않은 역할 값")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 활동·탈퇴 회원 수를 조회한다.")
+    void 관리자가_활동_탈퇴_회원_수를_조회한다() throws Exception {
+        when(memberQueryService.getAdminMemberSummary()).thenReturn(new AdminMemberSummaryResponse(300L, 5L));
+
+        mockMvc.perform(get("/admin/members/summary")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-member-summary",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("activeCount", "활동 사용자 수 (임시 계정 제외)"),
+                                numberFieldWithPath("withdrawnCount", "탈퇴 사용자 수 (임시 계정 제외)")
                         )
                 ));
     }
