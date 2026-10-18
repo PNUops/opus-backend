@@ -14,7 +14,7 @@
   <a href="https://opus.pusan.ac.kr/">🌐 운영 서비스 이동</a> | 
   <a href="https://github.com/PNUops/opus-backend">🧩 Production Repo 이동</a> | 
   <a href="https://opus.pnu.app/api/docs/">📄 Spring Rest Docs </a> | 
-  <a href="https://opus.pnu.app">🔨 개발 서버 </a> | 
+  <a href="https://opus-dev.pnuops.com/">🔨 개발 서버 </a> | 
   <a href="https://github.com/PNUops/ops-mvp-back">📦 MVP Backend</a>
 </p>
 <br>
