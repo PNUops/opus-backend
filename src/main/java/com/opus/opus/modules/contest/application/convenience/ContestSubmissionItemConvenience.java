@@ -6,6 +6,8 @@ import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType;
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +26,18 @@ public class ContestSubmissionItemConvenience {
 
     public ContestSubmissionItem getValidateExistSubmissionItem(final Long contestId, final Long submissionItemId) {
         final ContestSubmissionItem submissionItem = contestSubmissionItemRepository.findById(submissionItemId)
-                .orElseThrow(() -> new ContestSubmissionItemException(ContestSubmissionItemExceptionType.NOT_FOUND_SUBMISSION_ITEM));
+                .orElseThrow(() -> new ContestSubmissionItemException(
+                        ContestSubmissionItemExceptionType.NOT_FOUND_SUBMISSION_ITEM));
 
         if (!submissionItem.getContest().getId().equals(contestId)) {
-            throw new ContestSubmissionItemException(ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST);
+            throw new ContestSubmissionItemException(
+                    ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST);
         }
         return submissionItem;
+    }
+
+    public List<ContestSubmissionItem> findAllByDeadlineDate(final LocalDate deadlineDate) {
+        return contestSubmissionItemRepository.findAllByEndAtGreaterThanEqualAndEndAtLessThan(
+                deadlineDate.atStartOfDay(), deadlineDate.plusDays(1).atStartOfDay());
     }
 }

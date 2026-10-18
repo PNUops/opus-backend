@@ -8,11 +8,14 @@ import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
 import com.opus.opus.modules.notification.application.event.StaffPosition;
 import com.opus.opus.modules.notification.application.event.StaffUnassignedNotificationEvent;
 import com.opus.opus.modules.notification.application.event.SubmissionCompletedNotificationEvent;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineNotificationEvent;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTeam;
 import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
 import com.opus.opus.modules.notification.application.event.TeamCommentNotificationEvent;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +48,7 @@ public class NotificationEventListenerTest extends IntegrationTest {
     private static final Long SUBMISSION_ID = 10L;
     private static final Long SUBMISSION_ITEM_ID = 20L;
     private static final String SUBMISSION_ITEM_NAME = "중간보고서";
+    private static final LocalDateTime END_AT = LocalDateTime.of(2026, 10, 14, 23, 59);
     private static final Long STAFF_ID = 100L;
     private static final String STAFF_NAME = "김교수";
 
@@ -141,5 +145,35 @@ public class NotificationEventListenerTest extends IntegrationTest {
                 .containsExactlyInAnyOrder(MEMBER_ID_1, MEMBER_ID_2, STAFF_ID);
         assertThat(notifications).extracting(Notification::getType)
                 .containsOnly(NotificationType.MENTOR_UNASSIGNED);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출 마감 이벤트를 발행한 트랜잭션이 커밋되면 제출 마감 알림이 저장된다.")
+    void 제출_마감_이벤트를_발행한_트랜잭션이_커밋되면_제출_마감_알림이_저장된다() {
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(
+                new SubmissionDeadlineNotificationEvent(CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 1, END_AT,
+                        List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(MEMBER_ID_1, MEMBER_ID_2))))));
+
+        final List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).hasSize(2);
+        assertThat(notifications).extracting(Notification::getType)
+                .containsOnly(NotificationType.SUBMISSION_DEADLINE);
+    }
+
+    @Test
+    @DisplayName("[성공] 읽기 전용 트랜잭션에서 발행한 제출 마감 이벤트도 커밋되면 제출 마감 알림이 저장된다.")
+    void 읽기_전용_트랜잭션에서_발행한_제출_마감_이벤트도_커밋되면_제출_마감_알림이_저장된다() {
+        final TransactionTemplate readOnlyTransactionTemplate =
+                new TransactionTemplate(transactionTemplate.getTransactionManager());
+        readOnlyTransactionTemplate.setReadOnly(true);
+
+        readOnlyTransactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(
+                new SubmissionDeadlineNotificationEvent(CONTEST_ID, SUBMISSION_ITEM_ID, SUBMISSION_ITEM_NAME, 1, END_AT,
+                        List.of(new SubmissionDeadlineTeam(TEAM_ID, List.of(MEMBER_ID_1, MEMBER_ID_2))))));
+
+        final List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).hasSize(2);
+        assertThat(notifications).extracting(Notification::getType)
+                .containsOnly(NotificationType.SUBMISSION_DEADLINE);
     }
 }

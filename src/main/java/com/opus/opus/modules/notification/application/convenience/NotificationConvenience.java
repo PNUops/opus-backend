@@ -1,6 +1,7 @@
 package com.opus.opus.modules.notification.application.convenience;
 
 import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_COMPLETED;
+import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_DEADLINE;
 import static com.opus.opus.modules.notification.domain.NotificationType.SUBMISSION_FEEDBACK;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM;
 import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_AWARDS;
@@ -8,9 +9,12 @@ import static com.opus.opus.modules.notification.domain.NotificationType.TEAM_CO
 
 import com.opus.opus.modules.notification.application.event.StaffAssignmentTeam;
 import com.opus.opus.modules.notification.application.event.StaffPosition;
+import com.opus.opus.modules.notification.application.event.SubmissionDeadlineTeam;
 import com.opus.opus.modules.notification.domain.Notification;
 import com.opus.opus.modules.notification.domain.NotificationType;
 import com.opus.opus.modules.notification.domain.dao.NotificationRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
 public class NotificationConvenience {
+
+    private static final DateTimeFormatter DEADLINE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일 HH:mm");
 
     private final NotificationRepository notificationRepository;
 
@@ -59,6 +65,18 @@ public class NotificationConvenience {
                 toSubmissionRedirectUrl(contestId, teamId, submissionItemId));
     }
 
+    public void sendSubmissionDeadlineNotifications(final Long contestId, final Long submissionItemId,
+                                                    final String submissionItemName, final int daysLeft,
+                                                    final LocalDateTime endAt,
+                                                    final List<SubmissionDeadlineTeam> teams) {
+        final String content = submissionItemName + " 제출 마감이 " + daysLeft + "일 남았습니다. ("
+                + endAt.format(DEADLINE_FORMATTER) + ")";
+        final List<Notification> notifications = teams.stream()
+                .flatMap(team -> toSubmissionDeadlineNotifications(contestId, submissionItemId, content, team))
+                .toList();
+        notificationRepository.saveAll(notifications);
+    }
+
     public void sendStaffAssignedNotifications(final Long contestId, final String contestName, final Long staffId,
                                                final String staffName, final StaffPosition position,
                                                final List<StaffAssignmentTeam> teams) {
@@ -75,6 +93,13 @@ public class NotificationConvenience {
                 .flatMap(team -> toStaffUnassignedNotifications(contestId, staffId, staffName, position, team))
                 .toList();
         notificationRepository.saveAll(notifications);
+    }
+
+    private Stream<Notification> toSubmissionDeadlineNotifications(final Long contestId, final Long submissionItemId,
+                                                                   final String content,
+                                                                   final SubmissionDeadlineTeam team) {
+        return toNotifications(team.memberIds(), SUBMISSION_DEADLINE, "제출 마감 알림", content, submissionItemId,
+                toSubmissionRedirectUrl(contestId, team.teamId(), submissionItemId)).stream();
     }
 
     private Stream<Notification> toTeamMemberAssignedNotifications(final Long contestId, final String staffName,
