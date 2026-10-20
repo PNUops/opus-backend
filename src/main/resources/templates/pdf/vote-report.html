@@ -135,13 +135,13 @@
                 <tr>
                     <td class="half left">
                         <h3>일자별 투표</h3>
-                        <table class="list">
+                        <table class="list" th:if="${report.totalVotes() > 0}">
                             <tr th:each="daily : ${report.dailyVotes()}">
                                 <td th:text="${#temporals.format(daily.date(), 'M.d')}">날짜</td>
                                 <td class="num" th:text="${daily.voterCount()} + '명 (' + ${daily.voteCount()} + '표)'">0명</td>
                             </tr>
                         </table>
-                        <div class="empty" th:if="${report.dailyVotes().isEmpty()}">투표 없음</div>
+                        <div class="empty" th:if="${report.totalVotes() == 0}">투표 없음</div>
                     </td>
                     <td class="half right">
                         <h3>투표권 사용</h3>
