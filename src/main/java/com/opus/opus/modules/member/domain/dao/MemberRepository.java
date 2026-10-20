@@ -16,6 +16,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query(value = "SELECT * FROM member WHERE id IN :ids", nativeQuery = true)
     List<Member> findAllByIdIncludingDeleted(@Param("ids") List<Long> ids);
 
+    // 회원 roles N+1은 #244에서 한 번에 수정할 예정이며, 그때 이 @EntityGraph는 삭제한다.
     @EntityGraph(attributePaths = "roles")
     List<Member> findAllByIdIn(final List<Long> ids);
 
