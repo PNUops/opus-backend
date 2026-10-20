@@ -1047,7 +1047,7 @@ public class ContestApiDocsTest extends RestDocsTest {
 
         when(contestVoteReportFileQueryService.generateVoteReportPdf(any())).thenReturn(download);
 
-        mockMvc.perform(get("/contests/{contestId}/votes/report/pdf", 1)
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("download-vote-report-pdf",
@@ -1072,7 +1072,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .given(contestVoteReportFileQueryService)
                 .generateVoteReportPdf(any());
 
-        mockMvc.perform(get("/contests/{contestId}/votes/report/pdf", 1)
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isBadRequest())
                 .andDo(document("download-vote-report-pdf-fail-vote-not-ended",
@@ -1093,7 +1093,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 .given(contestVoteReportFileQueryService)
                 .generateVoteReportPdf(any());
 
-        mockMvc.perform(get("/contests/{contestId}/votes/report/pdf", 999)
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("download-vote-report-pdf-fail-not-found",
