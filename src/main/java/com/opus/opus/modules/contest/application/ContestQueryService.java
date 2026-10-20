@@ -7,7 +7,6 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CO
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
@@ -63,6 +62,7 @@ import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
 import com.opus.opus.modules.team.domain.dao.VoteRecordResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,7 +72,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -256,6 +255,8 @@ public class ContestQueryService {
         final boolean isVoteEnded = contest.isVoteEnded();
         // 집계 기준 시각: 마감 후에는 투표 종료 시각, 마감 전에는 현재 시각
         final LocalDateTime aggregatedAt = isVoteEnded ? contest.getVoteEndAt() : LocalDateTime.now();
+        final LocalDateTime firstHour = calculateFirstHour(voteRecords, contest.getVoteStartAt());
+        final LocalDateTime lastHour = calculateLastHour(voteRecords, aggregatedAt);
 
         return new ContestVoteReportResponse(
                 contest.getContestName(),
@@ -270,24 +271,53 @@ public class ContestQueryService {
                 rankings.size(),
                 calculateAverage(totalVotes, rankings.size()),
                 zeroVoteTeamCount,
-                aggregateDailyVotes(voteRecords),
+                aggregateDailyVotes(voteRecords, firstHour.toLocalDate(), lastHour.toLocalDate()),
                 aggregateVoteUsages(voteCountByVoter, contest.getMaxVotesLimit()),
-                aggregateHourlyVotes(voteRecords, contest.getVoteStartAt(), aggregatedAt),
+                aggregateHourlyVotes(voteRecords, firstHour, lastHour),
                 aggregateTrackVotes(rankingResultsByTrack),
                 aggregateTrackTopRankings(rankingResultsByTrack),
                 rankings
         );
     }
 
-    private List<DailyVoteResponse> aggregateDailyVotes(final List<VoteRecordResult> voteRecords) {
-        return voteRecords.stream()
-                .collect(groupingBy(voteRecord -> voteRecord.votedAt().toLocalDate(), TreeMap::new, toList()))
-                .entrySet().stream()
-                .map(entry -> new DailyVoteResponse(
-                        entry.getKey(),
-                        entry.getValue().stream().map(VoteRecordResult::memberId).distinct().count(),
-                        (long) entry.getValue().size()
-                ))
+    // 투표 시작 시각과 가장 이른 표 중 이른 쪽이 속한 시간대
+    // 투표 기간이 나중에 변경되어 기간 밖에 남은 표가 있으면 그 시각까지 범위를 넓힌다.
+    private LocalDateTime calculateFirstHour(final List<VoteRecordResult> voteRecords,
+                                             final LocalDateTime voteStartAt) {
+        return Stream.concat(Stream.of(voteStartAt),
+                        voteRecords.stream().map(VoteRecordResult::votedAt))
+                .min(Comparator.naturalOrder())
+                .orElseThrow()
+                .truncatedTo(HOURS);
+    }
+
+    // 집계 기준 시각과 가장 늦은 표 중 늦은 쪽이 속한 시간대
+    // 집계 기준 시각이 정각(예: 13:00)이면 13:00~14:00 시간대는 비어 있으므로 직전 시간대까지만 담는다.
+    private LocalDateTime calculateLastHour(final List<VoteRecordResult> voteRecords,
+                                            final LocalDateTime aggregatedAt) {
+        return Stream.concat(Stream.of(aggregatedAt.minusNanos(1)),
+                        voteRecords.stream().map(VoteRecordResult::votedAt))
+                .max(Comparator.naturalOrder())
+                .orElseThrow()
+                .truncatedTo(HOURS);
+    }
+
+    // 시간대별 집계와 같은 범위의 날짜별 투표자 수와 투표 수 (표가 없는 날은 0)
+    private List<DailyVoteResponse> aggregateDailyVotes(final List<VoteRecordResult> voteRecords,
+                                                        final LocalDate firstDate,
+                                                        final LocalDate lastDate) {
+        final Map<LocalDate, List<VoteRecordResult>> voteRecordsByDate = voteRecords.stream()
+                .collect(groupingBy(voteRecord -> voteRecord.votedAt().toLocalDate()));
+
+        return firstDate.datesUntil(lastDate.plusDays(1))
+                .map(date -> {
+                    final List<VoteRecordResult> dailyVoteRecords = voteRecordsByDate.getOrDefault(date, List.of());
+                    return new DailyVoteResponse(
+                            date,
+                            dailyVoteRecords.stream().map(VoteRecordResult::memberId).distinct().count(),
+                            (long) dailyVoteRecords.size()
+                    );
+                })
                 .toList();
     }
 
@@ -308,11 +338,10 @@ public class ContestQueryService {
                 .toList();
     }
 
-    // 투표 시작 ~ 집계 기준 시각까지 1시간 단위 투표 수와 누적 투표자 수
-    // 투표 기간이 나중에 변경되어 기간 밖에 남은 표가 있으면 그 시각까지 범위를 넓힌다.
+    // 첫 시간대 ~ 마지막 시간대까지 1시간 단위 투표 수와 누적 투표자 수
     private List<HourlyVoteResponse> aggregateHourlyVotes(final List<VoteRecordResult> voteRecords,
-                                                          final LocalDateTime voteStartAt,
-                                                          final LocalDateTime aggregatedAt) {
+                                                          final LocalDateTime firstHour,
+                                                          final LocalDateTime lastHour) {
         final Map<LocalDateTime, Long> voteCountByHour = voteRecords.stream()
                 .collect(groupingBy(voteRecord -> voteRecord.votedAt().truncatedTo(HOURS), counting()));
         final Map<LocalDateTime, Long> newVoterCountByHour = voteRecords.stream()
@@ -321,20 +350,9 @@ public class ContestQueryService {
                 .values().stream()
                 .collect(groupingBy(firstVotedAt -> firstVotedAt.truncatedTo(HOURS), counting()));
 
-        final LocalDateTime startHour = Stream.concat(Stream.of(voteStartAt),
-                        voteCountByHour.keySet().stream())
-                .min(Comparator.naturalOrder())
-                .orElseThrow()
-                .truncatedTo(HOURS);
-        final LocalDateTime endHour = Stream.concat(Stream.of(aggregatedAt),
-                        voteCountByHour.keySet().stream())
-                .max(Comparator.naturalOrder())
-                .orElseThrow()
-                .truncatedTo(HOURS);
-
         final List<HourlyVoteResponse> responses = new ArrayList<>();
         long cumulativeVoterCount = 0;
-        for (LocalDateTime hour = startHour; !hour.isAfter(endHour); hour = hour.plusHours(1)) {
+        for (LocalDateTime hour = firstHour; !hour.isAfter(lastHour); hour = hour.plusHours(1)) {
             cumulativeVoterCount += newVoterCountByHour.getOrDefault(hour, 0L);
             responses.add(new HourlyVoteResponse(hour, voteCountByHour.getOrDefault(hour, 0L),
                     cumulativeVoterCount));
