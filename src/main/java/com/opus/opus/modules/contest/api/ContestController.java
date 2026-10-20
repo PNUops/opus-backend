@@ -228,7 +228,7 @@ public class ContestController {
     }
 
     @Secured("ROLE_관리자")
-    @GetMapping("/contests/{contestId}/votes/report/pdf")
+    @GetMapping("/contests/{contestId}/votes/report/download")
     public ResponseEntity<Resource> downloadVoteReportPdf(@PathVariable final Long contestId) {
         final FileDownload download = contestVoteReportFileQueryService.generateVoteReportPdf(contestId);
         return ResponseEntity.ok()
