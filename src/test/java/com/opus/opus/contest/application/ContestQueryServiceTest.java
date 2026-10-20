@@ -508,8 +508,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 투표 리포트에서 입학연도별 투표자 구성을 조회하고 학번이 없는 투표자는 따로 집계된다.")
-    void 투표_리포트에서_입학연도별_투표자_구성을_조회하고_학번이_없는_투표자는_따로_집계된다() {
+    @DisplayName("[성공] 투표 리포트에서 입학연도별 투표자 구성을 조회하고 학생이 아닌 투표자는 학번이 숫자여도 따로 집계된다.")
+    void 투표_리포트에서_입학연도별_투표자_구성을_조회하고_학생이_아닌_투표자는_학번이_숫자여도_따로_집계된다() {
         final Member student2021 = memberRepository.save(
                 MemberFixture.createMemberWithEmailAndRole("202112345@pusan.ac.kr", ROLE_학생));
         final Member otherStudent2021 = memberRepository.save(
@@ -517,7 +517,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
         final Member student2023 = memberRepository.save(
                 MemberFixture.createMemberWithEmailAndRole("202312345@pusan.ac.kr", ROLE_학생));
         final Member professor = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRole("professor@pusan.ac.kr", ROLE_교수));
+                MemberFixture.createMemberWithEmailAndRole("201012345@pusan.ac.kr", ROLE_교수));
         teamVoteRepository.save(createTeamVote(team, student2021.getId()));
         teamVoteRepository.save(createTeamVote(team, otherStudent2021.getId()));
         teamVoteRepository.save(createTeamVote(team, student2023.getId()));
