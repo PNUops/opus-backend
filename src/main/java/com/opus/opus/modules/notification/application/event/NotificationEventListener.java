@@ -43,4 +43,56 @@ public class NotificationEventListener {
             log.error("팀 수상 알림 전송 실패 - teamId: {}", event.teamId(), e);
         }
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionCompletedNotification(final SubmissionCompletedNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionCompletedNotifications(
+                    event.memberIds(), event.contestId(), event.teamId(), event.submissionId(),
+                    event.submissionItemId(), event.submissionItemName());
+        } catch (Exception e) {
+            log.error("제출 완료 알림 전송 실패 - submissionId: {}", event.submissionId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionFeedbackNotification(final SubmissionFeedbackNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionFeedbackNotifications(
+                    event.memberIds(), event.contestId(), event.teamId(), event.submissionId(),
+                    event.submissionItemId(), event.submissionItemName());
+        } catch (Exception e) {
+            log.error("새 피드백 알림 전송 실패 - submissionId: {}", event.submissionId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSubmissionDeadlineNotification(final SubmissionDeadlineNotificationEvent event) {
+        try {
+            notificationConvenience.sendSubmissionDeadlineNotifications(event.contestId(), event.submissionItemId(),
+                    event.submissionItemName(), event.daysLeft(), event.endAt(), event.teams());
+        } catch (Exception e) {
+            log.error("제출 마감 알림 전송 실패 - submissionItemId: {}", event.submissionItemId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleStaffAssignedNotification(final StaffAssignedNotificationEvent event) {
+        try {
+            notificationConvenience.sendStaffAssignedNotifications(event.contestId(), event.contestName(),
+                    event.staffId(), event.staffName(), event.position(), event.teams());
+        } catch (Exception e) {
+            log.error("{} 지정 알림 전송 실패 - staffId: {}", event.position().getPositionName(), event.staffId(), e);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleStaffUnassignedNotification(final StaffUnassignedNotificationEvent event) {
+        try {
+            notificationConvenience.sendStaffUnassignedNotifications(
+                    event.contestId(), event.staffId(), event.staffName(), event.position(), event.teams());
+        } catch (Exception e) {
+            log.error("{} 해제 알림 전송 실패 - staffId: {}", event.position().getPositionName(), event.staffId(), e);
+        }
+    }
 }
