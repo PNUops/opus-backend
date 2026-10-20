@@ -147,9 +147,10 @@ public class Member extends BaseEntity {
         return roles.contains(MemberRoleType.ROLE_학생);
     }
 
-    // 학번 앞 4자리를 입학연도로 본다. (예: 202312345 → 2023) 학번이 없거나 숫자 형식이 아니면 null
+    // 학번 앞 4자리를 입학연도로 본다. (예: 202312345 → 2023)
+    // 교수·직원도 가입 시 학번을 입력하므로 학생만 추출한다. 학생이 아니거나 학번이 없거나 숫자 형식이 아니면 null
     public Integer extractAdmissionYear() {
-        if (studentId == null || !STUDENT_ID_PATTERN.matcher(studentId).matches()) {
+        if (!isStudent() || studentId == null || !STUDENT_ID_PATTERN.matcher(studentId).matches()) {
             return null;
         }
         return Integer.parseInt(studentId.substring(0, ADMISSION_YEAR_LENGTH));
