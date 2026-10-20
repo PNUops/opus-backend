@@ -986,7 +986,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("voterRoles[].voterCount", "투표자 수"),
                                 numberFieldWithPath("voterRoles[].ratio", "전체 투표자 대비 비율 (%)"),
                                 arrayFieldWithPath("admissionYears", "입학연도(학번 앞 4자리)별 투표자 구성 (연도 오름차순)"),
-                                numberFieldWithPath("admissionYears[].admissionYear", "입학연도 (학번이 없거나 탈퇴한 투표자는 null)").optional(),
+                                numberFieldWithPath("admissionYears[].admissionYear", "입학연도 (학생이 아니거나 학번이 없거나 탈퇴한 투표자는 null)").optional(),
                                 numberFieldWithPath("admissionYears[].voterCount", "투표자 수"),
                                 numberFieldWithPath("admissionYears[].ratio", "전체 투표자 대비 비율 (%)"),
                                 arrayFieldWithPath("trackVotes", "분과별 득표 (득표 수 내림차순)"),
