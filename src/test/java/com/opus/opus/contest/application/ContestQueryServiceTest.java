@@ -80,7 +80,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class ContestQueryServiceTest extends IntegrationTest {
 
-    // 이미 마감된 투표 기간 (10일 전 0시 ~ 다음 날 13시, 시간대 38개)
+    // 이미 마감된 투표 기간 (10일 전 0시 ~ 다음 날 13시, 13시 정각 마감이라 시간대는 12시까지 37개)
     private static final LocalDateTime ENDED_VOTE_START_AT = now().minusDays(10).truncatedTo(DAYS);
     private static final LocalDateTime ENDED_VOTE_END_AT = ENDED_VOTE_START_AT.plusDays(1).plusHours(13);
 
@@ -335,6 +335,24 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 투표 리포트에서 표가 없는 날도 0으로 채워 일자별 투표를 조회한다.")
+    void 투표_리포트에서_표가_없는_날도_0으로_채워_일자별_투표를_조회한다() {
+        contest.updateVotePeriod(ENDED_VOTE_START_AT, ENDED_VOTE_END_AT.plusDays(1));
+        saveVoteAt(team, 101L, ENDED_VOTE_START_AT.plusHours(10));
+        saveVoteAt(team, 102L, ENDED_VOTE_START_AT.plusDays(2).plusHours(9));
+
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contest.getId());
+
+        assertThat(response.dailyVotes())
+                .extracting(DailyVoteResponse::date, DailyVoteResponse::voterCount, DailyVoteResponse::voteCount)
+                .containsExactly(
+                        tuple(ENDED_VOTE_START_AT.toLocalDate(), 1L, 1L),
+                        tuple(ENDED_VOTE_START_AT.toLocalDate().plusDays(1), 0L, 0L),
+                        tuple(ENDED_VOTE_START_AT.toLocalDate().plusDays(2), 1L, 1L)
+                );
+    }
+
+    @Test
     @DisplayName("[성공] 투표 리포트에서 사용한 투표 수별 투표자 분포를 조회할 수 있다.")
     void 투표_리포트에서_사용한_투표_수별_투표자_분포를_조회할_수_있다() {
         final Team team2 = teamRepository.save(createTeamWithContestId(contest.getId()));
@@ -425,9 +443,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
 
         assertThat(response.isVoteEnded()).isTrue();
         assertThat(response.aggregatedAt()).isEqualTo(ENDED_VOTE_END_AT);
-        assertThat(hourlyVotes).hasSize(38);
+        assertThat(hourlyVotes).hasSize(37);
         assertThat(hourlyVotes.get(0).hour()).isEqualTo(ENDED_VOTE_START_AT);
-        assertThat(hourlyVotes.get(hourlyVotes.size() - 1).hour()).isEqualTo(ENDED_VOTE_END_AT);
+        assertThat(hourlyVotes.get(hourlyVotes.size() - 1).hour()).isEqualTo(ENDED_VOTE_END_AT.minusHours(1));
         assertThat(hourlyVotes)
                 .filteredOn(hourlyVote -> hourlyVote.voteCount() > 0)
                 .extracting(HourlyVoteResponse::hour, HourlyVoteResponse::voteCount,
@@ -507,7 +525,9 @@ public class ContestQueryServiceTest extends IntegrationTest {
         assertThat(response.totalVoters()).isEqualTo(0L);
         assertThat(response.totalVotes()).isEqualTo(0L);
         assertThat(response.averageVotesPerVoter()).isEqualTo(0.0);
-        assertThat(response.dailyVotes()).isEmpty();
+        assertThat(response.dailyVotes())
+                .extracting(DailyVoteResponse::voteCount)
+                .containsOnly(0L);
         assertThat(response.trackTopRankings())
                 .flatExtracting(TrackRankingResponse::rankings)
                 .isEmpty();
