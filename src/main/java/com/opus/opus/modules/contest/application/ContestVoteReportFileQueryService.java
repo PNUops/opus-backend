@@ -22,8 +22,10 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-// 템플릿 렌더링·PDF 변환(CPU 작업)이 DB 커넥션을 점유하지 않도록 클래스 레벨 트랜잭션을 두지 않는다.
+// 템플릿 렌더링·PDF 변환(CPU 작업)은 트랜잭션이 필요 없어 클래스 레벨 트랜잭션을 두지 않는다.
 // 조회는 ContestConvenience와 ContestQueryService가 각자의 읽기 전용 트랜잭션에서 끝낸다.
+// 다만 open-in-view가 켜져 있어(기본값) 지금은 응답이 끝날 때까지 DB 커넥션을 점유하며,
+// open-in-view를 끄면 렌더링·변환 중에는 커넥션을 점유하지 않게 된다.
 @Service
 @RequiredArgsConstructor
 public class ContestVoteReportFileQueryService {
