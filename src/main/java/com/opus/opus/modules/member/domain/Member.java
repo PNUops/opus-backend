@@ -147,6 +147,14 @@ public class Member extends BaseEntity {
         return roles.contains(MemberRoleType.ROLE_학생);
     }
 
+    public boolean isProfessor() {
+        return roles.contains(MemberRoleType.ROLE_교수);
+    }
+
+    public boolean isExternalMentor() {
+        return roles.contains(MemberRoleType.ROLE_외부멘토);
+    }
+
     // 학번 앞 4자리를 입학연도로 본다. (예: 202312345 → 2023)
     // 교수·직원도 가입 시 학번을 입력하므로 학생만 추출한다. 학생이 아니거나 학번이 없거나 숫자 형식이 아니면 null
     public Integer extractAdmissionYear() {

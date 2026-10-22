@@ -29,8 +29,8 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             ORDER BY item.id, track.id
             """)
     List<DownloadTargetResult> findDownloadTargets(@Param("contestId") Long contestId,
-                                                 @Param("submissionItemId") Long submissionItemId,
-                                                 @Param("trackId") Long trackId);
+                                                   @Param("submissionItemId") Long submissionItemId,
+                                                   @Param("trackId") Long trackId);
 
     // 제출 파일 다운로드 대상 zip 구성을 위한 제출물 단위 (항목·분과·팀명·제출ID) 행 반환
     // 파일 정보는 file 모듈에서 제출ID로 조회한다.
@@ -165,4 +165,15 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             """)
     ContestSubmissionSummaryResult findSubmissionSummary(final Long contestId, final Long submissionItemId,
                                                          final Long trackId);
+
+    @Query("""
+            SELECT t.id
+            FROM Team t
+            WHERE t.contestId = :contestId
+              AND (:trackId IS NULL OR t.trackId = :trackId)
+              AND NOT EXISTS (
+                  SELECT s.id FROM ContestSubmission s
+                  WHERE s.submissionItem.id = :submissionItemId AND s.teamId = t.id)
+            """)
+    List<Long> findNotSubmittedTeamIds(final Long contestId, final Long trackId, final Long submissionItemId);
 }
