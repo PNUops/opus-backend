@@ -491,6 +491,45 @@ include::{snippets}/get-vote-statistics-fail-not-found/http-response.adoc[]
 
 ====
 
+== 투표 리포트 조회
+
+=== `GET`: 대회 투표 리포트 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 투표 마감 전에는 현재 시각 기준 중간 집계를 반환합니다(`isVoteEnded = false`).
+집계 수치와 팀 순위는 `GET /contests/{contestId}/ranking`, `GET /contests/{contestId}/votes/statistics` 와 동일한 기준(탈퇴 회원의 표 포함)입니다.
+모든 집계는 현재 유효한 표 기준입니다. 취소된 표는 빠지고, 시간대별·일자별 추이는 지금 남아 있는 표가 들어온 시각으로 집계합니다.
+
+.Path Parameters
+include::{snippets}/get-vote-report/path-parameters.adoc[]
+
+.Request Headers
+include::{snippets}/get-vote-report/request-headers.adoc[]
+
+.HTTP Request
+include::{snippets}/get-vote-report/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/get-vote-report/http-response.adoc[]
+
+.Response Fields
+include::{snippets}/get-vote-report/response-fields.adoc[]
+
+==== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 대회
+
+[%collapsible]
+
+====
+
+include::{snippets}/get-vote-report-fail-not-found/path-parameters.adoc[]
+
+include::{snippets}/get-vote-report-fail-not-found/http-request.adoc[]
+
+include::{snippets}/get-vote-report-fail-not-found/http-response.adoc[]
+
+====
+
 == 대회 팀 템플릿 설정 관리
 
 === `GET`: 대회의 템플릿 조회

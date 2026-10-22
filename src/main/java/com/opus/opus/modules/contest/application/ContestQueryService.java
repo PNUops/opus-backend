@@ -4,6 +4,10 @@ package com.opus.opus.modules.contest.application;
 import static com.opus.opus.modules.file.domain.FileImageType.BANNER;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.CONTEST;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_WEBP_CONVERTED;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
@@ -18,11 +22,17 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSortRespons
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteReportResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
+import com.opus.opus.modules.contest.application.dto.response.DailyVoteResponse;
+import com.opus.opus.modules.contest.application.dto.response.HourlyVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
+import com.opus.opus.modules.contest.application.dto.response.TrackRankingResponse;
+import com.opus.opus.modules.contest.application.dto.response.TrackVoteResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
 import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestSort;
@@ -49,15 +59,23 @@ import com.opus.opus.modules.team.application.dto.response.MemberVoteCountRespon
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
 import com.opus.opus.modules.team.domain.dao.TeamRankingResult;
+import com.opus.opus.modules.team.domain.dao.VoteRecordResult;
 import com.opus.opus.modules.team.domain.dao.VoteStatisticsResult;
 import com.opus.opus.modules.team.domain.dao.projection.TeamAwardProjection;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -70,6 +88,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContestQueryService {
+
+    private static final int TRACK_TOP_RANK = 3;
 
     private final FileQueryService fileQueryService;
 
@@ -214,10 +234,182 @@ public class ContestQueryService {
     public ContestVoteStatisticsResponse getVoteStatistics(Long contestId) {
         contestConvenience.getValidateExistContest(contestId);
         final VoteStatisticsResult result = teamVoteConvenience.getVoteStaticsResult(contestId);
-        final double average = result.totalVoters() > 0
-                ? Math.round((double) result.totalVotes() / result.totalVoters() * 10) / 10.0
-                : 0.0;
+        final double average = calculateAverage(result.totalVotes(), result.totalVoters());
         return new ContestVoteStatisticsResponse(result.totalVotes(), result.totalVoters(), average);
+    }
+
+    public ContestVoteReportResponse getVoteReport(final Long contestId) {
+        final Contest contest = contestConvenience.getValidateExistContest(contestId);
+        final List<VoteRecordResult> voteRecords = teamVoteConvenience.getVoteRecords(contest.getId());
+        final List<TeamRankingResult> rankingResults = teamConvenience.getTeamRankingResults(contest.getId());
+        final List<ContestRankingResponse> rankings = applyRanking(rankingResults);
+        final Map<String, List<TeamRankingResult>> rankingResultsByTrack = groupRankingResultsByTrack(rankingResults);
+
+        final Map<Long, Long> voteCountByVoter = voteRecords.stream()
+                .collect(groupingBy(VoteRecordResult::memberId, counting()));
+        final long totalVotes = voteRecords.size();
+        final long totalVoters = voteCountByVoter.size();
+        final int zeroVoteTeamCount = (int) rankings.stream()
+                .filter(ranking -> ranking.voteCount() == 0)
+                .count();
+        final boolean isVoteEnded = contest.isVoteEnded();
+        // 집계 기준 시각: 마감 후에는 투표 종료 시각, 마감 전에는 현재 시각
+        final LocalDateTime aggregatedAt = isVoteEnded ? contest.getVoteEndAt() : LocalDateTime.now();
+        final LocalDateTime firstHour = calculateFirstHour(voteRecords, contest.getVoteStartAt());
+        final LocalDateTime lastHour = calculateLastHour(voteRecords, aggregatedAt);
+
+        return new ContestVoteReportResponse(
+                contest.getContestName(),
+                contest.getVoteStartAt(),
+                contest.getVoteEndAt(),
+                isVoteEnded,
+                aggregatedAt,
+                contest.getMaxVotesLimit(),
+                totalVoters,
+                totalVotes,
+                calculateAverage(totalVotes, totalVoters),
+                rankings.size(),
+                calculateAverage(totalVotes, rankings.size()),
+                zeroVoteTeamCount,
+                aggregateDailyVotes(voteRecords, firstHour.toLocalDate(), lastHour.toLocalDate()),
+                aggregateVoteUsages(voteCountByVoter, contest.getMaxVotesLimit()),
+                aggregateHourlyVotes(voteRecords, firstHour, lastHour),
+                aggregateTrackVotes(rankingResultsByTrack),
+                aggregateTrackTopRankings(rankingResultsByTrack),
+                rankings
+        );
+    }
+
+    // 투표 시작 시각과 가장 이른 표 중 이른 쪽이 속한 시간대
+    // 투표 기간이 나중에 변경되어 기간 밖에 남은 표가 있으면 그 시각까지 범위를 넓힌다.
+    private LocalDateTime calculateFirstHour(final List<VoteRecordResult> voteRecords,
+                                             final LocalDateTime voteStartAt) {
+        return Stream.concat(Stream.of(voteStartAt),
+                        voteRecords.stream().map(VoteRecordResult::votedAt))
+                .min(Comparator.naturalOrder())
+                .orElseThrow()
+                .truncatedTo(HOURS);
+    }
+
+    // 집계 기준 시각과 가장 늦은 표 중 늦은 쪽이 속한 시간대
+    // 집계 기준 시각이 정각(예: 13:00)이면 13:00~14:00 시간대는 비어 있으므로 직전 시간대까지만 담는다.
+    private LocalDateTime calculateLastHour(final List<VoteRecordResult> voteRecords,
+                                            final LocalDateTime aggregatedAt) {
+        return Stream.concat(Stream.of(aggregatedAt.minusNanos(1)),
+                        voteRecords.stream().map(VoteRecordResult::votedAt))
+                .max(Comparator.naturalOrder())
+                .orElseThrow()
+                .truncatedTo(HOURS);
+    }
+
+    // 시간대별 집계와 같은 범위의 날짜별 투표자 수와 투표 수 (표가 없는 날은 0)
+    private List<DailyVoteResponse> aggregateDailyVotes(final List<VoteRecordResult> voteRecords,
+                                                        final LocalDate firstDate,
+                                                        final LocalDate lastDate) {
+        final Map<LocalDate, List<VoteRecordResult>> voteRecordsByDate = voteRecords.stream()
+                .collect(groupingBy(voteRecord -> voteRecord.votedAt().toLocalDate()));
+
+        return firstDate.datesUntil(lastDate.plusDays(1))
+                .map(date -> {
+                    final List<VoteRecordResult> dailyVoteRecords = voteRecordsByDate.getOrDefault(date, List.of());
+                    return new DailyVoteResponse(
+                            date,
+                            dailyVoteRecords.stream().map(VoteRecordResult::memberId).distinct().count(),
+                            (long) dailyVoteRecords.size()
+                    );
+                })
+                .toList();
+    }
+
+    // 1표 ~ 최대 투표 수(한도 변경으로 한도를 넘긴 투표자가 있으면 그 수까지)별 투표자 수
+    private List<VoteUsageResponse> aggregateVoteUsages(final Map<Long, Long> voteCountByVoter,
+                                                        final int maxVotesLimit) {
+        final Map<Long, Long> voterCountByUsedVotes = voteCountByVoter.values().stream()
+                .collect(groupingBy(Function.identity(), counting()));
+        final long maxUsedVotes = Math.max(maxVotesLimit,
+                voterCountByUsedVotes.keySet().stream().max(Long::compare).orElse(0L));
+
+        return LongStream.rangeClosed(1, maxUsedVotes)
+                .mapToObj(usedVotes -> {
+                    final long voterCount = voterCountByUsedVotes.getOrDefault(usedVotes, 0L);
+                    return new VoteUsageResponse(usedVotes, voterCount,
+                            calculateRatio(voterCount, voteCountByVoter.size()));
+                })
+                .toList();
+    }
+
+    // 첫 시간대 ~ 마지막 시간대까지 1시간 단위 투표 수와 누적 투표자 수
+    private List<HourlyVoteResponse> aggregateHourlyVotes(final List<VoteRecordResult> voteRecords,
+                                                          final LocalDateTime firstHour,
+                                                          final LocalDateTime lastHour) {
+        final Map<LocalDateTime, Long> voteCountByHour = voteRecords.stream()
+                .collect(groupingBy(voteRecord -> voteRecord.votedAt().truncatedTo(HOURS), counting()));
+        final Map<LocalDateTime, Long> newVoterCountByHour = voteRecords.stream()
+                .collect(toMap(VoteRecordResult::memberId, VoteRecordResult::votedAt,
+                        BinaryOperator.minBy(Comparator.naturalOrder())))
+                .values().stream()
+                .collect(groupingBy(firstVotedAt -> firstVotedAt.truncatedTo(HOURS), counting()));
+
+        final List<HourlyVoteResponse> responses = new ArrayList<>();
+        long cumulativeVoterCount = 0;
+        for (LocalDateTime hour = firstHour; !hour.isAfter(lastHour); hour = hour.plusHours(1)) {
+            cumulativeVoterCount += newVoterCountByHour.getOrDefault(hour, 0L);
+            responses.add(new HourlyVoteResponse(hour, voteCountByHour.getOrDefault(hour, 0L),
+                    cumulativeVoterCount));
+        }
+        return responses;
+    }
+
+    // 분과가 없는 팀(trackName null)도 하나의 묶음으로 집계하기 위해 null 키를 허용하는 LinkedHashMap을 쓴다.
+    // 분과 순서는 분과 득표 수 내림차순 (같으면 순위가 높은 팀이 속한 분과 먼저)
+    private Map<String, List<TeamRankingResult>> groupRankingResultsByTrack(
+            final List<TeamRankingResult> rankingResults) {
+        final Map<String, List<TeamRankingResult>> rankingResultsByTrack = new LinkedHashMap<>();
+        rankingResults.forEach(result ->
+                rankingResultsByTrack.computeIfAbsent(result.trackName(), trackName -> new ArrayList<>()).add(result));
+
+        return rankingResultsByTrack.entrySet().stream()
+                .sorted(Comparator.comparing((Map.Entry<String, List<TeamRankingResult>> entry) ->
+                        sumVoteCounts(entry.getValue())).reversed())
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (existing, replacement) -> existing, LinkedHashMap::new));
+    }
+
+    private List<TrackVoteResponse> aggregateTrackVotes(
+            final Map<String, List<TeamRankingResult>> rankingResultsByTrack) {
+        return rankingResultsByTrack.entrySet().stream()
+                .map(entry -> {
+                    final int teamCount = entry.getValue().size();
+                    final long voteCount = sumVoteCounts(entry.getValue());
+                    return new TrackVoteResponse(entry.getKey(), teamCount, voteCount,
+                            calculateAverage(voteCount, teamCount));
+                })
+                .toList();
+    }
+
+    // 분과 안에서 순위를 다시 매겨(동점은 같은 순위) TRACK_TOP_RANK위까지의 팀을 담는다. 득표가 없는 팀은 제외한다.
+    private List<TrackRankingResponse> aggregateTrackTopRankings(
+            final Map<String, List<TeamRankingResult>> rankingResultsByTrack) {
+        return rankingResultsByTrack.entrySet().stream()
+                .map(entry -> new TrackRankingResponse(entry.getKey(), applyRanking(entry.getValue()).stream()
+                        .filter(ranking -> ranking.rank() <= TRACK_TOP_RANK && ranking.voteCount() > 0)
+                        .toList()))
+                .toList();
+    }
+
+    private long sumVoteCounts(final List<TeamRankingResult> rankingResults) {
+        return rankingResults.stream()
+                .mapToLong(TeamRankingResult::voteCount)
+                .sum();
+    }
+
+    private double calculateAverage(final long total, final long count) {
+        return count > 0 ? Math.round((double) total / count * 10) / 10.0 : 0.0;
+    }
+
+    // 백분율, 소수점 첫째 자리까지
+    private double calculateRatio(final long part, final long total) {
+        return total > 0 ? Math.round((double) part / total * 1000) / 10.0 : 0.0;
     }
 
     public List<ContestSubmissionResponse> getTeamSubmissions(Long contestId) {

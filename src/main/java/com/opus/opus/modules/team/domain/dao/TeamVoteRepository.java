@@ -42,6 +42,15 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     VoteStatisticsResult countVoteStatisticsByContest(Long contestId);
 
     @Query("""
+            SELECT new com.opus.opus.modules.team.domain.dao.VoteRecordResult(vote.memberId, vote.createdAt)
+            FROM TeamVote vote
+            JOIN vote.team team
+            WHERE team.contestId = :contestId
+            ORDER BY vote.createdAt ASC
+            """)
+    List<VoteRecordResult> findVoteRecordsByContestId(final Long contestId);
+
+    @Query("""
             SELECT new com.opus.opus.modules.member.domain.dao.MyVoteResponse(
                    c.id, c.contestName, t.id, t.teamName, t.projectName)
             FROM TeamVote tv
