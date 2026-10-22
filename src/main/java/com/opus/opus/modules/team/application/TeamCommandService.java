@@ -34,6 +34,7 @@ import com.opus.opus.modules.team.domain.dao.TeamRepository;
 import com.opus.opus.modules.team.domain.dao.TeamVoteRepository;
 import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamVoteException;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -217,7 +218,7 @@ public class TeamCommandService {
         final Contest contest = contestConvenience.getValidateExistContest(team.getContestId());
 
         contestConvenience.validateNotInVotingPeriod(contest);
-        teamLikeRepository.upsertLike(memberId, team.getId());
+        teamLikeRepository.upsertLike(memberId, team.getId(), LocalDateTime.now());
     }
 
     public void removeTeamLike(final Long memberId, final Long teamId) {
@@ -241,7 +242,7 @@ public class TeamCommandService {
         final long currentVoteCount = countCurrentMemberVotes(memberId, contest.getId());
         validateVoteLimit(currentVoteCount, maxVotesLimit);
 
-        teamVoteRepository.upsertVote(memberId, team.getId());
+        teamVoteRepository.upsertVote(memberId, team.getId(), LocalDateTime.now());
 
         return TeamVoteResponse.of(countCurrentMemberVotes(memberId, contest.getId()), maxVotesLimit);
     }
