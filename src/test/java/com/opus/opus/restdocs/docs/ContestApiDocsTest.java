@@ -11,6 +11,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_A
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_NOT_ENDED;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
@@ -80,6 +82,7 @@ import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
 import com.opus.opus.modules.contest.application.dto.response.VoterRoleResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
+import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
@@ -1025,6 +1028,75 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-vote-report-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 투표가 마감된 대회의 투표 결과 PDF를 다운로드할 수 있다.")
+    void 투표가_마감된_대회의_투표_결과_PDF를_다운로드할_수_있다() throws Exception {
+        final FileDownload download = new FileDownload(
+                new ByteArrayResource("pdf-binary".getBytes()), "CSE캡스톤디자인2026_투표결과_20261001.pdf",
+                MediaType.APPLICATION_PDF_VALUE);
+
+        when(contestVoteReportFileQueryService.generateVoteReportPdf(any())).thenReturn(download);
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("download-vote-report-pdf",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("application/pdf"),
+                                headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"...pdf\"")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 투표가 마감되지 않은 대회의 투표 결과 PDF 다운로드 시 400 에러를 반환한다.")
+    void 투표가_마감되지_않은_대회의_투표_결과_PDF_다운로드_시_400_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(VOTE_NOT_ENDED))
+                .given(contestVoteReportFileQueryService)
+                .generateVoteReportPdf(any());
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("download-vote-report-pdf-fail-vote-not-ended",
+                        pathParameters(
+                                parameterWithName("contestId").description("투표가 마감되지 않은 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 투표 결과 PDF 다운로드 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_투표_결과_PDF_다운로드_시_404_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestVoteReportFileQueryService)
+                .generateVoteReportPdf(any());
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-vote-report-pdf-fail-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),

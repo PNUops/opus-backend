@@ -1,5 +1,6 @@
 package com.opus.opus.global.config;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedMethods(HttpMethod.GET.name(), HttpMethod.HEAD.name(), HttpMethod.POST.name(),
                         HttpMethod.PATCH.name(), HttpMethod.PUT.name(), HttpMethod.DELETE.name())
                 .allowedHeaders("Origin", "Content-Type", "Accept", "Authorization")
+                .exposedHeaders(HttpHeaders.CONTENT_DISPOSITION)
                 .allowCredentials(true)
                 .maxAge(3600);
     }
