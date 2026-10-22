@@ -26,6 +26,17 @@ public enum MemberExceptionType implements BaseExceptionType {
     INVALID_DATE_ORDER(HttpStatus.BAD_REQUEST, "startDate는 endDate보다 이전이어야 합니다."),
     INVALID_SORT_VALUE(HttpStatus.BAD_REQUEST, "정렬 기준은 latest 또는 oldest만 가능합니다."),
     INVALID_ROLE_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 역할 값입니다."),
+    INVALID_MEMBER_STATUS(HttpStatus.BAD_REQUEST, "계정 상태는 ACTIVE 또는 WITHDRAWN만 가능합니다."),
+    ALREADY_WITHDRAWN_MEMBER(HttpStatus.CONFLICT, "이미 탈퇴한 회원입니다."),
+    NOT_WITHDRAWN_MEMBER(HttpStatus.BAD_REQUEST, "탈퇴하지 않은 회원입니다."),
+    CANNOT_WITHDRAW_SELF(HttpStatus.BAD_REQUEST, "본인 계정은 탈퇴 처리할 수 없습니다. 다른 관리자에게 요청해주세요."),
+    LAST_ADMIN_PROTECTED(HttpStatus.BAD_REQUEST, "마지막 활성 관리자는 탈퇴하거나 관리자 권한을 해제할 수 없습니다. 다른 관리자 권한을 먼저 부여해주세요."),
+    NOT_ASSIGNABLE_ROLE(HttpStatus.BAD_REQUEST, "관리자 화면에서 지정할 수 없는 역할입니다. 학생·교수·외부멘토·관리자 중에서 선택해주세요."),
+    SAME_ROLE(HttpStatus.BAD_REQUEST, "현재 역할과 동일한 역할로 변경할 수 없습니다."),
+    CANNOT_CHANGE_OWN_ROLE(HttpStatus.BAD_REQUEST, "본인의 역할은 변경할 수 없습니다. 다른 관리자에게 요청해주세요."),
+    WITHDRAWN_MEMBER_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "탈퇴한 회원의 역할은 변경할 수 없습니다."),
+    FAKE_MEMBER_NOT_MANAGEABLE(HttpStatus.BAD_REQUEST, "임시 계정의 역할은 임시 계정 설정에서 관리해주세요."),
+    ROLE_CHANGE_CONFLICT(HttpStatus.CONFLICT, "회원의 현재 역할이 변경되었습니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
     ;
 
     private final HttpStatus httpStatus;

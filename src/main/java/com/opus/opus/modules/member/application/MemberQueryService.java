@@ -8,8 +8,11 @@ import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
 import com.opus.opus.modules.file.domain.FileImage;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.Sort.Direction.ASC;
@@ -18,15 +21,21 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.domain.MemberStatus;
+import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
@@ -39,6 +48,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
@@ -58,6 +68,7 @@ public class MemberQueryService {
 
     private final MemberConvenience memberConvenience;
     private final MemberRepository memberRepository;
+    private final MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
     private final FileImageConvenience fileImageConvenience;
     private final FileQueryService fileQueryService;
     private final TeamCommentRepository teamCommentRepository;
@@ -113,6 +124,54 @@ public class MemberQueryService {
         return memberRepository.searchByEmailPrefix(escapeLikePattern(keyword), parsedRoleType, pageable).stream()
                 .map(MemberSearchResponse::from)
                 .toList();
+    }
+
+    public Page<AdminMemberResponse> getAdminMembers(final String keyword, final String roleType, final String status,
+                                                     final int page, final int size) {
+        final MemberRoleType parsedRoleType = parseRoleType(roleType);
+        final Boolean isDeleted = parseIsDeleted(status);
+        final String escapedKeyword = (keyword == null || keyword.isBlank()) ? null : escapeLikePattern(keyword.strip());
+        final String roleName = parsedRoleType == null ? null : parsedRoleType.name();
+        return memberRepository.findAdminMembers(escapedKeyword, roleName, isDeleted, PageRequest.of(page, size))
+                .map(AdminMemberResponse::from);
+    }
+
+    public AdminMemberSummaryResponse getAdminMemberSummary() {
+        return new AdminMemberSummaryResponse(
+                memberRepository.countNonFakeMembersByIsDeleted(false),
+                memberRepository.countNonFakeMembersByIsDeleted(true)
+        );
+    }
+
+    public MemberWithdrawalResponse getWithdrawal(final Long memberId) {
+        final Member member = findMemberIncludingDeleted(memberId)
+                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+        if (!member.getIsDeleted()) {
+            throw new MemberException(NOT_WITHDRAWN_MEMBER);
+        }
+        final MemberWithdrawalHistory history = memberWithdrawalHistoryRepository
+                .findTopByMemberIdOrderByIdDesc(memberId)
+                .orElse(null);
+        // 수행 관리자가 이후 탈퇴했더라도 이름을 보여주기 위해 탈퇴 회원까지 포함해 조회한다.
+        final Member admin = (history == null || history.getAdminId() == null)
+                ? null
+                : findMemberIncludingDeleted(history.getAdminId()).orElse(null);
+        return MemberWithdrawalResponse.of(member, history, admin);
+    }
+
+    private Optional<Member> findMemberIncludingDeleted(final Long memberId) {
+        return memberConvenience.findAllByIdIncludingDeleted(List.of(memberId)).stream().findFirst();
+    }
+
+    private Boolean parseIsDeleted(final String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return MemberStatus.valueOf(status) == MemberStatus.WITHDRAWN;
+        } catch (final IllegalArgumentException e) {
+            throw new MemberException(INVALID_MEMBER_STATUS);
+        }
     }
 
     // keyword에 포함된 LIKE 와일드카드(%, _)와 ESCAPE 문자(\)를 이스케이프해 리터럴 접두사 매칭을 보장한다.
