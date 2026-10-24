@@ -5,6 +5,7 @@ import com.opus.opus.modules.contest.domain.SubmissionVisibility;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +16,7 @@ public record ContestSubmissionItemRequest(
 
         Long contestTrackId,
 
+        @Size(max = 3000, message = "제출 항목 설명은 최대 3000자까지 작성할 수 있습니다.")
         String description,
 
         List<SubmissionFileFormat> allowedFileFormats,

@@ -20,6 +20,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE notice SET is_deleted = true where id = ?")
 public class Notice extends BaseEntity {
 
+    private static final int MAX_DESCRIPTION_LENGTH = 3000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +32,7 @@ public class Notice extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = MAX_DESCRIPTION_LENGTH)
     private String description;
 
     @Column(nullable = false)

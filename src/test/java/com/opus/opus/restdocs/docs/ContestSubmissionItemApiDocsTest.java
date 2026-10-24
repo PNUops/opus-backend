@@ -260,4 +260,38 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
                         )
                 ));
     }
+
+    @Test
+    @DisplayName("[실패] 제출 항목 설명이 3000자를 초과하면 에러를 반환한다.")
+    void 제출_항목_설명이_3000자를_초과하면_에러를_반환한다() throws Exception {
+        final ContestSubmissionItemRequest invalidRequest = new ContestSubmissionItemRequest(
+                "발표자료", null, "a".repeat(3001), List.of(PDF, ZIP),
+                50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, PUBLIC);
+
+        mockMvc.perform(post("/contests/{contestId}/submission-items", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-submission-item-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("name", "제출 항목 이름"),
+                                numberFieldWithPath("contestTrackId", "대상 분과 ID (생략 시 전체 분과)").optional(),
+                                stringFieldWithPath("description", "설명 (3000자 초과)").optional(),
+                                arrayFieldWithPath("allowedFileFormats", "허용 파일 형식 목록 (SubmissionFileFormat)"),
+                                numberFieldWithPath("maxFileSizeMb", "파일 크기 제한 (MB)"),
+                                numberFieldWithPath("maxFileCount", "파일 수 제한"),
+                                dateTimeFieldWithPath("startAt", "시작일시"),
+                                dateTimeFieldWithPath("endAt", "마감일시"),
+                                booleanFieldWithPath("allowLateSubmission", "지각 제출 허용 여부"),
+                                stringFieldWithPath("visibility", "공개 범위 (SubmissionVisibility)")
+                        )
+                ));
+    }
 }

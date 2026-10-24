@@ -30,6 +30,20 @@ include::{snippets}/create-notice/http-response.adoc[]
 .Request Fields
 include::{snippets}/create-notice/request-fields.adoc[]
 
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 내용 3000자 초과
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-notice-fail-length-exceeded/http-request.adoc[]
+
+include::{snippets}/create-notice-fail-length-exceeded/http-response.adoc[]
+
+====
+
 == `PATCH`: 전체 공지사항 수정
 
 .HTTP Request Headers
