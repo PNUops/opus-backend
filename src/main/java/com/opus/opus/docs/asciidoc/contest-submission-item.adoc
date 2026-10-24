@@ -70,6 +70,18 @@ include::{snippets}/create-submission-item-fail/request-fields.adoc[]
 
 ====
 
+.❌ Case 2: 제출 항목 설명 3000자 초과
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-submission-item-fail-length-exceeded/http-request.adoc[]
+
+include::{snippets}/create-submission-item-fail-length-exceeded/http-response.adoc[]
+
+====
+
 == `PATCH`: 제출 항목 수정
 
 저장된 제출 항목 설정을 수정하는 API입니다.
