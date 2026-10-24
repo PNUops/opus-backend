@@ -9,11 +9,14 @@ import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
+import java.util.concurrent.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.convention.TestBean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +38,10 @@ public abstract class IntegrationTest extends ApiTestHelper {
     protected JwtProvider jwtProvider;
 
     @MockitoBean
-    private MailUtil mailUtil;
+    protected MailUtil mailUtil;
+
+    @TestBean(name = "mailTaskExecutor")
+    private Executor mailTaskExecutor;
 
     @MockitoBean
     protected GoogleTokenManager googleTokenManager;
@@ -60,5 +66,9 @@ public abstract class IntegrationTest extends ApiTestHelper {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
                 .addFilters(new CharacterEncodingFilter("UTF-8", true))
                 .build();
+    }
+
+    static Executor mailTaskExecutor() {
+        return new SyncTaskExecutor();
     }
 }
