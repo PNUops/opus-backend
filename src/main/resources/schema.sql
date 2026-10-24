@@ -106,7 +106,7 @@ CREATE TABLE `contest_submission_item` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `allow_late_submission` bit(1) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
+  `description` varchar(3000) DEFAULT NULL,
   `end_at` datetime(6) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   `max_file_count` int NOT NULL,
@@ -335,7 +335,7 @@ CREATE TABLE `notice` (
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
   `contest_id` bigint DEFAULT NULL,
-  `description` varchar(255) NOT NULL,
+  `description` varchar(3000) NOT NULL,
   `is_deleted` bit(1) NOT NULL,
   `title` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
