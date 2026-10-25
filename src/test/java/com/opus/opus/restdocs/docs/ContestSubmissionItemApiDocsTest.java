@@ -262,8 +262,8 @@ public class ContestSubmissionItemApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 제출 항목 설명이 3000자를 초과하면 에러를 반환한다.")
-    void 제출_항목_설명이_3000자를_초과하면_에러를_반환한다() throws Exception {
+    @DisplayName("[실패] 제출 항목 설명이 3000자를 초과하면 400 에러를 반환한다.")
+    void 제출_항목_설명이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
         final ContestSubmissionItemRequest invalidRequest = new ContestSubmissionItemRequest(
                 "발표자료", null, "a".repeat(3001), List.of(PDF, ZIP),
                 50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, PUBLIC);

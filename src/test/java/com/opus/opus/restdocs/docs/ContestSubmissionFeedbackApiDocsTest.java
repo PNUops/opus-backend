@@ -140,8 +140,8 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 피드백 본문이 3000자를 초과하면 에러를 반환한다.")
-    void 피드백_본문이_3000자를_초과하면_에러를_반환한다() throws Exception {
+    @DisplayName("[실패] 피드백 본문이 3000자를 초과하면 400 에러를 반환한다.")
+    void 피드백_본문이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
         mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
                         .with(request -> {
                             request.setMethod("PUT");

@@ -66,8 +66,8 @@ public class NoticeApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 공지사항 내용이 3000자를 초과하면 에러를 반환한다.")
-    void 공지사항_내용이_3000자를_초과하면_에러를_반환한다() throws Exception {
+    @DisplayName("[실패] 공지사항 내용이 3000자를 초과하면 400 에러를 반환한다.")
+    void 공지사항_내용이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
         final NoticeRequest request = new NoticeRequest("전체 공지 제목", "a".repeat(3001));
 
         mockMvc.perform(post("/notices")
