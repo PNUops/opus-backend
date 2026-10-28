@@ -140,6 +140,29 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 피드백 본문이 3000자를 초과하면 400 에러를 반환한다.")
+    void 피드백_본문이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "a".repeat(3001))
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("save-submission-feedback-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[실패] 존재하지 않는 대회에 피드백 저장 시 404 에러를 반환한다.")
     void 존재하지_않는_대회에_피드백_저장_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))

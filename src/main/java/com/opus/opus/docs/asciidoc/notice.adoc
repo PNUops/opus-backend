@@ -30,6 +30,20 @@ include::{snippets}/create-notice/http-response.adoc[]
 .Request Fields
 include::{snippets}/create-notice/request-fields.adoc[]
 
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 내용 3000자 초과
+
+[%collapsible]
+
+====
+
+include::{snippets}/create-notice-fail-length-exceeded/http-request.adoc[]
+
+include::{snippets}/create-notice-fail-length-exceeded/http-response.adoc[]
+
+====
+
 == `PATCH`: 전체 공지사항 수정
 
 .HTTP Request Headers
@@ -46,6 +60,20 @@ include::{snippets}/update-notice/request-fields.adoc[]
 
 .Path Parameters
 include::{snippets}/update-notice/path-parameters.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 내용 3000자 초과
+
+[%collapsible]
+
+====
+
+include::{snippets}/update-notice-fail-length-exceeded/http-request.adoc[]
+
+include::{snippets}/update-notice-fail-length-exceeded/http-response.adoc[]
+
+====
 
 == `DELETE`: 전체 공지사항 삭제
 
