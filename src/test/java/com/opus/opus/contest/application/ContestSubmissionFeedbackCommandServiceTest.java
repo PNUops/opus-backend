@@ -1,8 +1,11 @@
 package com.opus.opus.contest.application;
 
+import static com.opus.opus.contest.ContestMemberFixture.createContestMember;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_TO_VIEW_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
@@ -12,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.opus.opus.contest.ContestFixture;
 import com.opus.opus.contest.ContestSubmissionFeedbackFixture;
 import com.opus.opus.contest.ContestSubmissionFixture;
+import com.opus.opus.contest.ContestSubmissionItemFixture;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.contest.application.ContestSubmissionFeedbackCommandService;
@@ -19,11 +23,14 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.SubmissionVisibility;
+import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestMemberException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -51,6 +58,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
 
     @Autowired
     private ContestRepository contestRepository;
+    @Autowired
+    private ContestMemberRepository contestMemberRepository;
     @Autowired
     private ContestSubmissionItemRepository submissionItemRepository;
     @Autowired
@@ -87,6 +96,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                 .team(team)
                 .roles(Set.of(ROLE_팀원))
                 .build());
+        contestMemberRepository.save(createContestMember(contest, member.getId(), List.of(team.getId())));
     }
 
     @Test
@@ -125,6 +135,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @DisplayName("[성공] 같은 제출물에 서로 다른 멘토는 각자의 피드백을 가진다.")
     void 같은_제출물에_서로_다른_멘토는_각자의_피드백을_가진다() {
         final Member otherMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        contestMemberRepository.save(createContestMember(contest, otherMember.getId(), List.of(team.getId())));
 
         feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), member.getId(), description, null,
                 null);
@@ -144,6 +155,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                 .roles(Set.of(ROLE_팀원))
                 .build());
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+        contestMemberRepository.save(createContestMember(contest, mentor.getId(), List.of(team.getId())));
 
         feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
                 null);
@@ -163,6 +175,7 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     @DisplayName("[성공] 기존 피드백을 수정하면 새 피드백 알림 이벤트를 발행하지 않는다.")
     void 기존_피드백을_수정하면_새_피드백_알림_이벤트를_발행하지_않는다() {
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
+        contestMemberRepository.save(createContestMember(contest, mentor.getId(), List.of(team.getId())));
         feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
                 null);
 
@@ -177,6 +190,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
     void 다른_멘토가_같은_제출물에_처음_작성하면_새_피드백_알림_이벤트를_다시_발행한다() {
         final Member mentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(3));
         final Member otherMentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(4));
+        contestMemberRepository.save(createContestMember(contest, mentor.getId(), List.of(team.getId())));
+        contestMemberRepository.save(createContestMember(contest, otherMentor.getId(), List.of(team.getId())));
 
         feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), mentor.getId(), description, null,
                 null);
@@ -220,6 +235,48 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                         description, null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(INVALID_SUBMISSION_FOR_CONTEST.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 담당 팀이 배정되지 않은 관계자는 피드백을 저장할 수 없다.")
+    void 담당_팀이_배정되지_않은_관계자는_피드백을_저장할_수_없다() {
+        final Member unassignedMentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(5));
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), unassignedMentor.getId(),
+                        description, null, null))
+                .isInstanceOf(ContestMemberException.class)
+                .hasMessage(NOT_ASSIGNED_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 팀을 담당하는 관계자는 피드백을 저장할 수 없다.")
+    void 다른_팀을_담당하는_관계자는_피드백을_저장할_수_없다() {
+        final Member otherMentor = memberRepository.save(MemberFixture.createMemberWithUniqueNum(6));
+        final Team otherTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(contest.getId(), "보안 2팀"));
+        contestMemberRepository.save(createContestMember(contest, otherMentor.getId(), List.of(otherTeam.getId())));
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.saveFeedback(contest.getId(), submission.getId(), otherMentor.getId(),
+                        description, null, null))
+                .isInstanceOf(ContestMemberException.class)
+                .hasMessage(NOT_ASSIGNED_TEAM.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 팀에게만 공개된 제출물에는 피드백을 저장할 수 없다.")
+    void 팀에게만_공개된_제출물에는_피드백을_저장할_수_없다() {
+        final ContestSubmissionItem teamOnlyItem = submissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItemWithVisibility(contest, SubmissionVisibility.TEAM));
+        final ContestSubmission teamOnlySubmission = submissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), teamOnlyItem));
+
+        assertThatThrownBy(() ->
+                feedbackCommandService.saveFeedback(contest.getId(), teamOnlySubmission.getId(), member.getId(),
+                        description, null, null))
+                .isInstanceOf(ContestException.class)
+                .hasMessage(NOT_ALLOWED_TO_VIEW_SUBMISSION.errorMessage());
     }
 
     @Test
