@@ -1,8 +1,10 @@
 package com.opus.opus.restdocs.docs;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_TO_VIEW_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +29,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionF
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionFeedbackResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionMyFeedbackResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
+import com.opus.opus.modules.contest.exception.ContestMemberException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
 import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.file.exception.FileException;
@@ -159,6 +162,60 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID"),
                                 parameterWithName("submissionId").description("제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 담당 팀이 아닌 관계자가 피드백 저장 시 403 에러를 반환한다.")
+    void 담당_팀이_아닌_관계자가_피드백_저장_시_403_에러를_반환한다() throws Exception {
+        willThrow(new ContestMemberException(NOT_ASSIGNED_TEAM))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isForbidden())
+                .andDo(document("save-submission-feedback-fail-not-assigned-team",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("담당 팀이 아닌 팀의 제출물 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 팀에게만 공개된 제출물에 피드백 저장 시 403 에러를 반환한다.")
+    void 팀에게만_공개된_제출물에_피드백_저장_시_403_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_ALLOWED_TO_VIEW_SUBMISSION))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isForbidden())
+                .andDo(document("save-submission-feedback-fail-forbidden-visibility",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("submissionId").description("팀에게만 공개된 제출물 ID")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")

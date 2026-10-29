@@ -95,6 +95,30 @@ include::{snippets}/save-submission-feedback-fail-file-not-found/http-response.a
 
 ====
 
+.❌ Case 6: 담당 팀이 아닌 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-not-assigned-team/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-not-assigned-team/http-response.adoc[]
+
+====
+
+.❌ Case 7: 팀에게만 공개된 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-forbidden-visibility/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-forbidden-visibility/http-response.adoc[]
+
+====
+
 == `GET`: 내 피드백 단건 조회
 
 외부멘토가 특정 제출물에 본인이 작성한 피드백 단건을 조회합니다. (작성 폼 프리필용)
