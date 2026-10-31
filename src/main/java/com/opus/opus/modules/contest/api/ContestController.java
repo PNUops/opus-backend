@@ -1,10 +1,12 @@
 package com.opus.opus.modules.contest.api;
 
 import com.opus.opus.global.security.annotation.LoginMember;
+import com.opus.opus.global.util.FileDownloadUtil;
 import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
+import com.opus.opus.modules.contest.application.ContestVoteReportFileQueryService;
 import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
 import com.opus.opus.modules.contest.application.dto.request.ContestRequest;
@@ -24,6 +26,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionS
 import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestTemplateResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteReportResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
@@ -33,6 +36,7 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItem
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.modules.team.application.dto.response.MemberVoteCountResponse;
@@ -42,7 +46,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
@@ -67,6 +73,7 @@ public class ContestController {
     private final ContestQueryService contestQueryService;
     private final ContestSubmissionCommandService contestSubmissionCommandService;
     private final ContestSubmissionQueryService contestSubmissionQueryService;
+    private final ContestVoteReportFileQueryService contestVoteReportFileQueryService;
 
     @GetMapping("/contests/{contestId}/image/banner")
     public ResponseEntity<Resource> getContestBanner(@PathVariable final Long contestId) {
@@ -211,6 +218,23 @@ public class ContestController {
     public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
         final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contestId);
         return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/contests/{contestId}/votes/report")
+    public ResponseEntity<ContestVoteReportResponse> getVoteReport(@PathVariable final Long contestId) {
+        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contestId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/contests/{contestId}/votes/report/download")
+    public ResponseEntity<Resource> downloadVoteReportPdf(@PathVariable final Long contestId) {
+        final FileDownload download = contestVoteReportFileQueryService.generateVoteReportPdf(contestId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(download.mimeType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, FileDownloadUtil.attachmentHeader(download.fileName()))
+                .body(download.resource());
     }
 
     @Secured("ROLE_관리자")

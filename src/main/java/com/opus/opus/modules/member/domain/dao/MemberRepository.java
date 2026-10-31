@@ -8,6 +8,7 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -42,6 +43,10 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM member WHERE is_fake = false AND is_deleted = :isDeleted", nativeQuery = true)
     long countNonFakeMembersByIsDeleted(@Param("isDeleted") boolean isDeleted);
+
+    // 회원 roles N+1은 #244에서 한 번에 수정할 예정이며, 그때 이 @EntityGraph는 삭제한다.
+    @EntityGraph(attributePaths = "roles")
+    List<Member> findAllByIdIn(final List<Long> ids);
 
     @Query("""
             SELECT m FROM Member m

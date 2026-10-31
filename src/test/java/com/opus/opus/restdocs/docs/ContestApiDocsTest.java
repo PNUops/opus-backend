@@ -11,6 +11,7 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_A
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_FILE_FORMAT;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.ONLY_CUSTOM_MODE_CAN_CHANGE;
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.VOTE_NOT_ENDED;
 import static java.time.LocalDateTime.now;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
@@ -63,6 +65,7 @@ import com.opus.opus.modules.contest.application.dto.response.ContestTemplateRes
 import com.opus.opus.modules.contest.application.dto.response.SubmissionCreateResponse;
 import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteLogResponse;
+import com.opus.opus.modules.contest.application.dto.response.ContestVoteReportResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVoteStatisticsResponse;
 import com.opus.opus.modules.contest.application.dto.response.ContestVotesLimitResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamDashboardSummaryResponse;
@@ -70,8 +73,16 @@ import com.opus.opus.modules.contest.application.dto.response.TeamSubmissionItem
 import com.opus.opus.modules.contest.application.dto.response.UpcomingSubmissionResponse;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse;
 import com.opus.opus.modules.contest.application.dto.response.VotePeriodResponse;
+import com.opus.opus.modules.contest.application.dto.response.AdmissionYearResponse;
+import com.opus.opus.modules.contest.application.dto.response.DailyVoteResponse;
+import com.opus.opus.modules.contest.application.dto.response.HourlyVoteResponse;
+import com.opus.opus.modules.contest.application.dto.response.TrackRankingResponse;
+import com.opus.opus.modules.contest.application.dto.response.TrackVoteResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoteUsageResponse;
+import com.opus.opus.modules.contest.application.dto.response.VoterRoleResponse;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestExceptionType;
+import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.file.exception.FileExceptionType;
 import com.opus.opus.modules.member.domain.Member;
@@ -81,6 +92,7 @@ import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -864,6 +876,227 @@ public class ContestApiDocsTest extends RestDocsTest {
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-vote-statistics-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 대회의 투표 리포트를 조회할 수 있다.")
+    void 대회의_투표_리포트를_조회할_수_있다() throws Exception {
+        final ContestVoteReportResponse response = new ContestVoteReportResponse(
+                "CSE 캡스톤디자인 2026",
+                LocalDateTime.of(2026, 9, 30, 0, 0),
+                LocalDateTime.of(2026, 10, 1, 13, 0),
+                true,
+                LocalDateTime.of(2026, 10, 1, 13, 0),
+                2,
+                339L,
+                477L,
+                1.4,
+                46,
+                10.4,
+                0,
+                List.of(
+                        new DailyVoteResponse(LocalDate.of(2026, 9, 30), 131L, 166L),
+                        new DailyVoteResponse(LocalDate.of(2026, 10, 1), 220L, 311L)
+                ),
+                List.of(
+                        new VoteUsageResponse(1L, 201L, 59.3),
+                        new VoteUsageResponse(2L, 138L, 40.7)
+                ),
+                List.of(
+                        new HourlyVoteResponse(LocalDateTime.of(2026, 9, 30, 0, 0), 7L, 5L),
+                        new HourlyVoteResponse(LocalDateTime.of(2026, 9, 30, 1, 0), 13L, 14L)
+                ),
+                List.of(
+                        new VoterRoleResponse("ROLE_학생", 320L, 94.4),
+                        new VoterRoleResponse("ROLE_교수", 17L, 5.0),
+                        new VoterRoleResponse(null, 2L, 0.6)
+                ),
+                List.of(
+                        new AdmissionYearResponse(2021, 120L, 35.4),
+                        new AdmissionYearResponse(2022, 200L, 59.0),
+                        new AdmissionYearResponse(null, 19L, 5.6)
+                ),
+                List.of(
+                        new TrackVoteResponse("AI 트랙", 20, 250L, 12.5),
+                        new TrackVoteResponse("웹 트랙", 26, 227L, 8.7)
+                ),
+                List.of(
+                        new TrackRankingResponse("AI 트랙", List.of(
+                                new ContestRankingResponse(1, 11L, "팀 A", "스마트 화분", "AI 트랙", 42L),
+                                new ContestRankingResponse(2, 13L, "팀 C", "노인 케어봇", "AI 트랙", 30L),
+                                new ContestRankingResponse(3, 15L, "팀 E", "감정 분석기", "AI 트랙", 21L)
+                        )),
+                        new TrackRankingResponse("웹 트랙", List.of(
+                                new ContestRankingResponse(1, 12L, "팀 B", "캠퍼스 지도", "웹 트랙", 38L),
+                                new ContestRankingResponse(2, 14L, "팀 D", "스터디 매칭", "웹 트랙", 25L),
+                                new ContestRankingResponse(2, 16L, "팀 F", "중고 거래", "웹 트랙", 25L)
+                        ))
+                ),
+                List.of(
+                        new ContestRankingResponse(1, 11L, "팀 A", "스마트 화분", "AI 트랙", 42L),
+                        new ContestRankingResponse(2, 12L, "팀 B", "캠퍼스 지도", "웹 트랙", 38L)
+                )
+        );
+
+        when(contestQueryService.getVoteReport(any(Long.class))).thenReturn(response);
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("get-vote-report",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseFields(
+                                stringFieldWithPath("contestName", "대회 이름"),
+                                dateTimeFieldWithPath("voteStartAt", "투표 시작 일시"),
+                                dateTimeFieldWithPath("voteEndAt", "투표 종료 일시"),
+                                booleanFieldWithPath("isVoteEnded", "투표 마감 여부 (false면 현재 시각 기준 중간 집계)"),
+                                dateTimeFieldWithPath("aggregatedAt", "집계 기준 시각 (마감 후에는 투표 종료 일시, 마감 전에는 현재 시각)"),
+                                numberFieldWithPath("maxVotesLimit", "1인 최대 투표 수"),
+                                numberFieldWithPath("totalVoters", "투표한 사람 수"),
+                                numberFieldWithPath("totalVotes", "총 투표 수"),
+                                numberFieldWithPath("averageVotesPerVoter", "1인당 평균 투표 수"),
+                                numberFieldWithPath("teamCount", "참여 팀 수"),
+                                numberFieldWithPath("averageVotesPerTeam", "팀당 평균 득표 수"),
+                                numberFieldWithPath("zeroVoteTeamCount", "득표가 없는 팀 수"),
+                                arrayFieldWithPath("dailyVotes", "일자별 투표 (hourlyVotes와 같은 기간의 모든 날짜, 날짜 오름차순, 표가 없는 날은 0)"),
+                                stringFieldWithPath("dailyVotes[].date", "투표 날짜 (yyyy-MM-dd)"),
+                                numberFieldWithPath("dailyVotes[].voterCount", "해당 날짜에 투표한 사람 수"),
+                                numberFieldWithPath("dailyVotes[].voteCount", "해당 날짜의 투표 수"),
+                                arrayFieldWithPath("voteUsages", "사용한 투표 수별 투표자 분포 (1표 ~ 1인 최대 투표 수, 한도가 줄어 한도보다 많이 투표한 투표자가 있으면 그 투표 수까지)"),
+                                numberFieldWithPath("voteUsages[].usedVotes", "사용한 투표 수"),
+                                numberFieldWithPath("voteUsages[].voterCount", "투표자 수"),
+                                numberFieldWithPath("voteUsages[].ratio", "전체 투표자 대비 비율 (%)"),
+                                arrayFieldWithPath("hourlyVotes", "투표 시작 ~ 집계 시점까지 1시간 단위 투표 추이 (투표 기간이 바뀌어 기간 밖에 남은 표가 있으면 그 시간대까지 넓힘)"),
+                                dateTimeFieldWithPath("hourlyVotes[].hour", "시간대 시작 시각"),
+                                numberFieldWithPath("hourlyVotes[].voteCount", "해당 시간대의 투표 수"),
+                                numberFieldWithPath("hourlyVotes[].cumulativeVoterCount", "해당 시간대까지의 누적 투표자 수"),
+                                arrayFieldWithPath("voterRoles", "대표 역할별 투표자 구성"),
+                                stringFieldWithPath("voterRoles[].role", "대표 역할 (탈퇴 등으로 역할을 알 수 없으면 null)").optional(),
+                                numberFieldWithPath("voterRoles[].voterCount", "투표자 수"),
+                                numberFieldWithPath("voterRoles[].ratio", "전체 투표자 대비 비율 (%)"),
+                                arrayFieldWithPath("admissionYears", "입학연도(학번 앞 4자리)별 투표자 구성 (연도 오름차순)"),
+                                numberFieldWithPath("admissionYears[].admissionYear", "입학연도 (학생이 아니거나 학번이 없거나 탈퇴한 투표자는 null)").optional(),
+                                numberFieldWithPath("admissionYears[].voterCount", "투표자 수"),
+                                numberFieldWithPath("admissionYears[].ratio", "전체 투표자 대비 비율 (%)"),
+                                arrayFieldWithPath("trackVotes", "분과별 득표 (득표 수 내림차순)"),
+                                stringFieldWithPath("trackVotes[].trackName", "분과명 (분과가 없는 팀은 null)").optional(),
+                                numberFieldWithPath("trackVotes[].teamCount", "분과 팀 수"),
+                                numberFieldWithPath("trackVotes[].voteCount", "분과 득표 수"),
+                                numberFieldWithPath("trackVotes[].averageVotesPerTeam", "분과 팀당 평균 득표 수"),
+                                arrayFieldWithPath("trackTopRankings", "분과별 1~3위 (분과 순서는 trackVotes와 동일)"),
+                                stringFieldWithPath("trackTopRankings[].trackName", "분과명 (분과가 없는 팀은 null)").optional(),
+                                arrayFieldWithPath("trackTopRankings[].rankings", "분과 안 3위까지의 팀 (동점 포함, 득표 없는 팀 제외)"),
+                                numberFieldWithPath("trackTopRankings[].rankings[].rank", "분과 안 순위 (동점은 같은 순위)"),
+                                numberFieldWithPath("trackTopRankings[].rankings[].teamId", "팀 ID"),
+                                stringFieldWithPath("trackTopRankings[].rankings[].teamName", "팀명"),
+                                stringFieldWithPath("trackTopRankings[].rankings[].projectName", "프로젝트명"),
+                                stringFieldWithPath("trackTopRankings[].rankings[].trackName", "분과명 (분과가 없는 팀은 null)").optional(),
+                                numberFieldWithPath("trackTopRankings[].rankings[].voteCount", "투표 수"),
+                                arrayFieldWithPath("rankings", "팀 순위 목록"),
+                                numberFieldWithPath("rankings[].rank", "투표 기준 순위 (Ranking) 예: 1-2-2-4"),
+                                numberFieldWithPath("rankings[].teamId", "팀 ID"),
+                                stringFieldWithPath("rankings[].teamName", "팀명"),
+                                stringFieldWithPath("rankings[].projectName", "프로젝트명"),
+                                stringFieldWithPath("rankings[].trackName", "트랙/분과명 (분과가 없는 팀은 null)").optional(),
+                                numberFieldWithPath("rankings[].voteCount", "투표 수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 투표 리포트 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_투표_리포트_조회_시_404_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestQueryService)
+                .getVoteReport(any(Long.class));
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("get-vote-report-fail-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("존재하지 않는 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 투표가 마감된 대회의 투표 결과 PDF를 다운로드할 수 있다.")
+    void 투표가_마감된_대회의_투표_결과_PDF를_다운로드할_수_있다() throws Exception {
+        final FileDownload download = new FileDownload(
+                new ByteArrayResource("pdf-binary".getBytes()), "CSE캡스톤디자인2026_투표결과_20261001.pdf",
+                MediaType.APPLICATION_PDF_VALUE);
+
+        when(contestVoteReportFileQueryService.generateVoteReportPdf(any())).thenReturn(download);
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("download-vote-report-pdf",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회의 고유 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        ),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("application/pdf"),
+                                headerWithName(HttpHeaders.CONTENT_DISPOSITION).description("attachment; filename=\"...pdf\"")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 투표가 마감되지 않은 대회의 투표 결과 PDF 다운로드 시 400 에러를 반환한다.")
+    void 투표가_마감되지_않은_대회의_투표_결과_PDF_다운로드_시_400_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(VOTE_NOT_ENDED))
+                .given(contestVoteReportFileQueryService)
+                .generateVoteReportPdf(any());
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("download-vote-report-pdf-fail-vote-not-ended",
+                        pathParameters(
+                                parameterWithName("contestId").description("투표가 마감되지 않은 대회 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "admin"))
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 대회의 투표 결과 PDF 다운로드 시 404 에러를 반환한다.")
+    void 존재하지_않는_대회의_투표_결과_PDF_다운로드_시_404_에러를_반환한다() throws Exception {
+        willThrow(new ContestException(NOT_FOUND_CONTEST))
+                .given(contestVoteReportFileQueryService)
+                .generateVoteReportPdf(any());
+
+        mockMvc.perform(get("/contests/{contestId}/votes/report/download", 999)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("download-vote-report-pdf-fail-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID")
                         ),
