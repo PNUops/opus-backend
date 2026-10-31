@@ -188,14 +188,14 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 인증 코드 TTL은 5분이다.")
+    @DisplayName("[성공] 인증 코드 TTL은 10분이다.")
     @Disabled
-        // 테스트에 따라 4와 5가 랜덤. 필요 시 Disable 해제하고 테스트
-    void 인증_코드_TTL은_5분이다() {
+        // 테스트에 따라 9와 10이 랜덤. 필요 시 Disable 해제하고 테스트
+    void 인증_코드_TTL은_10분이다() {
         memberCommandService.signUpEmailAuth(emailAuthRequest);
 
-        // 인증 시간은 테스트 시작부터 줄어들기 때문에(내림 처리됨) 4분으로 설정 (실제는 5분)
-        assertThat(authRedisUtil.ttl("signup:email:auth:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(4);
+        // 인증 시간은 테스트 시작부터 줄어들기 때문에(내림 처리됨) 9분으로 설정 (실제는 10분)
+        assertThat(authRedisUtil.ttl("signup:email:auth:" + emailAuthRequest.email(), TimeUnit.MINUTES)).isEqualTo(9);
     }
 
     @Test
@@ -407,7 +407,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER),
+                eq(PROFILE));
     }
 
     @Test
@@ -422,7 +423,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
         memberCommandService.modifyProfileImage(teamLeader, image);
 
         // then
-        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER), eq(PROFILE));
+        verify(fileImageCommandService, times(1)).replaceImageFile(any(), eq(teamLeader.getId()), eq(MEMBER),
+                eq(PROFILE));
     }
 
     @Test

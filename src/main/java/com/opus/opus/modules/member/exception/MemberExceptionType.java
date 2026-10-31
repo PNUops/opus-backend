@@ -18,6 +18,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     MISMATCH_STUDENT_ID_AND_NAME(HttpStatus.BAD_REQUEST, "입력한 학번과 이름이 일치하지 않습니다."),
     NOT_FOUND_STAFF_INFO(HttpStatus.BAD_REQUEST, "일치하는 교직원 정보가 없습니다."),
     EMAIL_AUTH_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "24시간 내 요청 횟수를 초과했습니다. 24시간 후 다시 시도해주세요."),
+    EMAIL_AUTH_MAIL_BUSY(HttpStatus.SERVICE_UNAVAILABLE, "인증 메일 요청이 많습니다. 잠시 후 다시 시도해주세요."),
     SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN(HttpStatus.BAD_REQUEST, "소셜 로그인 회원은 일반 로그인을 사용할 수 없습니다."),
     GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN(HttpStatus.BAD_REQUEST, "일반 회원으로 가입된 이메일입니다. 일반 로그인을 이용해주세요."),
     SOCIAL_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "다른 소셜 로그인으로 가입된 이메일입니다."),
