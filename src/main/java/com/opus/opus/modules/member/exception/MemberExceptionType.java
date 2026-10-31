@@ -36,6 +36,11 @@ public enum MemberExceptionType implements BaseExceptionType {
     WITHDRAWN_MEMBER_NOT_MODIFIABLE(HttpStatus.CONFLICT, "탈퇴한 회원의 역할은 변경할 수 없습니다."),
     EMPLOYEE_ROLE_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "직원 역할은 관리자 화면에서 변경할 수 없습니다."),
     FAKE_MEMBER_NOT_MANAGEABLE(HttpStatus.BAD_REQUEST, "임시 계정의 역할은 임시 계정 설정에서 관리해주세요."),
+    CANNOT_CHANGE_OWN_ADMIN_PERMISSION(HttpStatus.BAD_REQUEST, "본인의 관리 권한은 변경할 수 없습니다. 다른 관리자에게 요청해주세요."),
+    WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE(HttpStatus.CONFLICT, "탈퇴한 회원의 관리 권한은 변경할 수 없습니다."),
+    FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE(HttpStatus.BAD_REQUEST, "임시 계정의 관리 권한은 변경할 수 없습니다."),
+    ADMIN_PERMISSION_UNCHANGED(HttpStatus.CONFLICT, "이미 요청한 관리 권한 상태입니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
+    BASE_ROLE_REQUIRED(HttpStatus.BAD_REQUEST, "기본 역할이 없는 회원의 관리 권한은 회수할 수 없습니다. 기본 역할을 먼저 지정해주세요."),
     ROLE_CHANGE_CONFLICT(HttpStatus.CONFLICT, "회원의 현재 역할이 변경되었습니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
     ;
 

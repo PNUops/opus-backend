@@ -1,6 +1,7 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -8,9 +9,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.member.application.MemberCommandService;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
+import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -48,6 +51,9 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
 
     @Autowired
+    private MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -58,6 +64,7 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     @AfterEach
     void 테스트에서_커밋된_회원과_탈퇴_이력을_정리한다() {
         memberWithdrawalHistoryRepository.deleteAllInBatch();
+        memberAdminPermissionHistoryRepository.deleteAllInBatch();
         for (final Long memberId : committedMemberIds) {
             jdbcTemplate.update("DELETE FROM member_roles WHERE member_id = ?", memberId);
             jdbcTemplate.update("DELETE FROM member WHERE id = ?", memberId);
@@ -77,9 +84,9 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
         try {
             // when
             final Future<Optional<MemberException>> firstResult = executorService.submit(
-                    withdrawOtherAdmin(firstAdmin.getId(), secondAdmin.getId(), readyLatch, startLatch));
+                    startTogether(() -> withdraw(firstAdmin.getId(), secondAdmin.getId()), readyLatch, startLatch));
             final Future<Optional<MemberException>> secondResult = executorService.submit(
-                    withdrawOtherAdmin(secondAdmin.getId(), firstAdmin.getId(), readyLatch, startLatch));
+                    startTogether(() -> withdraw(secondAdmin.getId(), firstAdmin.getId()), readyLatch, startLatch));
             assertThat(readyLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
             startLatch.countDown();
 
@@ -100,25 +107,57 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 관리 권한 해제 전의 스냅샷을 가진 요청자는 해제된 권한으로 강제 탈퇴할 수 없다.")
-    void 관리_권한_해제_전의_스냅샷을_가진_요청자는_해제된_권한으로_강제_탈퇴할_수_없다() {
+    @DisplayName("[성공] 관리자 둘이 동시에 서로의 관리 권한을 회수해도 활성 관리자가 한 명 남는다.")
+    void 관리자_둘이_동시에_서로의_관리_권한을_회수해도_활성_관리자가_한_명_남는다() throws Exception {
+        // given
+        final Member firstAdmin = saveAdminWithBaseRole(901);
+        final Member secondAdmin = saveAdminWithBaseRole(902);
+        final CountDownLatch readyLatch = new CountDownLatch(2);
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        try {
+            // when
+            final Future<Optional<MemberException>> firstResult = executorService.submit(
+                    startTogether(() -> revokeAdmin(firstAdmin.getId(), secondAdmin.getId()), readyLatch, startLatch));
+            final Future<Optional<MemberException>> secondResult = executorService.submit(
+                    startTogether(() -> revokeAdmin(secondAdmin.getId(), firstAdmin.getId()), readyLatch, startLatch));
+            assertThat(readyLatch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
+            startLatch.countDown();
+
+            final List<MemberException> failures = List.of(
+                            firstResult.get(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                            secondResult.get(TIMEOUT_SECONDS, TimeUnit.SECONDS)).stream()
+                    .flatMap(Optional::stream)
+                    .toList();
+
+            // then
+            assertThat(failures).singleElement()
+                    .extracting(MemberException::getMessage)
+                    .isEqualTo(NOT_ADMIN.errorMessage());
+            assertThat(countAdminRoles(firstAdmin.getId(), secondAdmin.getId())).isEqualTo(1);
+        } finally {
+            executorService.shutdownNow();
+        }
+    }
+
+    @Test
+    @DisplayName("[성공] 관리 권한 회수 전의 스냅샷을 가진 요청자는 회수된 권한으로 강제 탈퇴할 수 없다.")
+    void 관리_권한_회수_전의_스냅샷을_가진_요청자는_회수된_권한으로_강제_탈퇴할_수_없다() {
         // given
         final Member remainingAdmin = saveAdmin(901);
-        final Member revokedAdmin = saveAdmin(902);
+        final Member revokedAdmin = saveAdminWithBaseRole(902);
         final TransactionTemplate revokeTransaction = new TransactionTemplate(transactionTemplate.getTransactionManager());
         revokeTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        final ForceDeleteMemberRequest request =
-                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
 
         // when & then
         transactionTemplate.executeWithoutResult(status -> {
-            // 요청자 트랜잭션의 스냅샷을 잡은 뒤, 다른 커넥션에서 관리 권한 해제를 커밋한다.
+            // 요청자 트랜잭션의 스냅샷을 잡은 뒤, 다른 커넥션에서 관리 권한 회수를 커밋한다.
             memberRepository.count();
-            revokeTransaction.executeWithoutResult(revokeStatus -> jdbcTemplate.update(
-                    "DELETE FROM member_roles WHERE member_id = ?", revokedAdmin.getId()));
+            revokeTransaction.executeWithoutResult(
+                    revokeStatus -> revokeAdmin(remainingAdmin.getId(), revokedAdmin.getId()));
 
-            assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(
-                    revokedAdmin.getId(), remainingAdmin.getId(), request))
+            assertThatThrownBy(() -> withdraw(revokedAdmin.getId(), remainingAdmin.getId()))
                     .isInstanceOf(MemberException.class)
                     .hasMessage(NOT_ADMIN.errorMessage());
             status.setRollbackOnly();
@@ -127,30 +166,45 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
         assertThat(memberRepository.findById(remainingAdmin.getId())).isPresent();
     }
 
+    private void withdraw(final Long adminId, final Long memberId) {
+        memberCommandService.withdrawByAdmin(adminId, memberId,
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null));
+    }
+
+    private void revokeAdmin(final Long adminId, final Long memberId) {
+        memberCommandService.changeAdminPermission(adminId, memberId, new AdminPermissionChangeRequest(false));
+    }
+
+    private int countAdminRoles(final Long firstMemberId, final Long secondMemberId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM member_roles WHERE member_id IN (?, ?) AND role = ?",
+                Integer.class, firstMemberId, secondMemberId, ROLE_관리자.name());
+    }
+
+    private Member saveAdminWithBaseRole(final int number) {
+        final Member admin = memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(
+                "2021" + number + "@pusan.ac.kr", ROLE_교수, ROLE_관리자));
+        committedMemberIds.add(admin.getId());
+        return admin;
+    }
+
     private Member saveAdmin(final int number) {
         final Member admin = memberRepository.save(MemberFixture.createMemberWithRole("관리자", number, ROLE_관리자));
         committedMemberIds.add(admin.getId());
         return admin;
     }
 
-    private Callable<Optional<MemberException>> withdrawOtherAdmin(final Long adminId, final Long memberId,
-                                                                   final CountDownLatch readyLatch,
-                                                                   final CountDownLatch startLatch) {
+    private Callable<Optional<MemberException>> startTogether(final Runnable action, final CountDownLatch readyLatch,
+                                                              final CountDownLatch startLatch) {
         return () -> {
             readyLatch.countDown();
             startLatch.await();
-            return attemptWithdrawal(adminId, memberId);
+            try {
+                action.run();
+                return Optional.empty();
+            } catch (final MemberException e) {
+                return Optional.of(e);
+            }
         };
-    }
-
-    private Optional<MemberException> attemptWithdrawal(final Long adminId, final Long memberId) {
-        final ForceDeleteMemberRequest request =
-                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
-        try {
-            memberCommandService.withdrawByAdmin(adminId, memberId, request);
-            return Optional.empty();
-        } catch (final MemberException e) {
-            return Optional.of(e);
-        }
     }
 }

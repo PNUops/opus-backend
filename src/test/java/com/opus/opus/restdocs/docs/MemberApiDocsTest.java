@@ -2,6 +2,8 @@ package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
@@ -12,9 +14,12 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
@@ -52,6 +57,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
@@ -957,6 +963,125 @@ public class MemberApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("currentRole", "회원의 현재 역할"),
                                 stringFieldWithPath("newRole", "변경할 역할 (누락, 검증 실패 유도)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 관리 권한을 변경한다.")
+    void 관리자가_회원의_관리_권한을_변경한다() throws Exception {
+        // Given
+        final AdminPermissionChangeRequest request = new AdminPermissionChangeRequest(true);
+        doNothing().when(memberCommandService).changeAdminPermission(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-change-admin-permission",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("관리 권한을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                booleanFieldWithPath("isAdmin", "true면 부여, false면 회수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 요청한 관리 권한 상태와 같으면 409를 반환한다.")
+    void 요청한_관리_권한_상태와_같으면_409_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-unchanged", ADMIN_PERMISSION_UNCHANGED,
+                status().isConflict(), "이미 요청한 상태인 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 기본 역할이 없는 회원의 관리 권한을 회수하면 400을 반환한다.")
+    void 기본_역할이_없는_회원의_관리_권한을_회수하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-base-role-required", BASE_ROLE_REQUIRED,
+                status().isBadRequest(), "기본 역할이 없는 관리자 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 관리 권한을 변경하면 400을 반환한다.")
+    void 관리자가_본인의_관리_권한을_변경하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-self", CANNOT_CHANGE_OWN_ADMIN_PERMISSION,
+                status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 관리 권한 변경은 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_관리_권한_변경은_403_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-not-admin", NOT_ADMIN,
+                status().isForbidden(), "관리 권한을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 관리 권한을 변경하면 409를 반환한다.")
+    void 탈퇴한_회원의_관리_권한을_변경하면_409_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-withdrawn",
+                WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE,
+                status().isConflict(), "탈퇴한 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 관리 권한을 변경하면 400을 반환한다.")
+    void 임시_계정의_관리_권한을_변경하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-fake-member",
+                FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE,
+                status().isBadRequest(), "임시 계정 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 관리 권한을 변경하면 404를 반환한다.")
+    void 존재하지_않는_회원의_관리_권한을_변경하면_404_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-not-found", NOT_FOUND_MEMBER,
+                status().isNotFound(), "존재하지 않는 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] isAdmin이 없으면 관리 권한 변경은 400을 반환한다.")
+    void isAdmin이_없으면_관리_권한_변경은_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-change-admin-permission-fail-missing-is-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("관리 권한을 변경할 회원 ID")
+                        )
+                ));
+    }
+
+    private void documentAdminPermissionFailure(final String identifier, final MemberExceptionType exceptionType,
+                                                final ResultMatcher expectedStatus,
+                                                final String memberIdDescription) throws Exception {
+        willThrow(new MemberException(exceptionType))
+                .given(memberCommandService).changeAdminPermission(any(), any(), any());
+
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AdminPermissionChangeRequest(false))))
+                .andExpect(expectedStatus)
+                .andDo(document(identifier,
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description(memberIdDescription)
                         )
                 ));
     }

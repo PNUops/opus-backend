@@ -11,6 +11,7 @@ import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.StatisticsQueryService;
 import com.opus.opus.modules.member.application.dto.request.AdminMemberSearchRequest;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
@@ -201,6 +202,15 @@ public class MemberController {
                                                  @PathVariable final Long memberId,
                                                  @Valid @RequestBody final MemberRoleChangeRequest request) {
         memberCommandService.changeRole(admin.getId(), memberId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/admin/members/{memberId}/admin-permission")
+    public ResponseEntity<Void> changeAdminPermission(@LoginMember final Member admin,
+                                                      @PathVariable final Long memberId,
+                                                      @Valid @RequestBody final AdminPermissionChangeRequest request) {
+        memberCommandService.changeAdminPermission(admin.getId(), memberId, request);
         return ResponseEntity.noContent().build();
     }
 

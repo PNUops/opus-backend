@@ -722,6 +722,124 @@ include::{snippets}/admin-change-member-role-fail-employee/http-request.adoc[]
 include::{snippets}/admin-change-member-role-fail-employee/http-response.adoc[]
 
 ====
+== `PATCH`: 관리자 회원 관리 권한 부여·회수
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 대상 회원의 기본 역할은 유지하고 관리 권한(`ROLE_관리자`)만 부여하거나 회수하며, 이력(대상 회원, 수행 관리자, 부여 여부, 시각)을 기록합니다.
+이미 요청한 상태이면 409를 반환합니다. 기본 역할이 없는 회원의 관리 권한은 회수할 수 없으므로 기본 역할을 먼저 지정해야 합니다.
+
+.HTTP Request
+include::{snippets}/admin-change-admin-permission/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-change-admin-permission/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-change-admin-permission/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-change-admin-permission/path-parameters.adoc[]
+
+.Request Fields
+include::{snippets}/admin-change-admin-permission/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 요청한 상태와 같음 (409)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-unchanged/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-unchanged/http-response.adoc[]
+
+====
+
+.❌ Case 2: 기본 역할이 없는 회원의 회수
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-base-role-required/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-base-role-required/http-response.adoc[]
+
+====
+
+.❌ Case 3: 관리자 본인의 관리 권한 변경
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-self/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-self/http-response.adoc[]
+
+====
+
+.❌ Case 4: 처리 중 관리자 권한 해제 (403)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-not-admin/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-not-admin/http-response.adoc[]
+
+====
+
+.❌ Case 5: 탈퇴한 회원 (409)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-withdrawn/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-withdrawn/http-response.adoc[]
+
+====
+
+.❌ Case 6: 임시 계정
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-fake-member/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-fake-member/http-response.adoc[]
+
+====
+
+.❌ Case 7: 존재하지 않는 회원 ID (404)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 8: isAdmin 누락
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-admin-permission-fail-missing-is-admin/http-request.adoc[]
+
+include::{snippets}/admin-change-admin-permission-fail-missing-is-admin/http-response.adoc[]
+
+====
+
 == `GET`: 회원 검색
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 이메일 앞부분 일치로 검색하며(대소문자 무시)

@@ -8,8 +8,11 @@ import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
@@ -17,10 +20,12 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOU
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.GENERAL_MEMBER_CANNOT_USE_SOCIAL_LOGIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
@@ -44,6 +49,7 @@ import com.opus.opus.file.FileFixture;
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.MemberCommandService;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
@@ -60,6 +66,7 @@ import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
+import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -98,6 +105,9 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberRoleChangeHistoryRepository memberRoleChangeHistoryRepository;
+
+    @Autowired
+    private MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -1032,5 +1042,164 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), 999999L, request))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원에게 관리 권한을 부여하면 기본 역할이 유지되고 이력이 저장된다.")
+    void 관리자가_회원에게_관리_권한을_부여하면_기본_역할이_유지되고_이력이_저장된다() {
+        // given
+        final Member admin = saveAdmin();
+
+        // when
+        memberCommandService.changeAdminPermission(admin.getId(), teamLeader.getId(),
+                new AdminPermissionChangeRequest(true));
+
+        // then
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
+        assertThat(memberAdminPermissionHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getAdminId()).isEqualTo(admin.getId());
+                    assertThat(history.getGranted()).isTrue();
+                    assertThat(history.getCreatedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 관리 권한을 회수하면 기본 역할이 유지되고 이력이 저장된다.")
+    void 관리자가_회원의_관리_권한을_회수하면_기본_역할이_유지되고_이력이_저장된다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member professorAdmin = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("professoradmin@pusan.ac.kr", ROLE_교수, ROLE_관리자));
+
+        // when
+        memberCommandService.changeAdminPermission(admin.getId(), professorAdmin.getId(),
+                new AdminPermissionChangeRequest(false));
+
+        // then
+        assertThat(reloadMember(professorAdmin.getId()).getRoles()).containsExactly(ROLE_교수);
+        assertThat(memberAdminPermissionHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> assertThat(history.getGranted()).isFalse());
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 관리 권한이 있는 회원에게 부여하면 예외가 발생한다.")
+    void 이미_관리_권한이_있는_회원에게_부여하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), otherAdmin.getId(),
+                new AdminPermissionChangeRequest(true)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ADMIN_PERMISSION_UNCHANGED.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 관리 권한이 없는 회원에게서 회수하면 예외가 발생한다.")
+    void 관리_권한이_없는_회원에게서_회수하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), teamLeader.getId(),
+                new AdminPermissionChangeRequest(false)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ADMIN_PERMISSION_UNCHANGED.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 기본 역할이 없는 회원의 관리 권한을 회수하면 예외가 발생한다.")
+    void 기본_역할이_없는_회원의_관리_권한을_회수하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), otherAdmin.getId(),
+                new AdminPermissionChangeRequest(false)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(BASE_ROLE_REQUIRED.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 관리 권한을 변경하면 예외가 발생한다.")
+    void 관리자가_본인의_관리_권한을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), admin.getId(),
+                new AdminPermissionChangeRequest(false)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_CHANGE_OWN_ADMIN_PERMISSION.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 요청자가 활성 관리자가 아니면 관리 권한을 변경할 수 없다.")
+    void 요청자가_활성_관리자가_아니면_관리_권한을_변경할_수_없다() {
+        // given
+        final Member target = saveAdmin();
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(teamLeader.getId(), target.getId(),
+                new AdminPermissionChangeRequest(false)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_ADMIN.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 관리 권한을 변경하면 예외가 발생한다.")
+    void 탈퇴한_회원의_관리_권한을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        memberCommandService.withdraw(teamLeader);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), teamLeader.getId(),
+                new AdminPermissionChangeRequest(true)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 관리 권한을 변경하면 예외가 발생한다.")
+    void 임시_계정의_관리_권한을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member fakeMember = MemberFixture.createMemberWithEmailAndRole("fakeadmin@pusan.ac.kr", ROLE_학생);
+        fakeMember.markAsFakeMember();
+        memberRepository.save(fakeMember);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), fakeMember.getId(),
+                new AdminPermissionChangeRequest(true)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 관리 권한을 변경하면 예외가 발생한다.")
+    void 존재하지_않는_회원의_관리_권한을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeAdminPermission(admin.getId(), 999999L,
+                new AdminPermissionChangeRequest(true)))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
     }
 }
