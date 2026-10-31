@@ -441,7 +441,7 @@ include::{snippets}/delete-member-profile-image/request-headers.adoc[]
 
 == `DELETE`: 회원 탈퇴
 
-NOTE: 탈퇴 이력이 `USER_REQUEST`(사용자 요청) 사유로 기록됩니다.
+NOTE: 탈퇴 이력이 `USER_REQUEST`(사용자 요청) 사유로 기록됩니다. 관리자는 이 API로 탈퇴할 수 없으며, 다른 관리자에게 요청해야 합니다.
 
 .HTTP Request
 include::{snippets}/withdraw-member/http-request.adoc[]
@@ -451,6 +451,20 @@ include::{snippets}/withdraw-member/http-response.adoc[]
 
 .Request Headers
 include::{snippets}/withdraw-member/request-headers.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 관리자 본인 탈퇴
+
+[%collapsible]
+
+====
+
+include::{snippets}/withdraw-member-fail-admin/http-request.adoc[]
+
+include::{snippets}/withdraw-member-fail-admin/http-response.adoc[]
+
+====
 
 == `DELETE`: 관리자 강제 회원 탈퇴
 

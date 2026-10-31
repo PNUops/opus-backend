@@ -344,6 +344,8 @@ public class MemberCommandService {
     }
 
     public void withdraw(final Member member) {
+        validateNotAdminWithdrawal(member);
+
         memberWithdrawalHistoryRepository.save(
                 MemberWithdrawalHistory.builder()
                         .memberId(member.getId())
@@ -351,6 +353,12 @@ public class MemberCommandService {
                         .build()
         );
         deleteMember(member);
+    }
+
+    private void validateNotAdminWithdrawal(final Member member) {
+        if (member.isAdmin()) {
+            throw new MemberException(CANNOT_WITHDRAW_SELF);
+        }
     }
 
     public void withdrawByAdmin(final Long adminId, final Long memberId, final ForceDeleteMemberRequest request) {

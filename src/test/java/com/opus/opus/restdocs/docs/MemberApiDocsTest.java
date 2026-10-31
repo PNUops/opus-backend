@@ -650,6 +650,25 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 관리자가 회원 탈퇴 API로 본인 탈퇴하면 400을 반환한다.")
+    void 관리자가_회원_탈퇴_API로_본인_탈퇴하면_400_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(CANNOT_WITHDRAW_SELF))
+                .given(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("withdraw-member-fail-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
     void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
         // Given

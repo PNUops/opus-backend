@@ -555,6 +555,21 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[실패] 관리자는 회원 탈퇴 API로 본인 탈퇴할 수 없다.")
+    void 관리자는_회원_탈퇴_API로_본인_탈퇴할_수_없다() {
+        // given
+        final Member admin = saveAdmin();
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.withdraw(admin))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_WITHDRAW_SELF.errorMessage());
+
+        assertThat(memberRepository.findById(admin.getId())).isPresent();
+        assertThat(memberWithdrawalHistoryRepository.count()).isZero();
+    }
+
+    @Test
     @DisplayName("[성공] 관리자 강제 탈퇴 시 해당 회원은 DB에서 조회되지 않는다.")
     void 관리자_강제_탈퇴_시_해당_회원은_DB에서_조회되지_않는다() {
         // given
