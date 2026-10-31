@@ -647,7 +647,7 @@ include::{snippets}/admin-change-member-role-fail-same-role/http-response.adoc[]
 
 ====
 
-.❌ Case 6: 탈퇴한 회원
+.❌ Case 6: 탈퇴한 회원 (409)
 
 [%collapsible]
 

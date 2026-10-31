@@ -34,7 +34,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     NOT_ASSIGNABLE_ROLE(HttpStatus.BAD_REQUEST, "관리자 화면에서 지정할 수 없는 역할입니다. 학생·교수·외부멘토·관리자 중에서 선택해주세요."),
     SAME_ROLE(HttpStatus.BAD_REQUEST, "현재 역할과 동일한 역할로 변경할 수 없습니다."),
     CANNOT_CHANGE_OWN_ROLE(HttpStatus.BAD_REQUEST, "본인의 역할은 변경할 수 없습니다. 다른 관리자에게 요청해주세요."),
-    WITHDRAWN_MEMBER_NOT_MODIFIABLE(HttpStatus.BAD_REQUEST, "탈퇴한 회원의 역할은 변경할 수 없습니다."),
+    WITHDRAWN_MEMBER_NOT_MODIFIABLE(HttpStatus.CONFLICT, "탈퇴한 회원의 역할은 변경할 수 없습니다."),
     FAKE_MEMBER_NOT_MANAGEABLE(HttpStatus.BAD_REQUEST, "임시 계정의 역할은 임시 계정 설정에서 관리해주세요."),
     ROLE_CHANGE_CONFLICT(HttpStatus.CONFLICT, "회원의 현재 역할이 변경되었습니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
     ;

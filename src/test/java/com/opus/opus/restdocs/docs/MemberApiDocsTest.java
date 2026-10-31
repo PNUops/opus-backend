@@ -883,11 +883,11 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 400을 반환한다.")
-    void 탈퇴한_회원의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 409를 반환한다.")
+    void 탈퇴한_회원의_역할을_변경하면_409_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-withdrawn", WITHDRAWN_MEMBER_NOT_MODIFIABLE,
                 new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
-                status().isBadRequest(), "탈퇴한 회원 ID");
+                status().isConflict(), "탈퇴한 회원 ID");
     }
 
     @Test
