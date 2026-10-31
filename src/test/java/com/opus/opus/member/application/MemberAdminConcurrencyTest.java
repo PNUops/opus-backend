@@ -3,6 +3,7 @@ package com.opus.opus.member.application;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
@@ -27,8 +28,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class MemberAdminConcurrencyTest extends IntegrationTest {
@@ -46,6 +49,9 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     private final List<Long> committedMemberIds = new ArrayList<>();
 
@@ -93,6 +99,34 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
         }
     }
 
+    @Test
+    @DisplayName("[성공] 관리 권한 해제 전의 스냅샷을 가진 요청자는 해제된 권한으로 강제 탈퇴할 수 없다.")
+    void 관리_권한_해제_전의_스냅샷을_가진_요청자는_해제된_권한으로_강제_탈퇴할_수_없다() {
+        // given
+        final Member remainingAdmin = saveAdmin(901);
+        final Member revokedAdmin = saveAdmin(902);
+        final TransactionTemplate revokeTransaction = new TransactionTemplate(transactionTemplate.getTransactionManager());
+        revokeTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
+
+        // when & then
+        transactionTemplate.executeWithoutResult(status -> {
+            // 요청자 트랜잭션의 스냅샷을 잡은 뒤, 다른 커넥션에서 관리 권한 해제를 커밋한다.
+            memberRepository.count();
+            revokeTransaction.executeWithoutResult(revokeStatus -> jdbcTemplate.update(
+                    "DELETE FROM member_roles WHERE member_id = ?", revokedAdmin.getId()));
+
+            assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(
+                    revokedAdmin.getId(), remainingAdmin.getId(), request))
+                    .isInstanceOf(MemberException.class)
+                    .hasMessage(NOT_ADMIN.errorMessage());
+            status.setRollbackOnly();
+        });
+
+        assertThat(memberRepository.findById(remainingAdmin.getId())).isPresent();
+    }
+
     private Member saveAdmin(final int number) {
         final Member admin = memberRepository.save(MemberFixture.createMemberWithRole("관리자", number, ROLE_관리자));
         committedMemberIds.add(admin.getId());
@@ -102,17 +136,21 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     private Callable<Optional<MemberException>> withdrawOtherAdmin(final Long adminId, final Long memberId,
                                                                    final CountDownLatch readyLatch,
                                                                    final CountDownLatch startLatch) {
-        final ForceDeleteMemberRequest request =
-                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
         return () -> {
             readyLatch.countDown();
             startLatch.await();
-            try {
-                memberCommandService.withdrawByAdmin(adminId, memberId, request);
-                return Optional.empty();
-            } catch (final MemberException e) {
-                return Optional.of(e);
-            }
+            return attemptWithdrawal(adminId, memberId);
         };
+    }
+
+    private Optional<MemberException> attemptWithdrawal(final Long adminId, final Long memberId) {
+        final ForceDeleteMemberRequest request =
+                new ForceDeleteMemberRequest(MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
+        try {
+            memberCommandService.withdrawByAdmin(adminId, memberId, request);
+            return Optional.empty();
+        } catch (final MemberException e) {
+            return Optional.of(e);
+        }
     }
 }

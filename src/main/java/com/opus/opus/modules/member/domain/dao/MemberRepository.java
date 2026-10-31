@@ -62,8 +62,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("SELECT m FROM Member m WHERE m.id = :id")
     Optional<Member> findByIdForUpdate(@Param("id") Long id);
 
+    // member_roles를 서브쿼리로 읽으면 락 대기 후에도 해제 전 스냅샷을 보므로, 조인해 역할 행까지 잠그고 최신 값을 읽는다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT m FROM Member m WHERE :role MEMBER OF m.roles AND m.isFake = false ORDER BY m.id")
+    @Query("SELECT m FROM Member m JOIN m.roles r WHERE r = :role AND m.isFake = false ORDER BY m.id")
     List<Member> findAllByRoleForUpdate(@Param("role") MemberRoleType role);
 
     Optional<Member> findByEmail(final String email);
