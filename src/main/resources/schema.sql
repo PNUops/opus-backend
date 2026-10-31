@@ -338,7 +338,7 @@ CREATE TABLE `member_role_change_history` (
   `updated_at` datetime(6) DEFAULT NULL,
   `member_id` bigint NOT NULL,
   `admin_id` bigint NOT NULL,
-  `before_role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
+  `before_role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') DEFAULT NULL,
   `after_role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_member_role_change_history_member_id` (`member_id`)

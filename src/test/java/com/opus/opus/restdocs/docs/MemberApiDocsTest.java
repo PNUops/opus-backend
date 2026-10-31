@@ -13,6 +13,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOU
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
@@ -855,8 +856,8 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("역할을 변경할 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("currentRole", "화면에서 확인한 회원의 현재 역할. 서버의 최신 역할과 다르면 409"),
-                                stringFieldWithPath("newRole", "변경할 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토, ROLE_관리자)")
+                                stringFieldWithPath("currentRole", "화면에 보이던 현재 기본 역할. 기본 역할이 없는 관리자 전용 계정은 생략").optional(),
+                                stringFieldWithPath("newRole", "변경할 기본 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토)")
                         )
                 ));
     }
@@ -873,7 +874,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 400을 반환한다.")
     void 관리자가_본인의_역할을_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-self", CANNOT_CHANGE_OWN_ROLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_학생),
+                new MemberRoleChangeRequest(null, MemberRoleType.ROLE_학생),
                 status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
     }
 
@@ -883,6 +884,14 @@ public class MemberApiDocsTest extends RestDocsTest {
         documentRoleChangeFailure("admin-change-member-role-fail-not-assignable", NOT_ASSIGNABLE_ROLE,
                 new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_직원),
                 status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 직원 회원의 기본 역할을 변경하면 400을 반환한다.")
+    void 직원_회원의_기본_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-employee", EMPLOYEE_ROLE_NOT_MODIFIABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_직원, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "직원 회원 ID");
     }
 
     @Test

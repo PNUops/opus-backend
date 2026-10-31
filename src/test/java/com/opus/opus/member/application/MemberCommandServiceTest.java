@@ -16,6 +16,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADM
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
@@ -838,18 +839,85 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 활성 관리자가 2명 이상이면 다른 관리자의 관리자 권한을 해제할 수 있다.")
-    void 활성_관리자가_2명_이상이면_다른_관리자의_관리자_권한을_해제할_수_있다() {
+    @DisplayName("[성공] 관리자 전용 계정에 기본 역할을 지정하면 관리 권한이 유지되고 이전 역할은 null로 기록된다.")
+    void 관리자_전용_계정에_기본_역할을_지정하면_관리_권한이_유지되고_이전_역할은_null로_기록된다() {
         // given
         final Member admin = saveAdmin();
         final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생);
 
         // when
         memberCommandService.changeRole(admin.getId(), otherAdmin.getId(), request);
 
         // then
-        assertThat(reloadMember(otherAdmin.getId()).getRoles()).containsExactly(ROLE_학생);
+        assertThat(reloadMember(otherAdmin.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
+        assertThat(memberRoleChangeHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getBeforeRole()).isNull();
+                    assertThat(history.getAfterRole()).isEqualTo(ROLE_학생);
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 관리 권한이 있는 회원의 기본 역할을 변경해도 관리 권한은 유지된다.")
+    void 관리_권한이_있는_회원의_기본_역할을_변경해도_관리_권한은_유지된다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member professorAdmin = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("professoradmin@pusan.ac.kr", ROLE_교수, ROLE_관리자));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), professorAdmin.getId(), request);
+
+        // then
+        assertThat(reloadMember(professorAdmin.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
+    }
+
+    @Test
+    @DisplayName("[실패] 기본 역할이 있는 회원의 currentRole을 생략하면 예외가 발생한다.")
+    void 기본_역할이_있는_회원의_currentRole을_생략하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_CONFLICT.errorMessage());
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
+    }
+
+    @Test
+    @DisplayName("[실패] 직원 회원의 기본 역할을 변경하면 예외가 발생한다.")
+    void 직원_회원의_기본_역할을_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member employee = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("employee@pusan.ac.kr", ROLE_직원));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_직원, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), employee.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(EMPLOYEE_ROLE_NOT_MODIFIABLE.errorMessage());
+        assertThat(reloadMember(employee.getId()).getRoles()).containsExactly(ROLE_직원);
+        assertThat(memberRoleChangeHistoryRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자 역할은 기본 역할로 지정할 수 없다.")
+    void 관리자_역할은_기본_역할로_지정할_수_없다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_관리자);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
     }
 
     @Test
@@ -899,7 +967,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         final Member admin = saveAdmin();
         memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), admin.getId(), request))
@@ -914,7 +982,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         // 다른 관리자가 먼저 권한을 해제해 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
         final Member lastAdmin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_관리자, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(teamLeader.getId(), lastAdmin.getId(), request))

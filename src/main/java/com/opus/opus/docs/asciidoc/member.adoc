@@ -579,9 +579,11 @@ include::{snippets}/admin-withdraw-member-fail-not-admin/http-response.adoc[]
 
 ====
 
-== `PATCH`: 관리자 회원 OPUS 역할 변경
+== `PATCH`: 관리자 회원 기본 역할 변경
 
-NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 회원의 OPUS 전역 역할을 하나로 교체하고 변경 이력(변경 전·후 역할, 수행 관리자, 시각)을 기록합니다.
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 회원의 기본 역할(학생·교수·외부멘토)을 교체하고 변경 이력(변경 전·후 역할, 수행 관리자, 시각)을 기록합니다. 대상 회원의 관리 권한(`ROLE_관리자`)은 유지됩니다.
+`currentRole`에는 화면에 보이던 기본 역할을 보내고, 기본 역할이 없는 관리자 전용 계정이면 생략하거나 `null`을 보냅니다. 서버의 값과 다르면 409를 반환합니다.
+직원 회원의 기본 역할은 변경할 수 없습니다.
 대회별 심사위원·지도교수·멘토 배정은 이 API로 변경하지 않으며, 역할 변경 시 기존 대회 배정은 그대로 유지됩니다.
 
 .HTTP Request
@@ -625,7 +627,7 @@ include::{snippets}/admin-change-member-role-fail-self/http-response.adoc[]
 
 ====
 
-.❌ Case 3: 지정할 수 없는 역할 (ROLE_직원)
+.❌ Case 3: 지정할 수 없는 역할 (ROLE_직원, ROLE_관리자)
 
 [%collapsible]
 
@@ -706,6 +708,18 @@ include::{snippets}/admin-change-member-role-fail-missing-new-role/http-response
 include::{snippets}/admin-change-member-role-fail-not-admin/http-request.adoc[]
 
 include::{snippets}/admin-change-member-role-fail-not-admin/http-response.adoc[]
+
+====
+
+.❌ Case 10: 직원 회원의 기본 역할 변경
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-employee/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-employee/http-response.adoc[]
 
 ====
 == `GET`: 회원 검색

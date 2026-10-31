@@ -28,8 +28,8 @@ public class MemberRoleChangeHistory extends BaseEntity {
     @Column(nullable = false)
     private Long adminId;
 
+    // 기본 역할이 없던 관리자 전용 계정에 처음 지정하면 null이다.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private MemberRoleType beforeRole;
 
     @Enumerated(EnumType.STRING)

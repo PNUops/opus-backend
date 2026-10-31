@@ -13,7 +13,7 @@ public enum MemberRoleType {
     ;
 
     private static final Set<MemberRoleType> STAFF_ROLES = Set.of(ROLE_교수, ROLE_외부멘토);
-    private static final Set<MemberRoleType> ADMIN_ASSIGNABLE_ROLES = Set.of(ROLE_학생, ROLE_교수, ROLE_외부멘토, ROLE_관리자);
+    private static final Set<MemberRoleType> ADMIN_ASSIGNABLE_ROLES = Set.of(ROLE_학생, ROLE_교수, ROLE_외부멘토);
 
     private final long id;
 

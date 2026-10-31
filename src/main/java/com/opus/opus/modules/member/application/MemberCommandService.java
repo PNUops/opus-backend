@@ -3,6 +3,7 @@ package com.opus.opus.modules.member.application;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
@@ -13,6 +14,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
@@ -393,7 +395,7 @@ public class MemberCommandService {
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
         validateRoleChangeTarget(member, request);
 
-        member.changeRole(request.newRole());
+        member.changeBaseRole(request.newRole());
         saveRoleChangeHistory(adminId, member, request);
     }
 
@@ -401,7 +403,10 @@ public class MemberCommandService {
         if (member.isFakeMember()) {
             throw new MemberException(FAKE_MEMBER_NOT_MANAGEABLE);
         }
-        if (member.getPrimaryRole() != request.currentRole()) {
+        if (member.getBaseRole() == ROLE_직원) {
+            throw new MemberException(EMPLOYEE_ROLE_NOT_MODIFIABLE);
+        }
+        if (member.getBaseRole() != request.currentRole()) {
             throw new MemberException(ROLE_CHANGE_CONFLICT);
         }
     }
@@ -426,7 +431,6 @@ public class MemberCommandService {
         if (request.currentRole() == request.newRole()) {
             throw new MemberException(SAME_ROLE);
         }
-        // 요청자는 관리자이므로 본인 역할 변경은 곧 본인 관리자 권한 해제다.
         if (adminId.equals(memberId)) {
             throw new MemberException(CANNOT_CHANGE_OWN_ROLE);
         }
