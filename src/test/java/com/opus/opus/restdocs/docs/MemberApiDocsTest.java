@@ -1313,8 +1313,8 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("keyword").description("이름·학번·이메일 부분 일치 검색어 (대소문자 무시). 미지정 시 전체").optional(),
                                 parameterWithName("roleType").description("OPUS 역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional(),
                                 parameterWithName("status").description("계정 상태 필터 (ACTIVE, WITHDRAWN). 미지정 시 전체").optional(),
-                                parameterWithName("page").description("페이지 번호 (0부터 시작, 기본값 0)").optional(),
-                                parameterWithName("size").description("페이지 크기 (기본값 20)").optional()
+                                parameterWithName("page").description("페이지 번호 (0 이상, 기본값 0)").optional(),
+                                parameterWithName("size").description("페이지 크기 (1~100, 기본값 20)").optional()
                         ),
                         responseFields(
                                 arrayFieldWithPath("content[]", "회원 목록 (가입일 최신순, 임시 계정 제외)"),
@@ -1379,6 +1379,47 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("roleType").description("유효하지 않은 역할 값")
                         )
                 ));
+    }
+
+    @Test
+    @DisplayName("[실패] 범위를 벗어난 page 또는 size로 회원 목록을 조회하면 400을 반환한다.")
+    void 범위를_벗어난_page_또는_size로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("page", "-1")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-page",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("page").description("범위를 벗어난 페이지 번호"),
+                                parameterWithName("size").description("범위를 벗어난 페이지 크기")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] size가 0이면 회원 목록 조회는 400을 반환한다.")
+    void size가_0이면_회원_목록_조회는_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("[성공] size가 100이면 회원 목록을 조회한다.")
+    void size가_100이면_회원_목록을_조회한다() throws Exception {
+        when(memberQueryService.getAdminMembers(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("size", "100"))
+                .andExpect(status().isOk());
     }
 
     @Test

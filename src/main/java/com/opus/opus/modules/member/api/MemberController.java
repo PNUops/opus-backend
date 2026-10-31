@@ -10,6 +10,7 @@ import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.StatisticsQueryService;
+import com.opus.opus.modules.member.application.dto.request.AdminMemberSearchRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
@@ -47,6 +48,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -213,10 +215,9 @@ public class MemberController {
     @Secured("ROLE_관리자")
     @GetMapping("/admin/members")
     public ResponseEntity<Page<AdminMemberResponse>> getAdminMembers(
-            @RequestParam(required = false) final String keyword, @RequestParam(required = false) final String roleType,
-            @RequestParam(required = false) final String status, @RequestParam(defaultValue = "0") final int page,
-            @RequestParam(defaultValue = "20") final int size) {
-        return ResponseEntity.ok(memberQueryService.getAdminMembers(keyword, roleType, status, page, size));
+            @Valid @ModelAttribute final AdminMemberSearchRequest request) {
+        return ResponseEntity.ok(memberQueryService.getAdminMembers(request.keyword(), request.roleType(),
+                request.status(), request.page(), request.size()));
     }
 
     @Secured("ROLE_관리자")
