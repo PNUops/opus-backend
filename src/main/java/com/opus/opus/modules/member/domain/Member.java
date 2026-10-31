@@ -131,6 +131,37 @@ public class Member extends BaseEntity {
                 .orElse(null);
     }
 
+    // ROLE_관리자는 기본 역할과 별개의 관리 권한이므로 제외한다. 기본 역할이 없는 관리자 전용 계정은 null
+    public MemberRoleType getBaseRole() {
+        return roles.stream()
+                .filter(role -> role != MemberRoleType.ROLE_관리자)
+                .min(Comparator.comparingLong(MemberRoleType::getId))
+                .orElse(null);
+    }
+
+    // 기존 기본 역할을 모두 대체하고 관리 권한은 유지한다.
+    // 생성 시 불변 Set이 주입될 수 있어 컬렉션을 수정하지 않고 새 Set으로 교체한다.
+    public void changeBaseRole(final MemberRoleType role) {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(Set.of(role));
+        if (isAdmin()) {
+            changedRoles.add(MemberRoleType.ROLE_관리자);
+        }
+        this.roles = changedRoles;
+    }
+
+    // 생성 시 불변 Set이 주입될 수 있어 컬렉션을 수정하지 않고 새 Set으로 교체한다.
+    public void grantAdmin() {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(roles);
+        changedRoles.add(MemberRoleType.ROLE_관리자);
+        this.roles = changedRoles;
+    }
+
+    public void revokeAdmin() {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(roles);
+        changedRoles.remove(MemberRoleType.ROLE_관리자);
+        this.roles = changedRoles;
+    }
+
     public boolean hasStaffRole() {
         return roles.stream().anyMatch(MemberRoleType::isStaff);
     }

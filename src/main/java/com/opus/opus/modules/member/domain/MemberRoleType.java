@@ -13,6 +13,7 @@ public enum MemberRoleType {
     ;
 
     private static final Set<MemberRoleType> STAFF_ROLES = Set.of(ROLE_교수, ROLE_외부멘토);
+    private static final Set<MemberRoleType> ADMIN_ASSIGNABLE_ROLES = Set.of(ROLE_학생, ROLE_교수, ROLE_외부멘토);
 
     private final long id;
 
@@ -22,5 +23,9 @@ public enum MemberRoleType {
 
     public boolean isStaff() {
         return STAFF_ROLES.contains(this);
+    }
+
+    public boolean isAdminAssignable() {
+        return ADMIN_ASSIGNABLE_ROLES.contains(this);
     }
 }

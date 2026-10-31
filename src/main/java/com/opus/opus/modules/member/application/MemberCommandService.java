@@ -2,16 +2,34 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
+import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
@@ -19,10 +37,12 @@ import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
@@ -31,13 +51,19 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.member.domain.MemberAdminPermissionHistory;
+import com.opus.opus.modules.member.domain.MemberRoleChangeHistory;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
+import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.StaffInfo;
+import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
+import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.member.exception.MemberExceptionType;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +85,8 @@ public class MemberCommandService {
     private final MemberRepository memberRepository;
     private final StaffInfoRepository staffInfoRepository;
     private final MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
+    private final MemberRoleChangeHistoryRepository memberRoleChangeHistoryRepository;
+    private final MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
 
     private final MemberConvenience memberConvenience;
 
@@ -327,19 +355,155 @@ public class MemberCommandService {
     }
 
     public void withdraw(final Member member) {
+        validateNotAdminWithdrawal(member);
+
+        memberWithdrawalHistoryRepository.save(
+                MemberWithdrawalHistory.builder()
+                        .memberId(member.getId())
+                        .reason(MemberWithdrawalReason.USER_REQUEST)
+                        .build()
+        );
         deleteMember(member);
     }
 
-    public void withdrawByAdmin(final Long memberId, final ForceDeleteMemberRequest request) {
-        final Member member = memberConvenience.getValidateExistMember(memberId);
+    private void validateNotAdminWithdrawal(final Member member) {
+        if (member.isAdmin()) {
+            throw new MemberException(CANNOT_WITHDRAW_SELF);
+        }
+    }
+
+    public void withdrawByAdmin(final Long adminId, final Long memberId, final ForceDeleteMemberRequest request) {
+        validateNotSelfWithdrawal(adminId, memberId);
+        // 관리자끼리 동시에 서로를 탈퇴시켜 활성 관리자가 0명이 되지 않도록, 활성 관리자 행을 먼저 잠근 뒤 대상 행을 잠근다.
+        final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member member = getActiveMemberForUpdate(memberId, ALREADY_WITHDRAWN_MEMBER);
+
         memberWithdrawalHistoryRepository.save(
                 MemberWithdrawalHistory.builder()
                         .memberId(member.getId())
                         .reason(request.reason())
                         .detail(request.detail())
+                        .adminId(adminId)
                         .build()
         );
         deleteMember(member);
+    }
+
+    private void validateNotSelfWithdrawal(final Long adminId, final Long memberId) {
+        if (adminId.equals(memberId)) {
+            throw new MemberException(CANNOT_WITHDRAW_SELF);
+        }
+    }
+
+    public void changeRole(final Long adminId, final Long memberId, final MemberRoleChangeRequest request) {
+        validateRoleChangeRequest(adminId, memberId, request);
+        // 관리자 권한 해제가 동시에 일어나 활성 관리자가 0명이 되지 않도록, 탈퇴와 같은 순서(관리자 행 → 대상 행)로 잠근다.
+        final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
+        validateRoleChangeTarget(member, request);
+
+        member.changeBaseRole(request.newRole());
+        saveRoleChangeHistory(adminId, member, request);
+    }
+
+    private void validateRoleChangeTarget(final Member member, final MemberRoleChangeRequest request) {
+        if (member.isFakeMember()) {
+            throw new MemberException(FAKE_MEMBER_NOT_MANAGEABLE);
+        }
+        if (member.getBaseRole() == ROLE_직원) {
+            throw new MemberException(EMPLOYEE_ROLE_NOT_MODIFIABLE);
+        }
+        if (member.getBaseRole() != request.currentRole()) {
+            throw new MemberException(ROLE_CHANGE_CONFLICT);
+        }
+    }
+
+    private void saveRoleChangeHistory(final Long adminId, final Member member,
+                                       final MemberRoleChangeRequest request) {
+        memberRoleChangeHistoryRepository.save(
+                MemberRoleChangeHistory.builder()
+                        .memberId(member.getId())
+                        .adminId(adminId)
+                        .beforeRole(request.currentRole())
+                        .afterRole(request.newRole())
+                        .build()
+        );
+    }
+
+    private void validateRoleChangeRequest(final Long adminId, final Long memberId,
+                                           final MemberRoleChangeRequest request) {
+        if (!request.newRole().isAdminAssignable()) {
+            throw new MemberException(NOT_ASSIGNABLE_ROLE);
+        }
+        if (request.currentRole() == request.newRole()) {
+            throw new MemberException(SAME_ROLE);
+        }
+        if (adminId.equals(memberId)) {
+            throw new MemberException(CANNOT_CHANGE_OWN_ROLE);
+        }
+    }
+
+    public void changeAdminPermission(final Long adminId, final Long memberId,
+                                      final AdminPermissionChangeRequest request) {
+        validateNotOwnAdminPermissionChange(adminId, memberId);
+        final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE);
+        validateAdminPermissionTarget(member, request);
+
+        if (request.isAdmin()) {
+            member.grantAdmin();
+        } else {
+            member.revokeAdmin();
+        }
+        saveAdminPermissionHistory(adminId, member, request);
+    }
+
+    private void validateNotOwnAdminPermissionChange(final Long adminId, final Long memberId) {
+        if (adminId.equals(memberId)) {
+            throw new MemberException(CANNOT_CHANGE_OWN_ADMIN_PERMISSION);
+        }
+    }
+
+    private void validateAdminPermissionTarget(final Member member, final AdminPermissionChangeRequest request) {
+        if (member.isFakeMember()) {
+            throw new MemberException(FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE);
+        }
+        if (member.isAdmin() == request.isAdmin()) {
+            throw new MemberException(ADMIN_PERMISSION_UNCHANGED);
+        }
+        if (!request.isAdmin() && member.getBaseRole() == null) {
+            throw new MemberException(BASE_ROLE_REQUIRED);
+        }
+    }
+
+    private void saveAdminPermissionHistory(final Long adminId, final Member member,
+                                            final AdminPermissionChangeRequest request) {
+        memberAdminPermissionHistoryRepository.save(
+                MemberAdminPermissionHistory.builder()
+                        .memberId(member.getId())
+                        .adminId(adminId)
+                        .granted(request.isAdmin())
+                        .build()
+        );
+    }
+
+    // @Secured 검사 후 락을 기다리는 동안 권한이 해제될 수 있어, 잠긴 활성 관리자 목록으로 요청자를 다시 확인한다.
+    // 요청자 본인은 대상이 될 수 없으므로, 이 검증을 통과하면 처리 후에도 활성 관리자가 최소 한 명 남는다.
+    private void validateRequesterIsActiveAdmin(final Long adminId, final List<Member> activeAdmins) {
+        if (activeAdmins.stream().noneMatch(admin -> admin.getId().equals(adminId))) {
+            throw new MemberException(NOT_ADMIN);
+        }
+    }
+
+    private Member getActiveMemberForUpdate(final Long memberId, final MemberExceptionType withdrawnExceptionType) {
+        return memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> {
+                    final boolean isWithdrawn = memberConvenience.findByIdIncludingDeleted(memberId).isPresent();
+                    return new MemberException(isWithdrawn ? withdrawnExceptionType : NOT_FOUND_MEMBER);
+                });
     }
 
     private void deleteMember(final Member member) {
