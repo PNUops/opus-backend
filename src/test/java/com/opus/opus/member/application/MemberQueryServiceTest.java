@@ -44,7 +44,7 @@ import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalRes
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
-import com.opus.opus.modules.member.domain.MemberStatus;
+import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;

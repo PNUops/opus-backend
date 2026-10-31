@@ -1,8 +1,8 @@
 package com.opus.opus.modules.member.application.dto.response;
 
+import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
-import com.opus.opus.modules.member.domain.MemberStatus;
 import java.time.LocalDateTime;
 
 public record AdminMemberResponse(

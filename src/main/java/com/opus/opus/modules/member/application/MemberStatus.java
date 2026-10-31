@@ -1,4 +1,6 @@
-package com.opus.opus.modules.member.domain;
+package com.opus.opus.modules.member.application;
+
+import com.opus.opus.modules.member.domain.Member;
 
 public enum MemberStatus {
     ACTIVE,
