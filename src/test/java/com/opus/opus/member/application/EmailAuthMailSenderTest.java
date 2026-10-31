@@ -31,7 +31,7 @@ public class EmailAuthMailSenderTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 메일 발송에 성공하면 인증 코드를 10분 TTL로 저장한다.")
     void 메일_발송에_성공하면_인증_코드를_10분_TTL로_저장한다() {
-        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY);
+        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY, System.currentTimeMillis());
 
         assertThat(authRedisUtil.get(AUTH_KEY)).isEqualTo("newCode");
         assertThat(authRedisUtil.ttl(AUTH_KEY, TimeUnit.SECONDS)).isBetween(590L, 600L);
@@ -42,7 +42,7 @@ public class EmailAuthMailSenderTest extends IntegrationTest {
     void 메일_발송에_실패하면_인증_코드를_저장하지_않는다() {
         willThrow(new MailSendException("SMTP 응답 없음")).given(mailUtil).sendMail(any(), any(), any());
 
-        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY);
+        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY, System.currentTimeMillis());
 
         assertThat(authRedisUtil.exists(AUTH_KEY)).isFalse();
     }
@@ -53,7 +53,7 @@ public class EmailAuthMailSenderTest extends IntegrationTest {
         authRedisUtil.set(AUTH_KEY, "previousCode", 10, TimeUnit.MINUTES);
         willThrow(new MailSendException("SMTP 응답 없음")).given(mailUtil).sendMail(any(), any(), any());
 
-        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY);
+        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY, System.currentTimeMillis());
 
         assertThat(authRedisUtil.get(AUTH_KEY)).isEqualTo("previousCode");
     }
@@ -65,7 +65,7 @@ public class EmailAuthMailSenderTest extends IntegrationTest {
         authRedisUtil.incrementWithTtl(COUNT_KEY, 1, TimeUnit.DAYS);
         willThrow(new MailSendException("SMTP 응답 없음")).given(mailUtil).sendMail(any(), any(), any());
 
-        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY);
+        emailAuthMailSender.send(EMAIL, "newCode", AUTH_KEY, COUNT_KEY, System.currentTimeMillis());
 
         assertThat(authRedisUtil.get(COUNT_KEY)).isEqualTo("1");
     }

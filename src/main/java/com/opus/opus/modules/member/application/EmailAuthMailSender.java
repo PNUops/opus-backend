@@ -22,19 +22,22 @@ public class EmailAuthMailSender {
     private final AuthRedisUtil authRedisUtil;
 
     @Async("mailTaskExecutor")
-    public void send(final String email, final String authCode, final String authKey, final String countKey) {
+    public void send(final String email, final String authCode, final String authKey, final String countKey,
+                     final long requestedAt) {
+        final long startTime = System.currentTimeMillis();
         try {
             sendAuthCodeMail(email, authCode);
+            log.info("인증 메일 발송 완료 [email={}, queueWaitMs={}, sendMs={}]",
+                    email, startTime - requestedAt, System.currentTimeMillis() - startTime);
             authRedisUtil.set(authKey, authCode, AUTH_CODE_TTL, TimeUnit.MINUTES);
         } catch (final MailException e) {
-            log.warn("인증 메일 발송 실패 [email={}]: {}", email, e.getMessage());
+            log.warn("인증 메일 발송 실패 [email={}, queueWaitMs={}, sendMs={}]: {}",
+                    email, startTime - requestedAt, System.currentTimeMillis() - startTime, e.getMessage());
             authRedisUtil.decrementIfExists(countKey);
         }
     }
 
     private void sendAuthCodeMail(final String email, final String authCode) {
-        final long startTime = System.currentTimeMillis();
         mailUtil.sendMail(List.of(email), AUTH_MAIL_SUBJECT, "인증코드는 " + authCode + " 입니다.");
-        log.info("인증 메일 발송 완료 [email={}, elapsedMs={}]", email, System.currentTimeMillis() - startTime);
     }
 }

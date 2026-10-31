@@ -252,7 +252,7 @@ public class MemberCommandService {
     private void sendAuthCodeMail(final String email, final String authKey) {
         final String countKey = emailAuthCountKey(email);
         try {
-            emailAuthMailSender.send(email, generateRandomAuthCode(), authKey, countKey);
+            emailAuthMailSender.send(email, generateRandomAuthCode(), authKey, countKey, System.currentTimeMillis());
         } catch (final TaskRejectedException e) {
             authRedisUtil.decrementIfExists(countKey);
             throw new MemberException(EMAIL_AUTH_MAIL_BUSY);

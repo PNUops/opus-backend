@@ -4,6 +4,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_A
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.willThrow;
 
 import com.opus.opus.helper.IntegrationTest;
@@ -33,7 +34,7 @@ public class MemberCommandServiceMailBusyTest extends IntegrationTest {
     void setUp() {
         authRedisUtil.delete(COUNT_KEY);
         willThrow(new TaskRejectedException("메일 발송 큐 초과")).given(emailAuthMailSender)
-                .send(any(), any(), any(), any());
+                .send(any(), any(), any(), any(), anyLong());
     }
 
     @Test

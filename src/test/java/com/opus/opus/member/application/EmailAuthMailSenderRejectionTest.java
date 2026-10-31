@@ -39,10 +39,12 @@ public class EmailAuthMailSenderRejectionTest {
 
         try {
             for (int i = 0; i < 505; i++) {
-                emailAuthMailSender.send("rejection@pusan.ac.kr", "code", "authKey", "countKey");
+                emailAuthMailSender.send("rejection@pusan.ac.kr", "code", "authKey", "countKey",
+                        System.currentTimeMillis());
             }
 
-            assertThatThrownBy(() -> emailAuthMailSender.send("rejection@pusan.ac.kr", "code", "authKey", "countKey"))
+            assertThatThrownBy(() -> emailAuthMailSender.send("rejection@pusan.ac.kr", "code", "authKey", "countKey",
+                    System.currentTimeMillis()))
                     .isInstanceOf(TaskRejectedException.class);
         } finally {
             blockLatch.countDown();
