@@ -420,8 +420,7 @@ public class MemberCommandService {
     private Member getActiveMemberForUpdate(final Long memberId, final MemberExceptionType withdrawnExceptionType) {
         return memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> {
-                    final boolean isWithdrawn = !memberConvenience.findAllByIdIncludingDeleted(List.of(memberId))
-                            .isEmpty();
+                    final boolean isWithdrawn = memberConvenience.findByIdIncludingDeleted(memberId).isPresent();
                     return new MemberException(isWithdrawn ? withdrawnExceptionType : NOT_FOUND_MEMBER);
                 });
     }

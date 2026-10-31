@@ -48,7 +48,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
@@ -144,7 +143,7 @@ public class MemberQueryService {
     }
 
     public MemberWithdrawalResponse getWithdrawal(final Long memberId) {
-        final Member member = findMemberIncludingDeleted(memberId)
+        final Member member = memberConvenience.findByIdIncludingDeleted(memberId)
                 .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
         if (!member.getIsDeleted()) {
             throw new MemberException(NOT_WITHDRAWN_MEMBER);
@@ -155,12 +154,8 @@ public class MemberQueryService {
         // 수행 관리자가 이후 탈퇴했더라도 이름을 보여주기 위해 탈퇴 회원까지 포함해 조회한다.
         final Member admin = (history == null || history.getAdminId() == null)
                 ? null
-                : findMemberIncludingDeleted(history.getAdminId()).orElse(null);
+                : memberConvenience.findByIdIncludingDeleted(history.getAdminId()).orElse(null);
         return MemberWithdrawalResponse.of(member, history, admin);
-    }
-
-    private Optional<Member> findMemberIncludingDeleted(final Long memberId) {
-        return memberConvenience.findAllByIdIncludingDeleted(List.of(memberId)).stream().findFirst();
     }
 
     private Boolean parseIsDeleted(final String status) {
