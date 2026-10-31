@@ -1444,9 +1444,10 @@ public class MemberApiDocsTest extends RestDocsTest {
     void 관리자가_일반_회원_목록을_조회한다() throws Exception {
         final List<AdminMemberResponse> content = List.of(
                 new AdminMemberResponse(3L, "김철수", "202412345", "chulsoo@pusan.ac.kr",
-                        MemberRoleType.ROLE_학생, MemberStatus.ACTIVE, LocalDateTime.of(2026, 4, 24, 10, 0)),
+                        List.of(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_학생), MemberStatus.ACTIVE,
+                        LocalDateTime.of(2026, 4, 24, 10, 0)),
                 new AdminMemberResponse(1L, "홍길동", null, "gildong@pusan.ac.kr",
-                        null, MemberStatus.WITHDRAWN, LocalDateTime.of(2026, 3, 9, 9, 30))
+                        List.of(), MemberStatus.WITHDRAWN, LocalDateTime.of(2026, 3, 9, 9, 30))
         );
         final Page<AdminMemberResponse> page = new PageImpl<>(content, PageRequest.of(0, 20), 2);
         when(memberQueryService.getAdminMembers(any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
@@ -1475,7 +1476,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("content[].name", "회원 이름"),
                                 stringFieldWithPath("content[].studentId", "학번 (소셜 가입 후 미입력 시 null)").optional(),
                                 stringFieldWithPath("content[].email", "회원 이메일"),
-                                stringFieldWithPath("content[].roleType", "OPUS 전역 역할 (탈퇴 회원은 역할이 삭제되어 null)").optional(),
+                                arrayFieldWithPath("content[].roles", "기본 역할과 관리 권한(ROLE_관리자) 목록, id 순서 (탈퇴 회원은 역할이 삭제되어 빈 배열)"),
                                 stringFieldWithPath("content[].status", "계정 상태 (ACTIVE: 활성, WITHDRAWN: 탈퇴)"),
                                 dateTimeFieldWithPath("content[].createdAt", "가입일시"),
                                 subsectionFieldWithPath("pageable", "페이지 정보"),

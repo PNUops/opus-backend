@@ -4,6 +4,8 @@ import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 
 public record AdminMemberResponse(
 
@@ -15,7 +17,7 @@ public record AdminMemberResponse(
 
         String email,
 
-        MemberRoleType roleType,
+        List<MemberRoleType> roles,
 
         MemberStatus status,
 
@@ -27,7 +29,9 @@ public record AdminMemberResponse(
                 member.getName(),
                 member.getStudentId(),
                 member.getEmail(),
-                member.getPrimaryRole(),
+                member.getRoles().stream()
+                        .sorted(Comparator.comparingLong(MemberRoleType::getId))
+                        .toList(),
                 MemberStatus.from(member),
                 member.getCreatedAt()
         );

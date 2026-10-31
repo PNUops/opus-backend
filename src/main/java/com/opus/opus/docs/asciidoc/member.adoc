@@ -881,7 +881,8 @@ include::{snippets}/admin-search-members-fail-invalid-role/query-parameters.adoc
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 탈퇴 회원을 포함하고 임시 계정은 제외하며, 가입일 최신순으로 반환합니다.
 `keyword`는 이름·학번·이메일에 부분 일치(대소문자 무시)하는 회원을 찾습니다.
-탈퇴 회원은 탈퇴 시 역할이 삭제되어 `roleType`이 `null`이며, `roleType` 필터에 걸리지 않습니다.
+`roles`는 기본 역할과 관리 권한(`ROLE_관리자`)을 함께 담습니다. 기본 역할 변경 API의 `currentRole`에는 `roles`에서 `ROLE_관리자`를 뺀 값을 보내고, 없으면 생략합니다.
+탈퇴 회원은 탈퇴 시 역할이 삭제되어 `roles`가 빈 배열이며, `roleType` 필터에 걸리지 않습니다.
 
 NOTE: 회원 검색 API(`GET /admin/members/search`)는 자동완성용입니다. 이메일 앞부분 일치로 탈퇴 회원을 제외하고 최대 20건을 반환하며 페이지네이션이 없습니다.
 이 API는 관리 목록용으로, 이름·학번·이메일 부분 일치로 탈퇴 회원을 포함해 페이지 단위로 반환합니다.

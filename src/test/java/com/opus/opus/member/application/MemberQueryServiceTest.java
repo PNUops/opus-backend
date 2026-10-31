@@ -517,12 +517,12 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         final Page<AdminMemberResponse> result = memberQueryService.getAdminMembers("acctall", null, null, 0, 20);
 
-        // 탈퇴(soft delete) 시 Hibernate가 member_roles 행을 삭제하므로 탈퇴 회원의 역할은 null이다.
+        // 탈퇴(soft delete) 시 Hibernate가 member_roles 행을 삭제하므로 탈퇴 회원의 역할은 빈 목록이다.
         assertThat(result.getContent())
-                .extracting(AdminMemberResponse::memberId, AdminMemberResponse::status, AdminMemberResponse::roleType)
+                .extracting(AdminMemberResponse::memberId, AdminMemberResponse::status, AdminMemberResponse::roles)
                 .containsExactly(
-                        tuple(withdrawn.getId(), MemberStatus.WITHDRAWN, null),
-                        tuple(active.getId(), MemberStatus.ACTIVE, MemberRoleType.ROLE_교수)
+                        tuple(withdrawn.getId(), MemberStatus.WITHDRAWN, List.of()),
+                        tuple(active.getId(), MemberStatus.ACTIVE, List.of(MemberRoleType.ROLE_교수))
                 );
         assertThat(result.getContent().get(1))
                 .satisfies(response -> {
@@ -558,6 +558,19 @@ public class MemberQueryServiceTest extends IntegrationTest {
         assertThat(result.getContent())
                 .extracting(AdminMemberResponse::memberId)
                 .containsExactly(professor.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자 회원 목록은 회원의 역할을 모두 id 순서로 반환한다.")
+    void 관리자_회원_목록은_회원의_역할을_모두_id_순서로_반환한다() {
+        memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(
+                "acctroles@pusan.ac.kr", MemberRoleType.ROLE_교수, MemberRoleType.ROLE_관리자));
+
+        final Page<AdminMemberResponse> result = memberQueryService.getAdminMembers("acctroles", null, null, 0, 20);
+
+        assertThat(result.getContent()).singleElement()
+                .extracting(AdminMemberResponse::roles)
+                .isEqualTo(List.of(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_교수));
     }
 
     @Test
