@@ -567,15 +567,15 @@ include::{snippets}/admin-withdraw-member-fail-self/http-response.adoc[]
 
 ====
 
-.❌ Case 7: 마지막 활성 관리자 탈퇴
+.❌ Case 7: 처리 중 관리자 권한 해제 (403)
 
 [%collapsible]
 
 ====
 
-include::{snippets}/admin-withdraw-member-fail-last-admin/http-request.adoc[]
+include::{snippets}/admin-withdraw-member-fail-not-admin/http-request.adoc[]
 
-include::{snippets}/admin-withdraw-member-fail-last-admin/http-response.adoc[]
+include::{snippets}/admin-withdraw-member-fail-not-admin/http-response.adoc[]
 
 ====
 
@@ -625,19 +625,7 @@ include::{snippets}/admin-change-member-role-fail-self/http-response.adoc[]
 
 ====
 
-.❌ Case 3: 마지막 활성 관리자의 관리자 권한 해제
-
-[%collapsible]
-
-====
-
-include::{snippets}/admin-change-member-role-fail-last-admin/http-request.adoc[]
-
-include::{snippets}/admin-change-member-role-fail-last-admin/http-response.adoc[]
-
-====
-
-.❌ Case 4: 지정할 수 없는 역할 (ROLE_직원)
+.❌ Case 3: 지정할 수 없는 역할 (ROLE_직원)
 
 [%collapsible]
 
@@ -649,7 +637,7 @@ include::{snippets}/admin-change-member-role-fail-not-assignable/http-response.a
 
 ====
 
-.❌ Case 5: 현재 역할과 같은 역할로 변경
+.❌ Case 4: 현재 역할과 같은 역할로 변경
 
 [%collapsible]
 
@@ -661,7 +649,7 @@ include::{snippets}/admin-change-member-role-fail-same-role/http-response.adoc[]
 
 ====
 
-.❌ Case 6: 탈퇴한 회원 (409)
+.❌ Case 5: 탈퇴한 회원 (409)
 
 [%collapsible]
 
@@ -673,7 +661,7 @@ include::{snippets}/admin-change-member-role-fail-withdrawn/http-response.adoc[]
 
 ====
 
-.❌ Case 7: 임시 계정
+.❌ Case 6: 임시 계정
 
 [%collapsible]
 
@@ -685,7 +673,7 @@ include::{snippets}/admin-change-member-role-fail-fake-member/http-response.adoc
 
 ====
 
-.❌ Case 8: 존재하지 않는 회원 ID (404)
+.❌ Case 7: 존재하지 않는 회원 ID (404)
 
 [%collapsible]
 
@@ -697,7 +685,7 @@ include::{snippets}/admin-change-member-role-fail-not-found/http-response.adoc[]
 
 ====
 
-.❌ Case 9: 변경할 역할 누락
+.❌ Case 8: 변경할 역할 누락
 
 [%collapsible]
 
@@ -706,6 +694,18 @@ include::{snippets}/admin-change-member-role-fail-not-found/http-response.adoc[]
 include::{snippets}/admin-change-member-role-fail-missing-new-role/http-request.adoc[]
 
 include::{snippets}/admin-change-member-role-fail-missing-new-role/http-response.adoc[]
+
+====
+
+.❌ Case 9: 처리 중 관리자 권한 해제 (403)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-not-admin/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-not-admin/http-response.adoc[]
 
 ====
 == `GET`: 회원 검색

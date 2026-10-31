@@ -14,8 +14,8 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
@@ -365,8 +365,8 @@ public class MemberCommandService {
         validateNotSelfWithdrawal(adminId, memberId);
         // 관리자끼리 동시에 서로를 탈퇴시켜 활성 관리자가 0명이 되지 않도록, 활성 관리자 행을 먼저 잠근 뒤 대상 행을 잠근다.
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, ALREADY_WITHDRAWN_MEMBER);
-        validateNotLastAdmin(member, activeAdmins);
 
         memberWithdrawalHistoryRepository.save(
                 MemberWithdrawalHistory.builder()
@@ -389,18 +389,25 @@ public class MemberCommandService {
         validateRoleChangeRequest(adminId, memberId, request);
         // 관리자 권한 해제가 동시에 일어나 활성 관리자가 0명이 되지 않도록, 탈퇴와 같은 순서(관리자 행 → 대상 행)로 잠근다.
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
+        validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
+        validateRoleChangeTarget(member, request);
+
+        member.changeRole(request.newRole());
+        saveRoleChangeHistory(adminId, member, request);
+    }
+
+    private void validateRoleChangeTarget(final Member member, final MemberRoleChangeRequest request) {
         if (member.isFakeMember()) {
             throw new MemberException(FAKE_MEMBER_NOT_MANAGEABLE);
         }
         if (member.getPrimaryRole() != request.currentRole()) {
             throw new MemberException(ROLE_CHANGE_CONFLICT);
         }
-        if (request.newRole() != ROLE_관리자) {
-            validateNotLastAdmin(member, activeAdmins);
-        }
+    }
 
-        member.changeRole(request.newRole());
+    private void saveRoleChangeHistory(final Long adminId, final Member member,
+                                       final MemberRoleChangeRequest request) {
         memberRoleChangeHistoryRepository.save(
                 MemberRoleChangeHistory.builder()
                         .memberId(member.getId())
@@ -425,18 +432,20 @@ public class MemberCommandService {
         }
     }
 
+    // @Secured 검사 후 락을 기다리는 동안 권한이 해제될 수 있어, 잠긴 활성 관리자 목록으로 요청자를 다시 확인한다.
+    // 요청자 본인은 대상이 될 수 없으므로, 이 검증을 통과하면 처리 후에도 활성 관리자가 최소 한 명 남는다.
+    private void validateRequesterIsActiveAdmin(final Long adminId, final List<Member> activeAdmins) {
+        if (activeAdmins.stream().noneMatch(admin -> admin.getId().equals(adminId))) {
+            throw new MemberException(NOT_ADMIN);
+        }
+    }
+
     private Member getActiveMemberForUpdate(final Long memberId, final MemberExceptionType withdrawnExceptionType) {
         return memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> {
                     final boolean isWithdrawn = memberConvenience.findByIdIncludingDeleted(memberId).isPresent();
                     return new MemberException(isWithdrawn ? withdrawnExceptionType : NOT_FOUND_MEMBER);
                 });
-    }
-
-    private void validateNotLastAdmin(final Member member, final List<Member> activeAdmins) {
-        if (member.isAdmin() && activeAdmins.size() <= 1) {
-            throw new MemberException(LAST_ADMIN_PROTECTED);
-        }
     }
 
     private void deleteMember(final Member member) {

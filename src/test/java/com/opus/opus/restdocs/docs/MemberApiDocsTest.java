@@ -4,7 +4,7 @@ import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
@@ -781,6 +781,32 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 강제 탈퇴는 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_강제_탈퇴는_403_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, null);
+        willThrow(new MemberException(NOT_ADMIN))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andDo(document("admin-withdraw-member-fail-not-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[실패] 관리자가 본인을 강제 탈퇴하면 400을 반환한다.")
     void 관리자가_본인을_강제_탈퇴하면_400_에러를_반환한다() throws Exception {
         // Given
@@ -802,32 +828,6 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         pathParameters(
                                 parameterWithName("memberId").description("요청한 관리자 본인의 회원 ID")
-                        )
-                ));
-    }
-
-    @Test
-    @DisplayName("[실패] 마지막 활성 관리자를 강제 탈퇴하면 400을 반환한다.")
-    void 마지막_활성_관리자를_강제_탈퇴하면_400_에러를_반환한다() throws Exception {
-        // Given
-        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
-                MemberWithdrawalReason.OPERATIONAL_CLEANUP, null);
-        willThrow(new MemberException(LAST_ADMIN_PROTECTED))
-                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
-
-        // When & Then
-        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andDo(document("admin-withdraw-member-fail-last-admin",
-                        requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description(
-                                        String.format(authorizationHeaderDescription, "(관리자)"))
-                        ),
-                        pathParameters(
-                                parameterWithName("memberId").description("마지막 활성 관리자의 회원 ID")
                         )
                 ));
     }
@@ -878,14 +878,6 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 마지막 활성 관리자의 관리자 권한을 해제하면 400을 반환한다.")
-    void 마지막_활성_관리자의_관리자_권한을_해제하면_400_에러를_반환한다() throws Exception {
-        documentRoleChangeFailure("admin-change-member-role-fail-last-admin", LAST_ADMIN_PROTECTED,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_교수),
-                status().isBadRequest(), "마지막 활성 관리자의 회원 ID");
-    }
-
-    @Test
     @DisplayName("[실패] 지정할 수 없는 역할로 변경하면 400을 반환한다.")
     void 지정할_수_없는_역할로_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-not-assignable", NOT_ASSIGNABLE_ROLE,
@@ -899,6 +891,14 @@ public class MemberApiDocsTest extends RestDocsTest {
         documentRoleChangeFailure("admin-change-member-role-fail-same-role", SAME_ROLE,
                 new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_학생),
                 status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 역할 변경은 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_역할_변경은_403_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-admin", NOT_ADMIN,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isForbidden(), "역할을 변경할 회원 ID");
     }
 
     @Test

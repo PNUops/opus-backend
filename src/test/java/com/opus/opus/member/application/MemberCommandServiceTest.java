@@ -12,7 +12,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.LAST_ADMIN_PROTECTED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
@@ -694,8 +694,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 마지막 활성 관리자를 강제 탈퇴하면 예외가 발생한다.")
-    void 마지막_활성_관리자를_강제_탈퇴하면_예외가_발생한다() {
+    @DisplayName("[실패] 요청자가 활성 관리자가 아니면 마지막 관리자를 강제 탈퇴할 수 없다.")
+    void 요청자가_활성_관리자가_아니면_마지막_관리자를_강제_탈퇴할_수_없다() {
         // given
         // 다른 관리자가 먼저 탈퇴 처리되어 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
         final Member lastAdmin = saveAdmin();
@@ -705,7 +705,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // when & then
         assertThatThrownBy(() -> memberCommandService.withdrawByAdmin(teamLeader.getId(), lastAdmin.getId(), request))
                 .isInstanceOf(MemberException.class)
-                .hasMessage(LAST_ADMIN_PROTECTED.errorMessage());
+                .hasMessage(NOT_ADMIN.errorMessage());
         assertThat(memberRepository.findById(lastAdmin.getId())).isPresent();
         assertThat(memberWithdrawalHistoryRepository.count()).isZero();
     }
@@ -909,8 +909,8 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[실패] 마지막 활성 관리자의 관리자 권한을 해제하면 예외가 발생한다.")
-    void 마지막_활성_관리자의_관리자_권한을_해제하면_예외가_발생한다() {
+    @DisplayName("[실패] 요청자가 활성 관리자가 아니면 마지막 관리자의 역할을 변경할 수 없다.")
+    void 요청자가_활성_관리자가_아니면_마지막_관리자의_역할을_변경할_수_없다() {
         // given
         // 다른 관리자가 먼저 권한을 해제해 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
         final Member lastAdmin = saveAdmin();
@@ -919,7 +919,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(teamLeader.getId(), lastAdmin.getId(), request))
                 .isInstanceOf(MemberException.class)
-                .hasMessage(LAST_ADMIN_PROTECTED.errorMessage());
+                .hasMessage(NOT_ADMIN.errorMessage());
         assertThat(reloadMember(lastAdmin.getId()).getRoles()).containsExactly(ROLE_관리자);
     }
 

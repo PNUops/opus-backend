@@ -30,7 +30,6 @@ public enum MemberExceptionType implements BaseExceptionType {
     ALREADY_WITHDRAWN_MEMBER(HttpStatus.CONFLICT, "이미 탈퇴한 회원입니다."),
     NOT_WITHDRAWN_MEMBER(HttpStatus.BAD_REQUEST, "탈퇴하지 않은 회원입니다."),
     CANNOT_WITHDRAW_SELF(HttpStatus.BAD_REQUEST, "본인 계정은 탈퇴 처리할 수 없습니다. 다른 관리자에게 요청해주세요."),
-    LAST_ADMIN_PROTECTED(HttpStatus.BAD_REQUEST, "마지막 활성 관리자는 탈퇴하거나 관리자 권한을 해제할 수 없습니다. 다른 관리자 권한을 먼저 부여해주세요."),
     NOT_ASSIGNABLE_ROLE(HttpStatus.BAD_REQUEST, "관리자 화면에서 지정할 수 없는 역할입니다. 학생·교수·외부멘토·관리자 중에서 선택해주세요."),
     SAME_ROLE(HttpStatus.BAD_REQUEST, "현재 역할과 동일한 역할로 변경할 수 없습니다."),
     CANNOT_CHANGE_OWN_ROLE(HttpStatus.BAD_REQUEST, "본인의 역할은 변경할 수 없습니다. 다른 관리자에게 요청해주세요."),
