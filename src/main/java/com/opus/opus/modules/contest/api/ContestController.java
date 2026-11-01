@@ -207,6 +207,7 @@ public class ContestController {
         return ResponseEntity.ok(contestQueryService.getContestVoteLog(contestId, page, size));
     }
 
+    @Secured("ROLE_관리자")
     @GetMapping("/contests/{contestId}/ranking")
     public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
         final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contestId);
