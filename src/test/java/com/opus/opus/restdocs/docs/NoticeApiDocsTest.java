@@ -66,6 +66,27 @@ public class NoticeApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 공지사항 내용이 3000자를 초과하면 400 에러를 반환한다.")
+    void 공지사항_내용이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("전체 공지 제목", "a".repeat(3001));
+
+        mockMvc.perform(post("/notices")
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("create-notice-fail-length-exceeded",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "공지 제목"),
+                                stringFieldWithPath("description", "공지 내용 (3000자 초과)")
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 유효한 요청이면 정상적으로 전체 공지사항이 수정된다.")
     void 유효한_요청이면_정상적으로_전체_공지사항이_수정된다() throws Exception {
         final NoticeRequest request = new NoticeRequest("수정된 전체 공지 제목", "수정된 전체 공지 내용");
@@ -87,6 +108,30 @@ public class NoticeApiDocsTest extends RestDocsTest {
                         requestFields(
                                 stringFieldWithPath("title", "수정된 공지 제목"),
                                 stringFieldWithPath("description", "수정된 공지 내용")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 공지사항 수정 시 내용이 3000자를 초과하면 400 에러를 반환한다.")
+    void 공지사항_수정_시_내용이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
+        final NoticeRequest request = new NoticeRequest("수정된 전체 공지 제목", "a".repeat(3001));
+
+        mockMvc.perform(patch("/notices/{noticeId}", 1)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("update-notice-fail-length-exceeded",
+                        pathParameters(
+                                parameterWithName("noticeId").description("공지 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("title", "수정된 공지 제목"),
+                                stringFieldWithPath("description", "수정된 공지 내용 (3000자 초과)")
                         )
                 ));
     }

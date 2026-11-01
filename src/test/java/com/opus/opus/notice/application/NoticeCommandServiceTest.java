@@ -58,6 +58,18 @@ public class NoticeCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 공지 내용은 3000자까지 등록할 수 있다.")
+    void 공지_내용은_3000자까지_등록할_수_있다() {
+        final String maxLengthDescription = "a".repeat(3000);
+        final NoticeRequest request = new NoticeRequest("전체 공지 제목", maxLengthDescription);
+
+        noticeCommandService.createNotice(request);
+
+        final Notice notice = noticeRepository.findAllByContestIdIsNullOrderByCreatedAtDesc().get(0);
+        assertThat(notice.getDescription()).hasSize(3000);
+    }
+
+    @Test
     @DisplayName("[성공] 전체 공지사항이 정상적으로 수정된다.")
     void 전체_공지사항이_정상적으로_수정된다() {
         final String beforeTitle = globalNotice.getTitle();
