@@ -1,14 +1,31 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_PUSAN_UNIVERSITY_EMAIL;
 import static java.time.LocalDateTime.of;
@@ -40,9 +57,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.modules.file.exception.FileException;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
@@ -51,6 +70,9 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse.CommentInfo;
@@ -60,16 +82,19 @@ import com.opus.opus.modules.member.application.dto.response.MyLikePreviewRespon
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.MemberRoleType;
+import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.member.exception.MemberExceptionType;
 import com.opus.opus.modules.contest.application.dto.response.TeamSummaryResponse.AwardInfo;
 import com.opus.opus.global.security.annotation.LoginMember;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import com.opus.opus.restdocs.RestDocsTest;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -81,6 +106,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.mock.web.MockMultipartFile;
 
 public class MemberApiDocsTest extends RestDocsTest {
@@ -631,12 +657,31 @@ public class MemberApiDocsTest extends RestDocsTest {
     }
 
     @Test
+    @DisplayName("[실패] 관리자가 회원 탈퇴 API로 본인 탈퇴하면 400을 반환한다.")
+    void 관리자가_회원_탈퇴_API로_본인_탈퇴하면_400_에러를_반환한다() throws Exception {
+        // Given
+        willThrow(new MemberException(CANNOT_WITHDRAW_SELF))
+                .given(memberCommandService).withdraw(any());
+
+        // When & Then
+        mockMvc.perform(delete("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("withdraw-member-fail-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        )
+                ));
+    }
+
+    @Test
     @DisplayName("[성공] 관리자가 회원을 강제 탈퇴시킨다.")
     void 관리자가_회원을_강제_탈퇴시킨다() throws Exception {
         // Given
         final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
                 MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
-        doNothing().when(memberCommandService).withdrawByAdmin(any(), any());
+        doNothing().when(memberCommandService).withdrawByAdmin(any(), any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 1L)
@@ -653,8 +698,35 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
-                                stringFieldWithPath("detail", "기타 사항").optional()
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
+                                stringFieldWithPath("detail", "상세 사유 (최대 500자, ETC 선택 시 필수)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 기타 사유를 선택하고 상세 사유가 없으면 400을 반환한다.")
+    void 기타_사유를_선택하고_상세_사유가_없으면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(MemberWithdrawalReason.ETC, " ");
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-missing-etc-detail",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("reason", "탈퇴 사유 (ETC)"),
+                                stringFieldWithPath("detail", "상세 사유 (공백, 검증 실패 유도)").optional()
                         )
                 ));
     }
@@ -666,7 +738,7 @@ public class MemberApiDocsTest extends RestDocsTest {
         final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
                 MemberWithdrawalReason.FRAUDULENT_USE, "동일 학번으로 다수 계정 생성 정황 확인");
         willThrow(new MemberException(NOT_FOUND_MEMBER))
-                .given(memberCommandService).withdrawByAdmin(any(), any());
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
 
         // When & Then
         mockMvc.perform(delete("/admin/members/{memberId}", 999L)
@@ -683,8 +755,355 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 탈퇴한 회원을 강제 탈퇴하면 409를 반환한다.")
+    void 이미_탈퇴한_회원을_강제_탈퇴하면_409_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, null);
+        willThrow(new MemberException(ALREADY_WITHDRAWN_MEMBER))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andDo(document("admin-withdraw-member-fail-already-withdrawn",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("이미 탈퇴한 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 강제 탈퇴는 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_강제_탈퇴는_403_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, null);
+        willThrow(new MemberException(NOT_ADMIN))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andDo(document("admin-withdraw-member-fail-not-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴시킬 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인을 강제 탈퇴하면 400을 반환한다.")
+    void 관리자가_본인을_강제_탈퇴하면_400_에러를_반환한다() throws Exception {
+        // Given
+        final ForceDeleteMemberRequest request = new ForceDeleteMemberRequest(
+                MemberWithdrawalReason.USER_REQUEST, null);
+        willThrow(new MemberException(CANNOT_WITHDRAW_SELF))
+                .given(memberCommandService).withdrawByAdmin(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(delete("/admin/members/{memberId}", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-withdraw-member-fail-self",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("요청한 관리자 본인의 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 OPUS 역할을 변경한다.")
+    void 관리자가_회원의_OPUS_역할을_변경한다() throws Exception {
+        // Given
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(
+                MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수);
+        doNothing().when(memberCommandService).changeRole(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-change-member-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("역할을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("currentRole", "화면에 보이던 현재 기본 역할. 기본 역할이 없는 관리자 전용 계정은 생략").optional(),
+                                stringFieldWithPath("newRole", "변경할 기본 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 회원의 현재 역할이 이미 변경되었으면 409를 반환한다.")
+    void 회원의_현재_역할이_이미_변경되었으면_409_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-conflict", ROLE_CHANGE_CONFLICT,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isConflict(), "현재 역할이 이미 변경된 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 400을 반환한다.")
+    void 관리자가_본인의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-self", CANNOT_CHANGE_OWN_ROLE,
+                new MemberRoleChangeRequest(null, MemberRoleType.ROLE_학생),
+                status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 지정할 수 없는 역할로 변경하면 400을 반환한다.")
+    void 지정할_수_없는_역할로_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-assignable", NOT_ASSIGNABLE_ROLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_직원),
+                status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 직원 회원의 기본 역할을 변경하면 400을 반환한다.")
+    void 직원_회원의_기본_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-employee", EMPLOYEE_ROLE_NOT_MODIFIABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_직원, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "직원 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 현재 역할과 같은 역할로 변경하면 400을 반환한다.")
+    void 현재_역할과_같은_역할로_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-same-role", SAME_ROLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_학생),
+                status().isBadRequest(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 역할 변경은 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_역할_변경은_403_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-admin", NOT_ADMIN,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isForbidden(), "역할을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 409를 반환한다.")
+    void 탈퇴한_회원의_역할을_변경하면_409_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-withdrawn", WITHDRAWN_MEMBER_NOT_MODIFIABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isConflict(), "탈퇴한 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 역할을 변경하면 400을 반환한다.")
+    void 임시_계정의_역할을_변경하면_400_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-fake-member", FAKE_MEMBER_NOT_MANAGEABLE,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isBadRequest(), "임시 계정 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할을 변경하면 404를 반환한다.")
+    void 존재하지_않는_회원의_역할을_변경하면_404_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-not-found", NOT_FOUND_MEMBER,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isNotFound(), "존재하지 않는 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 변경할 역할이 없으면 400을 반환한다.")
+    void 변경할_역할이_없으면_400_에러를_반환한다() throws Exception {
+        // Given
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, null);
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-change-member-role-fail-missing-new-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("역할을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                stringFieldWithPath("currentRole", "회원의 현재 역할"),
+                                stringFieldWithPath("newRole", "변경할 역할 (누락, 검증 실패 유도)").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 회원의 관리 권한을 변경한다.")
+    void 관리자가_회원의_관리_권한을_변경한다() throws Exception {
+        // Given
+        final AdminPermissionChangeRequest request = new AdminPermissionChangeRequest(true);
+        doNothing().when(memberCommandService).changeAdminPermission(any(), any(), any());
+
+        // When & Then
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-change-admin-permission",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("관리 권한을 변경할 회원 ID")
+                        ),
+                        requestFields(
+                                booleanFieldWithPath("isAdmin", "true면 부여, false면 회수")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 요청한 관리 권한 상태와 같으면 409를 반환한다.")
+    void 요청한_관리_권한_상태와_같으면_409_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-unchanged", ADMIN_PERMISSION_UNCHANGED,
+                status().isConflict(), "이미 요청한 상태인 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 기본 역할이 없는 회원의 관리 권한을 회수하면 400을 반환한다.")
+    void 기본_역할이_없는_회원의_관리_권한을_회수하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-base-role-required", BASE_ROLE_REQUIRED,
+                status().isBadRequest(), "기본 역할이 없는 관리자 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 관리 권한을 변경하면 400을 반환한다.")
+    void 관리자가_본인의_관리_권한을_변경하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-self", CANNOT_CHANGE_OWN_ADMIN_PERMISSION,
+                status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 관리 권한 변경은 403을 반환한다.")
+    void 처리_중_관리자_권한이_해제되면_관리_권한_변경은_403_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-not-admin", NOT_ADMIN,
+                status().isForbidden(), "관리 권한을 변경할 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 관리 권한을 변경하면 409를 반환한다.")
+    void 탈퇴한_회원의_관리_권한을_변경하면_409_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-withdrawn",
+                WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE,
+                status().isConflict(), "탈퇴한 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 관리 권한을 변경하면 400을 반환한다.")
+    void 임시_계정의_관리_권한을_변경하면_400_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-fake-member",
+                FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE,
+                status().isBadRequest(), "임시 계정 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 관리 권한을 변경하면 404를 반환한다.")
+    void 존재하지_않는_회원의_관리_권한을_변경하면_404_에러를_반환한다() throws Exception {
+        documentAdminPermissionFailure("admin-change-admin-permission-fail-not-found", NOT_FOUND_MEMBER,
+                status().isNotFound(), "존재하지 않는 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] isAdmin이 없으면 관리 권한 변경은 400을 반환한다.")
+    void isAdmin이_없으면_관리_권한_변경은_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-change-admin-permission-fail-missing-is-admin",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("관리 권한을 변경할 회원 ID")
+                        )
+                ));
+    }
+
+    private void documentAdminPermissionFailure(final String identifier, final MemberExceptionType exceptionType,
+                                                final ResultMatcher expectedStatus,
+                                                final String memberIdDescription) throws Exception {
+        willThrow(new MemberException(exceptionType))
+                .given(memberCommandService).changeAdminPermission(any(), any(), any());
+
+        mockMvc.perform(patch("/admin/members/{memberId}/admin-permission", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AdminPermissionChangeRequest(false))))
+                .andExpect(expectedStatus)
+                .andDo(document(identifier,
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description(memberIdDescription)
+                        )
+                ));
+    }
+
+    private void documentRoleChangeFailure(final String identifier, final MemberExceptionType exceptionType,
+                                           final MemberRoleChangeRequest request, final ResultMatcher expectedStatus,
+                                           final String memberIdDescription) throws Exception {
+        willThrow(new MemberException(exceptionType))
+                .given(memberCommandService).changeRole(any(), any(), any());
+
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(expectedStatus)
+                .andDo(document(identifier,
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description(memberIdDescription)
                         )
                 ));
     }
@@ -712,7 +1131,7 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("탈퇴시킬 회원 ID")
                         ),
                         requestFields(
-                                stringFieldWithPath("reason", "탈퇴 사유 (FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, ETC: 기타)"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타)"),
                                 stringFieldWithPath("detail", "기타 사항 (500자 초과)").optional()
                         )
                 ));
@@ -1016,6 +1435,239 @@ public class MemberApiDocsTest extends RestDocsTest {
                         queryParameters(
                                 parameterWithName("keyword").description("검색할 이메일").optional(),
                                 parameterWithName("roleType").description("유효하지 않은 역할 값").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 일반 회원 목록을 조회한다.")
+    void 관리자가_일반_회원_목록을_조회한다() throws Exception {
+        final List<AdminMemberResponse> content = List.of(
+                new AdminMemberResponse(3L, "김철수", "202412345", "chulsoo@pusan.ac.kr",
+                        List.of(MemberRoleType.ROLE_관리자, MemberRoleType.ROLE_학생), MemberStatus.ACTIVE,
+                        LocalDateTime.of(2026, 4, 24, 10, 0)),
+                new AdminMemberResponse(1L, "홍길동", null, "gildong@pusan.ac.kr",
+                        List.of(), MemberStatus.WITHDRAWN, LocalDateTime.of(2026, 3, 9, 9, 30))
+        );
+        final Page<AdminMemberResponse> page = new PageImpl<>(content, PageRequest.of(0, 20), 2);
+        when(memberQueryService.getAdminMembers(any(), any(), any(), anyInt(), anyInt())).thenReturn(page);
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("keyword", "pusan")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-members",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("keyword").description("이름·학번·이메일 부분 일치 검색어 (대소문자 무시). 미지정 시 전체").optional(),
+                                parameterWithName("roleType").description("OPUS 역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional(),
+                                parameterWithName("status").description("계정 상태 필터 (ACTIVE, WITHDRAWN). 미지정 시 전체").optional(),
+                                parameterWithName("page").description("페이지 번호 (0 이상, 기본값 0)").optional(),
+                                parameterWithName("size").description("페이지 크기 (1~100, 기본값 20)").optional()
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("content[]", "회원 목록 (가입일 최신순, 임시 계정 제외)"),
+                                numberFieldWithPath("content[].memberId", "회원 ID"),
+                                stringFieldWithPath("content[].name", "회원 이름"),
+                                stringFieldWithPath("content[].studentId", "학번 (소셜 가입 후 미입력 시 null)").optional(),
+                                stringFieldWithPath("content[].email", "회원 이메일"),
+                                arrayFieldWithPath("content[].roles", "기본 역할과 관리 권한(ROLE_관리자) 목록, id 순서 (탈퇴 회원은 역할이 삭제되어 빈 배열)"),
+                                stringFieldWithPath("content[].status", "계정 상태 (ACTIVE: 활성, WITHDRAWN: 탈퇴)"),
+                                dateTimeFieldWithPath("content[].createdAt", "가입일시"),
+                                subsectionFieldWithPath("pageable", "페이지 정보"),
+                                booleanFieldWithPath("last", "마지막 페이지 여부"),
+                                numberFieldWithPath("totalPages", "전체 페이지 수"),
+                                numberFieldWithPath("totalElements", "전체 요소 수"),
+                                booleanFieldWithPath("first", "첫 페이지 여부"),
+                                numberFieldWithPath("size", "페이지 크기"),
+                                numberFieldWithPath("number", "현재 페이지 번호"),
+                                subsectionFieldWithPath("sort", "정렬 정보"),
+                                numberFieldWithPath("numberOfElements", "현재 페이지 요소 수"),
+                                booleanFieldWithPath("empty", "비어있는 페이지 여부")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 계정 상태로 회원 목록을 조회하면 400을 반환한다.")
+    void 유효하지_않은_계정_상태로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_MEMBER_STATUS))
+                .given(memberQueryService).getAdminMembers(any(), any(), any(), anyInt(), anyInt());
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("status", "DELETED"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-status",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("status").description("유효하지 않은 계정 상태 값")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 유효하지 않은 역할로 회원 목록을 조회하면 400을 반환한다.")
+    void 유효하지_않은_역할로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(INVALID_ROLE_TYPE))
+                .given(memberQueryService).getAdminMembers(any(), any(), any(), anyInt(), anyInt());
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("roleType", "ROLE_없음"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-role",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("roleType").description("유효하지 않은 역할 값")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 범위를 벗어난 page 또는 size로 회원 목록을 조회하면 400을 반환한다.")
+    void 범위를_벗어난_page_또는_size로_회원_목록을_조회하면_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("page", "-1")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-members-fail-invalid-page",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        queryParameters(
+                                parameterWithName("page").description("범위를 벗어난 페이지 번호"),
+                                parameterWithName("size").description("범위를 벗어난 페이지 크기")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] size가 0이면 회원 목록 조회는 400을 반환한다.")
+    void size가_0이면_회원_목록_조회는_400_에러를_반환한다() throws Exception {
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("[성공] size가 100이면 회원 목록을 조회한다.")
+    void size가_100이면_회원_목록을_조회한다() throws Exception {
+        when(memberQueryService.getAdminMembers(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/admin/members")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("size", "100"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 활동·탈퇴 회원 수를 조회한다.")
+    void 관리자가_활동_탈퇴_회원_수를_조회한다() throws Exception {
+        when(memberQueryService.getAdminMemberSummary()).thenReturn(new AdminMemberSummaryResponse(300L, 5L));
+
+        mockMvc.perform(get("/admin/members/summary")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-member-summary",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("activeCount", "활동 사용자 수 (임시 계정 제외)"),
+                                numberFieldWithPath("withdrawnCount", "탈퇴 사용자 수 (임시 계정 제외)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 탈퇴 회원의 탈퇴 내역을 조회한다.")
+    void 관리자가_탈퇴_회원의_탈퇴_내역을_조회한다() throws Exception {
+        final MemberWithdrawalResponse response = new MemberWithdrawalResponse(
+                3L, "홍길동", null, "gildong@pusan.ac.kr",
+                MemberWithdrawalReason.DUPLICATE_ACCOUNT, "동일인 중복 가입 확인",
+                LocalDateTime.of(2026, 10, 10, 18, 8),
+                new MemberWithdrawalResponse.ProcessedAdmin(1L, "관리자"));
+        when(memberQueryService.getWithdrawal(any())).thenReturn(response);
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 3L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-member-withdrawal",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴 회원 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("memberId", "회원 ID"),
+                                stringFieldWithPath("name", "회원 이름"),
+                                stringFieldWithPath("studentId", "학번 (미입력 시 null)").optional(),
+                                stringFieldWithPath("email", "회원 이메일"),
+                                stringFieldWithPath("reason", "탈퇴 사유 (USER_REQUEST: 사용자 요청, FRAUDULENT_USE: 부정 이용, DUPLICATE_ACCOUNT: 중복 계정, OPERATIONAL_CLEANUP: 운영상 정리, ETC: 기타). 탈퇴 이력이 없으면 null").optional(),
+                                stringFieldWithPath("detail", "상세 사유 (내부 운영 메모)").optional(),
+                                dateTimeFieldWithPath("withdrawnAt", "탈퇴 처리 시각. 탈퇴 이력이 없으면 null").optional(),
+                                subsectionFieldWithPath("processedBy", "수행 관리자. 본인 탈퇴이거나 탈퇴 이력이 없으면 null").optional(),
+                                numberFieldWithPath("processedBy.memberId", "수행 관리자 회원 ID").optional(),
+                                stringFieldWithPath("processedBy.name", "수행 관리자 이름").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴하지 않은 회원의 탈퇴 내역을 조회하면 400을 반환한다.")
+    void 탈퇴하지_않은_회원의_탈퇴_내역을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_WITHDRAWN_MEMBER))
+                .given(memberQueryService).getWithdrawal(any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-member-withdrawal-fail-not-withdrawn",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("탈퇴하지 않은 회원 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 탈퇴 내역을 조회하면 404를 반환한다.")
+    void 존재하지_않는_회원의_탈퇴_내역을_조회하면_404_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberQueryService).getWithdrawal(any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/withdrawal", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-get-member-withdrawal-fail-not-found",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         )
                 ));
     }
