@@ -247,6 +247,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                         description, null, null))
                 .isInstanceOf(ContestMemberException.class)
                 .hasMessage(NOT_ASSIGNED_TEAM.errorMessage());
+        assertThat(feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId())).isEmpty();
+        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).isEmpty();
     }
 
     @Test
@@ -262,6 +264,8 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                         description, null, null))
                 .isInstanceOf(ContestMemberException.class)
                 .hasMessage(NOT_ASSIGNED_TEAM.errorMessage());
+        assertThat(feedbackRepository.findAllBySubmissionIdOrderByIdDesc(submission.getId())).isEmpty();
+        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).isEmpty();
     }
 
     @Test
@@ -277,6 +281,26 @@ public class ContestSubmissionFeedbackCommandServiceTest extends IntegrationTest
                         description, null, null))
                 .isInstanceOf(ContestException.class)
                 .hasMessage(NOT_ALLOWED_TO_VIEW_SUBMISSION.errorMessage());
+        assertThat(feedbackRepository.findAllBySubmissionIdOrderByIdDesc(teamOnlySubmission.getId())).isEmpty();
+        assertThat(applicationEvents.stream(SubmissionFeedbackNotificationEvent.class)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 관계자에게 공개된 제출물에는 피드백을 저장할 수 있다.")
+    void 관계자에게_공개된_제출물에는_피드백을_저장할_수_있다() {
+        final ContestSubmissionItem staffOnlyItem = submissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItemWithVisibility(contest, SubmissionVisibility.STAFF));
+        final ContestSubmission staffOnlySubmission = submissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), staffOnlyItem));
+
+        feedbackCommandService.saveFeedback(contest.getId(), staffOnlySubmission.getId(), member.getId(), description,
+                null, null);
+
+        final List<ContestSubmissionFeedback> feedbacks =
+                feedbackRepository.findAllBySubmissionIdOrderByIdDesc(staffOnlySubmission.getId());
+        assertThat(feedbacks).hasSize(1);
+        assertThat(feedbacks.get(0).getDescription()).isEqualTo(description);
+        assertThat(feedbacks.get(0).getMemberId()).isEqualTo(member.getId());
     }
 
     @Test
