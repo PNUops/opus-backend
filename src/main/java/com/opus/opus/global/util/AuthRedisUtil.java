@@ -1,13 +1,20 @@
 package com.opus.opus.global.util;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AuthRedisUtil {
+
+    private static final RedisScript<Long> DECREMENT_IF_EXISTS_SCRIPT = new DefaultRedisScript<>(
+            "if redis.call('EXISTS', KEYS[1]) == 1 then return redis.call('DECR', KEYS[1]) end return nil",
+            Long.class);
 
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -41,5 +48,9 @@ public class AuthRedisUtil {
             redisTemplate.expire(key, timeout, unit);
         }
         return value;
+    }
+
+    public void decrementIfExists(final String key) {
+        redisTemplate.execute(DECREMENT_IF_EXISTS_SCRIPT, List.of(key));
     }
 }
