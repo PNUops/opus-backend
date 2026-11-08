@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,44 +52,38 @@ public class AsyncConfigTest {
 
     @Test
     @DisplayName("[성공] 종료 대기 시간이 지나면 큐에 남은 메일 발송 작업은 실행하지 않는다.")
-    void 종료_대기_시간이_지나면_큐에_남은_메일_발송_작업은_실행하지_않는다() throws InterruptedException {
+    void 종료_대기_시간이_지나면_큐에_남은_메일_발송_작업은_실행하지_않는다() {
         final ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) new AsyncConfig(1L).mailTaskExecutor();
-        final CountDownLatch blockLatch = new CountDownLatch(1);
         final AtomicInteger queuedCompletedCount = new AtomicInteger();
 
         for (int i = 0; i < 5; i++) {
-            executor.execute(() -> awaitQuietly(blockLatch));
+            executor.execute(() -> sleepQuietly(1500));
         }
         for (int i = 0; i < 10; i++) {
             executor.execute(queuedCompletedCount::incrementAndGet);
         }
         executor.onApplicationEvent(new ContextClosedEvent(new GenericApplicationContext()));
-        blockLatch.countDown();
-        executor.getThreadPoolExecutor().awaitTermination(1, TimeUnit.SECONDS);
 
         assertThat(queuedCompletedCount.get()).isZero();
     }
 
     @Test
-    @DisplayName("[성공] 종료 대기 시간이 지나도 발송 중이던 메일 발송 작업은 중단하지 않는다.")
-    void 종료_대기_시간이_지나도_발송_중이던_메일_발송_작업은_중단하지_않는다() throws InterruptedException {
+    @DisplayName("[성공] 종료 대기 시간이 지나도 발송 중이던 메일 발송 작업은 중단하지 않고 끝날 때까지 기다린다.")
+    void 종료_대기_시간이_지나도_발송_중이던_메일_발송_작업은_중단하지_않고_끝날_때까지_기다린다() {
         final ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) new AsyncConfig(1L).mailTaskExecutor();
-        final CountDownLatch blockLatch = new CountDownLatch(1);
-        final AtomicInteger interruptedCount = new AtomicInteger();
+        final AtomicInteger completedCount = new AtomicInteger();
 
         for (int i = 0; i < 5; i++) {
             executor.execute(() -> {
-                awaitQuietly(blockLatch);
-                if (Thread.currentThread().isInterrupted()) {
-                    interruptedCount.incrementAndGet();
+                sleepQuietly(1500);
+                if (!Thread.currentThread().isInterrupted()) {
+                    completedCount.incrementAndGet();
                 }
             });
         }
         executor.onApplicationEvent(new ContextClosedEvent(new GenericApplicationContext()));
-        blockLatch.countDown();
-        executor.getThreadPoolExecutor().awaitTermination(1, TimeUnit.SECONDS);
 
-        assertThat(interruptedCount.get()).isZero();
+        assertThat(completedCount.get()).isEqualTo(5);
     }
 
     private static void awaitQuietly(final CountDownLatch latch) {

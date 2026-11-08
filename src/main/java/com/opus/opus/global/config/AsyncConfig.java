@@ -20,6 +20,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableScheduling
 public class AsyncConfig {
 
+    private static final long MAIL_IN_FLIGHT_AWAIT_SECONDS = 15L;
+
     private final long mailShutdownAwaitSeconds;
 
     public AsyncConfig(@Value("${async.mail.shutdown-await-seconds:30}") final long mailShutdownAwaitSeconds) {
@@ -60,12 +62,17 @@ public class AsyncConfig {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(mailShutdownAwaitSeconds, TimeUnit.SECONDS)) {
-                final List<Runnable> droppedTasks = new ArrayList<>();
-                executor.getQueue().drainTo(droppedTasks);
-                log.warn("메일 발송 큐 종료 대기 시간 초과 [미발송={}건]", droppedTasks.size());
+                dropQueuedTasks(executor);
+                executor.awaitTermination(MAIL_IN_FLIGHT_AWAIT_SECONDS, TimeUnit.SECONDS);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private static void dropQueuedTasks(final ThreadPoolExecutor executor) {
+        final List<Runnable> droppedTasks = new ArrayList<>();
+        executor.getQueue().drainTo(droppedTasks);
+        log.warn("메일 발송 큐 종료 대기 시간 초과 [미발송={}건]", droppedTasks.size());
     }
 }
