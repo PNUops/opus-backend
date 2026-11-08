@@ -1,5 +1,7 @@
 package com.opus.opus.global.config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +60,9 @@ public class AsyncConfig {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(mailShutdownAwaitSeconds, TimeUnit.SECONDS)) {
-                log.warn("메일 발송 큐 종료 대기 시간 초과 [미발송={}건]", executor.shutdownNow().size());
+                final List<Runnable> droppedTasks = new ArrayList<>();
+                executor.getQueue().drainTo(droppedTasks);
+                log.warn("메일 발송 큐 종료 대기 시간 초과 [미발송={}건]", droppedTasks.size());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
