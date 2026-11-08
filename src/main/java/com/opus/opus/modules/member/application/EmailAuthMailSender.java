@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class EmailAuthMailSender {
 
     private static final long AUTH_CODE_TTL = 10L;
+    private static final int MASK_VISIBLE_LENGTH = 2;
     private static final String AUTH_MAIL_SUBJECT = "SW프로젝트관리시스템 인증코드 발송 메일입니다.";
 
     private final MailUtil mailUtil;
@@ -27,17 +28,23 @@ public class EmailAuthMailSender {
         final long startTime = System.currentTimeMillis();
         try {
             sendAuthCodeMail(email, authCode);
-            log.info("인증 메일 발송 완료 [email={}, queueWaitMs={}, sendMs={}]",
-                    email, startTime - requestedAt, System.currentTimeMillis() - startTime);
+            log.info("인증 메일 발송 완료 [queueWaitMs={}, sendMs={}]",
+                    startTime - requestedAt, System.currentTimeMillis() - startTime);
             authRedisUtil.set(authKey, authCode, AUTH_CODE_TTL, TimeUnit.MINUTES);
         } catch (final MailException e) {
             log.warn("인증 메일 발송 실패 [email={}, queueWaitMs={}, sendMs={}]: {}",
-                    email, startTime - requestedAt, System.currentTimeMillis() - startTime, e.getMessage());
+                    maskEmail(email), startTime - requestedAt, System.currentTimeMillis() - startTime,
+                    e.getMessage(), e);
             authRedisUtil.decrementIfExists(countKey);
         }
     }
 
     private void sendAuthCodeMail(final String email, final String authCode) {
         mailUtil.sendMail(List.of(email), AUTH_MAIL_SUBJECT, "인증코드는 " + authCode + " 입니다.");
+    }
+
+    private static String maskEmail(final String email) {
+        final int atIndex = email.indexOf('@');
+        return email.substring(0, Math.min(MASK_VISIBLE_LENGTH, atIndex)) + "***" + email.substring(atIndex);
     }
 }
