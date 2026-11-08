@@ -3,6 +3,8 @@ package com.opus.opus.global.config;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.annotation.Configuration;
@@ -10,12 +12,17 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+@Slf4j
 @Configuration
 @EnableAsync
 @EnableScheduling
 public class AsyncConfig {
 
-    private static final long MAIL_SHUTDOWN_AWAIT_SECONDS = 30L;
+    private final long mailShutdownAwaitSeconds;
+
+    public AsyncConfig(@Value("${async.mail.shutdown-await-seconds:30}") final long mailShutdownAwaitSeconds) {
+        this.mailShutdownAwaitSeconds = mailShutdownAwaitSeconds;
+    }
 
     @Bean(name = "imageTaskExecutor")
     public Executor imageTaskExecutor() {
@@ -47,10 +54,12 @@ public class AsyncConfig {
         return executor;
     }
 
-    private static void awaitQueuedTasks(final ThreadPoolExecutor executor) {
+    private void awaitQueuedTasks(final ThreadPoolExecutor executor) {
         executor.shutdown();
         try {
-            executor.awaitTermination(MAIL_SHUTDOWN_AWAIT_SECONDS, TimeUnit.SECONDS);
+            if (!executor.awaitTermination(mailShutdownAwaitSeconds, TimeUnit.SECONDS)) {
+                log.warn("메일 발송 큐 종료 대기 시간 초과 [미발송={}건]", executor.shutdownNow().size());
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
