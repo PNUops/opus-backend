@@ -3,6 +3,7 @@ package com.opus.opus.modules.team.domain.dao;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamVote;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +21,10 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
     @Modifying
     @Query(value = """
                 INSERT INTO team_vote (member_id, team_id, created_at, updated_at)
-                VALUES (:memberId, :teamId, NOW(), NOW())
+                VALUES (:memberId, :teamId, :now, :now)
                 ON DUPLICATE KEY UPDATE id = id
             """, nativeQuery = true)
-    void upsertVote(Long memberId, Long teamId);
+    void upsertVote(Long memberId, Long teamId, LocalDateTime now);
 
     @Query("SELECT COUNT(tv) FROM TeamVote tv JOIN tv.team t " +
             "WHERE tv.memberId = :memberId AND t.contestId = :contestId")
@@ -57,10 +58,10 @@ public interface TeamVoteRepository extends JpaRepository<TeamVote, Long> {
             JOIN tv.team t
             JOIN Contest c ON c.id = t.contestId
             WHERE tv.memberId = :memberId
-              AND CURRENT_TIMESTAMP BETWEEN c.voteStartAt AND c.voteEndAt
+              AND :now BETWEEN c.voteStartAt AND c.voteEndAt
             ORDER BY tv.createdAt DESC
             """)
-    List<MyVoteResponse> findMyVotes(Long memberId);
+    List<MyVoteResponse> findMyVotes(Long memberId, LocalDateTime now);
 
     @Query("""
                 SELECT tv
