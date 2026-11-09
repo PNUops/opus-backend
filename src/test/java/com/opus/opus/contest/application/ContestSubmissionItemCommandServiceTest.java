@@ -139,6 +139,20 @@ class ContestSubmissionItemCommandServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 제출 항목 설명은 3000자까지 등록할 수 있다.")
+    void 제출_항목_설명은_3000자까지_등록할_수_있다() {
+        final String maxLengthDescription = "a".repeat(3000);
+        final ContestSubmissionItemRequest request = new ContestSubmissionItemRequest(
+                "발표자료", null, maxLengthDescription, List.of(PDF, ZIP),
+                50, 3, LocalDateTime.of(2026, 7, 1, 0, 0), LocalDateTime.of(2026, 7, 31, 23, 59), true, PUBLIC);
+
+        contestSubmissionItemCommandService.createSubmissionItem(contest.getId(), request);
+
+        final ContestSubmissionItem submissionItem = contestSubmissionItemRepository.findAll().get(0);
+        assertThat(submissionItem.getDescription()).hasSize(3000);
+    }
+
+    @Test
     @DisplayName("[실패] 시작일시와 마감일시가 같으면 제출 항목 생성에 실패한다.")
     void 시작일시와_마감일시가_같으면_제출_항목_생성에_실패한다() {
         final LocalDateTime sameTime = LocalDateTime.of(2026, 7, 1, 0, 0);

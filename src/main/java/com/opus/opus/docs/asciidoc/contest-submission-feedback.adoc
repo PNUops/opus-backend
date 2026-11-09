@@ -95,7 +95,19 @@ include::{snippets}/save-submission-feedback-fail-file-not-found/http-response.a
 
 ====
 
-.❌ Case 6: 담당 팀이 아닌 제출물
+.❌ Case 6: 본문 3000자 초과
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-length-exceeded/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-length-exceeded/http-response.adoc[]
+
+====
+
+.❌ Case 7: 담당 팀이 아닌 제출물
 
 [%collapsible]
 
@@ -107,7 +119,7 @@ include::{snippets}/save-submission-feedback-fail-not-assigned-team/http-respons
 
 ====
 
-.❌ Case 7: 팀에게만 공개된 제출물
+.❌ Case 8: 팀에게만 공개된 제출물
 
 [%collapsible]
 
