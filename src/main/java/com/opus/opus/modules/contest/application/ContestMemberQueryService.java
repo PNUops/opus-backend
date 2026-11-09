@@ -1,7 +1,6 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.INVALID_MEMBER_TYPE;
-import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 
 import com.opus.opus.modules.contest.application.convenience.ContestCategoryConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -77,7 +76,7 @@ public class ContestMemberQueryService {
     public TeamSubmissionsResponse getTeamSubmissions(final Long contestId, final Long teamId, final Member mentor) {
         contestConvenience.validateExistContest(contestId);
         final Team team = teamConvenience.getValidateTeamInContest(teamId, contestId);
-        validateAssignedTeam(contestId, mentor.getId(), teamId);
+        contestMemberConvenience.validateAssignedTeam(contestId, mentor.getId(), teamId);
 
         final String trackName = contestTrackConvenience.getTrackNameMap(contestId).get(team.getTrackId());
 
@@ -230,12 +229,6 @@ public class ContestMemberQueryService {
                 .map(team -> MentorProjectResponse.of(team, trackNames.get(team.getTrackId()), roleType,
                         pendingCounts.getOrDefault(team.getId(), 0L)))
                 .toList();
-    }
-
-    private void validateAssignedTeam(final Long contestId, final Long memberId, final Long teamId) {
-        if (!contestMemberConvenience.isAssignedTeam(contestId, memberId, teamId)) {
-            throw new ContestMemberException(NOT_ASSIGNED_TEAM);
-        }
     }
 
     private Map<Long, Long> pendingFeedbackCountsByTeam(final Long contestId, final Long memberId,

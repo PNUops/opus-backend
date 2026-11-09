@@ -14,9 +14,9 @@ endif::[]
 
 link:./opus.html[API 목록으로 돌아가기]
 
-== `POST`: 제출물 피드백 작성 (Upsert)
+== `PUT`: 제출물 피드백 작성 (Upsert)
 
-외부멘토가 특정 제출물에 본인 피드백을 작성하여 저장합니다. 본인 피드백이 없으면 생성, 있으면 수정합니다. 첨부파일은 추가(`files`) / 삭제(`removeFileIds`)를 함께 처리합니다. (`multipart/form-data`)
+교수·외부멘토가 본인이 담당하는 팀의 제출물에 본인 피드백을 작성하여 저장합니다. 본인 피드백이 없으면 생성, 있으면 수정합니다. 담당 팀이 아닌 제출물이거나 팀에게만 공개된(`TEAM`) 제출물에는 저장할 수 없습니다. 첨부파일은 추가(`files`) / 삭제(`removeFileIds`)를 함께 처리합니다. (`multipart/form-data`)
 
 .Path Parameters
 include::{snippets}/save-submission-feedback/path-parameters.adoc[]
@@ -104,6 +104,30 @@ include::{snippets}/save-submission-feedback-fail-file-not-found/http-response.a
 include::{snippets}/save-submission-feedback-fail-length-exceeded/http-request.adoc[]
 
 include::{snippets}/save-submission-feedback-fail-length-exceeded/http-response.adoc[]
+
+====
+
+.❌ Case 7: 담당 팀이 아닌 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-not-assigned-team/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-not-assigned-team/http-response.adoc[]
+
+====
+
+.❌ Case 8: 팀에게만 공개된 제출물
+
+[%collapsible]
+
+====
+
+include::{snippets}/save-submission-feedback-fail-forbidden-visibility/http-request.adoc[]
+
+include::{snippets}/save-submission-feedback-fail-forbidden-visibility/http-response.adoc[]
 
 ====
 
