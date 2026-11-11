@@ -14,6 +14,7 @@ import com.opus.opus.modules.member.application.dto.request.AdminMemberSearchReq
 import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -203,6 +204,13 @@ public class MemberController {
                                                  @Valid @RequestBody final MemberRoleChangeRequest request) {
         memberCommandService.changeRole(admin.getId(), memberId, request);
         return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/{memberId}/role-change-blockers")
+    public ResponseEntity<RoleChangeBlockersResponse> getRoleChangeBlockers(@PathVariable final Long memberId,
+                                                                            @RequestParam final String newRole) {
+        return ResponseEntity.ok(memberQueryService.getRoleChangeBlockers(memberId, newRole));
     }
 
     @Secured("ROLE_관리자")

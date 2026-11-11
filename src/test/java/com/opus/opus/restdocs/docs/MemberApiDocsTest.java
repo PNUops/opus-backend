@@ -81,6 +81,7 @@ import com.opus.opus.modules.member.application.dto.response.MemberSearchRespons
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
@@ -1670,6 +1671,97 @@ public class MemberApiDocsTest extends RestDocsTest {
                                 parameterWithName("memberId").description("존재하지 않는 회원 ID")
                         )
                 ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 역할 변경을 막는 진행 중 대회 배정을 조회한다.")
+    void 관리자가_역할_변경을_막는_진행_중_대회_배정을_조회한다() throws Exception {
+        final RoleChangeBlockersResponse response = new RoleChangeBlockersResponse(
+                List.of(new RoleChangeBlockersResponse.TeamMembership(
+                        1L, "2026 창의융합 해커톤", 10L, "팀 옵스", "옵스 프로젝트", true)),
+                List.of());
+        when(memberQueryService.getRoleChangeBlockers(any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/admin/members/{memberId}/role-change-blockers", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("newRole", "ROLE_교수"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-role-change-blockers",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        pathParameters(
+                                parameterWithName("memberId").description("역할을 변경할 회원 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("newRole").description("변경할 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토)")
+                        ),
+                        responseFields(
+                                arrayFieldWithPath("teams", "역할 변경을 막는 진행 중 대회의 팀 소속. 교수·외부멘토로 변경할 때만 채워집니다."),
+                                numberFieldWithPath("teams[].contestId", "대회 ID"),
+                                stringFieldWithPath("teams[].contestName", "대회 이름"),
+                                numberFieldWithPath("teams[].teamId", "팀 ID"),
+                                stringFieldWithPath("teams[].teamName", "팀 이름").optional(),
+                                stringFieldWithPath("teams[].projectName", "프로젝트 이름").optional(),
+                                booleanFieldWithPath("teams[].isLeader", "팀장 여부. 해제하면 팀장이 없는 팀이 됩니다."),
+                                arrayFieldWithPath("staffAssignments", "역할 변경을 막는 진행 중 대회의 교수·외부멘토 담당 배정. 학생으로 변경할 때만 채워집니다.")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 학생으로 변경할 때는 진행 중 대회의 담당 배정을 조회한다.")
+    void 학생으로_변경할_때는_진행_중_대회의_담당_배정을_조회한다() throws Exception {
+        final RoleChangeBlockersResponse response = new RoleChangeBlockersResponse(
+                List.of(),
+                List.of(new RoleChangeBlockersResponse.StaffAssignment(1L, "2026 캡스톤디자인", 5L,
+                        List.of(new RoleChangeBlockersResponse.AssignedTeam(10L, "팀 옵스", "옵스 프로젝트")))));
+        when(memberQueryService.getRoleChangeBlockers(any(), any())).thenReturn(response);
+
+        mockMvc.perform(get("/admin/members/{memberId}/role-change-blockers", 3L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("newRole", "ROLE_학생"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-role-change-blockers-staff",
+                        responseFields(
+                                arrayFieldWithPath("teams", "팀 소속 (학생으로 변경할 때는 빈 목록)"),
+                                arrayFieldWithPath("staffAssignments", "역할 변경을 막는 진행 중 대회의 담당 배정"),
+                                numberFieldWithPath("staffAssignments[].contestId", "대회 ID"),
+                                stringFieldWithPath("staffAssignments[].contestName", "대회 이름"),
+                                numberFieldWithPath("staffAssignments[].contestMemberId", "담당 배정 ID (담당 배정 해제 API의 contestMemberId)"),
+                                arrayFieldWithPath("staffAssignments[].teams", "담당 팀 목록"),
+                                numberFieldWithPath("staffAssignments[].teams[].teamId", "팀 ID"),
+                                stringFieldWithPath("staffAssignments[].teams[].teamName", "팀 이름").optional(),
+                                stringFieldWithPath("staffAssignments[].teams[].projectName", "프로젝트 이름").optional()
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자 화면에서 지정할 수 없는 역할로 조회하면 400을 반환한다.")
+    void 관리자_화면에서_지정할_수_없는_역할로_변경_차단_배정을_조회하면_400_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_ASSIGNABLE_ROLE))
+                .given(memberQueryService).getRoleChangeBlockers(any(), any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/role-change-blockers", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("newRole", "ROLE_직원"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("admin-get-role-change-blockers-fail-not-assignable"));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할 변경 차단 배정을 조회하면 404를 반환한다.")
+    void 존재하지_않는_회원의_역할_변경_차단_배정을_조회하면_404_에러를_반환한다() throws Exception {
+        willThrow(new MemberException(NOT_FOUND_MEMBER))
+                .given(memberQueryService).getRoleChangeBlockers(any(), any());
+
+        mockMvc.perform(get("/admin/members/{memberId}/role-change-blockers", 999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .param("newRole", "ROLE_교수"))
+                .andExpect(status().isNotFound())
+                .andDo(document("admin-get-role-change-blockers-fail-not-found"));
     }
 
     @Test

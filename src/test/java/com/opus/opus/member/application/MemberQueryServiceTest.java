@@ -5,6 +5,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +15,7 @@ import static org.mockito.BDDMockito.given;
 
 import com.opus.opus.contest.ContestCategoryFixture;
 import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestMemberFixture;
 import com.opus.opus.contest.ContestTrackFixture;
 import com.opus.opus.file.FileFixture;
 import com.opus.opus.helper.IntegrationTest;
@@ -24,6 +26,7 @@ import com.opus.opus.modules.contest.domain.ContestCategory;
 import com.opus.opus.modules.contest.domain.ContestTrack;
 import com.opus.opus.modules.contest.domain.dao.ContestAwardRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestTrackRepository;
 import com.opus.opus.modules.file.application.FileQueryService;
@@ -42,6 +45,7 @@ import com.opus.opus.modules.member.application.dto.response.MyLikedProjectRespo
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.application.MemberStatus;
@@ -109,6 +113,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
     private TeamCommentRepository teamCommentRepository;
     @Autowired
     private TeamLikeRepository teamLikeRepository;
+    @Autowired
+    private ContestMemberRepository contestMemberRepository;
 
     @Autowired
     private FileQueryService fileQueryService;
@@ -735,5 +741,118 @@ public class MemberQueryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> memberQueryService.getWithdrawal(999999L))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 교수로 변경하려는 학생은 진행 중 대회의 팀 소속만 역할 변경을 막는다.")
+    void 교수로_변경하려는_학생은_진행_중_대회의_팀_소속만_역할_변경을_막는다() {
+        final Member student = saveMember("blockstudent@pusan.ac.kr", MemberRoleType.ROLE_학생);
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Contest pastContest = saveContest("지난 대회", false);
+        final Team currentTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(currentContest.getId(), "진행팀"));
+        final Team pastTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(pastContest.getId(), "지난팀"));
+        saveTeamMember(student, currentTeam, TeamMemberRoleType.ROLE_팀장);
+        saveTeamMember(student, pastTeam, TeamMemberRoleType.ROLE_팀원);
+
+        final RoleChangeBlockersResponse response =
+                memberQueryService.getRoleChangeBlockers(student.getId(), "ROLE_교수");
+
+        assertThat(response.teams())
+                .extracting(RoleChangeBlockersResponse.TeamMembership::contestId,
+                        RoleChangeBlockersResponse.TeamMembership::contestName,
+                        RoleChangeBlockersResponse.TeamMembership::teamId,
+                        RoleChangeBlockersResponse.TeamMembership::isLeader)
+                .containsExactly(tuple(currentContest.getId(), "진행 중 대회", currentTeam.getId(), true));
+        assertThat(response.staffAssignments()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[성공] 학생으로 변경하려는 교수는 진행 중 대회의 담당 배정만 역할 변경을 막는다.")
+    void 학생으로_변경하려는_교수는_진행_중_대회의_담당_배정만_역할_변경을_막는다() {
+        final Member professor = saveMember("blockprofessor@pusan.ac.kr", MemberRoleType.ROLE_교수);
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Contest pastContest = saveContest("지난 대회", false);
+        final Team firstTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(currentContest.getId(), "담당혀1"));
+        final Team secondTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(currentContest.getId(), "담당혀2"));
+        final Team pastTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(pastContest.getId(), "지난팀"));
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                currentContest, professor.getId(), List.of(firstTeam.getId(), secondTeam.getId())));
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                pastContest, professor.getId(), List.of(pastTeam.getId())));
+
+        final RoleChangeBlockersResponse response =
+                memberQueryService.getRoleChangeBlockers(professor.getId(), "ROLE_학생");
+
+        assertThat(response.teams()).isEmpty();
+        assertThat(response.staffAssignments()).hasSize(1);
+        final RoleChangeBlockersResponse.StaffAssignment assignment = response.staffAssignments().get(0);
+        assertThat(assignment.contestId()).isEqualTo(currentContest.getId());
+        assertThat(assignment.contestName()).isEqualTo("진행 중 대회");
+        assertThat(assignment.teams())
+                .extracting(RoleChangeBlockersResponse.AssignedTeam::teamId,
+                        RoleChangeBlockersResponse.AssignedTeam::teamName)
+                .containsExactlyInAnyOrder(
+                        tuple(firstTeam.getId(), "담당혀1"),
+                        tuple(secondTeam.getId(), "담당혀2"));
+    }
+
+    @Test
+    @DisplayName("[성공] 교수가 외부멘토로 변경할 때는 담당 배정이 역할 변경을 막지 않는다.")
+    void 교수가_외부멘토로_변경할_때는_담당_배정이_역할_변경을_막지_않는다() {
+        final Member professor = saveMember("blockmentor@pusan.ac.kr", MemberRoleType.ROLE_교수);
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Team assignedTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(currentContest.getId(), "담당팀"));
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                currentContest, professor.getId(), List.of(assignedTeam.getId())));
+
+        final RoleChangeBlockersResponse response =
+                memberQueryService.getRoleChangeBlockers(professor.getId(), "ROLE_외부멘토");
+
+        assertThat(response.teams()).isEmpty();
+        assertThat(response.staffAssignments()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자 화면에서 지정할 수 없는 역할로 조회하면 예외가 발생한다.")
+    void 관리자_화면에서_지정할_수_없는_역할로_조회하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(member.getId(), "ROLE_직원"))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 역할 값으로 조회하면 예외가 발생한다.")
+    void 존재하지_않는_역할_값으로_조회하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(member.getId(), "ROLE_없는역할"))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(INVALID_ROLE_TYPE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할 변경 차단 배정을 조회하면 예외가 발생한다.")
+    void 존재하지_않는_회원의_역할_변경_차단_배정을_조회하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(999999L, "ROLE_교수"))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    private Contest saveContest(final String contestName, final boolean isCurrent) {
+        final Contest contest = ContestFixture.createContestWithCategoryIdAndName(1L, contestName);
+        contest.updateIsCurrent(isCurrent);
+        return contestRepository.save(contest);
+    }
+
+    private void saveTeamMember(final Member teamMember, final Team team, final TeamMemberRoleType role) {
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(teamMember.getId())
+                .team(team)
+                .roles(Set.of(role))
+                .build());
     }
 }

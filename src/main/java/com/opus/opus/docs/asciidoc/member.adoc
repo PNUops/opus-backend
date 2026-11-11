@@ -722,6 +722,70 @@ include::{snippets}/admin-change-member-role-fail-employee/http-request.adoc[]
 include::{snippets}/admin-change-member-role-fail-employee/http-response.adoc[]
 
 ====
+
+== `GET`: 역할 변경을 막는 배정 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 새 역할로는 유지할 수 없는 **진행 중 대회(`isCurrent`)**의 배정을 반환합니다.
+학생으로 변경하면 교수·외부멘토 담당 배정(`staffAssignments`)이, 교수·외부멘토로 변경하면 팀 소속(`teams`)이 반환됩니다.
+교수 ↔ 외부멘토 변경은 담당 배정을 유지할 수 있어 막지 않습니다. 지난 대회의 배정은 반환하지 않습니다.
+두 목록이 모두 비어 있으면 바로 역할을 변경할 수 있습니다.
+
+.HTTP Request
+include::{snippets}/admin-get-role-change-blockers/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-get-role-change-blockers/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-get-role-change-blockers/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/admin-get-role-change-blockers/path-parameters.adoc[]
+
+.Query Parameters
+include::{snippets}/admin-get-role-change-blockers/query-parameters.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-get-role-change-blockers/response-fields.adoc[]
+
+.📌 학생으로 변경할 때 (담당 배정 반환)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-role-change-blockers-staff/http-response.adoc[]
+
+include::{snippets}/admin-get-role-change-blockers-staff/response-fields.adoc[]
+
+====
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 관리자 화면에서 지정할 수 없는 역할
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-role-change-blockers-fail-not-assignable/http-request.adoc[]
+
+include::{snippets}/admin-get-role-change-blockers-fail-not-assignable/http-response.adoc[]
+
+====
+
+.❌ Case 2: 존재하지 않는 회원
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-get-role-change-blockers-fail-not-found/http-request.adoc[]
+
+include::{snippets}/admin-get-role-change-blockers-fail-not-found/http-response.adoc[]
+
+====
+
 == `PATCH`: 관리자 회원 관리 권한 부여·회수
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 대상 회원의 기본 역할은 유지하고 관리 권한(`ROLE_관리자`)만 부여하거나 회수하며, 이력(대상 회원, 수행 관리자, 부여 여부, 시각)을 기록합니다.

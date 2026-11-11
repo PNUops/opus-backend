@@ -11,13 +11,19 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
+import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestMemberConvenience;
+import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.SearchConditionRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
@@ -30,6 +36,10 @@ import com.opus.opus.modules.member.application.dto.response.MyLikedProjectRespo
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.AssignedTeam;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.StaffAssignment;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.TeamMembership;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
@@ -37,7 +47,12 @@ import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import com.opus.opus.modules.team.domain.dao.MyProjectFlatResult;
 import com.opus.opus.modules.team.domain.dao.TeamCommentRepository;
 import com.opus.opus.modules.team.domain.dao.TeamLikeRepository;
@@ -47,6 +62,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
@@ -74,6 +91,11 @@ public class MemberQueryService {
 
     private final TeamMemberRepository teamMemberRepository;
     private final TeamVoteRepository teamVoteRepository;
+
+    private final ContestConvenience contestConvenience;
+    private final ContestMemberConvenience contestMemberConvenience;
+    private final TeamConvenience teamConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
 
     public EmailFindResponse getMyEmail(final String studentId) {
         final Member member = memberConvenience.getValidateExistMemberByStudentId(studentId);
@@ -155,6 +177,76 @@ public class MemberQueryService {
                 ? null
                 : memberConvenience.findByIdIncludingDeleted(history.getAdminId()).orElse(null);
         return MemberWithdrawalResponse.of(member, history, admin);
+    }
+
+    // 새 역할로는 유지할 수 없는 진행 중 대회의 배정을 반환한다.
+    // 학생이 되면 교수·외부멘토 담당 배정이, 교수·외부멘토가 되면 팀 소속이 역할 변경을 막는다.
+    public RoleChangeBlockersResponse getRoleChangeBlockers(final Long memberId, final String newRole) {
+        final MemberRoleType parsedNewRole = parseAssignableRole(newRole);
+        memberConvenience.getValidateExistMember(memberId);
+
+        final Map<Long, String> currentContestNames = contestConvenience.getCurrentContests().stream()
+                .collect(toMap(Contest::getId, Contest::getContestName));
+        if (currentContestNames.isEmpty()) {
+            return RoleChangeBlockersResponse.empty();
+        }
+
+        final List<Long> currentContestIds = List.copyOf(currentContestNames.keySet());
+        if (parsedNewRole.isStaff()) {
+            return new RoleChangeBlockersResponse(
+                    findTeamMemberships(memberId, currentContestIds, currentContestNames), List.of());
+        }
+        return new RoleChangeBlockersResponse(
+                List.of(), findStaffAssignments(memberId, currentContestIds, currentContestNames));
+    }
+
+    private MemberRoleType parseAssignableRole(final String role) {
+        final MemberRoleType parsedRole = parseRoleType(role);
+        if (parsedRole == null) {
+            throw new MemberException(INVALID_ROLE_TYPE);
+        }
+        if (!parsedRole.isAdminAssignable()) {
+            throw new MemberException(NOT_ASSIGNABLE_ROLE);
+        }
+        return parsedRole;
+    }
+
+    private List<TeamMembership> findTeamMemberships(final Long memberId, final List<Long> contestIds,
+                                                     final Map<Long, String> contestNames) {
+        return teamMemberConvenience.findAllByMemberIdInContests(memberId, contestIds).stream()
+                .map(teamMember -> toTeamMembership(teamMember, contestNames))
+                .toList();
+    }
+
+    private TeamMembership toTeamMembership(final TeamMember teamMember, final Map<Long, String> contestNames) {
+        final Team team = teamMember.getTeam();
+        return new TeamMembership(team.getContestId(), contestNames.get(team.getContestId()), team.getId(),
+                team.getTeamName(), team.getProjectName(),
+                teamMember.getRoles().contains(TeamMemberRoleType.ROLE_팀장));
+    }
+
+    private List<StaffAssignment> findStaffAssignments(final Long memberId, final List<Long> contestIds,
+                                                       final Map<Long, String> contestNames) {
+        final List<ContestMember> contestMembers =
+                contestMemberConvenience.findAllByMemberIdInContests(memberId, contestIds);
+        final Map<Long, Team> teams = teamConvenience.getTeamsByIds(contestMembers.stream()
+                .flatMap(contestMember -> contestMember.getTeamIds().stream())
+                .distinct()
+                .toList());
+        return contestMembers.stream()
+                .map(contestMember -> toStaffAssignment(contestMember, contestNames, teams))
+                .toList();
+    }
+
+    private StaffAssignment toStaffAssignment(final ContestMember contestMember, final Map<Long, String> contestNames,
+                                              final Map<Long, Team> teams) {
+        final Long contestId = contestMember.getContest().getId();
+        final List<AssignedTeam> assignedTeams = contestMember.getTeamIds().stream()
+                .map(teams::get)
+                .filter(Objects::nonNull)
+                .map(team -> new AssignedTeam(team.getId(), team.getTeamName(), team.getProjectName()))
+                .toList();
+        return new StaffAssignment(contestId, contestNames.get(contestId), contestMember.getId(), assignedTeams);
     }
 
     private Boolean parseIsDeleted(final String status) {

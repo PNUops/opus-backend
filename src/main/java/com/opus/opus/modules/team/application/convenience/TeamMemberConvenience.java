@@ -95,6 +95,10 @@ public class TeamMemberConvenience {
         }
     }
 
+    public List<TeamMember> findAllByMemberIdInContests(final Long memberId, final List<Long> contestIds) {
+        return teamMemberRepository.findAllByMemberIdAndContestIdIn(memberId, contestIds);
+    }
+
     public Set<Long> findMemberIdsByContestId(final Long contestId) {
         return teamMemberRepository.findMemberIdsByContestId(contestId);
     }
