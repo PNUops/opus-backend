@@ -23,6 +23,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYE
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
@@ -41,11 +42,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.opus.opus.contest.ContestFixture;
+import com.opus.opus.contest.ContestMemberFixture;
 import com.opus.opus.global.security.oauth2.GoogleOAuth2UserService;
 import com.opus.opus.helper.IntegrationTest;
 import com.opus.opus.member.MemberFixture;
 import com.opus.opus.member.StaffInfoFixture;
 import com.opus.opus.file.FileFixture;
+import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
+import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.member.application.MemberCommandService;
@@ -70,6 +76,14 @@ import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepos
 import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import com.opus.opus.modules.team.domain.Team;
+import com.opus.opus.modules.team.domain.TeamMember;
+import com.opus.opus.modules.team.domain.TeamMemberRoleType;
+import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
+import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.team.TeamFixture;
+import java.util.List;
+import java.util.Set;
 import org.springframework.mock.web.MockMultipartFile;
 import jakarta.persistence.EntityManager;
 import java.util.concurrent.TimeUnit;
@@ -108,6 +122,18 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
     @Autowired
     private MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
+
+    @Autowired
+    private ContestRepository contestRepository;
+
+    @Autowired
+    private ContestMemberRepository contestMemberRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private TeamMemberRepository teamMemberRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -1042,6 +1068,95 @@ public class MemberCommandServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), 999999L, request))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 진행 중 대회의 팀에 소속된 학생을 교수로 변경하면 예외가 발생하고 역할이 유지된다.")
+    void 진행_중_대회의_팀에_소속된_학생을_교수로_변경하면_예외가_발생하고_역할이_유지된다() {
+        // given
+        final Member admin = saveAdmin();
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        saveTeamMember(teamLeader, team);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
+        assertThat(memberRoleChangeHistoryRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[실패] 진행 중 대회의 담당 배정이 있는 교수를 학생으로 변경하면 예외가 발생한다.")
+    void 진행_중_대회의_담당_배정이_있는_교수를_학생으로_변경하면_예외가_발생한다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("assignedprofessor@pusan.ac.kr", ROLE_교수));
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        contestMemberRepository.save(
+                ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생);
+
+        // when & then
+        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), professor.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
+        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[성공] 지난 대회의 팀에만 소속된 학생은 교수로 변경할 수 있다.")
+    void 지난_대회의_팀에만_소속된_학생은_교수로_변경할_수_있다() {
+        // given
+        final Member admin = saveAdmin();
+        final Contest pastContest = saveContest("지난 대회", false);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(pastContest.getId()));
+        saveTeamMember(teamLeader, team);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+
+        // then
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[성공] 진행 중 대회의 담당 배정이 있는 교수도 외부멘토로는 변경할 수 있다.")
+    void 진행_중_대회의_담당_배정이_있는_교수도_외부멘토로는_변경할_수_있다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("mentorprofessor@pusan.ac.kr", ROLE_교수));
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        contestMemberRepository.save(
+                ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), professor.getId(), request);
+
+        // then
+        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_외부멘토);
+    }
+
+    private Contest saveContest(final String contestName, final boolean isCurrent) {
+        final Contest contest = ContestFixture.createContestWithCategoryIdAndName(1L, contestName);
+        contest.updateIsCurrent(isCurrent);
+        return contestRepository.save(contest);
+    }
+
+    private void saveTeamMember(final Member member, final Team team) {
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(member.getId())
+                .team(team)
+                .roles(Set.of(TeamMemberRoleType.ROLE_팀원))
+                .build());
     }
 
     @Test

@@ -12,6 +12,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_PASSWORD;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE;
@@ -899,6 +900,15 @@ public class MemberApiDocsTest extends RestDocsTest {
         documentRoleChangeFailure("admin-change-member-role-fail-employee", EMPLOYEE_ROLE_NOT_MODIFIABLE,
                 new MemberRoleChangeRequest(MemberRoleType.ROLE_직원, MemberRoleType.ROLE_교수),
                 status().isBadRequest(), "직원 회원 ID");
+    }
+
+    @Test
+    @DisplayName("[실패] 진행 중 대회에 새 역할로 유지할 수 없는 배정이 있으면 409를 반환한다.")
+    void 진행_중_대회에_새_역할로_유지할_수_없는_배정이_있으면_409_에러를_반환한다() throws Exception {
+        documentRoleChangeFailure("admin-change-member-role-fail-blocked-by-assignment",
+                ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT,
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                status().isConflict(), "진행 중 대회의 팀에 소속된 회원 ID");
     }
 
     @Test

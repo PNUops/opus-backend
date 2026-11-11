@@ -25,6 +25,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADM
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
@@ -37,6 +38,7 @@ import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
+import com.opus.opus.modules.member.application.convenience.RoleChangeBlockerConvenience;
 import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -89,6 +91,7 @@ public class MemberCommandService {
     private final MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
 
     private final MemberConvenience memberConvenience;
+    private final RoleChangeBlockerConvenience roleChangeBlockerConvenience;
 
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
@@ -403,6 +406,7 @@ public class MemberCommandService {
         validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
         validateRoleChangeTarget(member, request);
+        validateNoBlockingAssignment(member, request);
 
         member.changeBaseRole(request.newRole());
         saveRoleChangeHistory(adminId, member, request);
@@ -417,6 +421,12 @@ public class MemberCommandService {
         }
         if (member.getBaseRole() != request.currentRole()) {
             throw new MemberException(ROLE_CHANGE_CONFLICT);
+        }
+    }
+
+    private void validateNoBlockingAssignment(final Member member, final MemberRoleChangeRequest request) {
+        if (roleChangeBlockerConvenience.findBlockers(member.getId(), request.newRole()).hasBlockers()) {
+            throw new MemberException(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT);
         }
     }
 

@@ -42,6 +42,7 @@ public enum MemberExceptionType implements BaseExceptionType {
     ADMIN_PERMISSION_UNCHANGED(HttpStatus.CONFLICT, "이미 요청한 관리 권한 상태입니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
     BASE_ROLE_REQUIRED(HttpStatus.BAD_REQUEST, "기본 역할이 없는 회원의 관리 권한은 회수할 수 없습니다. 기본 역할을 먼저 지정해주세요."),
     ROLE_CHANGE_CONFLICT(HttpStatus.CONFLICT, "회원의 현재 역할이 변경되었습니다. 최신 정보를 확인한 뒤 다시 시도해주세요."),
+    ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT(HttpStatus.CONFLICT, "진행 중인 대회의 팀 소속이나 담당 배정이 있어 역할을 변경할 수 없습니다. 배정을 해제한 뒤 다시 시도해주세요."),
     ;
 
     private final HttpStatus httpStatus;

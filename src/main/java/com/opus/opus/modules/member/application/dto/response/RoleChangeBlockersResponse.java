@@ -11,6 +11,10 @@ public record RoleChangeBlockersResponse(
         return new RoleChangeBlockersResponse(List.of(), List.of());
     }
 
+    public boolean hasBlockers() {
+        return !teams.isEmpty() || !staffAssignments.isEmpty();
+    }
+
     public record TeamMembership(
             Long contestId,
             String contestName,

@@ -584,7 +584,8 @@ include::{snippets}/admin-withdraw-member-fail-not-admin/http-response.adoc[]
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 회원의 기본 역할(학생·교수·외부멘토)을 교체하고 변경 이력(변경 전·후 역할, 수행 관리자, 시각)을 기록합니다. 대상 회원의 관리 권한(`ROLE_관리자`)은 유지됩니다.
 `currentRole`에는 화면에 보이던 기본 역할을 보내고, 기본 역할이 없는 관리자 전용 계정이면 생략하거나 `null`을 보냅니다. 서버의 값과 다르면 409를 반환합니다.
 직원 회원의 기본 역할은 변경할 수 없습니다.
-대회별 심사위원·지도교수·멘토 배정은 이 API로 변경하지 않으며, 역할 변경 시 기존 대회 배정은 그대로 유지됩니다.
+대회별 심사위원·지도교수·멘토 배정은 이 API로 변경하지 않습니다.
+진행 중 대회(`isCurrent`)에 새 역할로는 유지할 수 없는 배정(학생으로 변경 시 담당 배정, 교수·외부멘토로 변경 시 팀 소속)이 있으면 409를 반환합니다. 막는 배정은 역할 변경을 막는 배정 조회 API로 확인합니다. 지난 대회의 배정은 그대로 유지됩니다.
 
 .HTTP Request
 include::{snippets}/admin-change-member-role/http-request.adoc[]
@@ -720,6 +721,18 @@ include::{snippets}/admin-change-member-role-fail-not-admin/http-response.adoc[]
 include::{snippets}/admin-change-member-role-fail-employee/http-request.adoc[]
 
 include::{snippets}/admin-change-member-role-fail-employee/http-response.adoc[]
+
+====
+
+.❌ Case 11: 진행 중 대회에 새 역할로 유지할 수 없는 배정이 있음 (409)
+
+[%collapsible]
+
+====
+
+include::{snippets}/admin-change-member-role-fail-blocked-by-assignment/http-request.adoc[]
+
+include::{snippets}/admin-change-member-role-fail-blocked-by-assignment/http-response.adoc[]
 
 ====
 
