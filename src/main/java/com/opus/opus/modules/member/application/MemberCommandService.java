@@ -36,6 +36,7 @@ import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
 import com.opus.opus.global.util.MailUtil;
+import com.opus.opus.modules.contest.application.convenience.ContestMemberConvenience;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.convenience.RoleChangeBlockerConvenience;
@@ -51,6 +52,9 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.StaffAssignment;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.TeamMembership;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberAdminPermissionHistory;
@@ -66,6 +70,7 @@ import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.member.exception.MemberExceptionType;
+import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +97,8 @@ public class MemberCommandService {
 
     private final MemberConvenience memberConvenience;
     private final RoleChangeBlockerConvenience roleChangeBlockerConvenience;
+    private final TeamMemberConvenience teamMemberConvenience;
+    private final ContestMemberConvenience contestMemberConvenience;
 
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
@@ -406,7 +413,7 @@ public class MemberCommandService {
         validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
         validateRoleChangeTarget(member, request);
-        validateNoBlockingAssignment(member, request);
+        releaseOrRejectBlockingAssignments(member, request);
 
         member.changeBaseRole(request.newRole());
         saveRoleChangeHistory(adminId, member, request);
@@ -424,9 +431,31 @@ public class MemberCommandService {
         }
     }
 
-    private void validateNoBlockingAssignment(final Member member, final MemberRoleChangeRequest request) {
-        if (roleChangeBlockerConvenience.findBlockers(member.getId(), request.newRole()).hasBlockers()) {
+    private void releaseOrRejectBlockingAssignments(final Member member, final MemberRoleChangeRequest request) {
+        final RoleChangeBlockersResponse blockers =
+                roleChangeBlockerConvenience.findBlockers(member.getId(), request.newRole());
+        if (!blockers.hasBlockers()) {
+            return;
+        }
+        if (!request.releaseAssignments()) {
             throw new MemberException(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT);
+        }
+        releaseBlockingAssignments(member.getId(), blockers);
+    }
+
+    // 조회 API로 보여준 배정만 해제한다. 팀장이면 팀장 없는 팀이 되며, 지난 대회의 배정은 대상이 아니다.
+    private void releaseBlockingAssignments(final Long memberId, final RoleChangeBlockersResponse blockers) {
+        final List<Long> teamIds = blockers.teams().stream()
+                .map(TeamMembership::teamId)
+                .toList();
+        if (!teamIds.isEmpty()) {
+            teamMemberConvenience.deleteAllByMemberIdInTeams(memberId, teamIds);
+        }
+        final List<Long> contestMemberIds = blockers.staffAssignments().stream()
+                .map(StaffAssignment::contestMemberId)
+                .toList();
+        if (!contestMemberIds.isEmpty()) {
+            contestMemberConvenience.deleteAllByIds(contestMemberIds);
         }
     }
 

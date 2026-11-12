@@ -31,6 +31,10 @@ public class ContestMemberConvenience {
         return contestMemberRepository.findAllByMemberIdAndContestIdIn(memberId, contestIds);
     }
 
+    public void deleteAllByIds(final List<Long> contestMemberIds) {
+        contestMemberRepository.deleteAllById(contestMemberIds);
+    }
+
     public ContestMember getValidateExistContestMember(final Long contestId, final Long memberId) {
         return contestMemberRepository.findByContestIdAndMemberId(contestId, memberId)
                 .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));

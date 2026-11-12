@@ -840,7 +840,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 관리자가_회원의_OPUS_역할을_변경하면_역할이_교체되고_변경_이력이_저장된다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
@@ -865,7 +865,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Member admin = saveAdmin();
         final Member multiRoleMember = memberRepository.save(
                 MemberFixture.createMemberWithEmailAndRoles("multirole@pusan.ac.kr", ROLE_학생, ROLE_외부멘토));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), multiRoleMember.getId(), request);
@@ -880,7 +880,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         final Member admin = saveAdmin();
         final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), otherAdmin.getId(), request);
@@ -902,7 +902,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Member admin = saveAdmin();
         final Member professorAdmin = memberRepository.save(
                 MemberFixture.createMemberWithEmailAndRoles("professoradmin@pusan.ac.kr", ROLE_교수, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), professorAdmin.getId(), request);
@@ -916,7 +916,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 기본_역할이_있는_회원의_currentRole을_생략하면_예외가_발생한다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -932,7 +932,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Member admin = saveAdmin();
         final Member employee = memberRepository.save(
                 MemberFixture.createMemberWithEmailAndRole("employee@pusan.ac.kr", ROLE_직원));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_직원, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_직원, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), employee.getId(), request))
@@ -947,7 +947,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 관리자_역할은_기본_역할로_지정할_수_없다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_관리자);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_관리자, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -961,7 +961,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 요청한_현재_역할이_실제_역할과_다르면_예외가_발생하고_역할이_변경되지_않는다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -976,7 +976,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 현재_역할과_같은_역할로_변경하면_예외가_발생한다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_학생, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -989,7 +989,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 관리자_화면에서_지정할_수_없는_역할로_변경하면_예외가_발생한다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_직원);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_직원, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -1003,7 +1003,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         final Member admin = saveAdmin();
         memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), admin.getId(), request))
@@ -1018,7 +1018,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         // 다른 관리자가 먼저 권한을 해제해 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
         final Member lastAdmin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(teamLeader.getId(), lastAdmin.getId(), request))
@@ -1033,7 +1033,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         // given
         final Member admin = saveAdmin();
         memberCommandService.withdraw(teamLeader);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -1049,7 +1049,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Member fakeMember = MemberFixture.createMemberWithEmailAndRole("fakerole@pusan.ac.kr", ROLE_학생);
         fakeMember.markAsFakeMember();
         memberRepository.save(fakeMember);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), fakeMember.getId(), request))
@@ -1062,7 +1062,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     void 존재하지_않는_회원의_역할을_변경하면_예외가_발생한다() {
         // given
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), 999999L, request))
@@ -1078,7 +1078,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Contest currentContest = saveContest("진행 중 대회", true);
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
         saveTeamMember(teamLeader, team);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
@@ -1099,7 +1099,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
         contestMemberRepository.save(
                 ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, false);
 
         // when & then
         assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), professor.getId(), request))
@@ -1116,7 +1116,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Contest pastContest = saveContest("지난 대회", false);
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(pastContest.getId()));
         saveTeamMember(teamLeader, team);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
@@ -1136,13 +1136,86 @@ public class MemberCommandServiceTest extends IntegrationTest {
         final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
         contestMemberRepository.save(
                 ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토, false);
 
         // when
         memberCommandService.changeRole(admin.getId(), professor.getId(), request);
 
         // then
         assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_외부멘토);
+    }
+
+    @Test
+    @DisplayName("[성공] 일괄 해제를 요청하면 팀장인 학생의 진행 중 대회 팀 소속만 해제되고 교수로 변경된다.")
+    void 일괄_해제를_요청하면_팀장인_학생의_진행_중_대회_팀_소속만_해제되고_교수로_변경된다() {
+        // given
+        final Member admin = saveAdmin();
+        final Team currentTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestId(saveContest("진행 중 대회", true).getId()));
+        final Team pastTeam = teamRepository.save(
+                TeamFixture.createTeamWithContestId(saveContest("지난 대회", false).getId()));
+        teamMemberRepository.save(TeamMember.builder()
+                .memberId(teamLeader.getId())
+                .team(currentTeam)
+                .roles(Set.of(TeamMemberRoleType.ROLE_팀장))
+                .build());
+        saveTeamMember(teamLeader, pastTeam);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, true);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+
+        // then
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(currentTeam.getId(), teamLeader.getId())).isFalse();
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(pastTeam.getId(), teamLeader.getId())).isTrue();
+        assertThat(memberRoleChangeHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getBeforeRole()).isEqualTo(ROLE_학생);
+                    assertThat(history.getAfterRole()).isEqualTo(ROLE_교수);
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 일괄 해제를 요청하면 교수의 진행 중 대회 담당 배정만 해제되고 학생으로 변경된다.")
+    void 일괄_해제를_요청하면_교수의_진행_중_대회_담당_배정만_해제되고_학생으로_변경된다() {
+        // given
+        final Member admin = saveAdmin();
+        final Member professor = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("releaseprofessor@pusan.ac.kr", ROLE_교수));
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Contest pastContest = saveContest("지난 대회", false);
+        final Team currentTeam = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        final Team pastTeam = teamRepository.save(TeamFixture.createTeamWithContestId(pastContest.getId()));
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                currentContest, professor.getId(), List.of(currentTeam.getId())));
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                pastContest, professor.getId(), List.of(pastTeam.getId())));
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, true);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), professor.getId(), request);
+
+        // then
+        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_학생);
+        assertThat(contestMemberRepository.findAllByMemberId(professor.getId()))
+                .extracting(contestMember -> contestMember.getContest().getId())
+                .containsExactly(pastContest.getId());
+    }
+
+    @Test
+    @DisplayName("[성공] 막는 배정이 없으면 일괄 해제를 요청해도 역할만 변경된다.")
+    void 막는_배정이_없으면_일괄_해제를_요청해도_역할만_변경된다() {
+        // given
+        final Member admin = saveAdmin();
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, true);
+
+        // when
+        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+
+        // then
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
     }
 
     private Contest saveContest(final String contestName, final boolean isCurrent) {

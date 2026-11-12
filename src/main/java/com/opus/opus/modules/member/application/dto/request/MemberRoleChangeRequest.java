@@ -8,6 +8,8 @@ public record MemberRoleChangeRequest(
         MemberRoleType currentRole,
 
         @NotNull(message = "변경할 역할을 선택해주세요.")
-        MemberRoleType newRole
+        MemberRoleType newRole,
+
+        boolean releaseAssignments
 ) {
 }

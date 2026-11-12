@@ -846,7 +846,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     void 관리자가_회원의_OPUS_역할을_변경한다() throws Exception {
         // Given
         final MemberRoleChangeRequest request = new MemberRoleChangeRequest(
-                MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수);
+                MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false);
         doNothing().when(memberCommandService).changeRole(any(), any(), any());
 
         // When & Then
@@ -865,16 +865,32 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("currentRole", "화면에 보이던 현재 기본 역할. 기본 역할이 없는 관리자 전용 계정은 생략").optional(),
-                                stringFieldWithPath("newRole", "변경할 기본 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토)")
+                                stringFieldWithPath("newRole", "변경할 기본 역할 (ROLE_학생, ROLE_교수, ROLE_외부멘토)"),
+                                booleanFieldWithPath("releaseAssignments", "진행 중 대회에 역할 변경을 막는 배정이 있을 때 함께 해제할지 여부. 생략하면 false이며, false인데 막는 배정이 있으면 409").optional()
                         )
                 ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 진행 중 대회 배정을 일괄 해제하며 회원의 역할을 변경한다.")
+    void 관리자가_진행_중_대회_배정을_일괄_해제하며_회원의_역할을_변경한다() throws Exception {
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(
+                MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, true);
+        doNothing().when(memberCommandService).changeRole(any(), any(), any());
+
+        mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent())
+                .andDo(document("admin-change-member-role-release-assignments"));
     }
 
     @Test
     @DisplayName("[실패] 회원의 현재 역할이 이미 변경되었으면 409를 반환한다.")
     void 회원의_현재_역할이_이미_변경되었으면_409_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-conflict", ROLE_CHANGE_CONFLICT,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isConflict(), "현재 역할이 이미 변경된 회원 ID");
     }
 
@@ -882,7 +898,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 400을 반환한다.")
     void 관리자가_본인의_역할을_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-self", CANNOT_CHANGE_OWN_ROLE,
-                new MemberRoleChangeRequest(null, MemberRoleType.ROLE_학생),
+                new MemberRoleChangeRequest(null, MemberRoleType.ROLE_학생, false),
                 status().isBadRequest(), "요청한 관리자 본인의 회원 ID");
     }
 
@@ -890,7 +906,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 지정할 수 없는 역할로 변경하면 400을 반환한다.")
     void 지정할_수_없는_역할로_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-not-assignable", NOT_ASSIGNABLE_ROLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_직원),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_직원, false),
                 status().isBadRequest(), "역할을 변경할 회원 ID");
     }
 
@@ -898,7 +914,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 직원 회원의 기본 역할을 변경하면 400을 반환한다.")
     void 직원_회원의_기본_역할을_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-employee", EMPLOYEE_ROLE_NOT_MODIFIABLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_직원, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_직원, MemberRoleType.ROLE_교수, false),
                 status().isBadRequest(), "직원 회원 ID");
     }
 
@@ -907,7 +923,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     void 진행_중_대회에_새_역할로_유지할_수_없는_배정이_있으면_409_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-blocked-by-assignment",
                 ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isConflict(), "진행 중 대회의 팀에 소속된 회원 ID");
     }
 
@@ -915,7 +931,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 현재 역할과 같은 역할로 변경하면 400을 반환한다.")
     void 현재_역할과_같은_역할로_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-same-role", SAME_ROLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_학생),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_학생, false),
                 status().isBadRequest(), "역할을 변경할 회원 ID");
     }
 
@@ -923,7 +939,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 처리 중 관리자 권한이 해제되면 역할 변경은 403을 반환한다.")
     void 처리_중_관리자_권한이_해제되면_역할_변경은_403_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-not-admin", NOT_ADMIN,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isForbidden(), "역할을 변경할 회원 ID");
     }
 
@@ -931,7 +947,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 409를 반환한다.")
     void 탈퇴한_회원의_역할을_변경하면_409_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-withdrawn", WITHDRAWN_MEMBER_NOT_MODIFIABLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isConflict(), "탈퇴한 회원 ID");
     }
 
@@ -939,7 +955,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 임시 계정의 역할을 변경하면 400을 반환한다.")
     void 임시_계정의_역할을_변경하면_400_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-fake-member", FAKE_MEMBER_NOT_MANAGEABLE,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isBadRequest(), "임시 계정 회원 ID");
     }
 
@@ -947,7 +963,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 회원의 역할을 변경하면 404를 반환한다.")
     void 존재하지_않는_회원의_역할을_변경하면_404_에러를_반환한다() throws Exception {
         documentRoleChangeFailure("admin-change-member-role-fail-not-found", NOT_FOUND_MEMBER,
-                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수),
+                new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수, false),
                 status().isNotFound(), "존재하지 않는 회원 ID");
     }
 
@@ -955,7 +971,7 @@ public class MemberApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 변경할 역할이 없으면 400을 반환한다.")
     void 변경할_역할이_없으면_400_에러를_반환한다() throws Exception {
         // Given
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, null);
+        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(MemberRoleType.ROLE_학생, null, false);
 
         // When & Then
         mockMvc.perform(patch("/admin/members/{memberId}/role", 2L)
@@ -973,7 +989,8 @@ public class MemberApiDocsTest extends RestDocsTest {
                         ),
                         requestFields(
                                 stringFieldWithPath("currentRole", "회원의 현재 역할"),
-                                stringFieldWithPath("newRole", "변경할 역할 (누락, 검증 실패 유도)").optional()
+                                stringFieldWithPath("newRole", "변경할 역할 (누락, 검증 실패 유도)").optional(),
+                                booleanFieldWithPath("releaseAssignments", "막는 배정 일괄 해제 여부").optional()
                         )
                 ));
     }

@@ -99,6 +99,10 @@ public class TeamMemberConvenience {
         return teamMemberRepository.findAllByMemberIdAndContestIdIn(memberId, contestIds);
     }
 
+    public void deleteAllByMemberIdInTeams(final Long memberId, final List<Long> teamIds) {
+        teamMemberRepository.deleteAll(teamMemberRepository.findAllByMemberIdAndTeamIdIn(memberId, teamIds));
+    }
+
     public Set<Long> findMemberIdsByContestId(final Long contestId) {
         return teamMemberRepository.findMemberIdsByContestId(contestId);
     }
