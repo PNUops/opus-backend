@@ -84,6 +84,10 @@ public class MemberConvenience {
         return memberRepository.findAllByIdIncludingDeleted(memberIds);
     }
 
+    public Optional<Member> findByIdIncludingDeleted(final Long memberId) {
+        return memberRepository.findAllByIdIncludingDeleted(List.of(memberId)).stream().findFirst();
+    }
+
     private void validateNameMatchesStudentId(final String studentId, final String name) {
         memberRepository.findByStudentId(studentId)
                 .ifPresent(member -> {
