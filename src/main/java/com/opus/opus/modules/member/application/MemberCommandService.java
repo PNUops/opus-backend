@@ -9,6 +9,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_UPDATE_STUDENT_ID;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_MAIL_BUSY;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_VERIFIED_EMAIL_AUTH;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_MEMBER_CANNOT_USE_GENERAL_LOGIN;
@@ -16,7 +17,6 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.SOCIAL_
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.global.util.AuthRedisUtil;
 import com.opus.opus.global.util.GoogleTokenManager;
-import com.opus.opus.global.util.MailUtil;
 import com.opus.opus.modules.file.application.FileImageCommandService;
 import com.opus.opus.modules.member.application.convenience.MemberConvenience;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -39,12 +39,12 @@ import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +64,7 @@ public class MemberCommandService {
 
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-    private final MailUtil mailUtil;
+    private final EmailAuthMailSender emailAuthMailSender;
     private final AuthRedisUtil authRedisUtil;
     private final GoogleTokenManager googleTokenManager;
     private final FileImageCommandService fileImageCommandService;
@@ -74,12 +74,10 @@ public class MemberCommandService {
     private static final int AUTH_CODE_LENGTH = 10;
     private static final char[] AUTH_CODE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
 
-    private static final long SIGNUP_AUTH_CODE_TTL = 5L;
     private static final long SIGNUP_VERIFIED_TTL = 10L;
     private static final String SIGNUP_EMAIL_AUTH_KEY_PREFIX = "signup:email:auth:";
     private static final String SIGNUP_EMAIL_VERIFIED_KEY_PREFIX = "signup:email:verified:";
 
-    private static final long SIGNIN_AUTH_CODE_TTL = 5L;
     private static final long SIGNIN_VERIFIED_TTL = 10L;
     private static final String SIGNIN_EMAIL_AUTH_KEY_PREFIX = "signin:email:auth:";
     private static final String SIGNIN_EMAIL_VERIFIED_KEY_PREFIX = "signin:email:verified:";
@@ -112,10 +110,7 @@ public class MemberCommandService {
         memberConvenience.validatePusanDomain(email);
         checkEmailAuthLimit(email);
 
-        final String code = generateRandomAuthCode();
-
-        authRedisUtil.set(signUpAuthKey(email), code, SIGNUP_AUTH_CODE_TTL, TimeUnit.MINUTES);
-        sendAuthCodeMail(email, code);
+        sendAuthCodeMail(email, signUpAuthKey(email));
     }
 
     public void confirmSignUpEmailAuth(final EmailAuthConfirmRequest request) {
@@ -146,10 +141,7 @@ public class MemberCommandService {
         final Member member = memberConvenience.getValidateExistMemberByEmail(email);
         checkGeneralMember(member);
 
-        final String code = generateRandomAuthCode();
-
-        authRedisUtil.set(signInAuthKey(email), code, SIGNIN_AUTH_CODE_TTL, TimeUnit.MINUTES);
-        sendAuthCodeMail(email, code);
+        sendAuthCodeMail(email, signInAuthKey(email));
     }
 
     public void confirmSignInEmailAuth(final EmailAuthConfirmRequest request) {
@@ -257,11 +249,14 @@ public class MemberCommandService {
         return new String(buf);
     }
 
-    private void sendAuthCodeMail(final String email, final String authCode) {
-        final List<String> userList = new ArrayList<>(List.of(email));
-        final String subject = "SW프로젝트관리시스템 인증코드 발송 메일입니다.";
-        final String text = "인증코드는 " + authCode + " 입니다.";
-        mailUtil.sendMail(userList, subject, text);
+    private void sendAuthCodeMail(final String email, final String authKey) {
+        final String countKey = emailAuthCountKey(email);
+        try {
+            emailAuthMailSender.send(email, generateRandomAuthCode(), authKey, countKey, System.currentTimeMillis());
+        } catch (final TaskRejectedException e) {
+            authRedisUtil.decrementIfExists(countKey);
+            throw new MemberException(EMAIL_AUTH_MAIL_BUSY);
+        }
     }
 
     private void validateAuthCode(final String authKey, final String inputCode) {
@@ -315,6 +310,10 @@ public class MemberCommandService {
 
     private static String signInVerifiedKey(final String email) {
         return SIGNIN_EMAIL_VERIFIED_KEY_PREFIX + email;
+    }
+
+    private static String emailAuthCountKey(final String email) {
+        return EMAIL_AUTH_COUNT_KEY_PREFIX + email;
     }
 
     public void updateStudentId(final Long memberId, final StudentIdUpdateRequest request) {
@@ -377,8 +376,7 @@ public class MemberCommandService {
     }
 
     private void checkEmailAuthLimit(final String email) {
-        final String key = EMAIL_AUTH_COUNT_KEY_PREFIX + email;
-        final Long count = authRedisUtil.incrementWithTtl(key, AUTH_ATTEMPT_TTL, TimeUnit.DAYS);
+        final Long count = authRedisUtil.incrementWithTtl(emailAuthCountKey(email), AUTH_ATTEMPT_TTL, TimeUnit.DAYS);
 
         if (count > MAX_AUTH_ATTEMPTS) {
             throw new MemberException(EMAIL_AUTH_LIMIT_EXCEEDED);
