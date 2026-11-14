@@ -766,8 +766,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                         ),
                         responseFields(
                                 arrayFieldWithPath("content[]", "투표 로그 목록 (최신순)"),
-                                stringFieldWithPath("content[].voterName", "투표자 이름"),
-                                stringFieldWithPath("content[].voterEmail", "투표자 이메일"),
+                                stringFieldWithPath("content[].voterName", "투표자 이름 (탈퇴한 투표자는 null)").optional(),
+                                stringFieldWithPath("content[].voterEmail", "투표자 이메일 (탈퇴한 투표자는 null)").optional(),
                                 stringFieldWithPath("content[].teamName", "투표한 팀 이름"),
                                 dateTimeFieldWithPath("content[].votedAt", "투표 시점"),
 
