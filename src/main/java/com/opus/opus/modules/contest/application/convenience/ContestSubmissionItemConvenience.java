@@ -36,6 +36,12 @@ public class ContestSubmissionItemConvenience {
         return submissionItem;
     }
 
+    public void validateSubmissionItemInTrack(final ContestSubmissionItem submissionItem, final Long trackId) {
+        if (!submissionItem.isInTrack(trackId)) {
+            throw new ContestException(ContestExceptionType.INVALID_SUBMISSION_ITEM_FOR_TRACK);
+        }
+    }
+
     public List<ContestSubmissionItem> findAllByDeadlineDate(final LocalDate deadlineDate) {
         return contestSubmissionItemRepository.findAllByEndAtGreaterThanEqualAndEndAtLessThan(
                 deadlineDate.atStartOfDay(), deadlineDate.plusDays(1).atStartOfDay());

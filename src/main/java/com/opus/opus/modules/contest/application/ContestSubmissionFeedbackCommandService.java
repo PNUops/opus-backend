@@ -6,14 +6,16 @@ import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestMemberConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestSubmissionItemConvenience;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
-import com.opus.opus.modules.contest.domain.SubmissionVisibility;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
+import com.opus.opus.modules.team.application.convenience.TeamConvenience;
 import com.opus.opus.modules.team.application.convenience.TeamMemberConvenience;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,22 +29,31 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class ContestSubmissionFeedbackCommandService {
 
+    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
+
     private final ContestConvenience contestConvenience;
     private final ContestMemberConvenience contestMemberConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
-    private final FileFeedbackCommandService fileFeedbackCommandService;
+    private final ContestSubmissionItemConvenience contestSubmissionItemConvenience;
+    private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
+
+    private final FileFeedbackCommandService fileFeedbackCommandService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public void saveFeedback(final Long contestId, final Long submissionId, final Long memberId,
-                             final String description, final List<MultipartFile> files,
+    public void saveFeedback(final Long contestId, final Long teamId, final Long submissionItemId,
+                             final Long memberId, final String description, final List<MultipartFile> files,
                              final List<Long> removeFileIds) {
         contestConvenience.validateExistContest(contestId);
-        final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(
-                contestId, submissionId);
-        contestMemberConvenience.validateAssignedTeam(contestId, memberId, submission.getTeamId());
-        validateStaffViewableSubmission(submission);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        final ContestSubmissionItem submissionItem =
+                contestSubmissionItemConvenience.getValidateExistSubmissionItem(contestId, submissionItemId);
+        contestMemberConvenience.validateAssignedTeam(contestId, memberId, teamId);
+        validateStaffViewableSubmissionItem(submissionItem);
+        // 피드백은 제출 항목·팀 단위로 남지만, 작성은 팀의 제출물이 있을 때만 허용한다 (#257)
+        final ContestSubmission submission =
+                contestSubmissionConvenience.getValidateExistSubmission(teamId, submissionItem);
 
         final ContestSubmissionFeedback feedback = upsertFeedback(contestId, submission, memberId, description);
 
@@ -50,25 +61,27 @@ public class ContestSubmissionFeedbackCommandService {
         fileFeedbackCommandService.storeFeedbackFiles(files, feedback.getId());
     }
 
-    public void markFeedbackAsRead(final Long contestId, final Long submissionId, final Long feedbackId,
-                                   final Long teamId, final Member member) {
+    public void markFeedbackAsRead(final Long contestId, final Long teamId, final Long submissionItemId,
+                                   final Long feedbackId, final Member member) {
         contestConvenience.validateExistContest(contestId);
-        contestSubmissionConvenience.getValidateSubmissionBelongsToContest(contestId, submissionId);
+        teamConvenience.getValidateTeamInContest(teamId, contestId);
+        contestSubmissionItemConvenience.getValidateExistSubmissionItem(contestId, submissionItemId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(teamId, member);
-        final ContestSubmissionFeedback feedback =
-                contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
+        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackConvenience
+                .getValidateFeedbackInTeamSubmissionItem(feedbackId, submissionItemId, teamId);
         feedback.markAsRead();
     }
 
-    private void validateStaffViewableSubmission(final ContestSubmission submission) {
-        if (submission.getSubmissionItem().getVisibility() == SubmissionVisibility.TEAM) {
+    private void validateStaffViewableSubmissionItem(final ContestSubmissionItem submissionItem) {
+        if (!submissionItem.isStaffViewable()) {
             throw new ContestException(NOT_ALLOWED_TO_VIEW_SUBMISSION);
         }
     }
 
     private ContestSubmissionFeedback upsertFeedback(final Long contestId, final ContestSubmission submission,
                                                      final Long memberId, final String description) {
-        return contestSubmissionFeedbackConvenience.findFeedback(submission.getId(), memberId)
+        return contestSubmissionFeedbackConvenience.findFeedback(submission.getSubmissionItem().getId(),
+                        submission.getTeamId(), memberId)
                 .map(existing -> updateFeedback(existing, description))
                 .orElseGet(() -> createFeedback(contestId, submission, memberId, description));
     }
@@ -81,8 +94,13 @@ public class ContestSubmissionFeedbackCommandService {
 
     private ContestSubmissionFeedback createFeedback(final Long contestId, final ContestSubmission submission,
                                                      final Long memberId, final String description) {
-        final ContestSubmissionFeedback feedback =
-                contestSubmissionFeedbackConvenience.createFeedback(submission, memberId, description);
+        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedback.builder()
+                        .description(description)
+                        .memberId(memberId)
+                        .teamId(submission.getTeamId())
+                        .submissionItem(submission.getSubmissionItem())
+                        .build());
         publishFeedbackNotification(contestId, submission);
         return feedback;
     }

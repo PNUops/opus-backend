@@ -1,7 +1,6 @@
 package com.opus.opus.modules.contest.application;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_FILE_FORMAT;
-import static com.opus.opus.modules.contest.exception.ContestExceptionType.INVALID_SUBMISSION_ITEM_FOR_TRACK;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION_ITEM;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_ALREADY_EXISTS;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.SUBMISSION_FILE_COUNT_EXCEEDED;
@@ -108,7 +107,7 @@ public class ContestSubmissionCommandService {
                                     final Member member) {
         validateSubmissionItemInContest(submissionItem, contestId);
         teamMemberConvenience.validateTeamMemberUnlessAdmin(team.getId(), member);
-        validateItemInTeamTrack(submissionItem, team.getTrackId());
+        contestSubmissionItemConvenience.validateSubmissionItemInTrack(submissionItem, team.getTrackId());
         validateNotAlreadySubmitted(team.getId(), submissionItem);
         validateSubmittable(submissionItem);
         validateFilesNotEmpty(files);
@@ -136,12 +135,6 @@ public class ContestSubmissionCommandService {
     private void validateSubmissionItemInContest(final ContestSubmissionItem submissionItem, final Long contestId) {
         if (!submissionItem.isInContest(contestId)) {
             throw new ContestException(NOT_FOUND_SUBMISSION_ITEM);
-        }
-    }
-
-    private void validateItemInTeamTrack(final ContestSubmissionItem submissionItem, final Long trackId) {
-        if (!submissionItem.isInTrack(trackId)) {
-            throw new ContestException(INVALID_SUBMISSION_ITEM_FOR_TRACK);
         }
     }
 

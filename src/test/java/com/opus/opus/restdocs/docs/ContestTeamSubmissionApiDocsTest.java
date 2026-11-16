@@ -66,7 +66,7 @@ public class ContestTeamSubmissionApiDocsTest extends RestDocsTest {
                         responseFields(
                                 numberFieldWithPath("totalItemCount", "전체 제출 항목 수"),
                                 numberFieldWithPath("submittedCount", "제출 완료한 수"),
-                                numberFieldWithPath("totalFeedbackCount", "전체 피드백 수")
+                                numberFieldWithPath("totalFeedbackCount", "전체 피드백 수 (팀의 제출 항목별 피드백 기준, 제출물이 삭제돼도 포함, 삭제된 제출 항목의 피드백은 제외)")
                         )
                 ));
     }

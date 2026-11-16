@@ -119,7 +119,8 @@ public class ContestMemberQueryServiceTest extends IntegrationTest {
         contestSubmissionRepository.save(createSubmission(developTeam.getId(), memberItem));
         contestSubmissionRepository.save(createSubmission(developTeam.getId(), teamItem));
 
-        contestSubmissionFeedbackRepository.save(createFeedback(reviewedSubmission, professor.getId()));
+        contestSubmissionFeedbackRepository.save(createFeedback(reviewedSubmission.getSubmissionItem(),
+                reviewedSubmission.getTeamId(), professor.getId()));
         saveFile(reviewedSubmission.getId(), "중간발표.pdf", 13002342L);
         saveFile(pendingSubmission.getId(), "최종발표.pdf", 20480L);
     }
@@ -349,6 +350,44 @@ public class ContestMemberQueryServiceTest extends IntegrationTest {
                 .extracting(MentorSubmissionResponse::submissionItemName)
                 .containsExactly("중간발표 자료", "최종발표 자료", "심사용 자료", "회원 공개 자료")
                 .doesNotContain("팀 내부 자료");
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물을 삭제하고 다시 제출해도 같은 제출 항목에 남긴 피드백이 있으면 작성 완료로 조회한다.")
+    void 제출물을_삭제하고_다시_제출해도_같은_제출_항목에_남긴_피드백이_있으면_작성_완료로_조회한다() {
+        final ContestSubmissionItem demoItem = saveItem("시연 영상", SubmissionVisibility.PUBLIC);
+        final ContestSubmission deletedSubmission =
+                contestSubmissionRepository.save(createSubmission(developTeam.getId(), demoItem));
+        contestSubmissionFeedbackRepository.save(createFeedback(demoItem, developTeam.getId(), mentor.getId()));
+        contestSubmissionRepository.delete(deletedSubmission);
+        contestSubmissionRepository.save(createSubmission(developTeam.getId(), demoItem));
+
+        final TeamSubmissionsResponse response =
+                contestMemberQueryService.getTeamSubmissions(contest.getId(), developTeam.getId(), mentor);
+
+        final MentorSubmissionResponse resubmitted = response.submissions().stream()
+                .filter(submission -> submission.submissionItemName().equals("시연 영상"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(resubmitted.feedbackStatus()).isEqualTo(FeedbackStatus.COMPLETED);
+        assertThat(response.pendingFeedbackCount()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물을 삭제하고 다시 제출해도 같은 제출 항목에 남긴 피드백은 담당 팀의 미작성 피드백 수에서 빠진다.")
+    void 제출물을_삭제하고_다시_제출해도_같은_제출_항목에_남긴_피드백은_담당_팀의_미작성_피드백_수에서_빠진다() {
+        final ContestSubmissionItem demoItem = saveItem("시연 영상", SubmissionVisibility.PUBLIC);
+        final ContestSubmission deletedSubmission =
+                contestSubmissionRepository.save(createSubmission(developTeam.getId(), demoItem));
+        contestSubmissionFeedbackRepository.save(createFeedback(demoItem, developTeam.getId(), mentor.getId()));
+        contestSubmissionRepository.delete(deletedSubmission);
+        contestSubmissionRepository.save(createSubmission(developTeam.getId(), demoItem));
+
+        final List<MentorProjectResponse> teams =
+                contestMemberQueryService.getMentorContestTeams(contest.getId(), mentor);
+
+        final MentorProjectResponse develop = findProject(teams, developTeam.getId());
+        assertThat(develop.pendingFeedbackCount()).isEqualTo(4);
     }
 
     @Test

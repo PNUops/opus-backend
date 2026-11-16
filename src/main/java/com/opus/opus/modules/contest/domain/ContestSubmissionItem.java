@@ -122,6 +122,10 @@ public class ContestSubmissionItem extends BaseEntity {
         return LocalDateTime.now().isAfter(endAt) && !allowLateSubmission;
     }
 
+    public boolean isStaffViewable() {
+        return visibility != SubmissionVisibility.TEAM;
+    }
+
     public boolean isFileCountExceeded(final int totalFileCount) {
         return totalFileCount > maxFileCount;
     }

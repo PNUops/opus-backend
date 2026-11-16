@@ -21,7 +21,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "contest_submission_feedback", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_feedback_member_submission", columnNames = {"member_id", "contest_submission_id"})
+        @UniqueConstraint(name = "uk_feedback_member_submission_item_team",
+                columnNames = {"member_id", "contest_submission_item_id", "team_id"})
 })
 public class ContestSubmissionFeedback extends BaseEntity {
 
@@ -40,15 +41,20 @@ public class ContestSubmissionFeedback extends BaseEntity {
     @Column(nullable = false)
     private Boolean isRead;
 
+    @Column(nullable = false)
+    private Long teamId;
+
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "contest_submission_id", nullable = false)
-    private ContestSubmission submission;
+    @JoinColumn(name = "contest_submission_item_id", nullable = false)
+    private ContestSubmissionItem submissionItem;
 
     @Builder
-    private ContestSubmissionFeedback(final String description, final Long memberId, final ContestSubmission submission) {
+    private ContestSubmissionFeedback(final String description, final Long memberId, final Long teamId,
+                                      final ContestSubmissionItem submissionItem) {
         this.description = description;
         this.memberId = memberId;
-        this.submission = submission;
+        this.teamId = teamId;
+        this.submissionItem = submissionItem;
         this.isRead = false;
     }
 

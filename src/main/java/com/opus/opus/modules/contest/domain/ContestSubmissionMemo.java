@@ -9,7 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,14 +34,19 @@ public class ContestSubmissionMemo extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "contest_submission_id", nullable = false, unique = true)
-    private ContestSubmission submission;
+    @Column(nullable = false)
+    private Long teamId;
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "contest_submission_item_id", nullable = false)
+    private ContestSubmissionItem submissionItem;
 
     @Builder
-    private ContestSubmissionMemo(final String content, final ContestSubmission submission) {
+    private ContestSubmissionMemo(final String content, final Long teamId,
+                                  final ContestSubmissionItem submissionItem) {
         this.content = content;
-        this.submission = submission;
+        this.teamId = teamId;
+        this.submissionItem = submissionItem;
         this.isDeleted = false;
     }
 

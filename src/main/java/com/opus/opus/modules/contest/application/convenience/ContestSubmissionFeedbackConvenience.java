@@ -2,7 +2,6 @@ package com.opus.opus.modules.contest.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 
-import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
@@ -19,32 +18,29 @@ public class ContestSubmissionFeedbackConvenience {
 
     private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
 
-    public List<ContestSubmissionFeedback> getFeedbacksBySubmission(final Long submissionId) {
-        return contestSubmissionFeedbackRepository.findAllBySubmissionIdOrderByIdDesc(submissionId);
+    public List<ContestSubmissionFeedback> getFeedbacksByTeamSubmissionItem(final Long submissionItemId,
+                                                                            final Long teamId) {
+        return contestSubmissionFeedbackRepository.findAllBySubmissionItemIdAndTeamIdOrderByIdDesc(submissionItemId,
+                teamId);
     }
 
-    public ContestSubmissionFeedback getValidateFeedback(final Long submissionId, final Long memberId) {
-        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId)
+    public ContestSubmissionFeedback getValidateFeedback(final Long submissionItemId, final Long teamId,
+                                                         final Long memberId) {
+        return findFeedback(submissionItemId, teamId, memberId)
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public ContestSubmissionFeedback getValidateFeedbackInSubmission(final Long feedbackId, final Long submissionId) {
-        return contestSubmissionFeedbackRepository.findById(feedbackId)
-                .filter(feedback -> feedback.getSubmission().getId().equals(submissionId))
+    public ContestSubmissionFeedback getValidateFeedbackInTeamSubmissionItem(final Long feedbackId,
+                                                                             final Long submissionItemId,
+                                                                             final Long teamId) {
+        return contestSubmissionFeedbackRepository.findByIdAndSubmissionItemIdAndTeamId(feedbackId, submissionItemId,
+                        teamId)
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionId, final Long memberId) {
-        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId);
-    }
-
-    @Transactional
-    public ContestSubmissionFeedback createFeedback(final ContestSubmission submission, final Long memberId,
-                                                    final String description) {
-        return contestSubmissionFeedbackRepository.save(ContestSubmissionFeedback.builder()
-                .description(description)
-                .memberId(memberId)
-                .submission(submission)
-                .build());
+    public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionItemId, final Long teamId,
+                                                            final Long memberId) {
+        return contestSubmissionFeedbackRepository.findBySubmissionItemIdAndTeamIdAndMemberId(submissionItemId, teamId,
+                memberId);
     }
 }
