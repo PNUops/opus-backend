@@ -2,6 +2,8 @@ package com.opus.opus.modules.member.application;
 
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_ROLE_NOT_BASE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLES_REQUIRED;
 
 import com.opus.opus.modules.file.application.FileQueryService;
 import com.opus.opus.modules.file.application.convenience.FileImageConvenience;
@@ -11,7 +13,6 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_SORT_VALUE;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static java.util.stream.Collectors.groupingBy;
@@ -50,6 +51,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.opus.opus.modules.file.application.dto.FileResource;
 import org.springframework.data.domain.Page;
@@ -162,19 +165,29 @@ public class MemberQueryService {
         return MemberWithdrawalResponse.of(member, history, admin);
     }
 
-    public RoleChangeBlockersResponse getRoleChangeBlockers(final Long memberId, final String newRole) {
-        final MemberRoleType parsedNewRole = parseAssignableRole(newRole);
-        memberConvenience.getValidateExistMember(memberId);
-        return roleChangeBlockerConvenience.findBlockers(memberId, parsedNewRole);
+    public RoleChangeBlockersResponse getRoleChangeBlockers(final Long memberId, final Set<String> roles) {
+        final Set<MemberRoleType> targetRoles = parseBaseRoles(roles);
+        final Member member = memberConvenience.getValidateExistMember(memberId);
+        return roleChangeBlockerConvenience.findBlockers(memberId, member.getBaseRoles(), targetRoles);
     }
 
-    private MemberRoleType parseAssignableRole(final String role) {
+    private Set<MemberRoleType> parseBaseRoles(final Set<String> roles) {
+        if (roles.isEmpty()) {
+            throw new MemberException(BASE_ROLES_REQUIRED);
+        }
+        final Set<MemberRoleType> parsedRoles = roles.stream()
+                .map(this::parseRequiredRoleType)
+                .collect(Collectors.toUnmodifiableSet());
+        if (parsedRoles.contains(MemberRoleType.ROLE_관리자)) {
+            throw new MemberException(ADMIN_ROLE_NOT_BASE_ROLE);
+        }
+        return parsedRoles;
+    }
+
+    private MemberRoleType parseRequiredRoleType(final String role) {
         final MemberRoleType parsedRole = parseRoleType(role);
         if (parsedRole == null) {
             throw new MemberException(INVALID_ROLE_TYPE);
-        }
-        if (!parsedRole.isAdminAssignable()) {
-            throw new MemberException(NOT_ASSIGNABLE_ROLE);
         }
         return parsedRole;
     }

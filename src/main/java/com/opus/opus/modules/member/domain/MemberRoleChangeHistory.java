@@ -1,13 +1,20 @@
 package com.opus.opus.modules.member.domain;
 
+import static jakarta.persistence.FetchType.EAGER;
+
 import com.opus.opus.global.base.BaseEntity;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,20 +35,27 @@ public class MemberRoleChangeHistory extends BaseEntity {
     @Column(nullable = false)
     private Long adminId;
 
-    // 기본 역할이 없던 관리자 전용 계정에 처음 지정하면 null이다.
+    @ElementCollection(fetch = EAGER)
+    @CollectionTable(name = "member_role_change_history_before_roles",
+            joinColumns = @JoinColumn(name = "history_id"))
     @Enumerated(EnumType.STRING)
-    private MemberRoleType beforeRole;
+    @Column(name = "role", nullable = false)
+    private Set<MemberRoleType> beforeRoles = new HashSet<>();
 
+    @ElementCollection(fetch = EAGER)
+    @CollectionTable(name = "member_role_change_history_after_roles",
+            joinColumns = @JoinColumn(name = "history_id"))
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MemberRoleType afterRole;
+    @Column(name = "role", nullable = false)
+    private Set<MemberRoleType> afterRoles = new HashSet<>();
 
     @Builder
-    private MemberRoleChangeHistory(final Long memberId, final Long adminId, final MemberRoleType beforeRole,
-                                    final MemberRoleType afterRole) {
+    private MemberRoleChangeHistory(final Long memberId, final Long adminId,
+                                    final Set<MemberRoleType> beforeRoles,
+                                    final Set<MemberRoleType> afterRoles) {
         this.memberId = memberId;
         this.adminId = adminId;
-        this.beforeRole = beforeRole;
-        this.afterRole = afterRole;
+        this.beforeRoles = new HashSet<>(beforeRoles);
+        this.afterRoles = new HashSet<>(afterRoles);
     }
 }

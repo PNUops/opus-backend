@@ -1,11 +1,12 @@
 package com.opus.opus.member.application;
 
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_EXISTS_MATCHING_IMAGE_ID;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_ROLE_NOT_BASE_ROLE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLES_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_ORDER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -439,7 +440,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).email()).isEqualTo("kim2@pusan.ac.kr");
-        assertThat(responses.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_교수);
+        assertThat(responses.get(0).roles()).containsExactly(MemberRoleType.ROLE_교수);
     }
 
     @Test
@@ -485,15 +486,16 @@ public class MemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 복수 역할 회원의 대표 역할은 id가 가장 작은 역할로 결정된다.")
-    void 복수_역할_회원의_대표_역할은_id가_가장_작은_역할로_결정된다() {
+    @DisplayName("[성공] 복수 역할 회원 검색 결과는 전체 역할을 id 순서로 반환한다.")
+    void 복수_역할_회원_검색_결과는_전체_역할을_id_순서로_반환한다() {
         memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(
                 "kim@pusan.ac.kr", MemberRoleType.ROLE_교수, MemberRoleType.ROLE_학생));
 
         final List<MemberSearchResponse> responses = memberQueryService.getMembersByKeyword("kim", null);
 
         assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).roleType()).isEqualTo(MemberRoleType.ROLE_학생);
+        assertThat(responses.get(0).roles())
+                .containsExactly(MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수);
     }
 
     private Member saveMember(final String email, final MemberRoleType role) {
@@ -757,7 +759,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
         saveTeamMember(student, pastTeam, TeamMemberRoleType.ROLE_팀원);
 
         final RoleChangeBlockersResponse response =
-                memberQueryService.getRoleChangeBlockers(student.getId(), "ROLE_교수");
+                memberQueryService.getRoleChangeBlockers(student.getId(), Set.of("ROLE_교수"));
 
         assertThat(response.teams())
                 .extracting(RoleChangeBlockersResponse.TeamMembership::contestId,
@@ -786,7 +788,7 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 pastContest, professor.getId(), List.of(pastTeam.getId())));
 
         final RoleChangeBlockersResponse response =
-                memberQueryService.getRoleChangeBlockers(professor.getId(), "ROLE_학생");
+                memberQueryService.getRoleChangeBlockers(professor.getId(), Set.of("ROLE_학생"));
 
         assertThat(response.teams()).isEmpty();
         assertThat(response.staffAssignments()).hasSize(1);
@@ -802,6 +804,25 @@ public class MemberQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 학생과 마지막 직원 역할을 모두 제거하면 팀 소속과 담당 배정을 함께 반환한다.")
+    void 학생과_마지막_직원_역할을_모두_제거하면_팀_소속과_담당_배정을_함께_반환한다() {
+        final Member studentStaff = memberRepository.save(MemberFixture.createMemberWithEmailAndRoles(
+                "blockboth@pusan.ac.kr", MemberRoleType.ROLE_학생, MemberRoleType.ROLE_교수));
+        final Contest currentContest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(
+                TeamFixture.createTeamWithContestIdAndTeamName(currentContest.getId(), "겸임팀"));
+        saveTeamMember(studentStaff, team, TeamMemberRoleType.ROLE_팀원);
+        contestMemberRepository.save(ContestMemberFixture.createContestMember(
+                currentContest, studentStaff.getId(), List.of(team.getId())));
+
+        final RoleChangeBlockersResponse response =
+                memberQueryService.getRoleChangeBlockers(studentStaff.getId(), Set.of("ROLE_직원"));
+
+        assertThat(response.teams()).hasSize(1);
+        assertThat(response.staffAssignments()).hasSize(1);
+    }
+
+    @Test
     @DisplayName("[성공] 교수가 외부멘토로 변경할 때는 담당 배정이 역할 변경을 막지 않는다.")
     void 교수가_외부멘토로_변경할_때는_담당_배정이_역할_변경을_막지_않는다() {
         final Member professor = saveMember("blockmentor@pusan.ac.kr", MemberRoleType.ROLE_교수);
@@ -812,24 +833,34 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 currentContest, professor.getId(), List.of(assignedTeam.getId())));
 
         final RoleChangeBlockersResponse response =
-                memberQueryService.getRoleChangeBlockers(professor.getId(), "ROLE_외부멘토");
+                memberQueryService.getRoleChangeBlockers(professor.getId(), Set.of("ROLE_외부멘토"));
 
         assertThat(response.teams()).isEmpty();
         assertThat(response.staffAssignments()).isEmpty();
     }
 
     @Test
-    @DisplayName("[실패] 관리자 화면에서 지정할 수 없는 역할로 조회하면 예외가 발생한다.")
-    void 관리자_화면에서_지정할_수_없는_역할로_조회하면_예외가_발생한다() {
-        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(member.getId(), "ROLE_직원"))
+    @DisplayName("[실패] 관리자 권한을 기본 역할 집합에 포함하면 예외가 발생한다.")
+    void 관리자_권한을_기본_역할_집합에_포함하면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(
+                member.getId(), Set.of("ROLE_학생", "ROLE_관리자")))
                 .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
+                .hasMessage(ADMIN_ROLE_NOT_BASE_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 변경 후 기본 역할 집합이 비어 있으면 예외가 발생한다.")
+    void 변경_후_기본_역할_집합이_비어_있으면_예외가_발생한다() {
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(member.getId(), Set.of()))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(BASE_ROLES_REQUIRED.errorMessage());
     }
 
     @Test
     @DisplayName("[실패] 존재하지 않는 역할 값으로 조회하면 예외가 발생한다.")
     void 존재하지_않는_역할_값으로_조회하면_예외가_발생한다() {
-        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(member.getId(), "ROLE_없는역할"))
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(
+                member.getId(), Set.of("ROLE_없는역할")))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(INVALID_ROLE_TYPE.errorMessage());
     }
@@ -837,7 +868,8 @@ public class MemberQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 회원의 역할 변경 차단 배정을 조회하면 예외가 발생한다.")
     void 존재하지_않는_회원의_역할_변경_차단_배정을_조회하면_예외가_발생한다() {
-        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(999999L, "ROLE_교수"))
+        assertThatThrownBy(() -> memberQueryService.getRoleChangeBlockers(
+                999999L, Set.of("ROLE_교수")))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }

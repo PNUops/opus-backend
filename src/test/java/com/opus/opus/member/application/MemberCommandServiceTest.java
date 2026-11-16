@@ -9,8 +9,10 @@ import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_ROLE_NOT_BASE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLES_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_MATCH_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
@@ -19,10 +21,8 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADM
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ROLE_CHANGE_CONFLICT;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.SAME_ROLE;
@@ -59,7 +59,7 @@ import com.opus.opus.modules.member.application.dto.request.AdminPermissionChang
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
-import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRolesChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.SignInRequest;
@@ -836,386 +836,269 @@ public class MemberCommandServiceTest extends IntegrationTest {
     }
 
     @Test
-    @DisplayName("[성공] 관리자가 회원의 OPUS 역할을 변경하면 역할이 교체되고 변경 이력이 저장된다.")
-    void 관리자가_회원의_OPUS_역할을_변경하면_역할이_교체되고_변경_이력이_저장된다() {
-        // given
+    @DisplayName("[성공] 역할을 추가할 때는 진행 중 대회 배정을 해제하지 않고 전체 역할 스냅샷을 기록한다.")
+    void 역할을_추가할_때는_진행_중_대회_배정을_해제하지_않고_전체_역할_스냅샷을_기록한다() {
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
+        final Contest contest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        saveTeamMember(teamLeader, team);
+        final MemberRolesChangeRequest request = new MemberRolesChangeRequest(
+                Set.of(ROLE_학생), Set.of(ROLE_학생, ROLE_교수), false);
 
-        // when
-        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+        memberCommandService.changeRoles(admin.getId(), teamLeader.getId(), request);
 
-        // then
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
+        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(team.getId(), teamLeader.getId())).isTrue();
         assertThat(memberRoleChangeHistoryRepository.findAll())
                 .singleElement()
                 .satisfies(history -> {
                     assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
                     assertThat(history.getAdminId()).isEqualTo(admin.getId());
-                    assertThat(history.getBeforeRole()).isEqualTo(ROLE_학생);
-                    assertThat(history.getAfterRole()).isEqualTo(ROLE_교수);
+                    assertThat(history.getBeforeRoles()).containsExactly(ROLE_학생);
+                    assertThat(history.getAfterRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
                     assertThat(history.getCreatedAt()).isNotNull();
                 });
     }
 
     @Test
-    @DisplayName("[성공] 역할이 여러 개인 회원의 역할을 변경하면 선택한 역할 하나만 남는다.")
-    void 역할이_여러_개인_회원의_역할을_변경하면_선택한_역할_하나만_남는다() {
-        // given
+    @DisplayName("[성공] 학생 역할만 제거하면 현재 대회 팀 소속만 해제하고 직원 배정은 유지한다.")
+    void 학생_역할만_제거하면_현재_대회_팀_소속만_해제하고_직원_배정은_유지한다() {
         final Member admin = saveAdmin();
-        final Member multiRoleMember = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRoles("multirole@pusan.ac.kr", ROLE_학생, ROLE_외부멘토));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when
-        memberCommandService.changeRole(admin.getId(), multiRoleMember.getId(), request);
-
-        // then
-        assertThat(reloadMember(multiRoleMember.getId()).getRoles()).containsExactly(ROLE_교수);
-    }
-
-    @Test
-    @DisplayName("[성공] 관리자 전용 계정에 기본 역할을 지정하면 관리 권한이 유지되고 이전 역할은 null로 기록된다.")
-    void 관리자_전용_계정에_기본_역할을_지정하면_관리_권한이_유지되고_이전_역할은_null로_기록된다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생, false);
-
-        // when
-        memberCommandService.changeRole(admin.getId(), otherAdmin.getId(), request);
-
-        // then
-        assertThat(reloadMember(otherAdmin.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
-        assertThat(memberRoleChangeHistoryRepository.findAll())
-                .singleElement()
-                .satisfies(history -> {
-                    assertThat(history.getBeforeRole()).isNull();
-                    assertThat(history.getAfterRole()).isEqualTo(ROLE_학생);
-                });
-    }
-
-    @Test
-    @DisplayName("[성공] 관리 권한이 있는 회원의 기본 역할을 변경해도 관리 권한은 유지된다.")
-    void 관리_권한이_있는_회원의_기본_역할을_변경해도_관리_권한은_유지된다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member professorAdmin = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRoles("professoradmin@pusan.ac.kr", ROLE_교수, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, false);
-
-        // when
-        memberCommandService.changeRole(admin.getId(), professorAdmin.getId(), request);
-
-        // then
-        assertThat(reloadMember(professorAdmin.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
-    }
-
-    @Test
-    @DisplayName("[실패] 기본 역할이 있는 회원의 currentRole을 생략하면 예외가 발생한다.")
-    void 기본_역할이_있는_회원의_currentRole을_생략하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(ROLE_CHANGE_CONFLICT.errorMessage());
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
-    }
-
-    @Test
-    @DisplayName("[실패] 직원 회원의 기본 역할을 변경하면 예외가 발생한다.")
-    void 직원_회원의_기본_역할을_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member employee = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRole("employee@pusan.ac.kr", ROLE_직원));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_직원, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), employee.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(EMPLOYEE_ROLE_NOT_MODIFIABLE.errorMessage());
-        assertThat(reloadMember(employee.getId()).getRoles()).containsExactly(ROLE_직원);
-        assertThat(memberRoleChangeHistoryRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("[실패] 관리자 역할은 기본 역할로 지정할 수 없다.")
-    void 관리자_역할은_기본_역할로_지정할_수_없다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_관리자, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
-    }
-
-    @Test
-    @DisplayName("[실패] 요청한 현재 역할이 실제 역할과 다르면 예외가 발생하고 역할이 변경되지 않는다.")
-    void 요청한_현재_역할이_실제_역할과_다르면_예외가_발생하고_역할이_변경되지_않는다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(ROLE_CHANGE_CONFLICT.errorMessage());
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
-        assertThat(memberRoleChangeHistoryRepository.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("[실패] 현재 역할과 같은 역할로 변경하면 예외가 발생한다.")
-    void 현재_역할과_같은_역할로_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_학생, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(SAME_ROLE.errorMessage());
-    }
-
-    @Test
-    @DisplayName("[실패] 관리자 화면에서 지정할 수 없는 역할(직원)로 변경하면 예외가 발생한다.")
-    void 관리자_화면에서_지정할_수_없는_역할로_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_직원, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_ASSIGNABLE_ROLE.errorMessage());
-    }
-
-    @Test
-    @DisplayName("[실패] 관리자가 본인의 역할을 변경하면 예외가 발생한다.")
-    void 관리자가_본인의_역할을_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_학생, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), admin.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(CANNOT_CHANGE_OWN_ROLE.errorMessage());
-        assertThat(reloadMember(admin.getId()).getRoles()).containsExactly(ROLE_관리자);
-    }
-
-    @Test
-    @DisplayName("[실패] 요청자가 활성 관리자가 아니면 마지막 관리자의 역할을 변경할 수 없다.")
-    void 요청자가_활성_관리자가_아니면_마지막_관리자의_역할을_변경할_수_없다() {
-        // given
-        // 다른 관리자가 먼저 권한을 해제해 요청자가 더 이상 활성 관리자가 아닌 동시 처리 상황을 가정한다.
-        final Member lastAdmin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(null, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(teamLeader.getId(), lastAdmin.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_ADMIN.errorMessage());
-        assertThat(reloadMember(lastAdmin.getId()).getRoles()).containsExactly(ROLE_관리자);
-    }
-
-    @Test
-    @DisplayName("[실패] 탈퇴한 회원의 역할을 변경하면 예외가 발생한다.")
-    void 탈퇴한_회원의_역할을_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        memberCommandService.withdraw(teamLeader);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(WITHDRAWN_MEMBER_NOT_MODIFIABLE.errorMessage());
-    }
-
-    @Test
-    @DisplayName("[실패] 임시 계정의 역할을 변경하면 예외가 발생한다.")
-    void 임시_계정의_역할을_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member fakeMember = MemberFixture.createMemberWithEmailAndRole("fakerole@pusan.ac.kr", ROLE_학생);
-        fakeMember.markAsFakeMember();
-        memberRepository.save(fakeMember);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), fakeMember.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(FAKE_MEMBER_NOT_MANAGEABLE.errorMessage());
-    }
-
-    @Test
-    @DisplayName("[실패] 존재하지 않는 회원의 역할을 변경하면 예외가 발생한다.")
-    void 존재하지_않는_회원의_역할을_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), 999999L, request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
-    }
-
-    @Test
-    @DisplayName("[실패] 진행 중 대회의 팀에 소속된 학생을 교수로 변경하면 예외가 발생하고 역할이 유지된다.")
-    void 진행_중_대회의_팀에_소속된_학생을_교수로_변경하면_예외가_발생하고_역할이_유지된다() {
-        // given
-        final Member admin = saveAdmin();
-        final Contest currentContest = saveContest("진행 중 대회", true);
-        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
-        saveTeamMember(teamLeader, team);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_학생);
-        assertThat(memberRoleChangeHistoryRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("[실패] 진행 중 대회의 담당 배정이 있는 교수를 학생으로 변경하면 예외가 발생한다.")
-    void 진행_중_대회의_담당_배정이_있는_교수를_학생으로_변경하면_예외가_발생한다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member professor = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRole("assignedprofessor@pusan.ac.kr", ROLE_교수));
-        final Contest currentContest = saveContest("진행 중 대회", true);
-        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("studentstaff@pusan.ac.kr", ROLE_학생, ROLE_교수));
+        final Contest contest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        saveTeamMember(member, team);
         contestMemberRepository.save(
-                ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, false);
+                ContestMemberFixture.createContestMember(contest, member.getId(), List.of(team.getId())));
 
-        // when & then
-        assertThatThrownBy(() -> memberCommandService.changeRole(admin.getId(), professor.getId(), request))
-                .isInstanceOf(MemberException.class)
-                .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
-        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_교수);
+        memberCommandService.changeRoles(admin.getId(), member.getId(),
+                new MemberRolesChangeRequest(Set.of(ROLE_학생, ROLE_교수), Set.of(ROLE_교수), true));
+
+        assertThat(reloadMember(member.getId()).getRoles()).containsExactly(ROLE_교수);
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(team.getId(), member.getId())).isFalse();
+        assertThat(contestMemberRepository.existsByContestIdAndMemberId(contest.getId(), member.getId())).isTrue();
     }
 
     @Test
-    @DisplayName("[성공] 지난 대회의 팀에만 소속된 학생은 교수로 변경할 수 있다.")
-    void 지난_대회의_팀에만_소속된_학생은_교수로_변경할_수_있다() {
-        // given
+    @DisplayName("[성공] 마지막 직원 역할만 제거하면 현재 대회 담당 배정만 해제하고 팀 소속은 유지한다.")
+    void 마지막_직원_역할만_제거하면_현재_대회_담당_배정만_해제하고_팀_소속은_유지한다() {
         final Member admin = saveAdmin();
-        final Contest pastContest = saveContest("지난 대회", false);
-        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(pastContest.getId()));
-        saveTeamMember(teamLeader, team);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, false);
-
-        // when
-        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
-
-        // then
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
-    }
-
-    @Test
-    @DisplayName("[성공] 진행 중 대회의 담당 배정이 있는 교수도 외부멘토로는 변경할 수 있다.")
-    void 진행_중_대회의_담당_배정이_있는_교수도_외부멘토로는_변경할_수_있다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member professor = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRole("mentorprofessor@pusan.ac.kr", ROLE_교수));
-        final Contest currentContest = saveContest("진행 중 대회", true);
-        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("staffstudent@pusan.ac.kr", ROLE_학생, ROLE_외부멘토));
+        final Contest contest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        saveTeamMember(member, team);
         contestMemberRepository.save(
-                ContestMemberFixture.createContestMember(currentContest, professor.getId(), List.of(team.getId())));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_외부멘토, false);
+                ContestMemberFixture.createContestMember(contest, member.getId(), List.of(team.getId())));
 
-        // when
-        memberCommandService.changeRole(admin.getId(), professor.getId(), request);
+        memberCommandService.changeRoles(admin.getId(), member.getId(),
+                new MemberRolesChangeRequest(Set.of(ROLE_학생, ROLE_외부멘토), Set.of(ROLE_학생), true));
 
-        // then
-        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_외부멘토);
+        assertThat(reloadMember(member.getId()).getRoles()).containsExactly(ROLE_학생);
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(team.getId(), member.getId())).isTrue();
+        assertThat(contestMemberRepository.existsByContestIdAndMemberId(contest.getId(), member.getId())).isFalse();
     }
 
     @Test
-    @DisplayName("[성공] 일괄 해제를 요청하면 팀장인 학생의 진행 중 대회 팀 소속만 해제되고 교수로 변경된다.")
-    void 일괄_해제를_요청하면_팀장인_학생의_진행_중_대회_팀_소속만_해제되고_교수로_변경된다() {
-        // given
+    @DisplayName("[성공] 학생과 마지막 직원 역량을 모두 제거하면 현재 대회의 두 배정만 해제한다.")
+    void 학생과_마지막_직원_역량을_모두_제거하면_현재_대회의_두_배정만_해제한다() {
         final Member admin = saveAdmin();
-        final Team currentTeam = teamRepository.save(
-                TeamFixture.createTeamWithContestId(saveContest("진행 중 대회", true).getId()));
-        final Team pastTeam = teamRepository.save(
-                TeamFixture.createTeamWithContestId(saveContest("지난 대회", false).getId()));
-        teamMemberRepository.save(TeamMember.builder()
-                .memberId(teamLeader.getId())
-                .team(currentTeam)
-                .roles(Set.of(TeamMemberRoleType.ROLE_팀장))
-                .build());
-        saveTeamMember(teamLeader, pastTeam);
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, true);
-
-        // when
-        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
-
-        // then
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
-        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(currentTeam.getId(), teamLeader.getId())).isFalse();
-        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(pastTeam.getId(), teamLeader.getId())).isTrue();
-        assertThat(memberRoleChangeHistoryRepository.findAll())
-                .singleElement()
-                .satisfies(history -> {
-                    assertThat(history.getBeforeRole()).isEqualTo(ROLE_학생);
-                    assertThat(history.getAfterRole()).isEqualTo(ROLE_교수);
-                });
-    }
-
-    @Test
-    @DisplayName("[성공] 일괄 해제를 요청하면 교수의 진행 중 대회 담당 배정만 해제되고 학생으로 변경된다.")
-    void 일괄_해제를_요청하면_교수의_진행_중_대회_담당_배정만_해제되고_학생으로_변경된다() {
-        // given
-        final Member admin = saveAdmin();
-        final Member professor = memberRepository.save(
-                MemberFixture.createMemberWithEmailAndRole("releaseprofessor@pusan.ac.kr", ROLE_교수));
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("bothcapabilities@pusan.ac.kr", ROLE_학생, ROLE_교수));
         final Contest currentContest = saveContest("진행 중 대회", true);
         final Contest pastContest = saveContest("지난 대회", false);
         final Team currentTeam = teamRepository.save(TeamFixture.createTeamWithContestId(currentContest.getId()));
         final Team pastTeam = teamRepository.save(TeamFixture.createTeamWithContestId(pastContest.getId()));
+        saveTeamMember(member, currentTeam);
+        saveTeamMember(member, pastTeam);
         contestMemberRepository.save(ContestMemberFixture.createContestMember(
-                currentContest, professor.getId(), List.of(currentTeam.getId())));
+                currentContest, member.getId(), List.of(currentTeam.getId())));
         contestMemberRepository.save(ContestMemberFixture.createContestMember(
-                pastContest, professor.getId(), List.of(pastTeam.getId())));
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_교수, ROLE_학생, true);
+                pastContest, member.getId(), List.of(pastTeam.getId())));
 
-        // when
-        memberCommandService.changeRole(admin.getId(), professor.getId(), request);
+        memberCommandService.changeRoles(admin.getId(), member.getId(),
+                new MemberRolesChangeRequest(Set.of(ROLE_학생, ROLE_교수), Set.of(ROLE_직원), true));
 
-        // then
-        assertThat(reloadMember(professor.getId()).getRoles()).containsExactly(ROLE_학생);
-        assertThat(contestMemberRepository.findAllByMemberId(professor.getId()))
+        assertThat(reloadMember(member.getId()).getRoles()).containsExactly(ROLE_직원);
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(currentTeam.getId(), member.getId())).isFalse();
+        assertThat(teamMemberRepository.existsByTeamIdAndMemberId(pastTeam.getId(), member.getId())).isTrue();
+        assertThat(contestMemberRepository.findAllByMemberId(member.getId()))
                 .extracting(contestMember -> contestMember.getContest().getId())
                 .containsExactly(pastContest.getId());
     }
 
     @Test
-    @DisplayName("[성공] 막는 배정이 없으면 일괄 해제를 요청해도 역할만 변경된다.")
-    void 막는_배정이_없으면_일괄_해제를_요청해도_역할만_변경된다() {
-        // given
+    @DisplayName("[실패] 제거되는 두 역량에 배정이 있으면 해제 요청 없이는 역할 집합을 변경하지 않는다.")
+    void 제거되는_두_역량에_배정이_있으면_해제_요청_없이는_역할_집합을_변경하지_않는다() {
         final Member admin = saveAdmin();
-        final MemberRoleChangeRequest request = new MemberRoleChangeRequest(ROLE_학생, ROLE_교수, true);
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("blockedboth@pusan.ac.kr", ROLE_학생, ROLE_교수));
+        final Contest contest = saveContest("진행 중 대회", true);
+        final Team team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
+        saveTeamMember(member, team);
+        contestMemberRepository.save(
+                ContestMemberFixture.createContestMember(contest, member.getId(), List.of(team.getId())));
+        final MemberRolesChangeRequest request = new MemberRolesChangeRequest(
+                Set.of(ROLE_학생, ROLE_교수), Set.of(ROLE_직원), false);
 
-        // when
-        memberCommandService.changeRole(admin.getId(), teamLeader.getId(), request);
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), member.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
+        assertThat(reloadMember(member.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
+        assertThat(memberRoleChangeHistoryRepository.findAll()).isEmpty();
+    }
 
-        // then
-        assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactly(ROLE_교수);
+    @Test
+    @DisplayName("[성공] 관리자 전용 계정에 기본 역할 집합을 지정해도 관리 권한을 유지한다.")
+    void 관리자_전용_계정에_기본_역할_집합을_지정해도_관리_권한을_유지한다() {
+        final Member admin = saveAdmin();
+        final Member otherAdmin = memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+
+        memberCommandService.changeRoles(admin.getId(), otherAdmin.getId(),
+                new MemberRolesChangeRequest(Set.of(), Set.of(ROLE_학생, ROLE_직원), false));
+
+        assertThat(reloadMember(otherAdmin.getId()).getRoles())
+                .containsExactlyInAnyOrder(ROLE_학생, ROLE_직원, ROLE_관리자);
+        assertThat(memberRoleChangeHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getBeforeRoles()).isEmpty();
+                    assertThat(history.getAfterRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_직원);
+                });
+    }
+
+    @Test
+    @DisplayName("[성공] 직원 역할은 다른 기본 역할과 자유롭게 조합할 수 있다.")
+    void 직원_역할은_다른_기본_역할과_자유롭게_조합할_수_있다() {
+        final Member admin = saveAdmin();
+        final Member employee = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRole("employee@pusan.ac.kr", ROLE_직원));
+
+        memberCommandService.changeRoles(admin.getId(), employee.getId(),
+                new MemberRolesChangeRequest(
+                        Set.of(ROLE_직원), Set.of(ROLE_직원, ROLE_학생, ROLE_교수, ROLE_외부멘토), false));
+
+        assertThat(reloadMember(employee.getId()).getRoles())
+                .containsExactlyInAnyOrder(ROLE_직원, ROLE_학생, ROLE_교수, ROLE_외부멘토);
+    }
+
+    @Test
+    @DisplayName("[실패] 요청한 현재 역할 집합이 실제 전체 기본 역할 집합과 다르면 충돌한다.")
+    void 요청한_현재_역할_집합이_실제_전체_기본_역할_집합과_다르면_충돌한다() {
+        final Member admin = saveAdmin();
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("conflict@pusan.ac.kr", ROLE_학생, ROLE_교수));
+        final MemberRolesChangeRequest request = new MemberRolesChangeRequest(
+                Set.of(ROLE_학생), Set.of(ROLE_학생, ROLE_외부멘토), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), member.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ROLE_CHANGE_CONFLICT.errorMessage());
+        assertThat(reloadMember(member.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
+    }
+
+    @Test
+    @DisplayName("[실패] 순서와 무관하게 같은 역할 집합으로 변경하면 예외가 발생한다.")
+    void 순서와_무관하게_같은_역할_집합으로_변경하면_예외가_발생한다() {
+        final Member admin = saveAdmin();
+        final Member member = memberRepository.save(
+                MemberFixture.createMemberWithEmailAndRoles("sameset@pusan.ac.kr", ROLE_학생, ROLE_교수));
+        final MemberRolesChangeRequest request = new MemberRolesChangeRequest(
+                Set.of(ROLE_학생, ROLE_교수), Set.of(ROLE_교수, ROLE_학생), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), member.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(SAME_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 빈 대상 역할 집합은 허용하지 않는다.")
+    void 빈_대상_역할_집합은_허용하지_않는다() {
+        final Member admin = saveAdmin();
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(ROLE_학생), Set.of(), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(BASE_ROLES_REQUIRED.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자 권한은 기본 역할 집합에 포함할 수 없다.")
+    void 관리자_권한은_기본_역할_집합에_포함할_수_없다() {
+        final Member admin = saveAdmin();
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(ROLE_학생), Set.of(ROLE_학생, ROLE_관리자), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(ADMIN_ROLE_NOT_BASE_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 관리자가 본인의 역할 집합을 변경하면 예외가 발생한다.")
+    void 관리자가_본인의_역할_집합을_변경하면_예외가_발생한다() {
+        final Member admin = saveAdmin();
+        memberRepository.save(MemberFixture.createMemberWithRole("관리자2", 2, ROLE_관리자));
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(), Set.of(ROLE_학생), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), admin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(CANNOT_CHANGE_OWN_ROLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 요청자가 활성 관리자가 아니면 역할 집합을 변경할 수 없다.")
+    void 요청자가_활성_관리자가_아니면_역할_집합을_변경할_수_없다() {
+        final Member targetAdmin = saveAdmin();
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(), Set.of(ROLE_교수), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(teamLeader.getId(), targetAdmin.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_ADMIN.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 탈퇴한 회원의 역할 집합을 변경하면 예외가 발생한다.")
+    void 탈퇴한_회원의_역할_집합을_변경하면_예외가_발생한다() {
+        final Member admin = saveAdmin();
+        memberCommandService.withdraw(teamLeader);
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(ROLE_학생), Set.of(ROLE_교수), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), teamLeader.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(WITHDRAWN_MEMBER_NOT_MODIFIABLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 임시 계정의 역할 집합을 변경하면 예외가 발생한다.")
+    void 임시_계정의_역할_집합을_변경하면_예외가_발생한다() {
+        final Member admin = saveAdmin();
+        final Member fakeMember = MemberFixture.createMemberWithEmailAndRole("fakerole@pusan.ac.kr", ROLE_학생);
+        fakeMember.markAsFakeMember();
+        memberRepository.save(fakeMember);
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(ROLE_학생), Set.of(ROLE_교수), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), fakeMember.getId(), request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(FAKE_MEMBER_NOT_MANAGEABLE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 회원의 역할 집합을 변경하면 예외가 발생한다.")
+    void 존재하지_않는_회원의_역할_집합을_변경하면_예외가_발생한다() {
+        final Member admin = saveAdmin();
+        final MemberRolesChangeRequest request =
+                new MemberRolesChangeRequest(Set.of(ROLE_학생), Set.of(ROLE_교수), false);
+
+        assertThatThrownBy(() -> memberCommandService.changeRoles(admin.getId(), 999999L, request))
+                .isInstanceOf(MemberException.class)
+                .hasMessage(NOT_FOUND_MEMBER.errorMessage());
     }
 
     private Contest saveContest(final String contestName, final boolean isCurrent) {

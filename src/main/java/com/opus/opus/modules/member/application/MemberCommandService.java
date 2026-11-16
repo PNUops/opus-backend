@@ -3,11 +3,12 @@ package com.opus.opus.modules.member.application;
 import static com.opus.opus.modules.file.domain.FileImageType.PROFILE;
 import static com.opus.opus.modules.file.domain.ReferenceDomainType.MEMBER;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_관리자;
-import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_학생;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_ROLE_NOT_BASE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ADMIN_PERMISSION_UNCHANGED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.ALREADY_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLE_REQUIRED;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.BASE_ROLES_REQUIRED;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ADMIN_PERMISSION;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_OWN_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_CHANGE_SAME_PASSWORD;
@@ -17,10 +18,8 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_WITHDRAW_SELF;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_LIMIT_EXCEEDED;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.EMPLOYEE_ROLE_NOT_MODIFIABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.FAKE_MEMBER_NOT_MANAGEABLE;
-import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ASSIGNABLE_ROLE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_ADMIN;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
@@ -45,7 +44,7 @@ import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequ
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
-import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRolesChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateMyPageRequest;
 import com.opus.opus.modules.member.application.dto.request.PasswordUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
@@ -406,34 +405,32 @@ public class MemberCommandService {
         }
     }
 
-    public void changeRole(final Long adminId, final Long memberId, final MemberRoleChangeRequest request) {
-        validateRoleChangeRequest(adminId, memberId, request);
+    public void changeRoles(final Long adminId, final Long memberId, final MemberRolesChangeRequest request) {
+        validateRolesChangeRequest(adminId, memberId, request);
         // 관리자 권한 해제가 동시에 일어나 활성 관리자가 0명이 되지 않도록, 탈퇴와 같은 순서(관리자 행 → 대상 행)로 잠근다.
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
         validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
-        validateRoleChangeTarget(member, request);
+        validateRolesChangeTarget(member, request);
         releaseOrRejectBlockingAssignments(member, request);
 
-        member.changeBaseRole(request.newRole());
-        saveRoleChangeHistory(adminId, member, request);
+        final Set<MemberRoleType> beforeRoles = member.getBaseRoles();
+        member.changeBaseRoles(request.roles());
+        saveRoleChangeHistory(adminId, member.getId(), beforeRoles, request.roles());
     }
 
-    private void validateRoleChangeTarget(final Member member, final MemberRoleChangeRequest request) {
+    private void validateRolesChangeTarget(final Member member, final MemberRolesChangeRequest request) {
         if (member.isFakeMember()) {
             throw new MemberException(FAKE_MEMBER_NOT_MANAGEABLE);
         }
-        if (member.getBaseRole() == ROLE_직원) {
-            throw new MemberException(EMPLOYEE_ROLE_NOT_MODIFIABLE);
-        }
-        if (member.getBaseRole() != request.currentRole()) {
+        if (!member.getBaseRoles().equals(request.currentRoles())) {
             throw new MemberException(ROLE_CHANGE_CONFLICT);
         }
     }
 
-    private void releaseOrRejectBlockingAssignments(final Member member, final MemberRoleChangeRequest request) {
-        final RoleChangeBlockersResponse blockers =
-                roleChangeBlockerConvenience.findBlockers(member.getId(), request.newRole());
+    private void releaseOrRejectBlockingAssignments(final Member member, final MemberRolesChangeRequest request) {
+        final RoleChangeBlockersResponse blockers = roleChangeBlockerConvenience.findBlockers(member.getId(),
+                member.getBaseRoles(), request.roles());
         if (!blockers.hasBlockers()) {
             return;
         }
@@ -459,28 +456,37 @@ public class MemberCommandService {
         }
     }
 
-    private void saveRoleChangeHistory(final Long adminId, final Member member,
-                                       final MemberRoleChangeRequest request) {
+    private void saveRoleChangeHistory(final Long adminId, final Long memberId,
+                                       final Set<MemberRoleType> beforeRoles,
+                                       final Set<MemberRoleType> afterRoles) {
         memberRoleChangeHistoryRepository.save(
                 MemberRoleChangeHistory.builder()
-                        .memberId(member.getId())
+                        .memberId(memberId)
                         .adminId(adminId)
-                        .beforeRole(request.currentRole())
-                        .afterRole(request.newRole())
+                        .beforeRoles(beforeRoles)
+                        .afterRoles(afterRoles)
                         .build()
         );
     }
 
-    private void validateRoleChangeRequest(final Long adminId, final Long memberId,
-                                           final MemberRoleChangeRequest request) {
-        if (!request.newRole().isAdminAssignable()) {
-            throw new MemberException(NOT_ASSIGNABLE_ROLE);
-        }
-        if (request.currentRole() == request.newRole()) {
+    private void validateRolesChangeRequest(final Long adminId, final Long memberId,
+                                            final MemberRolesChangeRequest request) {
+        validateBaseRoles(request.currentRoles(), true);
+        validateBaseRoles(request.roles(), false);
+        if (request.currentRoles().equals(request.roles())) {
             throw new MemberException(SAME_ROLE);
         }
         if (adminId.equals(memberId)) {
             throw new MemberException(CANNOT_CHANGE_OWN_ROLE);
+        }
+    }
+
+    private void validateBaseRoles(final Set<MemberRoleType> roles, final boolean emptyAllowed) {
+        if (!emptyAllowed && roles.isEmpty()) {
+            throw new MemberException(BASE_ROLES_REQUIRED);
+        }
+        if (roles.contains(ROLE_관리자)) {
+            throw new MemberException(ADMIN_ROLE_NOT_BASE_ROLE);
         }
     }
 
@@ -513,7 +519,7 @@ public class MemberCommandService {
         if (member.isAdmin() == request.isAdmin()) {
             throw new MemberException(ADMIN_PERMISSION_UNCHANGED);
         }
-        if (!request.isAdmin() && member.getBaseRole() == null) {
+        if (!request.isAdmin() && member.getBaseRoles().isEmpty()) {
             throw new MemberException(BASE_ROLE_REQUIRED);
         }
     }

@@ -13,7 +13,7 @@ import com.opus.opus.modules.member.application.StatisticsQueryService;
 import com.opus.opus.modules.member.application.dto.request.AdminMemberSearchRequest;
 import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
-import com.opus.opus.modules.member.application.dto.request.MemberRoleChangeRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRolesChangeRequest;
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
@@ -41,6 +41,7 @@ import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Set;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -54,6 +55,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -198,19 +200,19 @@ public class MemberController {
     }
 
     @Secured("ROLE_관리자")
-    @PatchMapping("/admin/members/{memberId}/role")
-    public ResponseEntity<Void> changeMemberRole(@LoginMember final Member admin,
-                                                 @PathVariable final Long memberId,
-                                                 @Valid @RequestBody final MemberRoleChangeRequest request) {
-        memberCommandService.changeRole(admin.getId(), memberId, request);
+    @PutMapping("/admin/members/{memberId}/roles")
+    public ResponseEntity<Void> changeMemberRoles(@LoginMember final Member admin,
+                                                  @PathVariable final Long memberId,
+                                                  @Valid @RequestBody final MemberRolesChangeRequest request) {
+        memberCommandService.changeRoles(admin.getId(), memberId, request);
         return ResponseEntity.noContent().build();
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/admin/members/{memberId}/role-change-blockers")
     public ResponseEntity<RoleChangeBlockersResponse> getRoleChangeBlockers(@PathVariable final Long memberId,
-                                                                            @RequestParam final String newRole) {
-        return ResponseEntity.ok(memberQueryService.getRoleChangeBlockers(memberId, newRole));
+                                                                            @RequestParam final Set<String> roles) {
+        return ResponseEntity.ok(memberQueryService.getRoleChangeBlockers(memberId, roles));
     }
 
     @Secured("ROLE_관리자")

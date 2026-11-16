@@ -19,6 +19,7 @@ import com.opus.opus.modules.team.domain.TeamMemberRoleType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +34,17 @@ public class RoleChangeBlockerConvenience {
     private final TeamConvenience teamConvenience;
     private final TeamMemberConvenience teamMemberConvenience;
 
-    // 새 역할로는 유지할 수 없는 진행 중 대회의 배정을 반환한다.
-    // 학생이 되면 교수·외부멘토 담당 배정이, 교수·외부멘토가 되면 팀 소속이 역할 변경을 막는다.
-    public RoleChangeBlockersResponse findBlockers(final Long memberId, final MemberRoleType newRole) {
+    public RoleChangeBlockersResponse findBlockers(final Long memberId,
+                                                   final Set<MemberRoleType> currentRoles,
+                                                   final Set<MemberRoleType> targetRoles) {
+        final boolean removesStudent = currentRoles.contains(MemberRoleType.ROLE_학생)
+                && !targetRoles.contains(MemberRoleType.ROLE_학생);
+        final boolean removesLastStaffRole = currentRoles.stream().anyMatch(MemberRoleType::isStaff)
+                && targetRoles.stream().noneMatch(MemberRoleType::isStaff);
+        if (!removesStudent && !removesLastStaffRole) {
+            return RoleChangeBlockersResponse.empty();
+        }
+
         final Map<Long, String> currentContestNames = contestConvenience.getCurrentContests().stream()
                 .collect(toMap(Contest::getId, Contest::getContestName));
         if (currentContestNames.isEmpty()) {
@@ -43,12 +52,13 @@ public class RoleChangeBlockerConvenience {
         }
 
         final List<Long> currentContestIds = List.copyOf(currentContestNames.keySet());
-        if (newRole.isStaff()) {
-            return new RoleChangeBlockersResponse(
-                    findTeamMemberships(memberId, currentContestIds, currentContestNames), List.of());
-        }
         return new RoleChangeBlockersResponse(
-                List.of(), findStaffAssignments(memberId, currentContestIds, currentContestNames));
+                removesStudent
+                        ? findTeamMemberships(memberId, currentContestIds, currentContestNames)
+                        : List.of(),
+                removesLastStaffRole
+                        ? findStaffAssignments(memberId, currentContestIds, currentContestNames)
+                        : List.of());
     }
 
     private List<TeamMembership> findTeamMemberships(final Long memberId, final List<Long> contestIds,
