@@ -25,6 +25,7 @@ import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_WITHDRAWN_MEMBER;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.NOT_FOUND_STAFF_INFO;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.CANNOT_VERIFY_EXPIRED_EMAIL_AUTH_CODE;
+import static com.opus.opus.modules.member.exception.MemberExceptionType.EMAIL_AUTH_MAIL_BUSY;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_DATE_RANGE;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_MEMBER_STATUS;
 import static com.opus.opus.modules.member.exception.MemberExceptionType.INVALID_ROLE_TYPE;
@@ -168,6 +169,24 @@ public class MemberApiDocsTest extends RestDocsTest {
                 .andDo(document("signup-auth-fail",
                         requestFields(
                                 stringFieldWithPath("email", "잘못된 도메인의 이메일 (부산대 메일이 아님)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 인증 메일 발송 요청이 많으면 회원가입 이메일 인증 요청 시 503 에러를 반환한다.")
+    void 인증_메일_발송_요청이_많으면_회원가입_이메일_인증_요청_시_에러를_반환한다() throws Exception {
+        final EmailAuthRequest request = new EmailAuthRequest(member.getEmail());
+
+        willThrow(new MemberException(EMAIL_AUTH_MAIL_BUSY)).given(memberCommandService).signUpEmailAuth(any());
+
+        mockMvc.perform(post("/sign-up/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isServiceUnavailable())
+                .andDo(document("signup-auth-mail-busy",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일")
                         )
                 ));
     }
@@ -360,6 +379,24 @@ public class MemberApiDocsTest extends RestDocsTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andDo(document("signin-auth",
+                        requestFields(
+                                stringFieldWithPath("email", "가입 이메일")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 인증 메일 발송 요청이 많으면 비밀번호 변경 이메일 인증 요청 시 503 에러를 반환한다.")
+    void 인증_메일_발송_요청이_많으면_비밀번호_변경_이메일_인증_요청_시_에러를_반환한다() throws Exception {
+        final EmailAuthRequest request = new EmailAuthRequest(member.getEmail());
+
+        willThrow(new MemberException(EMAIL_AUTH_MAIL_BUSY)).given(memberCommandService).signInEmailAuth(any());
+
+        mockMvc.perform(post("/sign-in/password-reset/email-auth")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().isServiceUnavailable())
+                .andDo(document("signin-auth-mail-busy",
                         requestFields(
                                 stringFieldWithPath("email", "가입 이메일")
                         )
@@ -1436,8 +1473,10 @@ public class MemberApiDocsTest extends RestDocsTest {
                                         String.format(authorizationHeaderDescription, "(관리자)"))
                         ),
                         queryParameters(
-                                parameterWithName("keyword").description("검색할 이메일 (앞부분 일치, 대소문자 무시). 누락/빈값이면 빈 배열 반환").optional(),
-                                parameterWithName("roleType").description("역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional()
+                                parameterWithName("keyword").description("검색할 이메일 (앞부분 일치, 대소문자 무시). 누락/빈값이면 빈 배열 반환")
+                                        .optional(),
+                                parameterWithName("roleType").description(
+                                        "역할 필터 (ROLE_학생, ROLE_관리자, ROLE_교수, ROLE_직원, ROLE_외부멘토). 미지정 시 전체").optional()
                         ),
                         responseFields(
                                 numberFieldWithPath("[].memberId", "회원 ID"),

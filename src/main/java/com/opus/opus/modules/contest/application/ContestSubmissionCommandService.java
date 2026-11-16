@@ -80,7 +80,7 @@ public class ContestSubmissionCommandService {
         validateFiles(submissionItem, files, (int) existingFileCount + files.size());
 
         fileDocumentCommandService.storeDocumentFiles(submissionId, files);
-        contestSubmissionRepository.touchUpdatedAt(submissionId);
+        contestSubmissionRepository.touchUpdatedAt(submissionId, LocalDateTime.now());
     }
 
     public void deleteSubmissionFile(final Long contestId, final Long submissionId, final Long fileId,
@@ -99,7 +99,7 @@ public class ContestSubmissionCommandService {
         if (isLastFile) {
             contestSubmissionRepository.delete(submission);
         } else {
-            contestSubmissionRepository.touchUpdatedAt(submissionId);
+            contestSubmissionRepository.touchUpdatedAt(submissionId, LocalDateTime.now());
         }
     }
 

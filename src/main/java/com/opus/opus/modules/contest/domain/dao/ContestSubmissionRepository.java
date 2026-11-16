@@ -82,8 +82,8 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
     void deleteAllBySubmissionItemId(final Long submissionItemId);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE ContestSubmission s SET s.updatedAt = CURRENT_TIMESTAMP WHERE s.id = :submissionId")
-    void touchUpdatedAt(@Param("submissionId") final Long submissionId);
+    @Query("UPDATE ContestSubmission s SET s.updatedAt = :now WHERE s.id = :submissionId")
+    void touchUpdatedAt(@Param("submissionId") final Long submissionId, @Param("now") final LocalDateTime now);
 
     @Query("""
             SELECT s FROM ContestSubmission s

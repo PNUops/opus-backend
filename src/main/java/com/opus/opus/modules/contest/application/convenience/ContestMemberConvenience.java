@@ -1,5 +1,6 @@
 package com.opus.opus.modules.contest.application.convenience;
 
+import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 
 import com.opus.opus.modules.contest.domain.ContestMember;
@@ -21,6 +22,12 @@ public class ContestMemberConvenience {
         return contestMemberRepository.findByContestIdAndMemberId(contestId, memberId)
                 .map(contestMember -> contestMember.getTeamIds().contains(teamId))
                 .orElse(false);
+    }
+
+    public void validateAssignedTeam(final Long contestId, final Long memberId, final Long teamId) {
+        if (!isAssignedTeam(contestId, memberId, teamId)) {
+            throw new ContestMemberException(NOT_ASSIGNED_TEAM);
+        }
     }
 
     public List<ContestMember> getAssignedContestMembers(final Long memberId) {

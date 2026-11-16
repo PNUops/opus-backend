@@ -18,6 +18,8 @@ link:./opus.html[API 목록으로 돌아가기]
 
 NOTE: 이메일 인증 시도는 계정당 하루에 5회만 가능합니다. 5회 이상 인증 코드 요청 시 24시간 뒤 재요청 가능합니다.
 
+NOTE: 인증 메일은 비동기로 발송되므로, 성공 응답은 발송 완료가 아니라 발송 요청 접수를 의미합니다. 인증 코드의 유효 시간은 10분입니다.
+
 .HTTP Request
 include::{snippets}/signup-auth/http-request.adoc[]
 
@@ -40,6 +42,20 @@ include::{snippets}/signup-auth-fail/http-request.adoc[]
 include::{snippets}/signup-auth-fail/http-response.adoc[]
 
 include::{snippets}/signup-auth-fail/request-fields.adoc[]
+
+====
+
+.❌ Case 2: 인증 메일 발송 요청이 많음
+
+[%collapsible]
+
+====
+
+include::{snippets}/signup-auth-mail-busy/http-request.adoc[]
+
+include::{snippets}/signup-auth-mail-busy/http-response.adoc[]
+
+include::{snippets}/signup-auth-mail-busy/request-fields.adoc[]
 
 ====
 
@@ -158,6 +174,8 @@ include::{snippets}/signin/response-fields.adoc[]
 
 NOTE: 이메일 인증 시도는 계정당 하루에 5회만 가능합니다. 5회 이상 인증 코드 요청 시 24시간 뒤 재요청 가능합니다.
 
+NOTE: 인증 메일은 비동기로 발송되므로, 성공 응답은 발송 완료가 아니라 발송 요청 접수를 의미합니다. 인증 코드의 유효 시간은 10분입니다.
+
 .HTTP Request
 include::{snippets}/signin-auth/http-request.adoc[]
 
@@ -166,6 +184,22 @@ include::{snippets}/signin-auth/http-response.adoc[]
 
 .Request Fields
 include::{snippets}/signin-auth/request-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 인증 메일 발송 요청이 많음
+
+[%collapsible]
+
+====
+
+include::{snippets}/signin-auth-mail-busy/http-request.adoc[]
+
+include::{snippets}/signin-auth-mail-busy/http-response.adoc[]
+
+include::{snippets}/signin-auth-mail-busy/request-fields.adoc[]
+
+====
 
 == `PATCH`: 비밀번호 변경 이메일 인증코드 확인
 

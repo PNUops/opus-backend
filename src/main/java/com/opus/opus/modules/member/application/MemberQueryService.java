@@ -230,7 +230,7 @@ public class MemberQueryService {
     }
 
     public List<MyVoteResponse> getMyVotes(final Long memberId) {
-        return teamVoteRepository.findMyVotes(memberId);
+        return teamVoteRepository.findMyVotes(memberId, LocalDateTime.now());
     }
 
     public Page<MyCommentResponse> getMyComments(final Long memberId, final String sort,

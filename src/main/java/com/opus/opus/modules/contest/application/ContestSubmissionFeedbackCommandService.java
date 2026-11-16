@@ -1,11 +1,16 @@
 package com.opus.opus.modules.contest.application;
 
+import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_ALLOWED_TO_VIEW_SUBMISSION;
+
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
+import com.opus.opus.modules.contest.application.convenience.ContestMemberConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionConvenience;
 import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFeedbackConvenience;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.SubmissionVisibility;
+import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.notification.application.event.SubmissionFeedbackNotificationEvent;
@@ -23,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContestSubmissionFeedbackCommandService {
 
     private final ContestConvenience contestConvenience;
+    private final ContestMemberConvenience contestMemberConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
     private final FileFeedbackCommandService fileFeedbackCommandService;
@@ -35,6 +41,8 @@ public class ContestSubmissionFeedbackCommandService {
         contestConvenience.validateExistContest(contestId);
         final ContestSubmission submission = contestSubmissionConvenience.getValidateSubmissionBelongsToContest(
                 contestId, submissionId);
+        contestMemberConvenience.validateAssignedTeam(contestId, memberId, submission.getTeamId());
+        validateStaffViewableSubmission(submission);
 
         final ContestSubmissionFeedback feedback = upsertFeedback(contestId, submission, memberId, description);
 
@@ -50,6 +58,12 @@ public class ContestSubmissionFeedbackCommandService {
         final ContestSubmissionFeedback feedback =
                 contestSubmissionFeedbackConvenience.getValidateFeedbackInSubmission(feedbackId, submissionId);
         feedback.markAsRead();
+    }
+
+    private void validateStaffViewableSubmission(final ContestSubmission submission) {
+        if (submission.getSubmissionItem().getVisibility() == SubmissionVisibility.TEAM) {
+            throw new ContestException(NOT_ALLOWED_TO_VIEW_SUBMISSION);
+        }
     }
 
     private ContestSubmissionFeedback upsertFeedback(final Long contestId, final ContestSubmission submission,

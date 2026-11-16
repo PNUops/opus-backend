@@ -21,10 +21,10 @@ public interface TeamLikeRepository extends JpaRepository<TeamLike, Long> {
     @Modifying
     @Query(value = """
                 INSERT INTO team_like (member_id, team_id, created_at, updated_at)
-                VALUES (:memberId, :teamId, NOW(), NOW())
+                VALUES (:memberId, :teamId, :now, :now)
                 ON DUPLICATE KEY UPDATE id = id
             """, nativeQuery = true)
-    void upsertLike(Long memberId, Long teamId);
+    void upsertLike(Long memberId, Long teamId, LocalDateTime now);
 
     @Query("""
                 SELECT tl

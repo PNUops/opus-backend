@@ -25,11 +25,13 @@ import lombok.NoArgsConstructor;
 })
 public class ContestSubmissionFeedback extends BaseEntity {
 
+    private static final int MAX_DESCRIPTION_LENGTH = 3000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 3000)
+    @Column(nullable = false, length = MAX_DESCRIPTION_LENGTH)
     private String description;
 
     @Column(nullable = false)

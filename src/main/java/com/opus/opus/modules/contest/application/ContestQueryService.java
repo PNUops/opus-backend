@@ -195,15 +195,7 @@ public class ContestQueryService {
         final Page<TeamVote> votePage = getContestVotes(contestId, pageable);
         final Map<Long, Member> memberMap = getMemberMap(votePage);
 
-        return votePage.map(vote -> {
-            final Member member = memberMap.get(vote.getMemberId());
-            return new ContestVoteLogResponse(
-                    member.getName(),
-                    member.getEmail(),
-                    vote.getTeam().getTeamName(),
-                    vote.getCreatedAt()
-            );
-        });
+        return votePage.map(vote -> ContestVoteLogResponse.of(vote, memberMap.get(vote.getMemberId())));
     }
 
     private Page<TeamVote> getContestVotes(final Long contestId, final Pageable pageable) {

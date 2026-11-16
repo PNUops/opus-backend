@@ -32,6 +32,7 @@ import org.hibernate.annotations.SQLRestriction;
 public class ContestSubmissionItem extends BaseEntity {
 
     private static final long MB_IN_BYTES = 1024L * 1024L;
+    private static final int MAX_DESCRIPTION_LENGTH = 3000;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +41,7 @@ public class ContestSubmissionItem extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(length = MAX_DESCRIPTION_LENGTH)
     private String description;
 
     @ElementCollection
