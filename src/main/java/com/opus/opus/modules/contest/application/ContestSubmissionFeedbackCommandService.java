@@ -33,8 +33,9 @@ public class ContestSubmissionFeedbackCommandService {
     private final ContestMemberConvenience contestMemberConvenience;
     private final ContestSubmissionConvenience contestSubmissionConvenience;
     private final ContestSubmissionFeedbackConvenience contestSubmissionFeedbackConvenience;
-    private final FileFeedbackCommandService fileFeedbackCommandService;
     private final TeamMemberConvenience teamMemberConvenience;
+
+    private final FileFeedbackCommandService fileFeedbackCommandService;
     private final ApplicationEventPublisher eventPublisher;
 
     public void saveFeedback(final Long contestId, final Long submissionId, final Long memberId,
