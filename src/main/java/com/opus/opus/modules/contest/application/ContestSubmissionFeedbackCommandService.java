@@ -9,7 +9,6 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFe
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
-import com.opus.opus.modules.contest.domain.SubmissionVisibility;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import com.opus.opus.modules.member.domain.Member;
@@ -61,7 +60,7 @@ public class ContestSubmissionFeedbackCommandService {
     }
 
     private void validateStaffViewableSubmission(final ContestSubmission submission) {
-        if (submission.getSubmissionItem().getVisibility() == SubmissionVisibility.TEAM) {
+        if (!submission.getSubmissionItem().isStaffViewable()) {
             throw new ContestException(NOT_ALLOWED_TO_VIEW_SUBMISSION);
         }
     }
