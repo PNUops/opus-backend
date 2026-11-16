@@ -205,6 +205,23 @@ public class ContestQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 탈퇴한 회원의 표는 투표 로그에서 이름과 이메일 없이 조회된다.")
+    void 탈퇴한_회원의_표는_투표_로그에서_이름과_이메일_없이_조회된다() {
+        final Member withdrawnMember = memberRepository.save(createMemberWithUniqueNum(1));
+        teamVoteRepository.save(createTeamVote(team, withdrawnMember.getId()));
+        memberRepository.delete(withdrawnMember);
+        entityManager.flush();
+        entityManager.clear();
+
+        final Page<ContestVoteLogResponse> page = contestQueryService.getContestVoteLog(contest.getId(), 0, 20);
+
+        assertThat(page.getContent())
+                .extracting(ContestVoteLogResponse::voterName, ContestVoteLogResponse::voterEmail,
+                        ContestVoteLogResponse::teamName)
+                .containsExactly(tuple(null, null, team.getTeamName()));
+    }
+
+    @Test
     @DisplayName("[성공] 사용자의 남은 투표 개수를 조회할 수 있다.")
     void 사용자의_남은_투표_개수를_조회할_수_있다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
