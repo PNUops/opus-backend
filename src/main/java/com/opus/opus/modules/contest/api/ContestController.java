@@ -6,6 +6,7 @@ import com.opus.opus.modules.contest.application.ContestCommandService;
 import com.opus.opus.modules.contest.application.ContestQueryService;
 import com.opus.opus.modules.contest.application.ContestSubmissionCommandService;
 import com.opus.opus.modules.contest.application.ContestSubmissionQueryService;
+import com.opus.opus.modules.contest.application.ContestVoteQueryService;
 import com.opus.opus.modules.contest.application.ContestVoteReportFileQueryService;
 import com.opus.opus.modules.contest.application.SubmissionStatus;
 import com.opus.opus.modules.contest.application.dto.request.ContestCurrentToggleRequest;
@@ -73,6 +74,7 @@ public class ContestController {
     private final ContestQueryService contestQueryService;
     private final ContestSubmissionCommandService contestSubmissionCommandService;
     private final ContestSubmissionQueryService contestSubmissionQueryService;
+    private final ContestVoteQueryService contestVoteQueryService;
     private final ContestVoteReportFileQueryService contestVoteReportFileQueryService;
 
     @GetMapping("/contests/{contestId}/image/banner")
@@ -204,27 +206,27 @@ public class ContestController {
     public ResponseEntity<Page<ContestVoteLogResponse>> getContestVoteLog(@PathVariable final Long contestId,
                                                                           @RequestParam(defaultValue = "0") @PositiveOrZero int page,
                                                                           @RequestParam(defaultValue = "20") @PositiveOrZero int size) {
-        return ResponseEntity.ok(contestQueryService.getContestVoteLog(contestId, page, size));
+        return ResponseEntity.ok(contestVoteQueryService.getContestVoteLog(contestId, page, size));
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/contests/{contestId}/ranking")
     public ResponseEntity<List<ContestRankingResponse>> getTeamRanking(@PathVariable final Long contestId) {
-        final List<ContestRankingResponse> responses = contestQueryService.getTeamRanking(contestId);
+        final List<ContestRankingResponse> responses = contestVoteQueryService.getTeamRanking(contestId);
         return ResponseEntity.ok(responses);
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/contests/{contestId}/votes/statistics")
     public ResponseEntity<ContestVoteStatisticsResponse> getVoteStatistics(@PathVariable final Long contestId) {
-        final ContestVoteStatisticsResponse response = contestQueryService.getVoteStatistics(contestId);
+        final ContestVoteStatisticsResponse response = contestVoteQueryService.getVoteStatistics(contestId);
         return ResponseEntity.ok(response);
     }
 
     @Secured("ROLE_관리자")
     @GetMapping("/contests/{contestId}/votes/report")
     public ResponseEntity<ContestVoteReportResponse> getVoteReport(@PathVariable final Long contestId) {
-        final ContestVoteReportResponse response = contestQueryService.getVoteReport(contestId);
+        final ContestVoteReportResponse response = contestVoteQueryService.getVoteReport(contestId);
         return ResponseEntity.ok(response);
     }
 
