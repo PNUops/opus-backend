@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ContestSubmissionMemoRepository extends JpaRepository<ContestSubmissionMemo, Long> {
 
-    Optional<ContestSubmissionMemo> findBySubmissionId(Long submissionId);
+    Optional<ContestSubmissionMemo> findBySubmissionItemIdAndTeamId(final Long submissionItemId, final Long teamId);
 
-    boolean existsBySubmissionId(Long submissionId);
+    boolean existsBySubmissionItemIdAndTeamId(final Long submissionItemId, final Long teamId);
 }
