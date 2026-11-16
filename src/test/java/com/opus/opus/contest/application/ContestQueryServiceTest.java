@@ -367,7 +367,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[실패] 팀원이 아닌 사용자가 대시보드 통계를 조회하면 TEAM_MEMBER_NOT_FOUND_IN_TEAM 예외가 발생한다.")
-    void 팀원이_아닌_사용자가_대시보드_통계를_조회하면_예외가_발생한다() {
+    void 팀원이_아닌_사용자가_대시보드_통계를_조회하면_TEAM_MEMBER_NOT_FOUND_IN_TEAM_예외가_발생한다() {
         final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
 
         assertThatThrownBy(() ->

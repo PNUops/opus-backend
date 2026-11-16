@@ -130,7 +130,7 @@ public class ContestVoteQueryServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] Standard Ranking 방식으로 대회 내 팀들의 순위를 조회할 수 있다.")
-    void standard_ranking_방식으로_팀들의_순위를_조회할_수_있다() {
+    void standard_ranking_방식으로_대회_내_팀들의_순위를_조회할_수_있다() {
         final Team team1 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team2 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         final Team team3 = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
@@ -181,7 +181,7 @@ public class ContestVoteQueryServiceTest extends IntegrationTest {
 
     @Test
     @DisplayName("[성공] 투표가 없는 경우 집계 수치는 0으로 반환된다.")
-    void 투표가_없는_경우_집계는_0이다() {
+    void 투표가_없는_경우_집계_수치는_0으로_반환된다() {
         final ContestVoteStatisticsResponse response = contestVoteQueryService.getVoteStatistics(contest.getId());
 
         assertThat(response.totalVotes()).isEqualTo(0L);
