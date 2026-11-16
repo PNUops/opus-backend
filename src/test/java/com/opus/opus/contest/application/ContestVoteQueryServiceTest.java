@@ -542,7 +542,7 @@ public class ContestVoteQueryServiceTest extends IntegrationTest {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team3, 103L));
 
         final List<ContestRankingResponse> responses = contestVoteQueryService.getTeamRanking(contest.getId());
-        List<ContestRankingResponse> sameVoteResponses = responses.stream()
+        final List<ContestRankingResponse> sameVoteResponses = responses.stream()
                 .filter(r -> r.voteCount() == 1L)
                 .toList();
 

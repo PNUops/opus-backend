@@ -27,7 +27,6 @@ import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestSort;
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
-import com.opus.opus.modules.contest.domain.dao.ContestCategoryRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSortRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
@@ -73,8 +72,6 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Autowired
     private ContestTemplateRepository contestTemplateRepository;
     @Autowired
-    private ContestCategoryRepository contestCategoryRepository;
-    @Autowired
     private ContestSortRepository contestSortRepository;
     @Autowired
     private ContestSubmissionItemRepository submissionItemRepository;
@@ -86,16 +83,15 @@ public class ContestQueryServiceTest extends IntegrationTest {
     private Contest contest;
     private Team team;
     private Member member;
-    private ContestSort contestSort;
 
     @BeforeEach
     void setUp() {
-        Contest newContest = ContestFixture.createContest();
+        final Contest newContest = ContestFixture.createContest();
         newContest.updateVotePeriod(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
         newContest.updateMaxVotesLimit(2);
 
         contest = contestRepository.save(newContest);
-        contestSort = contestSortRepository.save(ContestSortFixture.createContestSort(contest));
+        contestSortRepository.save(ContestSortFixture.createContestSort(contest));
         team = teamRepository.save(TeamFixture.createTeamWithContestId(contest.getId()));
         member = memberRepository.save(MemberFixture.createMember());
         teamMemberRepository.save(TeamMember.builder()
@@ -108,11 +104,11 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표 기간 조회 시 저장된 기간을 반환한다.")
     void 투표_기간_조회_시_저장된_기간을_반환한다() {
-        LocalDateTime startAt = now().plusDays(2);
-        LocalDateTime endAt = now().plusDays(7);
+        final LocalDateTime startAt = now().plusDays(2);
+        final LocalDateTime endAt = now().plusDays(7);
         contest.updateVotePeriod(startAt, endAt);
 
-        VotePeriodResponse response = contestQueryService.getVotePeriod(contest.getId());
+        final VotePeriodResponse response = contestQueryService.getVotePeriod(contest.getId());
 
         assertThat(response.voteStartAt()).isEqualTo(startAt);
         assertThat(response.voteEndAt()).isEqualTo(endAt);
@@ -153,7 +149,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 사용자의_남은_투표_개수를_조회할_수_있다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
-        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        final MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -162,7 +158,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
     @Test
     @DisplayName("[성공] 투표하지 않은 사용자는 최대 투표 수만큼 남은 투표 개수가 있다.")
     void 투표하지_않은_사용자는_최대_투표_수만큼_남은_투표_개수가_있다() {
-        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        final MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(2L);
         assertThat(response.maxVotesLimit()).isEqualTo(2L);
@@ -173,7 +169,7 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 한_표만_사용한_사용자는_한_표가_남는다() {
         teamVoteRepository.save(TeamVoteFixture.createTeamVote(team, member.getId()));
 
-        MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
+        final MemberVoteCountResponse response = contestQueryService.getMemberVoteCount(member.getId(), contest.getId());
 
         assertThat(response.remainingVotesCount()).isEqualTo(1L);
     }
