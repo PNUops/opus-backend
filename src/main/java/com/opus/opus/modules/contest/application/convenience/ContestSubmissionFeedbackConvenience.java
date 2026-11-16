@@ -18,22 +18,29 @@ public class ContestSubmissionFeedbackConvenience {
 
     private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
 
-    public List<ContestSubmissionFeedback> getFeedbacksBySubmission(final Long submissionId) {
-        return contestSubmissionFeedbackRepository.findAllBySubmissionIdOrderByIdDesc(submissionId);
+    public List<ContestSubmissionFeedback> getFeedbacksByTeamSubmissionItem(final Long submissionItemId,
+                                                                            final Long teamId) {
+        return contestSubmissionFeedbackRepository.findAllBySubmissionItemIdAndTeamIdOrderByIdDesc(submissionItemId,
+                teamId);
     }
 
-    public ContestSubmissionFeedback getValidateFeedback(final Long submissionId, final Long memberId) {
-        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId)
+    public ContestSubmissionFeedback getValidateFeedback(final Long submissionItemId, final Long teamId,
+                                                         final Long memberId) {
+        return findFeedback(submissionItemId, teamId, memberId)
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public ContestSubmissionFeedback getValidateFeedbackInSubmission(final Long feedbackId, final Long submissionId) {
-        return contestSubmissionFeedbackRepository.findById(feedbackId)
-                .filter(feedback -> feedback.getSubmission().getId().equals(submissionId))
+    public ContestSubmissionFeedback getValidateFeedbackInTeamSubmissionItem(final Long feedbackId,
+                                                                             final Long submissionItemId,
+                                                                             final Long teamId) {
+        return contestSubmissionFeedbackRepository.findByIdAndSubmissionItemIdAndTeamId(feedbackId, submissionItemId,
+                        teamId)
                 .orElseThrow(() -> new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
     }
 
-    public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionId, final Long memberId) {
-        return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId);
+    public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionItemId, final Long teamId,
+                                                            final Long memberId) {
+        return contestSubmissionFeedbackRepository.findBySubmissionItemIdAndTeamIdAndMemberId(submissionItemId, teamId,
+                memberId);
     }
 }

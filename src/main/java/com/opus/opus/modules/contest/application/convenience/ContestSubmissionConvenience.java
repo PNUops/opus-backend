@@ -13,7 +13,6 @@ import com.opus.opus.modules.contest.domain.dao.DownloadTargetResult;
 import com.opus.opus.modules.contest.domain.dao.TeamSubmissionStatusResult;
 import com.opus.opus.modules.contest.domain.dao.UpcomingSubmissionResult;
 import com.opus.opus.modules.contest.exception.ContestException;
-import com.opus.opus.modules.contest.exception.ContestExceptionType;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -32,20 +31,16 @@ public class ContestSubmissionConvenience {
                 .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
     }
 
+    public ContestSubmission getValidateExistSubmission(final Long teamId, final ContestSubmissionItem submissionItem) {
+        return contestSubmissionRepository.findByTeamIdAndSubmissionItem(teamId, submissionItem)
+                .orElseThrow(() -> new ContestException(NOT_FOUND_SUBMISSION));
+    }
+
     // 제출물 기능(#160): 대회 소속이 아니면 존재하지 않는 것으로 간주 → 404
     public ContestSubmission getValidateSubmissionInContest(final Long contestId, final Long submissionId) {
         final ContestSubmission submission = getValidateExistSubmission(submissionId);
         if (!submission.isInContest(contestId)) {
             throw new ContestException(NOT_FOUND_SUBMISSION);
-        }
-        return submission;
-    }
-
-    // 피드백 기능(#159): 대회 소속이 아니면 잘못된 요청 → 400
-    public ContestSubmission getValidateSubmissionBelongsToContest(final Long contestId, final Long submissionId) {
-        final ContestSubmission submission = getValidateExistSubmission(submissionId);
-        if (!submission.isInContest(contestId)) {
-            throw new ContestException(ContestExceptionType.INVALID_SUBMISSION_FOR_CONTEST);
         }
         return submission;
     }

@@ -174,9 +174,11 @@ CREATE TABLE `contest_submission_feedback` (
   `description` varchar(3000) NOT NULL,
   `member_id` bigint NOT NULL,
   `is_read` tinyint(1) NOT NULL DEFAULT 0,
-  `contest_submission_id` bigint NOT NULL,
+  `team_id` bigint NOT NULL,
+  `contest_submission_item_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_feedback_member_submission` (`member_id`,`contest_submission_id`)
+  UNIQUE KEY `uk_feedback_member_submission_item_team` (`member_id`,`contest_submission_item_id`,`team_id`),
+  KEY `idx_feedback_team_submission_item` (`team_id`,`contest_submission_item_id`)
 );
 
 CREATE TABLE `contest_sort` (

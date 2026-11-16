@@ -5,27 +5,36 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 public interface ContestSubmissionFeedbackRepository extends JpaRepository<ContestSubmissionFeedback, Long> {
 
-    List<ContestSubmissionFeedback> findAllBySubmissionIdOrderByIdDesc(Long submissionId);
+    List<ContestSubmissionFeedback> findAllBySubmissionItemIdAndTeamIdOrderByIdDesc(final Long submissionItemId,
+                                                                                    final Long teamId);
 
-    Optional<ContestSubmissionFeedback> findBySubmissionIdAndMemberId(Long submissionId, Long memberId);
+    Optional<ContestSubmissionFeedback> findBySubmissionItemIdAndTeamIdAndMemberId(final Long submissionItemId,
+                                                                                   final Long teamId,
+                                                                                   final Long memberId);
 
-    long countBySubmission_TeamIdAndIsReadFalse(Long teamId);
+    Optional<ContestSubmissionFeedback> findByIdAndSubmissionItemIdAndTeamId(final Long id,
+                                                                             final Long submissionItemId,
+                                                                             final Long teamId);
 
-    Optional<ContestSubmissionFeedback> findTopBySubmission_TeamIdOrderByCreatedAtDesc(Long teamId);
+    long countByTeamIdAndIsReadFalseAndSubmissionItem_IsDeletedFalse(final Long teamId);
 
-    long countBySubmissionId(Long submissionId);
+    Optional<ContestSubmissionFeedback> findTopByTeamIdAndSubmissionItem_IsDeletedFalseOrderByCreatedAtDesc(
+            final Long teamId);
 
-    long countBySubmissionIdIn(List<Long> submissionIds);
+    long countBySubmissionItemIdAndTeamId(final Long submissionItemId, final Long teamId);
+
+    long countByTeamIdAndSubmissionItem_IsDeletedFalse(final Long teamId);
 
     @Query("""
-            SELECT f.submission.id
+            SELECT f.submissionItem.id
             FROM ContestSubmissionFeedback f
             WHERE f.memberId = :memberId
-              AND f.submission.id IN :submissionIds
+              AND f.teamId = :teamId
+              AND f.submissionItem.id IN :submissionItemIds
             """)
-    List<Long> findReviewedSubmissionIds(Long memberId, List<Long> submissionIds);
+    List<Long> findReviewedSubmissionItemIds(final Long memberId, final Long teamId,
+                                             final List<Long> submissionItemIds);
 }
