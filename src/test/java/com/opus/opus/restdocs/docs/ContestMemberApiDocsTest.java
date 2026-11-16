@@ -228,7 +228,7 @@ public class ContestMemberApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("[].projectName", "프로젝트명"),
                                 stringFieldWithPath("[].trackName", "분과(트랙)명 (분과 미지정 시 null)"),
                                 stringFieldWithPath("[].roleType", "역할 (MemberRoleType)"),
-                                numberFieldWithPath("[].pendingFeedbackCount", "이 팀의 피드백 대기 건수")
+                                numberFieldWithPath("[].pendingFeedbackCount", "이 팀의 피드백 대기 건수 (현재 제출물 중 본인 피드백이 없는 제출 항목 수)")
                         )
                 ));
     }
@@ -262,12 +262,12 @@ public class ContestMemberApiDocsTest extends RestDocsTest {
                                 stringFieldWithPath("teamName", "팀명"),
                                 stringFieldWithPath("projectName", "프로젝트명"),
                                 stringFieldWithPath("trackName", "분과(트랙)명 (분과 미지정 시 null)"),
-                                numberFieldWithPath("pendingFeedbackCount", "이 팀의 피드백 대기 건수"),
+                                numberFieldWithPath("pendingFeedbackCount", "이 팀의 피드백 대기 건수 (현재 제출물 중 본인 피드백이 없는 제출 항목 수)"),
                                 arrayFieldWithPath("submissions", "제출물 목록"),
                                 numberFieldWithPath("submissions[].submissionId", "제출 ID"),
                                 numberFieldWithPath("submissions[].submissionItemId", "제출 항목 ID"),
                                 stringFieldWithPath("submissions[].submissionItemName", "제출 항목명"),
-                                stringFieldWithPath("submissions[].feedbackStatus", "피드백 상태 (COMPLETED/PENDING)"),
+                                stringFieldWithPath("submissions[].feedbackStatus", "피드백 상태 (COMPLETED/PENDING, 같은 팀·제출 항목에 본인 피드백이 있으면 다시 제출해도 COMPLETED)"),
                                 arrayFieldWithPath("submissions[].files", "첨부 파일 목록"),
                                 numberFieldWithPath("submissions[].files[].fileId", "첨부 파일 ID"),
                                 stringFieldWithPath("submissions[].files[].fileName", "파일명"),
