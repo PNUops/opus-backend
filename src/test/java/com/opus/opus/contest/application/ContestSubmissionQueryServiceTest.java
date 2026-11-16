@@ -52,6 +52,7 @@ import com.opus.opus.modules.team.exception.TeamExceptionType;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.modules.team.exception.TeamMemberExceptionType;
 import com.opus.opus.team.TeamFixture;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -85,6 +86,8 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
     private ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
     @Autowired
     private ContestMemberRepository contestMemberRepository;
+    @Autowired
+    private EntityManager entityManager;
 
     private Contest contest;
     private Team team;
@@ -160,14 +163,38 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         final Member feedbackMember1 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
         final Member feedbackMember2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
         contestSubmissionFeedbackRepository.save(
-                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember1.getId()));
+                ContestSubmissionFeedbackFixture.createFeedback(
+                        submission.getSubmissionItem(), submission.getTeamId(), feedbackMember1.getId()));
         contestSubmissionFeedbackRepository.save(
-                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember2.getId()));
+                ContestSubmissionFeedbackFixture.createFeedback(
+                        submission.getSubmissionItem(), submission.getTeamId(), feedbackMember2.getId()));
 
         final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
                 contest.getId(), submission.getId(), member);
 
         assertThat(response.feedbackCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물을 삭제하고 다시 제출해도 제출물 상세의 피드백 개수에 기존 피드백이 포함된다.")
+    void 제출물을_삭제하고_다시_제출해도_제출물_상세의_피드백_개수에_기존_피드백이_포함된다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionItemFixture.createSubmissionItem(contest, track));
+        final ContestSubmission deletedSubmission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), item));
+        final Member feedbackMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(item, team.getId(), feedbackMember.getId()));
+        contestSubmissionRepository.delete(deletedSubmission);
+        final ContestSubmission resubmission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), item));
+
+        final ContestSubmissionDetailResponse response = contestSubmissionQueryService.getSubmissionDetail(
+                contest.getId(), resubmission.getId(), member);
+
+        assertThat(response.feedbackCount()).isEqualTo(1);
     }
 
     @Test
@@ -809,14 +836,60 @@ public class ContestSubmissionQueryServiceTest extends IntegrationTest {
         final Member feedbackMember1 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
         final Member feedbackMember2 = memberRepository.save(MemberFixture.createMemberWithUniqueNum(2));
         contestSubmissionFeedbackRepository.save(
-                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember1.getId()));
+                ContestSubmissionFeedbackFixture.createFeedback(
+                        submission.getSubmissionItem(), submission.getTeamId(), feedbackMember1.getId()));
         contestSubmissionFeedbackRepository.save(
-                ContestSubmissionFeedbackFixture.createFeedback(submission, feedbackMember2.getId()));
+                ContestSubmissionFeedbackFixture.createFeedback(
+                        submission.getSubmissionItem(), submission.getTeamId(), feedbackMember2.getId()));
 
         final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
                 contest.getId(), team.getId(), member);
 
         assertThat(response.totalFeedbackCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물이 삭제돼도 남아 있는 피드백은 피드백 총 수에 포함된다.")
+    void 제출물이_삭제돼도_남아_있는_피드백은_피드백_총_수에_포함된다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmission submission = contestSubmissionRepository.save(
+                ContestSubmissionFixture.createSubmission(team.getId(), item));
+        final Member feedbackMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(item, team.getId(), feedbackMember.getId()));
+        contestSubmissionRepository.delete(submission);
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.submittedCount()).isZero();
+        assertThat(response.totalFeedbackCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[성공] 삭제된 제출 항목의 피드백은 피드백 총 수에 포함되지 않는다.")
+    void 삭제된_제출_항목의_피드백은_피드백_총_수에_포함되지_않는다() {
+        prepareTeamAndMember();
+        joinTeam(member, team);
+        final ContestSubmissionItem item = contestSubmissionItemRepository.save(
+                ContestSubmissionFixture.createSubmissionItem(contest));
+        final Member feedbackMember = memberRepository.save(MemberFixture.createMemberWithUniqueNum(1));
+        contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedbackFixture.createFeedback(item, team.getId(), feedbackMember.getId()));
+
+        entityManager.createQuery("UPDATE ContestSubmissionItem i SET i.isDeleted = true WHERE i.id = :id")
+                .setParameter("id", item.getId())
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
+
+        final TeamSubmissionSummaryResponse response = contestSubmissionQueryService.getTeamSubmissionSummary(
+                contest.getId(), team.getId(), member);
+
+        assertThat(response.totalFeedbackCount()).isZero();
     }
 
     @Test
