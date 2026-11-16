@@ -10,7 +10,11 @@ import org.springframework.security.access.annotation.Secured;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
 import com.opus.opus.modules.member.application.StatisticsQueryService;
+import com.opus.opus.modules.member.application.dto.request.AdminMemberSearchRequest;
+import com.opus.opus.modules.member.application.dto.request.AdminPermissionChangeRequest;
 import com.opus.opus.modules.member.application.dto.request.GithubUrlUpdateRequest;
+import com.opus.opus.modules.member.application.dto.request.MemberRolesChangeRequest;
+import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
 import com.opus.opus.modules.member.application.dto.response.StatisticsSummaryResponse;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthConfirmRequest;
 import com.opus.opus.modules.member.application.dto.request.EmailAuthRequest;
@@ -21,6 +25,8 @@ import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpd
 import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -28,12 +34,14 @@ import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberSearchResponse;
+import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.team.application.dto.ImageResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Set;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -43,9 +51,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -182,9 +192,35 @@ public class MemberController {
 
     @Secured("ROLE_관리자")
     @DeleteMapping("/admin/members/{memberId}")
-    public ResponseEntity<Void> forceDeleteMember(@PathVariable final Long memberId,
+    public ResponseEntity<Void> forceDeleteMember(@LoginMember final Member admin,
+                                                  @PathVariable final Long memberId,
                                                   @Valid @RequestBody final ForceDeleteMemberRequest request) {
-        memberCommandService.withdrawByAdmin(memberId, request);
+        memberCommandService.withdrawByAdmin(admin.getId(), memberId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @PutMapping("/admin/members/{memberId}/roles")
+    public ResponseEntity<Void> changeMemberRoles(@LoginMember final Member admin,
+                                                  @PathVariable final Long memberId,
+                                                  @Valid @RequestBody final MemberRolesChangeRequest request) {
+        memberCommandService.changeRoles(admin.getId(), memberId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/{memberId}/role-change-blockers")
+    public ResponseEntity<RoleChangeBlockersResponse> getRoleChangeBlockers(@PathVariable final Long memberId,
+                                                                            @RequestParam final Set<String> roles) {
+        return ResponseEntity.ok(memberQueryService.getRoleChangeBlockers(memberId, roles));
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/admin/members/{memberId}/admin-permission")
+    public ResponseEntity<Void> changeAdminPermission(@LoginMember final Member admin,
+                                                      @PathVariable final Long memberId,
+                                                      @Valid @RequestBody final AdminPermissionChangeRequest request) {
+        memberCommandService.changeAdminPermission(admin.getId(), memberId, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -194,6 +230,26 @@ public class MemberController {
             @RequestParam(required = false) final String keyword,
             @RequestParam(required = false) final String roleType) {
         return ResponseEntity.ok(memberQueryService.getMembersByKeyword(keyword, roleType));
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members")
+    public ResponseEntity<Page<AdminMemberResponse>> getAdminMembers(
+            @Valid @ModelAttribute final AdminMemberSearchRequest request) {
+        return ResponseEntity.ok(memberQueryService.getAdminMembers(request.keyword(), request.roleType(),
+                request.status(), request.page(), request.size()));
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/summary")
+    public ResponseEntity<AdminMemberSummaryResponse> getAdminMemberSummary() {
+        return ResponseEntity.ok(memberQueryService.getAdminMemberSummary());
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/members/{memberId}/withdrawal")
+    public ResponseEntity<MemberWithdrawalResponse> getWithdrawal(@PathVariable final Long memberId) {
+        return ResponseEntity.ok(memberQueryService.getWithdrawal(memberId));
     }
 
     @GetMapping("/members/me/projects")

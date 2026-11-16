@@ -131,6 +131,33 @@ public class Member extends BaseEntity {
                 .orElse(null);
     }
 
+    public Set<MemberRoleType> getBaseRoles() {
+        final Set<MemberRoleType> baseRoles = new HashSet<>(roles);
+        baseRoles.remove(MemberRoleType.ROLE_관리자);
+        return Set.copyOf(baseRoles);
+    }
+
+    public void changeBaseRoles(final Set<MemberRoleType> baseRoles) {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(baseRoles);
+        if (isAdmin()) {
+            changedRoles.add(MemberRoleType.ROLE_관리자);
+        }
+        this.roles = changedRoles;
+    }
+
+    // 생성 시 불변 Set이 주입될 수 있어 컬렉션을 수정하지 않고 새 Set으로 교체한다.
+    public void grantAdmin() {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(roles);
+        changedRoles.add(MemberRoleType.ROLE_관리자);
+        this.roles = changedRoles;
+    }
+
+    public void revokeAdmin() {
+        final Set<MemberRoleType> changedRoles = new HashSet<>(roles);
+        changedRoles.remove(MemberRoleType.ROLE_관리자);
+        this.roles = changedRoles;
+    }
+
     public boolean hasStaffRole() {
         return roles.stream().anyMatch(MemberRoleType::isStaff);
     }
@@ -138,8 +165,8 @@ public class Member extends BaseEntity {
     public String getStaffRoleName() {
         return roles.stream()
                 .filter(MemberRoleType::isStaff)
+                .min(Comparator.comparingLong(MemberRoleType::getId))
                 .map(Enum::name)
-                .findFirst()
                 .orElse(null);
     }
 
