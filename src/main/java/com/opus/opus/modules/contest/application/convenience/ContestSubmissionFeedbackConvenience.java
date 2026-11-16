@@ -2,7 +2,6 @@ package com.opus.opus.modules.contest.application.convenience;
 
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 
-import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
@@ -36,15 +35,5 @@ public class ContestSubmissionFeedbackConvenience {
 
     public Optional<ContestSubmissionFeedback> findFeedback(final Long submissionId, final Long memberId) {
         return contestSubmissionFeedbackRepository.findBySubmissionIdAndMemberId(submissionId, memberId);
-    }
-
-    @Transactional
-    public ContestSubmissionFeedback createFeedback(final ContestSubmission submission, final Long memberId,
-                                                    final String description) {
-        return contestSubmissionFeedbackRepository.save(ContestSubmissionFeedback.builder()
-                .description(description)
-                .memberId(memberId)
-                .submission(submission)
-                .build());
     }
 }

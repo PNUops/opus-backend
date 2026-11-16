@@ -9,6 +9,7 @@ import com.opus.opus.modules.contest.application.convenience.ContestSubmissionFe
 import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionFeedback;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
+import com.opus.opus.modules.contest.domain.dao.ContestSubmissionFeedbackRepository;
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.file.application.FileFeedbackCommandService;
 import com.opus.opus.modules.member.domain.Member;
@@ -25,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Transactional
 public class ContestSubmissionFeedbackCommandService {
+
+    private final ContestSubmissionFeedbackRepository contestSubmissionFeedbackRepository;
 
     private final ContestConvenience contestConvenience;
     private final ContestMemberConvenience contestMemberConvenience;
@@ -80,8 +83,12 @@ public class ContestSubmissionFeedbackCommandService {
 
     private ContestSubmissionFeedback createFeedback(final Long contestId, final ContestSubmission submission,
                                                      final Long memberId, final String description) {
-        final ContestSubmissionFeedback feedback =
-                contestSubmissionFeedbackConvenience.createFeedback(submission, memberId, description);
+        final ContestSubmissionFeedback feedback = contestSubmissionFeedbackRepository.save(
+                ContestSubmissionFeedback.builder()
+                        .description(description)
+                        .memberId(memberId)
+                        .submission(submission)
+                        .build());
         publishFeedbackNotification(contestId, submission);
         return feedback;
     }
