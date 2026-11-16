@@ -747,7 +747,7 @@ public class ContestApiDocsTest extends RestDocsTest {
         final Page<ContestVoteLogResponse> page = new PageImpl<>(content,
                 PageRequest.of(0, 20, Sort.by(DESC, "votedAt")), 2);
 
-        when(contestQueryService.getContestVoteLog(any(), anyInt(), anyInt())).thenReturn(page);
+        when(contestVoteQueryService.getContestVoteLog(any(), anyInt(), anyInt())).thenReturn(page);
 
         mockMvc.perform(get("/contests/{contestId}/vote-log", 1)
                         .param("page", "0")
@@ -793,7 +793,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 new ContestRankingResponse(4, 13L, "팀 D", "감정 분석기", "AI 트랙", 85L)  // 3 → 4
         );
 
-        when(contestQueryService.getTeamRanking(any())).thenReturn(responses);
+        when(contestVoteQueryService.getTeamRanking(any())).thenReturn(responses);
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -822,7 +822,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 랭킹 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_랭킹_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(contestQueryService)
+                .given(contestVoteQueryService)
                 .getTeamRanking(any());
 
         mockMvc.perform(get("/contests/{contestId}/ranking", 999)
@@ -844,7 +844,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     void 대회의_투표_집계를_조회할_수_있다() throws Exception {
         final ContestVoteStatisticsResponse response = new ContestVoteStatisticsResponse(366L, 249L, 1.5);
 
-        when(contestQueryService.getVoteStatistics(any())).thenReturn(response);
+        when(contestVoteQueryService.getVoteStatistics(any())).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -869,7 +869,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 집계 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_집계_조회_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(contestQueryService)
+                .given(contestVoteQueryService)
                 .getVoteStatistics(any());
 
         mockMvc.perform(get("/contests/{contestId}/votes/statistics", 999)
@@ -946,7 +946,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                 )
         );
 
-        when(contestQueryService.getVoteReport(any(Long.class))).thenReturn(response);
+        when(contestVoteQueryService.getVoteReport(any(Long.class))).thenReturn(response);
 
         mockMvc.perform(get("/contests/{contestId}/votes/report", 1)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
@@ -1021,7 +1021,7 @@ public class ContestApiDocsTest extends RestDocsTest {
     @DisplayName("[실패] 존재하지 않는 대회의 투표 리포트 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_투표_리포트_조회_시_404_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
-                .given(contestQueryService)
+                .given(contestVoteQueryService)
                 .getVoteReport(any(Long.class));
 
         mockMvc.perform(get("/contests/{contestId}/votes/report", 999)
