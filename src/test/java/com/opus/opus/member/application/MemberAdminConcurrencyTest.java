@@ -13,7 +13,7 @@ import com.opus.opus.modules.member.application.dto.request.AdminPermissionChang
 import com.opus.opus.modules.member.application.dto.request.ForceDeleteMemberRequest;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
-import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
+import com.opus.opus.modules.member.domain.dao.AdminActivityHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -51,7 +51,7 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
 
     @Autowired
-    private MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
+    private AdminActivityHistoryRepository adminActivityHistoryRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -64,7 +64,7 @@ public class MemberAdminConcurrencyTest extends IntegrationTest {
     @AfterEach
     void 테스트에서_커밋된_회원과_탈퇴_이력을_정리한다() {
         memberWithdrawalHistoryRepository.deleteAllInBatch();
-        memberAdminPermissionHistoryRepository.deleteAllInBatch();
+        adminActivityHistoryRepository.deleteAllInBatch();
         for (final Long memberId : committedMemberIds) {
             jdbcTemplate.update("DELETE FROM member_roles WHERE member_id = ?", memberId);
             jdbcTemplate.update("DELETE FROM member WHERE id = ?", memberId);

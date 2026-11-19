@@ -75,6 +75,7 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminRecentActivityResponse;
 import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
@@ -85,6 +86,8 @@ import com.opus.opus.modules.member.application.dto.response.MyLikePreviewRespon
 import com.opus.opus.modules.member.application.dto.response.MyLikedProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
+import com.opus.opus.modules.member.domain.AdminActivityTargetType;
+import com.opus.opus.modules.member.domain.AdminActivityType;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
@@ -1663,6 +1666,40 @@ public class MemberApiDocsTest extends RestDocsTest {
                         responseFields(
                                 numberFieldWithPath("activeCount", "활동 사용자 수 (임시 계정 제외)"),
                                 numberFieldWithPath("withdrawnCount", "탈퇴 사용자 수 (임시 계정 제외)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 최근 관리 이력을 조회한다.")
+    void 관리자가_최근_관리_이력을_조회한다() throws Exception {
+        final List<AdminRecentActivityResponse> response = List.of(
+                new AdminRecentActivityResponse(12L, AdminActivityType.MEMBER_ROLES_CHANGED, "관리자",
+                        AdminActivityTargetType.MEMBER, "홍길동", null, null,
+                        "홍길동님의 역할이 학생에서 학생, 교수로 변경됨", LocalDateTime.of(2026, 11, 19, 14, 30)),
+                new AdminRecentActivityResponse(11L, AdminActivityType.ADMIN_PERMISSION_GRANTED, "관리자",
+                        AdminActivityTargetType.MEMBER, "김철수", null, null,
+                        "김철수님에게 관리자 권한이 부여됨", LocalDateTime.of(2026, 11, 19, 13, 5)));
+        when(memberQueryService.getRecentAdminActivities()).thenReturn(response);
+
+        mockMvc.perform(get("/admin/dashboard/recent-activities")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer admin.access.token"))
+                .andExpect(status().isOk())
+                .andDo(document("admin-get-recent-activities",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description(
+                                        String.format(authorizationHeaderDescription, "(관리자)"))
+                        ),
+                        responseFields(
+                                numberFieldWithPath("[].id", "관리 이력 ID"),
+                                stringFieldWithPath("[].type", "작업 종류 (MEMBER_ROLES_CHANGED: 역할 변경, ADMIN_PERMISSION_GRANTED: 관리자 권한 부여, ADMIN_PERMISSION_REVOKED: 관리자 권한 회수, MEMBER_WITHDRAWN_BY_ADMIN: 관리자 탈퇴 처리)"),
+                                stringFieldWithPath("[].actorName", "작업을 수행한 관리자 이름 (작업 시점 기준)"),
+                                stringFieldWithPath("[].targetType", "작업 대상 종류 (MEMBER: 회원)"),
+                                stringFieldWithPath("[].targetName", "작업 대상 이름 (작업 시점 기준)"),
+                                numberFieldWithPath("[].contestId", "대회 ID. 서비스 전역 작업이면 null").optional(),
+                                stringFieldWithPath("[].contestName", "대회명. 서비스 전역 작업이거나 대회가 삭제되었으면 null").optional(),
+                                stringFieldWithPath("[].summary", "작업 요약 문구"),
+                                dateTimeFieldWithPath("[].createdAt", "작업 처리 시각")
                         )
                 ));
     }

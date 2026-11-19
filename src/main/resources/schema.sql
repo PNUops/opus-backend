@@ -33,6 +33,7 @@ DROP TABLE IF EXISTS `member_role_change_history_before_roles`;
 DROP TABLE IF EXISTS `member_role_change_history_after_roles`;
 DROP TABLE IF EXISTS `member_role_change_history`;
 DROP TABLE IF EXISTS `member_admin_permission_history`;
+DROP TABLE IF EXISTS `admin_activity_history`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest`;
@@ -335,37 +336,20 @@ CREATE TABLE `member_withdrawal_history` (
   KEY `idx_member_withdrawal_history_member_id` (`member_id`)
 );
 
-CREATE TABLE `member_role_change_history` (
+CREATE TABLE `admin_activity_history` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `member_id` bigint NOT NULL,
-  `admin_id` bigint NOT NULL,
+  `type` enum('MEMBER_ROLES_CHANGED','ADMIN_PERMISSION_GRANTED','ADMIN_PERMISSION_REVOKED','MEMBER_WITHDRAWN_BY_ADMIN') NOT NULL,
+  `actor_id` bigint NOT NULL,
+  `actor_name` varchar(255) NOT NULL,
+  `target_type` enum('MEMBER') NOT NULL,
+  `target_id` bigint NOT NULL,
+  `target_name` varchar(255) NOT NULL,
+  `contest_id` bigint DEFAULT NULL,
+  `summary` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_member_role_change_history_member_id` (`member_id`)
-);
-
-CREATE TABLE `member_role_change_history_before_roles` (
-  `history_id` bigint NOT NULL,
-  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
-  PRIMARY KEY (`history_id`,`role`)
-);
-
-CREATE TABLE `member_role_change_history_after_roles` (
-  `history_id` bigint NOT NULL,
-  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
-  PRIMARY KEY (`history_id`,`role`)
-);
-
-CREATE TABLE `member_admin_permission_history` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `member_id` bigint NOT NULL,
-  `admin_id` bigint NOT NULL,
-  `granted` bit(1) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_member_admin_permission_history_member_id` (`member_id`)
+  KEY `idx_admin_activity_history_created_at_id` (`created_at`, `id`)
 );
 
 CREATE TABLE `notice` (

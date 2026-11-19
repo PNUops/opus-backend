@@ -27,6 +27,7 @@ import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateReque
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminRecentActivityResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -244,6 +245,12 @@ public class MemberController {
     @GetMapping("/admin/members/summary")
     public ResponseEntity<AdminMemberSummaryResponse> getAdminMemberSummary() {
         return ResponseEntity.ok(memberQueryService.getAdminMemberSummary());
+    }
+
+    @Secured("ROLE_관리자")
+    @GetMapping("/admin/dashboard/recent-activities")
+    public ResponseEntity<List<AdminRecentActivityResponse>> getRecentAdminActivities() {
+        return ResponseEntity.ok(memberQueryService.getRecentAdminActivities());
     }
 
     @Secured("ROLE_관리자")

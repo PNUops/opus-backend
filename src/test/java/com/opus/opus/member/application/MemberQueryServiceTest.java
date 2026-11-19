@@ -36,6 +36,7 @@ import com.opus.opus.modules.file.domain.FileImage;
 import com.opus.opus.modules.file.domain.dao.FileImageRepository;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.application.MemberQueryService;
+import com.opus.opus.modules.member.application.dto.response.AdminRecentActivityResponse;
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
@@ -47,11 +48,13 @@ import com.opus.opus.modules.member.application.dto.response.MemberSearchRespons
 import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
+import com.opus.opus.modules.member.domain.AdminActivityHistory;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.application.MemberStatus;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
+import com.opus.opus.modules.member.domain.dao.AdminActivityHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -71,8 +74,10 @@ import com.opus.opus.team.TeamCommentFixture;
 import com.opus.opus.team.TeamFixture;
 import com.opus.opus.team.TeamLikeFixture;
 import com.opus.opus.team.TeamVoteFixture;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,6 +124,12 @@ public class MemberQueryServiceTest extends IntegrationTest {
 
     @Autowired
     private FileQueryService fileQueryService;
+
+    @Autowired
+    private AdminActivityHistoryRepository adminActivityHistoryRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private Member member;
     private Team team;
@@ -872,6 +883,78 @@ public class MemberQueryServiceTest extends IntegrationTest {
                 999999L, Set.of("ROLE_교수")))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 최근 관리 이력은 최신순으로 최대 4건 조회된다.")
+    void 최근_관리_이력은_최신순으로_최대_4건_조회된다() {
+        final LocalDateTime base = LocalDateTime.of(2026, 11, 1, 10, 0);
+        final List<Long> ids = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            ids.add(saveAdminActivityAt(base.plusMinutes(i), null));
+        }
+
+        final List<AdminRecentActivityResponse> responses = memberQueryService.getRecentAdminActivities();
+
+        assertThat(responses).extracting(AdminRecentActivityResponse::id)
+                .containsExactly(ids.get(4), ids.get(3), ids.get(2), ids.get(1));
+    }
+
+    @Test
+    @DisplayName("[성공] 처리 시각이 같은 최근 관리 이력은 나중에 저장된 순으로 조회된다.")
+    void 처리_시각이_같은_최근_관리_이력은_나중에_저장된_순으로_조회된다() {
+        final LocalDateTime sameTime = LocalDateTime.of(2026, 11, 1, 10, 0);
+        final Long firstId = saveAdminActivityAt(sameTime, null);
+        final Long secondId = saveAdminActivityAt(sameTime, null);
+
+        final List<AdminRecentActivityResponse> responses = memberQueryService.getRecentAdminActivities();
+
+        assertThat(responses).extracting(AdminRecentActivityResponse::id)
+                .containsExactly(secondId, firstId);
+    }
+
+    @Test
+    @DisplayName("[성공] 대회 이력은 대회명을 함께 반환하고, 삭제된 대회나 전역 작업은 대회명이 null이다.")
+    void 대회_이력은_대회명을_함께_반환하고_삭제된_대회나_전역_작업은_대회명이_null이다() {
+        final Contest activeContest = saveContest("진행 중 대회", true);
+        final Contest deletedContest = saveContest("삭제된 대회", false);
+        contestRepository.delete(deletedContest);
+        final LocalDateTime base = LocalDateTime.of(2026, 11, 1, 10, 0);
+        final Long globalId = saveAdminActivityAt(base, null);
+        final Long deletedContestId = saveAdminActivityAt(base.plusMinutes(1), deletedContest.getId());
+        final Long activeContestId = saveAdminActivityAt(base.plusMinutes(2), activeContest.getId());
+
+        final List<AdminRecentActivityResponse> responses = memberQueryService.getRecentAdminActivities();
+
+        assertThat(responses)
+                .extracting(AdminRecentActivityResponse::id, AdminRecentActivityResponse::contestId,
+                        AdminRecentActivityResponse::contestName)
+                .containsExactly(
+                        tuple(activeContestId, activeContest.getId(), "진행 중 대회"),
+                        tuple(deletedContestId, deletedContest.getId(), null),
+                        tuple(globalId, null, null));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리 이력이 없으면 빈 목록을 반환한다.")
+    void 관리_이력이_없으면_빈_목록을_반환한다() {
+        assertThat(memberQueryService.getRecentAdminActivities()).isEmpty();
+    }
+
+    // 현재 대회 이벤트가 없어 contest_id를 채우는 팩토리가 없으므로, 처리 시각과 함께 직접 갱신한다.
+    private Long saveAdminActivityAt(final LocalDateTime createdAt, final Long contestId) {
+        final AdminActivityHistory history = adminActivityHistoryRepository.save(
+                AdminActivityHistory.adminPermissionChanged(member, member, true));
+        entityManager.flush();
+
+        entityManager.createNativeQuery(
+                        "UPDATE admin_activity_history SET created_at = :createdAt, contest_id = :contestId WHERE id = :id")
+                .setParameter("createdAt", createdAt)
+                .setParameter("contestId", contestId)
+                .setParameter("id", history.getId())
+                .executeUpdate();
+        entityManager.clear();
+        return history.getId();
     }
 
     private Contest saveContest(final String contestName, final boolean isCurrent) {

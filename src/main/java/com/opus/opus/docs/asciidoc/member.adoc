@@ -1074,6 +1074,23 @@ include::{snippets}/admin-get-member-summary/request-headers.adoc[]
 .Response Body's Fields
 include::{snippets}/admin-get-member-summary/response-fields.adoc[]
 
+== `GET`: 최근 관리 이력 조회
+
+NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 관리자 대시보드에 표시할 최근 관리 이력을 처리 시각 최신순으로 최대 4건 반환합니다.
+`actorName`·`targetName`은 작업 시점의 이름이며, 서비스 전역 작업이면 `contestId`·`contestName`이 `null`입니다.
+
+.HTTP Request
+include::{snippets}/admin-get-recent-activities/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/admin-get-recent-activities/http-response.adoc[]
+
+.Request Headers
+include::{snippets}/admin-get-recent-activities/request-headers.adoc[]
+
+.Response Body's Fields
+include::{snippets}/admin-get-recent-activities/response-fields.adoc[]
+
 == `GET`: 관리자 탈퇴 내역 조회
 
 NOTE: 관리자 권한(`ROLE_관리자`)이 필요합니다. 탈퇴 회원의 탈퇴 사유·상세 사유·처리 시각·수행 관리자를 반환합니다.

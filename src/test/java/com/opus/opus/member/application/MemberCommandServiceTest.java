@@ -67,13 +67,14 @@ import com.opus.opus.modules.member.application.dto.request.SignUpRequest;
 import com.opus.opus.modules.member.application.dto.request.ProfileVisibilityUpdateRequest;
 import com.opus.opus.modules.member.application.dto.request.StudentIdUpdateRequest;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import com.opus.opus.modules.member.domain.AdminActivityTargetType;
+import com.opus.opus.modules.member.domain.AdminActivityType;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
+import com.opus.opus.modules.member.domain.dao.AdminActivityHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
-import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
-import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
 import com.opus.opus.modules.team.domain.Team;
@@ -118,10 +119,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
     private MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
 
     @Autowired
-    private MemberRoleChangeHistoryRepository memberRoleChangeHistoryRepository;
-
-    @Autowired
-    private MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
+    private AdminActivityHistoryRepository adminActivityHistoryRepository;
 
     @Autowired
     private ContestRepository contestRepository;
@@ -591,6 +589,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                     assertThat(history.getDetail()).isNull();
                     assertThat(history.getAdminId()).isNull();
                 });
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -642,6 +641,15 @@ public class MemberCommandServiceTest extends IntegrationTest {
                     assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.DUPLICATE_ACCOUNT);
                     assertThat(history.getDetail()).isEqualTo("동일 학번 중복 가입");
                     assertThat(history.getAdminId()).isEqualTo(admin.getId());
+                });
+        assertThat(adminActivityHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getType()).isEqualTo(AdminActivityType.MEMBER_WITHDRAWN_BY_ADMIN);
+                    assertThat(history.getActorId()).isEqualTo(admin.getId());
+                    assertThat(history.getTargetId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getSummary())
+                            .isEqualTo("%s님의 계정이 탈퇴 처리됨".formatted(teamLeader.getName()));
                 });
     }
 
@@ -763,6 +771,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(MemberException.class)
                 .hasMessage(ALREADY_WITHDRAWN_MEMBER.errorMessage());
         assertThat(memberWithdrawalHistoryRepository.count()).isEqualTo(1);
+        assertThat(adminActivityHistoryRepository.count()).isEqualTo(1);
     }
 
     @Test
@@ -851,13 +860,18 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
         assertThat(teamMemberRepository.existsByTeamIdAndMemberId(team.getId(), teamLeader.getId())).isTrue();
-        assertThat(memberRoleChangeHistoryRepository.findAll())
+        assertThat(adminActivityHistoryRepository.findAll())
                 .singleElement()
                 .satisfies(history -> {
-                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
-                    assertThat(history.getAdminId()).isEqualTo(admin.getId());
-                    assertThat(history.getBeforeRoles()).containsExactly(ROLE_학생);
-                    assertThat(history.getAfterRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
+                    assertThat(history.getType()).isEqualTo(AdminActivityType.MEMBER_ROLES_CHANGED);
+                    assertThat(history.getActorId()).isEqualTo(admin.getId());
+                    assertThat(history.getActorName()).isEqualTo(admin.getName());
+                    assertThat(history.getTargetType()).isEqualTo(AdminActivityTargetType.MEMBER);
+                    assertThat(history.getTargetId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getTargetName()).isEqualTo(teamLeader.getName());
+                    assertThat(history.getContestId()).isNull();
+                    assertThat(history.getSummary())
+                            .isEqualTo("%s님의 역할이 학생에서 학생, 교수로 변경됨".formatted(teamLeader.getName()));
                     assertThat(history.getCreatedAt()).isNotNull();
                 });
     }
@@ -948,7 +962,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(MemberException.class)
                 .hasMessage(ROLE_CHANGE_BLOCKED_BY_ASSIGNMENT.errorMessage());
         assertThat(reloadMember(member.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_교수);
-        assertThat(memberRoleChangeHistoryRepository.findAll()).isEmpty();
+        assertThat(adminActivityHistoryRepository.findAll()).isEmpty();
     }
 
     @Test
@@ -962,12 +976,10 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         assertThat(reloadMember(otherAdmin.getId()).getRoles())
                 .containsExactlyInAnyOrder(ROLE_학생, ROLE_직원, ROLE_관리자);
-        assertThat(memberRoleChangeHistoryRepository.findAll())
+        assertThat(adminActivityHistoryRepository.findAll())
                 .singleElement()
-                .satisfies(history -> {
-                    assertThat(history.getBeforeRoles()).isEmpty();
-                    assertThat(history.getAfterRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_직원);
-                });
+                .satisfies(history -> assertThat(history.getSummary())
+                        .isEqualTo("%s님의 역할이 없음에서 학생, 직원으로 변경됨".formatted(otherAdmin.getName())));
     }
 
     @Test
@@ -1129,12 +1141,14 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         // then
         assertThat(reloadMember(teamLeader.getId()).getRoles()).containsExactlyInAnyOrder(ROLE_학생, ROLE_관리자);
-        assertThat(memberAdminPermissionHistoryRepository.findAll())
+        assertThat(adminActivityHistoryRepository.findAll())
                 .singleElement()
                 .satisfies(history -> {
-                    assertThat(history.getMemberId()).isEqualTo(teamLeader.getId());
-                    assertThat(history.getAdminId()).isEqualTo(admin.getId());
-                    assertThat(history.getGranted()).isTrue();
+                    assertThat(history.getType()).isEqualTo(AdminActivityType.ADMIN_PERMISSION_GRANTED);
+                    assertThat(history.getActorId()).isEqualTo(admin.getId());
+                    assertThat(history.getTargetId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getSummary())
+                            .isEqualTo("%s님에게 관리자 권한이 부여됨".formatted(teamLeader.getName()));
                     assertThat(history.getCreatedAt()).isNotNull();
                 });
     }
@@ -1153,9 +1167,13 @@ public class MemberCommandServiceTest extends IntegrationTest {
 
         // then
         assertThat(reloadMember(professorAdmin.getId()).getRoles()).containsExactly(ROLE_교수);
-        assertThat(memberAdminPermissionHistoryRepository.findAll())
+        assertThat(adminActivityHistoryRepository.findAll())
                 .singleElement()
-                .satisfies(history -> assertThat(history.getGranted()).isFalse());
+                .satisfies(history -> {
+                    assertThat(history.getType()).isEqualTo(AdminActivityType.ADMIN_PERMISSION_REVOKED);
+                    assertThat(history.getSummary())
+                            .isEqualTo("%s님의 관리자 권한이 회수됨".formatted(professorAdmin.getName()));
+                });
     }
 
     @Test
@@ -1170,7 +1188,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(true)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(ADMIN_PERMISSION_UNCHANGED.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1184,7 +1202,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(false)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(ADMIN_PERMISSION_UNCHANGED.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1199,7 +1217,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(false)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(BASE_ROLE_REQUIRED.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1213,7 +1231,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(false)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(CANNOT_CHANGE_OWN_ADMIN_PERMISSION.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1227,7 +1245,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(false)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_ADMIN.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1242,7 +1260,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(true)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1259,7 +1277,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(true)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(FAKE_MEMBER_ADMIN_PERMISSION_NOT_MANAGEABLE.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -1273,6 +1291,6 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 new AdminPermissionChangeRequest(true)))
                 .isInstanceOf(MemberException.class)
                 .hasMessage(NOT_FOUND_MEMBER.errorMessage());
-        assertThat(memberAdminPermissionHistoryRepository.count()).isZero();
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 }
