@@ -55,16 +55,14 @@ import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersR
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.StaffAssignment;
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse.TeamMembership;
 import com.opus.opus.modules.member.application.dto.response.SignInResponse;
+import com.opus.opus.modules.member.domain.AdminActivityHistory;
 import com.opus.opus.modules.member.domain.Member;
-import com.opus.opus.modules.member.domain.MemberAdminPermissionHistory;
-import com.opus.opus.modules.member.domain.MemberRoleChangeHistory;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
 import com.opus.opus.modules.member.domain.MemberWithdrawalReason;
 import com.opus.opus.modules.member.domain.StaffInfo;
-import com.opus.opus.modules.member.domain.dao.MemberAdminPermissionHistoryRepository;
+import com.opus.opus.modules.member.domain.dao.AdminActivityHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
-import com.opus.opus.modules.member.domain.dao.MemberRoleChangeHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.StaffInfoRepository;
 import com.opus.opus.modules.member.exception.MemberException;
@@ -91,8 +89,7 @@ public class MemberCommandService {
     private final MemberRepository memberRepository;
     private final StaffInfoRepository staffInfoRepository;
     private final MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
-    private final MemberRoleChangeHistoryRepository memberRoleChangeHistoryRepository;
-    private final MemberAdminPermissionHistoryRepository memberAdminPermissionHistoryRepository;
+    private final AdminActivityHistoryRepository adminActivityHistoryRepository;
 
     private final MemberConvenience memberConvenience;
     private final RoleChangeBlockerConvenience roleChangeBlockerConvenience;
@@ -408,14 +405,15 @@ public class MemberCommandService {
         validateRolesChangeRequest(adminId, memberId, request);
         // 관리자 권한 해제가 동시에 일어나 활성 관리자가 0명이 되지 않도록, 탈퇴와 같은 순서(관리자 행 → 대상 행)로 잠근다.
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
-        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member admin = validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_NOT_MODIFIABLE);
         validateRolesChangeTarget(member, request);
         releaseOrRejectBlockingAssignments(member, request);
 
         final Set<MemberRoleType> beforeRoles = member.getBaseRoles();
         member.changeBaseRoles(request.roles());
-        saveRoleChangeHistory(adminId, member.getId(), beforeRoles, request.roles());
+        adminActivityHistoryRepository.save(
+                AdminActivityHistory.rolesChanged(admin, member, beforeRoles, request.roles()));
     }
 
     private void validateRolesChangeTarget(final Member member, final MemberRolesChangeRequest request) {
@@ -455,19 +453,6 @@ public class MemberCommandService {
         }
     }
 
-    private void saveRoleChangeHistory(final Long adminId, final Long memberId,
-                                       final Set<MemberRoleType> beforeRoles,
-                                       final Set<MemberRoleType> afterRoles) {
-        memberRoleChangeHistoryRepository.save(
-                MemberRoleChangeHistory.builder()
-                        .memberId(memberId)
-                        .adminId(adminId)
-                        .beforeRoles(beforeRoles)
-                        .afterRoles(afterRoles)
-                        .build()
-        );
-    }
-
     private void validateRolesChangeRequest(final Long adminId, final Long memberId,
                                             final MemberRolesChangeRequest request) {
         validateBaseRoles(request.currentRoles(), true);
@@ -493,7 +478,7 @@ public class MemberCommandService {
                                       final AdminPermissionChangeRequest request) {
         validateNotOwnAdminPermissionChange(adminId, memberId);
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
-        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member admin = validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, WITHDRAWN_MEMBER_ADMIN_PERMISSION_NOT_MODIFIABLE);
         validateAdminPermissionTarget(member, request);
 
@@ -502,7 +487,8 @@ public class MemberCommandService {
         } else {
             member.revokeAdmin();
         }
-        saveAdminPermissionHistory(adminId, member, request);
+        adminActivityHistoryRepository.save(
+                AdminActivityHistory.adminPermissionChanged(admin, member, request.isAdmin()));
     }
 
     private void validateNotOwnAdminPermissionChange(final Long adminId, final Long memberId) {
@@ -523,23 +509,13 @@ public class MemberCommandService {
         }
     }
 
-    private void saveAdminPermissionHistory(final Long adminId, final Member member,
-                                            final AdminPermissionChangeRequest request) {
-        memberAdminPermissionHistoryRepository.save(
-                MemberAdminPermissionHistory.builder()
-                        .memberId(member.getId())
-                        .adminId(adminId)
-                        .granted(request.isAdmin())
-                        .build()
-        );
-    }
-
     // @Secured 검사 후 락을 기다리는 동안 권한이 해제될 수 있어, 잠긴 활성 관리자 목록으로 요청자를 다시 확인한다.
     // 요청자 본인은 대상이 될 수 없으므로, 이 검증을 통과하면 처리 후에도 활성 관리자가 최소 한 명 남는다.
-    private void validateRequesterIsActiveAdmin(final Long adminId, final List<Member> activeAdmins) {
-        if (activeAdmins.stream().noneMatch(admin -> admin.getId().equals(adminId))) {
-            throw new MemberException(NOT_ADMIN);
-        }
+    private Member validateRequesterIsActiveAdmin(final Long adminId, final List<Member> activeAdmins) {
+        return activeAdmins.stream()
+                .filter(admin -> admin.getId().equals(adminId))
+                .findFirst()
+                .orElseThrow(() -> new MemberException(NOT_ADMIN));
     }
 
     private Member getActiveMemberForUpdate(final Long memberId, final MemberExceptionType withdrawnExceptionType) {

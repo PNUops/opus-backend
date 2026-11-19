@@ -336,39 +336,6 @@ CREATE TABLE `member_withdrawal_history` (
   KEY `idx_member_withdrawal_history_member_id` (`member_id`)
 );
 
-CREATE TABLE `member_role_change_history` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `member_id` bigint NOT NULL,
-  `admin_id` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_member_role_change_history_member_id` (`member_id`)
-);
-
-CREATE TABLE `member_role_change_history_before_roles` (
-  `history_id` bigint NOT NULL,
-  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
-  PRIMARY KEY (`history_id`,`role`)
-);
-
-CREATE TABLE `member_role_change_history_after_roles` (
-  `history_id` bigint NOT NULL,
-  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
-  PRIMARY KEY (`history_id`,`role`)
-);
-
-CREATE TABLE `member_admin_permission_history` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `member_id` bigint NOT NULL,
-  `admin_id` bigint NOT NULL,
-  `granted` bit(1) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_member_admin_permission_history_member_id` (`member_id`)
-);
-
 CREATE TABLE `admin_activity_history` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
