@@ -26,6 +26,7 @@ import com.opus.opus.modules.member.application.dto.request.SearchConditionReque
 import com.opus.opus.modules.member.application.dto.response.AccountInfoResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberResponse;
 import com.opus.opus.modules.member.application.dto.response.AdminMemberSummaryResponse;
+import com.opus.opus.modules.member.application.dto.response.AdminRecentActivityResponse;
 import com.opus.opus.modules.member.application.dto.response.EmailFindResponse;
 import com.opus.opus.modules.member.application.dto.response.MyCommentResponse;
 import com.opus.opus.modules.member.application.dto.response.MyLikePreviewResponse;
@@ -34,9 +35,13 @@ import com.opus.opus.modules.member.application.dto.response.MemberSearchRespons
 import com.opus.opus.modules.member.application.dto.response.MemberWithdrawalResponse;
 import com.opus.opus.modules.member.application.dto.response.MyProjectResponse;
 import com.opus.opus.modules.member.application.dto.response.RoleChangeBlockersResponse;
+import com.opus.opus.modules.contest.domain.Contest;
+import com.opus.opus.modules.contest.domain.dao.ContestRepository;
+import com.opus.opus.modules.member.domain.AdminActivityHistory;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.modules.member.domain.MemberWithdrawalHistory;
+import com.opus.opus.modules.member.domain.dao.AdminActivityHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.domain.dao.MemberWithdrawalHistoryRepository;
 import com.opus.opus.modules.member.domain.dao.MyVoteResponse;
@@ -51,6 +56,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +80,8 @@ public class MemberQueryService {
     private final MemberConvenience memberConvenience;
     private final MemberRepository memberRepository;
     private final MemberWithdrawalHistoryRepository memberWithdrawalHistoryRepository;
+    private final AdminActivityHistoryRepository adminActivityHistoryRepository;
+    private final ContestRepository contestRepository;
     private final FileImageConvenience fileImageConvenience;
     private final FileQueryService fileQueryService;
     private final TeamCommentRepository teamCommentRepository;
@@ -163,6 +172,20 @@ public class MemberQueryService {
                 ? null
                 : memberConvenience.findByIdIncludingDeleted(history.getAdminId()).orElse(null);
         return MemberWithdrawalResponse.of(member, history, admin);
+    }
+
+    public List<AdminRecentActivityResponse> getRecentAdminActivities() {
+        final List<AdminActivityHistory> histories = adminActivityHistoryRepository.findTop4ByOrderByCreatedAtDescIdDesc();
+        final Set<Long> contestIds = histories.stream()
+                .map(AdminActivityHistory::getContestId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        // 삭제된 대회는 조회되지 않으므로 대회명이 null로 남는다.
+        final Map<Long, String> contestNames = contestRepository.findAllById(contestIds).stream()
+                .collect(Collectors.toMap(Contest::getId, Contest::getContestName));
+        return histories.stream()
+                .map(history -> AdminRecentActivityResponse.of(history, contestNames.get(history.getContestId())))
+                .toList();
     }
 
     public RoleChangeBlockersResponse getRoleChangeBlockers(final Long memberId, final Set<String> roles) {
