@@ -340,7 +340,7 @@ CREATE TABLE `admin_activity_history` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL,
-  `type` enum('MEMBER_ROLES_CHANGED','ADMIN_PERMISSION_GRANTED','ADMIN_PERMISSION_REVOKED') NOT NULL,
+  `type` enum('MEMBER_ROLES_CHANGED','ADMIN_PERMISSION_GRANTED','ADMIN_PERMISSION_REVOKED','MEMBER_WITHDRAWN_BY_ADMIN') NOT NULL,
   `actor_id` bigint NOT NULL,
   `actor_name` varchar(255) NOT NULL,
   `target_type` enum('MEMBER') NOT NULL,

@@ -88,6 +88,11 @@ public class AdminActivityHistory extends BaseEntity {
                 "%s님의 관리자 권한이 회수됨".formatted(target.getName()));
     }
 
+    public static AdminActivityHistory withdrawnByAdmin(final Member actor, final Member target) {
+        return new AdminActivityHistory(AdminActivityType.MEMBER_WITHDRAWN_BY_ADMIN, actor, target,
+                "%s님의 계정이 탈퇴 처리됨".formatted(target.getName()));
+    }
+
     private static String roleNames(final Set<MemberRoleType> roles) {
         if (roles.isEmpty()) {
             return NO_ROLE;

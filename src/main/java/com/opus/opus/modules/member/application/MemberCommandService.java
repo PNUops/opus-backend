@@ -381,7 +381,7 @@ public class MemberCommandService {
         validateNotSelfWithdrawal(adminId, memberId);
         // 관리자끼리 동시에 서로를 탈퇴시켜 활성 관리자가 0명이 되지 않도록, 활성 관리자 행을 먼저 잠근 뒤 대상 행을 잠근다.
         final List<Member> activeAdmins = memberRepository.findAllByRoleForUpdate(ROLE_관리자);
-        validateRequesterIsActiveAdmin(adminId, activeAdmins);
+        final Member admin = validateRequesterIsActiveAdmin(adminId, activeAdmins);
         final Member member = getActiveMemberForUpdate(memberId, ALREADY_WITHDRAWN_MEMBER);
 
         memberWithdrawalHistoryRepository.save(
@@ -392,6 +392,7 @@ public class MemberCommandService {
                         .adminId(adminId)
                         .build()
         );
+        adminActivityHistoryRepository.save(AdminActivityHistory.withdrawnByAdmin(admin, member));
         deleteMember(member);
     }
 

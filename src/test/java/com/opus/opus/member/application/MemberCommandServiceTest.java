@@ -589,6 +589,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                     assertThat(history.getDetail()).isNull();
                     assertThat(history.getAdminId()).isNull();
                 });
+        assertThat(adminActivityHistoryRepository.count()).isZero();
     }
 
     @Test
@@ -640,6 +641,15 @@ public class MemberCommandServiceTest extends IntegrationTest {
                     assertThat(history.getReason()).isEqualTo(MemberWithdrawalReason.DUPLICATE_ACCOUNT);
                     assertThat(history.getDetail()).isEqualTo("동일 학번 중복 가입");
                     assertThat(history.getAdminId()).isEqualTo(admin.getId());
+                });
+        assertThat(adminActivityHistoryRepository.findAll())
+                .singleElement()
+                .satisfies(history -> {
+                    assertThat(history.getType()).isEqualTo(AdminActivityType.MEMBER_WITHDRAWN_BY_ADMIN);
+                    assertThat(history.getActorId()).isEqualTo(admin.getId());
+                    assertThat(history.getTargetId()).isEqualTo(teamLeader.getId());
+                    assertThat(history.getSummary())
+                            .isEqualTo("%s님의 계정이 탈퇴 처리됨".formatted(teamLeader.getName()));
                 });
     }
 
@@ -761,6 +771,7 @@ public class MemberCommandServiceTest extends IntegrationTest {
                 .isInstanceOf(MemberException.class)
                 .hasMessage(ALREADY_WITHDRAWN_MEMBER.errorMessage());
         assertThat(memberWithdrawalHistoryRepository.count()).isEqualTo(1);
+        assertThat(adminActivityHistoryRepository.count()).isEqualTo(1);
     }
 
     @Test
