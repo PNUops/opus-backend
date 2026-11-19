@@ -33,6 +33,7 @@ DROP TABLE IF EXISTS `member_role_change_history_before_roles`;
 DROP TABLE IF EXISTS `member_role_change_history_after_roles`;
 DROP TABLE IF EXISTS `member_role_change_history`;
 DROP TABLE IF EXISTS `member_admin_permission_history`;
+DROP TABLE IF EXISTS `admin_activity_history`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `contest_category`;
 DROP TABLE IF EXISTS `contest`;
@@ -366,6 +367,22 @@ CREATE TABLE `member_admin_permission_history` (
   `granted` bit(1) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_member_admin_permission_history_member_id` (`member_id`)
+);
+
+CREATE TABLE `admin_activity_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `type` enum('MEMBER_ROLES_CHANGED','ADMIN_PERMISSION_GRANTED','ADMIN_PERMISSION_REVOKED') NOT NULL,
+  `actor_id` bigint NOT NULL,
+  `actor_name` varchar(255) NOT NULL,
+  `target_type` enum('MEMBER') NOT NULL,
+  `target_id` bigint NOT NULL,
+  `target_name` varchar(255) NOT NULL,
+  `contest_id` bigint DEFAULT NULL,
+  `summary` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_activity_history_created_at_id` (`created_at`, `id`)
 );
 
 CREATE TABLE `notice` (
