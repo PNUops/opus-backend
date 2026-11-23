@@ -1,9 +1,15 @@
 package com.opus.opus.restdocs.docs;
 
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_CONTEST;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.ALREADY_ACCEPTED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.ALREADY_INVITED;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANCELED_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_ACCEPT_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVALID_INVITATION_ROLE;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVITATION_EMAIL_MISMATCH;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.NOT_FOUND_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.REPLACED_INVITATION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
@@ -24,10 +30,12 @@ import com.opus.opus.modules.invitation.application.dto.request.InvitationCreate
 import com.opus.opus.modules.invitation.application.dto.response.InvitationCreateResponse;
 import com.opus.opus.modules.invitation.application.dto.response.InvitationResponse;
 import com.opus.opus.modules.invitation.exception.InvitationException;
+import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.MemberRoleType;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +46,7 @@ public class InvitationApiDocsTest extends RestDocsTest {
 
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
     private static final String INVITATION_TOKEN = "Qw3rTy-invitation-token";
+    private static final String MEMBER_TOKEN = "Bearer member.access.token";
 
     @BeforeEach
     void setUp() {
@@ -201,6 +210,145 @@ public class InvitationApiDocsTest extends RestDocsTest {
                 .andDo(document("get-invitation-fail-not-found",
                         pathParameters(
                                 parameterWithName("token").description("존재하지 않는 초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 로그인한 회원이 초대를 수락하면 200을 반환한다.")
+    void 로그인한_회원이_초대를_수락하면_200을_반환한다() throws Exception {
+        final SignInResponse response = new SignInResponse(
+                1L, "김멘토", "new.access.token", Set.of(MemberRoleType.ROLE_외부멘토));
+
+        when(invitationCommandService.acceptInvitation(any(), any())).thenReturn(response);
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isOk())
+                .andDo(document("accept-invitation",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                        ),
+                        pathParameters(
+                                parameterWithName("token").description("초대 링크 토큰")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("memberId", "회원 ID"),
+                                stringFieldWithPath("name", "회원 이름"),
+                                stringFieldWithPath("token", "새 accessToken (외부멘토 역할 포함)"),
+                                arrayFieldWithPath("types", "회원 역할 목록 (MemberRoleType)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 초대 토큰으로 수락하면 404 에러를 반환한다.")
+    void 존재하지_않는_초대_토큰으로_수락하면_404_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(NOT_FOUND_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", "unknown-token")
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("accept-invitation-fail-not-found",
+                        pathParameters(
+                                parameterWithName("token").description("존재하지 않는 초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 재발급으로 교체된 링크로 수락하면 409 에러를 반환한다.")
+    void 재발급으로_교체된_링크로_수락하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(REPLACED_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("accept-invitation-fail-replaced",
+                        pathParameters(
+                                parameterWithName("token").description("재발급으로 교체된 초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 만료된 링크로 수락하면 409 에러를 반환한다.")
+    void 만료된_링크로_수락하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(EXPIRED_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("accept-invitation-fail-expired",
+                        pathParameters(
+                                parameterWithName("token").description("만료된 초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 초대받은 이메일과 다른 계정으로 수락하면 403 에러를 반환한다.")
+    void 초대받은_이메일과_다른_계정으로_수락하면_403_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(INVITATION_EMAIL_MISMATCH));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isForbidden())
+                .andDo(document("accept-invitation-fail-email-mismatch",
+                        pathParameters(
+                                parameterWithName("token").description("초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 취소된 초대를 수락하면 409 에러를 반환한다.")
+    void 취소된_초대를_수락하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(CANCELED_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("accept-invitation-fail-canceled",
+                        pathParameters(
+                                parameterWithName("token").description("취소된 초대의 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 회원이 수락한 초대를 수락하면 409 에러를 반환한다.")
+    void 다른_회원이_수락한_초대를_수락하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(ALREADY_ACCEPTED_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("accept-invitation-fail-already-accepted",
+                        pathParameters(
+                                parameterWithName("token").description("다른 회원이 수락한 초대의 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 직원 계정으로 수락하면 409 에러를 반환한다.")
+    void 직원_계정으로_수락하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.acceptInvitation(any(), any()))
+                .thenThrow(new InvitationException(CANNOT_ACCEPT_INVITATION));
+
+        mockMvc.perform(post("/invitations/{token}/accept", INVITATION_TOKEN)
+                        .header(HttpHeaders.AUTHORIZATION, MEMBER_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("accept-invitation-fail-staff",
+                        pathParameters(
+                                parameterWithName("token").description("초대 링크 토큰")
                         )
                 ));
     }
