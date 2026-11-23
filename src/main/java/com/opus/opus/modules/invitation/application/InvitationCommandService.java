@@ -83,7 +83,7 @@ public class InvitationCommandService {
         final InvitationToken invitationToken = invitationConvenience.getValidateExistToken(token);
         final Invitation invitation = invitationRepository.findByIdForUpdate(invitationToken.getInvitation().getId())
                 .orElseThrow(() -> new InvitationException(NOT_FOUND_INVITATION));
-        final Member member = memberConvenience.getValidateExistMember(memberId);
+        final Member member = memberConvenience.getValidateExistMemberForUpdate(memberId);
 
         if (invitation.isAcceptedBy(memberId)) {
             return createSignInResponse(member);
@@ -119,7 +119,7 @@ public class InvitationCommandService {
         if (invitation.isAccepted()) {
             throw new InvitationException(ALREADY_ACCEPTED_INVITATION);
         }
-        if (!invitationConvenience.isLatestToken(invitationToken)) {
+        if (!invitationConvenience.isLatestTokenForUpdate(invitationToken)) {
             throw new InvitationException(REPLACED_INVITATION);
         }
         if (invitationToken.isExpired(now)) {

@@ -11,6 +11,8 @@ import static java.util.stream.Collectors.toMap;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
 import com.opus.opus.modules.member.exception.MemberException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +34,19 @@ public class MemberConvenience {
 
     final private MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
 
     public Member getValidateExistMember(final Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+    }
+
+    // 요청 전에 영속성 컨텍스트에 올라온 회원도 잠금 후 최신 상태로 다시 읽는다.
+    @Transactional
+    public Member getValidateExistMemberForUpdate(final Long memberId) {
+        final Member member = getValidateExistMember(memberId);
+        entityManager.refresh(member, LockModeType.PESSIMISTIC_WRITE);
+        return member;
     }
 
     public void validateExistMember(final Long memberId) {

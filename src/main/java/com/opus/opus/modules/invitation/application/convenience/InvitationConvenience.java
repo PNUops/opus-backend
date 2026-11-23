@@ -30,4 +30,11 @@ public class InvitationConvenience {
                 .map(latestToken -> Objects.equals(latestToken.getId(), invitationToken.getId()))
                 .orElse(false);
     }
+
+    @Transactional
+    public boolean isLatestTokenForUpdate(final InvitationToken invitationToken) {
+        return invitationTokenRepository.findLatestByInvitationIdForUpdate(invitationToken.getInvitation().getId())
+                .map(latestToken -> Objects.equals(latestToken.getId(), invitationToken.getId()))
+                .orElse(false);
+    }
 }
