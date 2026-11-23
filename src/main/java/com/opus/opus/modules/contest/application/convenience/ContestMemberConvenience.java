@@ -3,6 +3,7 @@ package com.opus.opus.modules.contest.application.convenience;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_FOUND_CONTEST_MEMBER;
 
+import com.opus.opus.modules.contest.domain.Contest;
 import com.opus.opus.modules.contest.domain.ContestMember;
 import com.opus.opus.modules.contest.domain.dao.ContestMemberRepository;
 import com.opus.opus.modules.contest.exception.ContestMemberException;
@@ -45,5 +46,16 @@ public class ContestMemberConvenience {
     public ContestMember getValidateExistContestMember(final Long contestId, final Long memberId) {
         return contestMemberRepository.findByContestIdAndMemberId(contestId, memberId)
                 .orElseThrow(() -> new ContestMemberException(NOT_FOUND_CONTEST_MEMBER));
+    }
+
+    @Transactional
+    public void createIfAbsent(final Contest contest, final Long memberId) {
+        if (contestMemberRepository.existsByContestIdAndMemberId(contest.getId(), memberId)) {
+            return;
+        }
+        contestMemberRepository.save(ContestMember.builder()
+                .contest(contest)
+                .memberId(memberId)
+                .build());
     }
 }

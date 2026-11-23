@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -64,5 +65,15 @@ public class Invitation extends BaseEntity {
 
     public boolean isCanceled() {
         return status == InvitationStatus.CANCELED;
+    }
+
+    public boolean isAcceptedBy(final Long memberId) {
+        return isAccepted() && Objects.equals(acceptedMemberId, memberId);
+    }
+
+    public void accept(final Long memberId, final LocalDateTime now) {
+        this.status = InvitationStatus.ACCEPTED;
+        this.acceptedMemberId = memberId;
+        this.acceptedAt = now;
     }
 }
