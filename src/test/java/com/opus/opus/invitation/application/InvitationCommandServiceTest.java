@@ -63,7 +63,7 @@ public class InvitationCommandServiceTest extends IntegrationTest {
     @DisplayName("[성공] 관리자는 외부멘토 초대 링크를 발급할 수 있다.")
     void 관리자는_외부멘토_초대_링크를_발급할_수_있다() {
         final InvitationCreateRequest request = new InvitationCreateRequest(
-                contest.getId(), "외부멘토", " Mentor@Example.com ", ROLE_외부멘토);
+                contest.getId(), "외부멘토", "Mentor@Example.com", ROLE_외부멘토);
 
         final InvitationCreateResponse response = invitationCommandService.createInvitation(1L, request);
 

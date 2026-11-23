@@ -28,8 +28,10 @@ public class InvitationCommandService {
 
     private final InvitationRepository invitationRepository;
     private final InvitationTokenRepository invitationTokenRepository;
-    private final InvitationTokenProvider invitationTokenProvider;
+
     private final ContestConvenience contestConvenience;
+
+    private final InvitationTokenProvider invitationTokenProvider;
 
     public InvitationCreateResponse createInvitation(final Long adminId, final InvitationCreateRequest request) {
         validateInvitationRole(request.role());
@@ -69,6 +71,6 @@ public class InvitationCommandService {
     }
 
     private String normalizeEmail(final String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
+        return email.toLowerCase(Locale.ROOT);
     }
 }
