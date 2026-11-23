@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InvitationConvenience {
 
     private final InvitationTokenRepository invitationTokenRepository;
+
     private final InvitationTokenProvider invitationTokenProvider;
 
     public InvitationToken getValidateExistToken(final String token) {
