@@ -6,6 +6,7 @@ import com.opus.opus.modules.invitation.application.InvitationQueryService;
 import com.opus.opus.modules.invitation.application.dto.request.InvitationCreateRequest;
 import com.opus.opus.modules.invitation.application.dto.response.InvitationCreateResponse;
 import com.opus.opus.modules.invitation.application.dto.response.InvitationResponse;
+import com.opus.opus.modules.member.application.dto.response.SignInResponse;
 import com.opus.opus.modules.member.domain.Member;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,11 @@ public class InvitationController {
     @GetMapping("/invitations/{token}")
     public ResponseEntity<InvitationResponse> getInvitation(@PathVariable final String token) {
         return ResponseEntity.ok(invitationQueryService.getInvitation(token));
+    }
+
+    @PostMapping("/invitations/{token}/accept")
+    public ResponseEntity<SignInResponse> acceptInvitation(@LoginMember final Member member,
+                                                           @PathVariable final String token) {
+        return ResponseEntity.ok(invitationCommandService.acceptInvitation(member.getId(), token));
     }
 }
