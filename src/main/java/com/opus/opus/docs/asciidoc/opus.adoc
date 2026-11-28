@@ -13,6 +13,8 @@ endif::[]
 
 link:./member.html[회원 API]
 
+link:./invitation.html[외부멘토 초대 API]
+
 == 팀 관련 API
 
 link:./team.html[팀 API]

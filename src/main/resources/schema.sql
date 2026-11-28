@@ -1,5 +1,7 @@
 USE opus;
 
+DROP TABLE IF EXISTS `invitation_token`;
+DROP TABLE IF EXISTS `invitation`;
 DROP TABLE IF EXISTS `contest_submission_memo`;
 DROP TABLE IF EXISTS `contest_submission_feedback`;
 DROP TABLE IF EXISTS `contest_submission`;
@@ -366,6 +368,36 @@ CREATE TABLE `member_admin_permission_history` (
   `granted` bit(1) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_member_admin_permission_history_member_id` (`member_id`)
+);
+
+CREATE TABLE `invitation` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `contest_id` bigint NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `role` enum('ROLE_학생','ROLE_관리자','ROLE_교수','ROLE_직원','ROLE_외부멘토') NOT NULL,
+  `status` enum('PENDING','ACCEPTED','CANCELED') NOT NULL,
+  `accepted_member_id` bigint DEFAULT NULL,
+  `accepted_at` datetime(6) DEFAULT NULL,
+  `canceled_by` bigint DEFAULT NULL,
+  `canceled_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_invitation_contest_id_email` (`contest_id`, `email`)
+);
+
+CREATE TABLE `invitation_token` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `invitation_id` bigint NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `expires_at` datetime(6) NOT NULL,
+  `issued_by` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_invitation_token_token_hash` (`token_hash`),
+  KEY `idx_invitation_token_invitation_id` (`invitation_id`)
 );
 
 CREATE TABLE `notice` (

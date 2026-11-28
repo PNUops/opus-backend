@@ -36,6 +36,9 @@ import com.opus.opus.modules.contest.application.ContestSubmissionItemCommandSer
 import com.opus.opus.modules.contest.application.ContestSubmissionItemQueryService;
 import com.opus.opus.modules.contest.application.ContestTrackCommandService;
 import com.opus.opus.modules.contest.application.ContestTrackQueryService;
+import com.opus.opus.modules.invitation.api.InvitationController;
+import com.opus.opus.modules.invitation.application.InvitationCommandService;
+import com.opus.opus.modules.invitation.application.InvitationQueryService;
 import com.opus.opus.modules.member.api.MemberController;
 import com.opus.opus.modules.member.application.MemberCommandService;
 import com.opus.opus.modules.member.application.MemberQueryService;
@@ -85,6 +88,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
         ContestSubmissionItemController.class,
         ContestSubmissionMemoController.class,
         ContestTeamSubmissionController.class,
+        InvitationController.class,
 })
 @Import(RestDocsConfig.class)
 @ExtendWith(RestDocumentationExtension.class)
@@ -183,6 +187,12 @@ public abstract class RestDocsTest extends ApiTestHelper {
 
     @MockitoBean
     protected ContestSubmissionItemQueryService contestSubmissionItemQueryService;
+
+    @MockitoBean
+    protected InvitationCommandService invitationCommandService;
+
+    @MockitoBean
+    protected InvitationQueryService invitationQueryService;
 
     // Setting
     @Autowired
