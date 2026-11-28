@@ -4,10 +4,13 @@ import static com.opus.opus.modules.invitation.exception.InvitationExceptionType
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.ALREADY_INVITED;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANCELED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_ACCEPT_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_CANCEL_EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVALID_INVITATION_ROLE;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVITATION_EMAIL_MISMATCH;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.NOT_FOUND_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.REPLACED_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.TOO_FREQUENT_REISSUE;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_교수;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_외부멘토;
 import static com.opus.opus.modules.member.domain.MemberRoleType.ROLE_직원;
@@ -32,6 +35,7 @@ import com.opus.opus.modules.invitation.application.dto.request.InvitationCreate
 import com.opus.opus.modules.invitation.application.dto.response.InvitationCreateResponse;
 import com.opus.opus.modules.invitation.domain.Invitation;
 import com.opus.opus.modules.invitation.domain.InvitationStatus;
+import com.opus.opus.modules.invitation.domain.InvitationToken;
 import com.opus.opus.modules.invitation.domain.dao.InvitationRepository;
 import com.opus.opus.modules.invitation.domain.dao.InvitationTokenRepository;
 import com.opus.opus.modules.invitation.exception.InvitationException;
@@ -48,6 +52,8 @@ public class InvitationCommandServiceTest extends IntegrationTest {
 
     private static final String INVITED_EMAIL = "mentor@example.com";
     private static final String TOKEN = "invitation-token";
+    private static final Long ADMIN_ID = 1L;
+    private static final Long NOT_EXIST_INVITATION_ID = 999_999L;
 
     @Autowired
     private InvitationCommandService invitationCommandService;
@@ -269,11 +275,143 @@ public class InvitationCommandServiceTest extends IntegrationTest {
                 .hasMessage(CANNOT_ACCEPT_INVITATION.errorMessage());
     }
 
+    @Test
+    @DisplayName("[성공] 대기 중인 초대는 링크를 재발급할 수 있다.")
+    void 대기_중인_초대는_링크를_재발급할_수_있다() {
+        final Invitation invitation = saveInvitationWithIssuedToken(LocalDateTime.now().plusHours(1));
+
+        final InvitationCreateResponse response = invitationCommandService.reissueInvitation(ADMIN_ID,
+                invitation.getId());
+
+        final InvitationToken latestToken = invitationTokenRepository
+                .findTopByInvitationIdOrderByIdDesc(invitation.getId()).orElseThrow();
+        assertThat(response.invitationId()).isEqualTo(invitation.getId());
+        assertThat(latestToken.getTokenHash()).isEqualTo(invitationTokenProvider.hash(response.token()));
+        assertThat(latestToken.getIssuedBy()).isEqualTo(ADMIN_ID);
+        assertThat(invitationTokenRepository.findByTokenHash(invitationTokenProvider.hash(TOKEN))).isPresent();
+        assertThat(response.expiresAt()).isAfter(LocalDateTime.now().plusHours(47));
+    }
+
+    @Test
+    @DisplayName("[성공] 만료된 초대도 링크를 재발급할 수 있다.")
+    void 만료된_초대도_링크를_재발급할_수_있다() {
+        final Invitation invitation = saveInvitationWithIssuedToken(LocalDateTime.now().minusHours(1));
+
+        final InvitationCreateResponse response = invitationCommandService.reissueInvitation(ADMIN_ID,
+                invitation.getId());
+
+        assertThat(invitationTokenRepository.findByTokenHash(invitationTokenProvider.hash(response.token())))
+                .isPresent();
+        assertThat(response.expiresAt()).isAfter(LocalDateTime.now().plusHours(47));
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 발급 후 10초가 지나지 않으면 링크를 재발급할 수 없다.")
+    void 마지막_발급_후_10초가_지나지_않으면_링크를_재발급할_수_없다() {
+        final Invitation invitation = saveInvitationWithToken(LocalDateTime.now().plusHours(1));
+
+        assertThatThrownBy(() -> invitationCommandService.reissueInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(TOO_FREQUENT_REISSUE.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 수락된 초대는 링크를 재발급할 수 없다.")
+    void 수락된_초대는_링크를_재발급할_수_없다() {
+        final Invitation invitation = saveInvitationWithIssuedToken(LocalDateTime.now().plusHours(1));
+        invitation.accept(2L, LocalDateTime.now());
+
+        assertThatThrownBy(() -> invitationCommandService.reissueInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(ALREADY_ACCEPTED_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 취소된 초대는 링크를 재발급할 수 없다.")
+    void 취소된_초대는_링크를_재발급할_수_없다() {
+        final Invitation invitation = saveInvitationWithIssuedToken(LocalDateTime.now().plusHours(1));
+        invitation.cancel(ADMIN_ID, LocalDateTime.now());
+
+        assertThatThrownBy(() -> invitationCommandService.reissueInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(CANCELED_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 초대는 링크를 재발급할 수 없다.")
+    void 존재하지_않는_초대는_링크를_재발급할_수_없다() {
+        assertThatThrownBy(() -> invitationCommandService.reissueInvitation(ADMIN_ID, NOT_EXIST_INVITATION_ID))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(NOT_FOUND_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[성공] 대기 중인 초대는 취소할 수 있다.")
+    void 대기_중인_초대는_취소할_수_있다() {
+        final Invitation invitation = saveInvitationWithToken(LocalDateTime.now().plusHours(1));
+
+        invitationCommandService.cancelInvitation(ADMIN_ID, invitation.getId());
+
+        final Invitation canceledInvitation = invitationRepository.findById(invitation.getId()).orElseThrow();
+        assertThat(canceledInvitation.getStatus()).isEqualTo(InvitationStatus.CANCELED);
+        assertThat(canceledInvitation.getCanceledBy()).isEqualTo(ADMIN_ID);
+        assertThat(canceledInvitation.getCanceledAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("[실패] 만료된 초대는 취소할 수 없다.")
+    void 만료된_초대는_취소할_수_없다() {
+        final Invitation invitation = saveInvitationWithToken(LocalDateTime.now().minusHours(1));
+
+        assertThatThrownBy(() -> invitationCommandService.cancelInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(CANNOT_CANCEL_EXPIRED_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 수락된 초대는 취소할 수 없다.")
+    void 수락된_초대는_취소할_수_없다() {
+        final Invitation invitation = saveInvitationWithToken(LocalDateTime.now().plusHours(1));
+        invitation.accept(2L, LocalDateTime.now());
+
+        assertThatThrownBy(() -> invitationCommandService.cancelInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(ALREADY_ACCEPTED_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 취소된 초대는 다시 취소할 수 없다.")
+    void 이미_취소된_초대는_다시_취소할_수_없다() {
+        final Invitation invitation = saveInvitationWithToken(LocalDateTime.now().plusHours(1));
+        invitation.cancel(ADMIN_ID, LocalDateTime.now());
+
+        assertThatThrownBy(() -> invitationCommandService.cancelInvitation(ADMIN_ID, invitation.getId()))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(CANCELED_INVITATION.errorMessage());
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 초대는 취소할 수 없다.")
+    void 존재하지_않는_초대는_취소할_수_없다() {
+        assertThatThrownBy(() -> invitationCommandService.cancelInvitation(ADMIN_ID, NOT_EXIST_INVITATION_ID))
+                .isInstanceOf(InvitationException.class)
+                .hasMessage(NOT_FOUND_INVITATION.errorMessage());
+    }
+
     private Invitation saveInvitationWithToken(final LocalDateTime expiresAt) {
         final Invitation invitation = invitationRepository.save(
                 InvitationFixture.createInvitation(contest.getId(), INVITED_EMAIL));
         invitationTokenRepository.save(InvitationFixture.createInvitationToken(
                 invitation, invitationTokenProvider.hash(TOKEN), expiresAt));
+        return invitation;
+    }
+
+    private Invitation saveInvitationWithIssuedToken(final LocalDateTime expiresAt) {
+        final Invitation invitation = invitationRepository.save(
+                InvitationFixture.createInvitation(contest.getId(), INVITED_EMAIL));
+        final InvitationToken invitationToken = invitationTokenRepository.save(InvitationFixture.createInvitationToken(
+                invitation, invitationTokenProvider.hash(TOKEN), expiresAt));
+        setField(invitationToken, "createdAt", LocalDateTime.now().minusMinutes(1));
         return invitation;
     }
 }
