@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,23 @@ public class InvitationController {
                                                                      @Valid @RequestBody final InvitationCreateRequest request) {
         final InvitationCreateResponse response = invitationCommandService.createInvitation(admin.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @PostMapping("/admin/invitations/{invitationId}/reissue")
+    public ResponseEntity<InvitationCreateResponse> reissueInvitation(@LoginMember final Member admin,
+                                                                      @PathVariable final Long invitationId) {
+        final InvitationCreateResponse response = invitationCommandService.reissueInvitation(admin.getId(),
+                invitationId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Secured("ROLE_관리자")
+    @PatchMapping("/admin/invitations/{invitationId}/cancel")
+    public ResponseEntity<Void> cancelInvitation(@LoginMember final Member admin,
+                                                 @PathVariable final Long invitationId) {
+        invitationCommandService.cancelInvitation(admin.getId(), invitationId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/invitations/{token}")
