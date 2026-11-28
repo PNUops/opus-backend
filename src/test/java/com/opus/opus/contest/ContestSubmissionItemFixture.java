@@ -125,10 +125,11 @@ public class ContestSubmissionItemFixture {
                 .build();
     }
 
-    public static ContestSubmissionMemo createMemo(final ContestSubmission submission) {
+    public static ContestSubmissionMemo createMemo(final ContestSubmissionItem submissionItem, final Long teamId) {
         return ContestSubmissionMemo.builder()
                 .content("테스트 메모 내용입니다.")
-                .submission(submission)
+                .teamId(teamId)
+                .submissionItem(submissionItem)
                 .build();
     }
 }

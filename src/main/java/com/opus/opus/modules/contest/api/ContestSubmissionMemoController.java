@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/contests/{contestId}/teams/{teamId}/submissions/{submissionId}/memos")
+@RequestMapping("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/memos")
 @Secured({"ROLE_학생", "ROLE_관리자", "ROLE_교수", "ROLE_직원", "ROLE_외부멘토"})
 public class ContestSubmissionMemoController {
 
@@ -33,40 +33,40 @@ public class ContestSubmissionMemoController {
 
     @PostMapping
     public ResponseEntity<Void> createMemo(@PathVariable final Long contestId, @PathVariable final Long teamId,
-                                           @PathVariable final Long submissionId,
+                                           @PathVariable final Long submissionItemId,
                                            @Valid @RequestBody final ContestSubmissionMemoRequest request,
                                            @LoginMember final Member member
     ) {
-        memoCommandService.createMemo(contestId, teamId, submissionId, request, member);
+        memoCommandService.createMemo(contestId, teamId, submissionItemId, request, member);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
     public ResponseEntity<ContestSubmissionMemoResponse> getMemo(@PathVariable final Long contestId,
                                                                  @PathVariable final Long teamId,
-                                                                 @PathVariable final Long submissionId,
+                                                                 @PathVariable final Long submissionItemId,
                                                                  @LoginMember final Member member
     ) {
-        ContestSubmissionMemoResponse response = memoQueryService.getMemo(contestId, teamId, submissionId, member);
+        final ContestSubmissionMemoResponse response = memoQueryService.getMemo(contestId, teamId, submissionItemId, member);
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping
     public ResponseEntity<Void> updateMemo(@PathVariable final Long contestId, @PathVariable final Long teamId,
-                                           @PathVariable final Long submissionId,
+                                           @PathVariable final Long submissionItemId,
                                            @Valid @RequestBody final ContestSubmissionMemoRequest request,
                                            @LoginMember final Member member
     ) {
-        memoCommandService.updateMemo(contestId, teamId, submissionId, request, member);
+        memoCommandService.updateMemo(contestId, teamId, submissionItemId, request, member);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteMemo(@PathVariable final Long contestId, @PathVariable final Long teamId,
-                                           @PathVariable final Long submissionId,
+                                           @PathVariable final Long submissionItemId,
                                            @LoginMember final Member member
     ) {
-        memoCommandService.deleteMemo(contestId, teamId, submissionId, member);
+        memoCommandService.deleteMemo(contestId, teamId, submissionItemId, member);
         return ResponseEntity.noContent().build();
     }
 }

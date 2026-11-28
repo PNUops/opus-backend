@@ -1208,7 +1208,7 @@ public class ContestApiDocsTest extends RestDocsTest {
                                 numberFieldWithPath("files[].fileId", "파일 ID"),
                                 stringFieldWithPath("files[].fileName", "파일명"),
                                 numberFieldWithPath("files[].fileSize", "파일 용량 (byte)"),
-                                numberFieldWithPath("feedbackCount", "피드백 개수")
+                                numberFieldWithPath("feedbackCount", "피드백 개수 (이 제출물의 팀·제출 항목에 달린 피드백 기준, 파일을 모두 삭제했다가 다시 제출하기 전의 피드백도 포함)")
                         )
                 ));
     }
@@ -1949,8 +1949,8 @@ public class ContestApiDocsTest extends RestDocsTest {
                         responseFields(
                                 numberFieldWithPath("pendingSubmissionCount", "아직 제출하지 않은 미제출 항목 수"),
                                 dateTimeFieldWithPath("nearestDeadline", "가장 가까운 마감 일시 (미제출 항목 없으면 null)").optional(),
-                                numberFieldWithPath("unreadFeedbackCount", "읽지 않은 피드백 수"),
-                                stringFieldWithPath("latestFeedbackPreview", "가장 최근 피드백 미리보기 (없으면 null)").optional()
+                                numberFieldWithPath("unreadFeedbackCount", "읽지 않은 피드백 수 (팀의 제출 항목별 피드백 기준, 제출물이 삭제돼도 포함, 삭제된 제출 항목의 피드백은 제외)"),
+                                stringFieldWithPath("latestFeedbackPreview", "가장 최근 피드백 미리보기 (unreadFeedbackCount와 같은 기준, 없으면 null)").optional()
                         )
                 ));
     }

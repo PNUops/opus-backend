@@ -5,8 +5,12 @@ import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_F
 import static com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackExceptionType.NOT_FOUND_FEEDBACK;
 import static com.opus.opus.modules.contest.exception.ContestExceptionType.NOT_FOUND_SUBMISSION;
 import static com.opus.opus.modules.contest.exception.ContestMemberExceptionType.NOT_ASSIGNED_TEAM;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.NOT_FOUND_SUBMISSION_ITEM;
 import static com.opus.opus.modules.file.exception.FileExceptionType.EMPTY_FILE;
 import static com.opus.opus.modules.file.exception.FileExceptionType.NOT_FOUND;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.TEAM_NOT_IN_CONTEST;
+import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
@@ -16,6 +20,7 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.requestHe
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
@@ -31,9 +36,12 @@ import com.opus.opus.modules.contest.application.dto.response.ContestSubmissionM
 import com.opus.opus.modules.contest.exception.ContestException;
 import com.opus.opus.modules.contest.exception.ContestMemberException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionFeedbackException;
+import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.file.application.dto.FileDownload;
 import com.opus.opus.modules.file.exception.FileException;
 import com.opus.opus.modules.member.domain.Member;
+import com.opus.opus.modules.team.exception.TeamException;
+import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.restdocs.RestDocsTest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,6 +57,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
 
     private static final String MENTOR_TOKEN = "Bearer mentor.access.token";
     private static final String ADMIN_TOKEN = "Bearer admin.access.token";
+    private static final String STUDENT_TOKEN = "Bearer student.access.token";
 
     @BeforeEach
     void setUp() {
@@ -66,9 +75,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 "files", "피드백.pdf", MediaType.APPLICATION_PDF_VALUE, "feedback-content".getBytes());
 
         doNothing().when(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .file(file)
                         .with(request -> {
                             request.setMethod("PUT");
@@ -81,10 +90,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         ),
                         requestParts(
                                 partWithName("files").description("신규 추가 첨부파일 (선택, 다중 업로드 허용)").optional()
@@ -93,13 +103,13 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     }
 
     @Test
-    @DisplayName("[실패] 존재하지 않는 제출물에 피드백 저장 시 404 에러를 반환한다.")
-    void 존재하지_않는_제출물에_피드백_저장_시_에러를_반환한다() throws Exception {
+    @DisplayName("[실패] 팀의 제출물이 없는 제출 항목에 피드백 저장 시 404 에러를 반환한다.")
+    void 팀의_제출물이_없는_제출_항목에_피드백_저장_시_404_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_SUBMISSION))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 999)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 999)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -111,10 +121,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-submission-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("존재하지 않는 제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("팀의 제출물이 없는 제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -122,7 +133,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 본문이 비어있으면 400 에러를 반환한다.")
     void 본문이_비어있으면_에러를_반환한다() throws Exception {
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -134,10 +145,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-blank",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -145,7 +157,7 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 피드백 본문이 3000자를 초과하면 400 에러를 반환한다.")
     void 피드백_본문이_3000자를_초과하면_400_에러를_반환한다() throws Exception {
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -157,10 +169,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-length-exceeded",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -170,9 +183,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     void 존재하지_않는_대회에_피드백_저장_시_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_FOUND_CONTEST))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 999, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 999, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -184,10 +197,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-contest-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -197,9 +211,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     void 담당_팀이_아닌_관계자가_피드백_저장_시_403_에러를_반환한다() throws Exception {
         willThrow(new ContestMemberException(NOT_ASSIGNED_TEAM))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -211,10 +225,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-not-assigned-team",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("담당 팀이 아닌 팀의 제출물 ID")
+                                parameterWithName("teamId").description("담당 팀이 아닌 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -224,9 +239,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     void 팀에게만_공개된_제출물에_피드백_저장_시_403_에러를_반환한다() throws Exception {
         willThrow(new ContestException(NOT_ALLOWED_TO_VIEW_SUBMISSION))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -238,10 +253,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-forbidden-visibility",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("팀에게만 공개된 제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("팀에게만 공개된 제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -256,18 +272,19 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 List.of(new ContestSubmissionFeedbackFileResponse(201L, "피드백.pdf", 524288L))
         );
 
-        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 12)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 1, 3, 12)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-my-submission-feedback",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         ),
                         responseFields(
                                 numberFieldWithPath("feedbackId", "피드백 ID"),
@@ -285,19 +302,20 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 작성한 피드백이 없으면 단건 조회 시 404 에러를 반환한다.")
     void 작성한_피드백이_없으면_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any()))
                 .thenThrow(new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 12)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 1, 3, 12)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-my-submission-feedback-fail-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -314,18 +332,19 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 )
         );
 
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any())).thenReturn(response);
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any(), any())).thenReturn(response);
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("get-submission-feedbacks",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         ),
                         responseFields(
                                 arrayFieldWithPath("[]", "피드백 목록"),
@@ -347,39 +366,41 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 대회의 피드백 목록 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_피드백_목록_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any(), any()))
                 .thenThrow(new ContestException(NOT_FOUND_CONTEST));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 999, 12)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 999, 3, 12)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-submission-feedbacks-fail-contest-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }
 
     @Test
-    @DisplayName("[실패] 존재하지 않는 제출물의 피드백 목록 조회 시 404 에러를 반환한다.")
-    void 존재하지_않는_제출물의_피드백_목록_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any()))
-                .thenThrow(new ContestException(NOT_FOUND_SUBMISSION));
+    @DisplayName("[실패] 존재하지 않는 제출 항목의 피드백 목록 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출_항목의_피드백_목록_조회_시_404_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any(), any()))
+                .thenThrow(new ContestSubmissionItemException(NOT_FOUND_SUBMISSION_ITEM));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 999)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
-                .andDo(document("get-submission-feedbacks-fail-submission-not-found",
+                .andDo(document("get-submission-feedbacks-fail-submission-item-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("존재하지 않는 제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("존재하지 않는 제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }
@@ -390,22 +411,23 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
         final FileDownload download = new FileDownload(
                 new ByteArrayResource("feedback-file".getBytes()), "피드백.pdf", MediaType.APPLICATION_PDF_VALUE);
 
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any(), any()))
                 .thenReturn(download);
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",
-                        1, 12, 50, 201)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/files/{fileId}",
+                        1, 3, 12, 50, 201)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isOk())
                 .andDo(document("download-submission-feedback-file",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
                                 parameterWithName("feedbackId").description("피드백 ID"),
                                 parameterWithName("fileId").description("첨부파일 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }
@@ -413,22 +435,23 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 피드백의 파일 다운로드 시 404 에러를 반환한다.")
     void 존재하지_않는_피드백의_파일_다운로드_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",
-                        1, 12, 999, 201)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/files/{fileId}",
+                        1, 3, 12, 999, 201)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("download-submission-feedback-file-fail-feedback-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
                                 parameterWithName("feedbackId").description("존재하지 않는 피드백 ID"),
                                 parameterWithName("fileId").description("첨부파일 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }
@@ -436,22 +459,23 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 피드백에 속하지 않은 파일 다운로드 시 404 에러를 반환한다.")
     void 피드백에_속하지_않은_파일_다운로드_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new FileException(NOT_FOUND));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/{feedbackId}/files/{fileId}",
-                        1, 12, 50, 999)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/files/{fileId}",
+                        1, 3, 12, 50, 999)
                         .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("download-submission-feedback-file-fail-file-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
                                 parameterWithName("feedbackId").description("피드백 ID"),
                                 parameterWithName("fileId").description("존재하지 않는 첨부파일 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }
@@ -464,9 +488,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
 
         willThrow(new FileException(EMPTY_FILE))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .file(emptyFile)
                         .with(request -> {
                             request.setMethod("PUT");
@@ -479,10 +503,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-empty-file",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -492,9 +517,9 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     void 삭제할_첨부파일이_본인_피드백에_없으면_에러를_반환한다() throws Exception {
         willThrow(new FileException(NOT_FOUND))
                 .given(contestSubmissionFeedbackCommandService)
-                .saveFeedback(any(), any(), any(), any(), any(), any());
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
 
-        mockMvc.perform(multipart("/contests/{contestId}/submissions/{submissionId}/feedbacks", 1, 12)
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 12)
                         .with(request -> {
                             request.setMethod("PUT");
                             return request;
@@ -507,10 +532,11 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
                 .andDo(document("save-submission-feedback-fail-file-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
@@ -518,39 +544,368 @@ public class ContestSubmissionFeedbackApiDocsTest extends RestDocsTest {
     @Test
     @DisplayName("[실패] 존재하지 않는 대회의 내 피드백 단건 조회 시 404 에러를 반환한다.")
     void 존재하지_않는_대회의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any()))
                 .thenThrow(new ContestException(NOT_FOUND_CONTEST));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 999, 12)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 999, 3, 12)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isNotFound())
                 .andDo(document("get-my-submission-feedback-fail-contest-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("존재하지 않는 대회 ID"),
-                                parameterWithName("submissionId").description("제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
                         )
                 ));
     }
 
     @Test
-    @DisplayName("[실패] 존재하지 않는 제출물의 내 피드백 단건 조회 시 404 에러를 반환한다.")
-    void 존재하지_않는_제출물의_내_피드백_단건_조회_시_에러를_반환한다() throws Exception {
-        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any()))
-                .thenThrow(new ContestException(NOT_FOUND_SUBMISSION));
+    @DisplayName("[실패] 존재하지 않는 제출 항목의 내 피드백 단건 조회 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출_항목의_내_피드백_단건_조회_시_404_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any()))
+                .thenThrow(new ContestSubmissionItemException(NOT_FOUND_SUBMISSION_ITEM));
 
-        mockMvc.perform(get("/contests/{contestId}/submissions/{submissionId}/feedbacks/me", 1, 999)
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 1, 3, 999)
                         .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
                 .andExpect(status().isNotFound())
-                .andDo(document("get-my-submission-feedback-fail-submission-not-found",
+                .andDo(document("get-my-submission-feedback-fail-submission-item-not-found",
                         pathParameters(
                                 parameterWithName("contestId").description("대회 ID"),
-                                parameterWithName("submissionId").description("존재하지 않는 제출물 ID")
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("존재하지 않는 제출 항목 ID")
                         ),
                         requestHeaders(
-                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken}")
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀에 피드백 저장 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_팀에_피드백_저장_시_400_에러를_반환한다() throws Exception {
+        willThrow(new TeamException(TEAM_NOT_IN_CONTEST))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 99, 12)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("save-submission-feedback-fail-team-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("대회에 속하지 않은 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 제출 항목에 피드백 저장 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_제출_항목에_피드백_저장_시_400_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionItemException(INVALID_SUBMISSION_ITEM_FOR_CONTEST))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 99)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andDo(document("save-submission-feedback-fail-submission-item-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("대회에 속하지 않은 제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀의 내 피드백 단건 조회 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_팀의_내_피드백_단건_조회_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any()))
+                .thenThrow(new TeamException(TEAM_NOT_IN_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 1, 99, 12)
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("get-my-submission-feedback-fail-team-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("대회에 속하지 않은 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 제출 항목의 내 피드백 단건 조회 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_제출_항목의_내_피드백_단건_조회_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedback(any(), any(), any(), any()))
+                .thenThrow(new ContestSubmissionItemException(INVALID_SUBMISSION_ITEM_FOR_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/me", 1, 3, 99)
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("get-my-submission-feedback-fail-submission-item-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("대회에 속하지 않은 제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀의 피드백 목록 조회 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_팀의_피드백_목록_조회_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any(), any()))
+                .thenThrow(new TeamException(TEAM_NOT_IN_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 99, 12)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("get-submission-feedbacks-fail-team-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("대회에 속하지 않은 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 제출 항목의 피드백 목록 조회 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_제출_항목의_피드백_목록_조회_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.getFeedbacks(any(), any(), any(), any()))
+                .thenThrow(new ContestSubmissionItemException(INVALID_SUBMISSION_ITEM_FOR_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 99)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("get-submission-feedbacks-fail-submission-item-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("대회에 속하지 않은 제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 팀원이 피드백을 읽음 처리하면 204를 반환한다.")
+    void 팀원이_피드백을_읽음_처리하면_204를_반환한다() throws Exception {
+        doNothing().when(contestSubmissionFeedbackCommandService).markFeedbackAsRead(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/read", 1, 3, 12, 50)
+                        .header(HttpHeaders.AUTHORIZATION, STUDENT_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("mark-submission-feedback-as-read",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 팀의 제출 항목에 없는 피드백을 읽음 처리하면 404 에러를 반환한다.")
+    void 팀의_제출_항목에_없는_피드백을_읽음_처리하면_404_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionFeedbackException(NOT_FOUND_FEEDBACK))
+                .given(contestSubmissionFeedbackCommandService)
+                .markFeedbackAsRead(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/read", 1, 3, 12, 999)
+                        .header(HttpHeaders.AUTHORIZATION, STUDENT_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("mark-submission-feedback-as-read-fail-feedback-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
+                                parameterWithName("feedbackId").description("팀의 제출 항목에 없는 피드백 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 팀원이 아닌 사용자가 피드백을 읽음 처리하면 404 에러를 반환한다.")
+    void 팀원이_아닌_사용자가_피드백을_읽음_처리하면_404_에러를_반환한다() throws Exception {
+        willThrow(new TeamMemberException(TEAM_MEMBER_NOT_FOUND_IN_TEAM))
+                .given(contestSubmissionFeedbackCommandService)
+                .markFeedbackAsRead(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/read", 1, 3, 12, 50)
+                        .header(HttpHeaders.AUTHORIZATION, STUDENT_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("mark-submission-feedback-as-read-fail-not-team-member",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 제출 항목에 피드백 저장 시 404 에러를 반환한다.")
+    void 존재하지_않는_제출_항목에_피드백_저장_시_404_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionItemException(NOT_FOUND_SUBMISSION_ITEM))
+                .given(contestSubmissionFeedbackCommandService)
+                .saveFeedback(any(), any(), any(), any(), any(), any(), any());
+
+        mockMvc.perform(multipart("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks", 1, 3, 999)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .param("description", "발표 흐름이 좋네요.")
+                        .header(HttpHeaders.AUTHORIZATION, MENTOR_TOKEN)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isNotFound())
+                .andDo(document("save-submission-feedback-fail-submission-item-not-found",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("존재하지 않는 제출 항목 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (교수, 외부멘토)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀의 피드백을 읽음 처리하면 400 에러를 반환한다.")
+    void 대회에_속하지_않은_팀의_피드백을_읽음_처리하면_400_에러를_반환한다() throws Exception {
+        willThrow(new TeamException(TEAM_NOT_IN_CONTEST))
+                .given(contestSubmissionFeedbackCommandService)
+                .markFeedbackAsRead(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/read", 1, 99, 12, 50)
+                        .header(HttpHeaders.AUTHORIZATION, STUDENT_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("mark-submission-feedback-as-read-fail-team-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("대회에 속하지 않은 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 제출 항목의 피드백을 읽음 처리하면 400 에러를 반환한다.")
+    void 대회에_속하지_않은_제출_항목의_피드백을_읽음_처리하면_400_에러를_반환한다() throws Exception {
+        willThrow(new ContestSubmissionItemException(INVALID_SUBMISSION_ITEM_FOR_CONTEST))
+                .given(contestSubmissionFeedbackCommandService)
+                .markFeedbackAsRead(any(), any(), any(), any(), any());
+
+        mockMvc.perform(patch("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/read", 1, 3, 99, 50)
+                        .header(HttpHeaders.AUTHORIZATION, STUDENT_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("mark-submission-feedback-as-read-fail-submission-item-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("대회에 속하지 않은 제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 팀의 피드백 파일 다운로드 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_팀의_피드백_파일_다운로드_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any(), any()))
+                .thenThrow(new TeamException(TEAM_NOT_IN_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/files/{fileId}", 1, 99, 12, 50, 201)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("download-submission-feedback-file-fail-team-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("대회에 속하지 않은 팀 ID"),
+                                parameterWithName("submissionItemId").description("제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID"),
+                                parameterWithName("fileId").description("첨부파일 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 대회에 속하지 않은 제출 항목의 피드백 파일 다운로드 시 400 에러를 반환한다.")
+    void 대회에_속하지_않은_제출_항목의_피드백_파일_다운로드_시_400_에러를_반환한다() throws Exception {
+        when(contestSubmissionFeedbackQueryService.downloadFeedbackFile(any(), any(), any(), any(), any(), any()))
+                .thenThrow(new ContestSubmissionItemException(INVALID_SUBMISSION_ITEM_FOR_CONTEST));
+
+        mockMvc.perform(get("/contests/{contestId}/teams/{teamId}/submission-items/{submissionItemId}/feedbacks/{feedbackId}/files/{fileId}", 1, 3, 99, 50, 201)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isBadRequest())
+                .andDo(document("download-submission-feedback-file-fail-submission-item-not-in-contest",
+                        pathParameters(
+                                parameterWithName("contestId").description("대회 ID"),
+                                parameterWithName("teamId").description("팀 ID"),
+                                parameterWithName("submissionItemId").description("대회에 속하지 않은 제출 항목 ID"),
+                                parameterWithName("feedbackId").description("피드백 ID"),
+                                parameterWithName("fileId").description("첨부파일 ID")
+                        ),
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자, 학생)")
                         )
                 ));
     }

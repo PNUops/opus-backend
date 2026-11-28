@@ -87,13 +87,12 @@ public class ContestMemberQueryService {
         }
 
         final List<Long> submissionIds = submissions.stream().map(ContestSubmission::getId).toList();
-        final Set<Long> reviewedSubmissionIds = Set.copyOf(
-                contestSubmissionFeedbackRepository.findReviewedSubmissionIds(mentor.getId(), submissionIds));
+        final Set<Long> reviewedSubmissionItemIds = findReviewedSubmissionItemIds(mentor.getId(), teamId, submissions);
         final Map<Long, List<ContestSubmissionFileResponse>> filesBySubmissionId = filesGroupedBySubmission(submissionIds);
 
         final List<MentorSubmissionResponse> submissionResponses = submissions.stream()
                 .map(submission -> MentorSubmissionResponse.of(submission,
-                        reviewedSubmissionIds.contains(submission.getId()),
+                        reviewedSubmissionItemIds.contains(submission.getSubmissionItem().getId()),
                         filesBySubmissionId.getOrDefault(submission.getId(), List.of())))
                 .toList();
 
@@ -236,6 +235,15 @@ public class ContestMemberQueryService {
         return contestSubmissionRepository.findPendingFeedbackCountsByTeams(contestId, memberId, teamIds).stream()
                 .collect(Collectors.toMap(TeamPendingFeedbackResult::teamId,
                         TeamPendingFeedbackResult::pendingFeedbackCount));
+    }
+
+    private Set<Long> findReviewedSubmissionItemIds(final Long memberId, final Long teamId,
+                                                    final List<ContestSubmission> submissions) {
+        final List<Long> submissionItemIds = submissions.stream()
+                .map(submission -> submission.getSubmissionItem().getId())
+                .toList();
+        return Set.copyOf(contestSubmissionFeedbackRepository.findReviewedSubmissionItemIds(memberId, teamId,
+                submissionItemIds));
     }
 
     private Map<Long, List<ContestSubmissionFileResponse>> filesGroupedBySubmission(final List<Long> submissionIds) {

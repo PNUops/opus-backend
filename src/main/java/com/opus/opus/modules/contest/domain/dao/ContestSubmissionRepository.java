@@ -4,6 +4,7 @@ import com.opus.opus.modules.contest.domain.ContestSubmission;
 import com.opus.opus.modules.contest.domain.ContestSubmissionItem;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -66,7 +67,8 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
                    s.teamId, SUM(CASE WHEN f.id IS NULL THEN 1L ELSE 0L END))
             FROM ContestSubmission s
             JOIN s.submissionItem item
-            LEFT JOIN ContestSubmissionFeedback f ON f.submission = s AND f.memberId = :memberId
+            LEFT JOIN ContestSubmissionFeedback f
+                   ON f.submissionItem = s.submissionItem AND f.teamId = s.teamId AND f.memberId = :memberId
             WHERE item.contest.id = :contestId
               AND item.visibility IN (
                     com.opus.opus.modules.contest.domain.SubmissionVisibility.PUBLIC,
@@ -78,6 +80,9 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
     List<TeamPendingFeedbackResult> findPendingFeedbackCountsByTeams(Long contestId, Long memberId, List<Long> teamIds);
 
     boolean existsByTeamIdAndSubmissionItem(final Long teamId, final ContestSubmissionItem submissionItem);
+
+    Optional<ContestSubmission> findByTeamIdAndSubmissionItem(final Long teamId,
+                                                              final ContestSubmissionItem submissionItem);
 
     void deleteAllBySubmissionItemId(final Long submissionItemId);
 
@@ -94,6 +99,14 @@ public interface ContestSubmissionRepository extends JpaRepository<ContestSubmis
             """)
     List<ContestSubmission> findAllByTeamIdAndContestId(@Param("teamId") Long teamId,
                                                         @Param("contestId") Long contestId);
+
+    @Query("""
+            SELECT COUNT(s) FROM ContestSubmission s
+            JOIN s.submissionItem item
+            WHERE s.teamId = :teamId
+              AND item.contest.id = :contestId
+            """)
+    long countByTeamIdAndContestId(@Param("teamId") final Long teamId, @Param("contestId") final Long contestId);
 
     @Query("""
             SELECT new com.opus.opus.modules.contest.domain.dao.TeamSubmissionStatusResult(

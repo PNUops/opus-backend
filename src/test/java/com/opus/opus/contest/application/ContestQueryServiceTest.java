@@ -331,7 +331,8 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 읽지_않은_피드백_수가_unreadFeedbackCount에_반영된다() {
         final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
         final ContestSubmission submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
-        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(submission, member.getId()));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(
+                submission.getSubmissionItem(), submission.getTeamId(), member.getId()));
 
         final TeamDashboardSummaryResponse response =
                 contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
@@ -344,12 +345,47 @@ public class ContestQueryServiceTest extends IntegrationTest {
     void 읽은_피드백은_unreadFeedbackCount에_포함되지_않는다() {
         final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
         final ContestSubmission submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
-        feedbackRepository.save(ContestSubmissionFeedbackFixture.createReadFeedback(submission, member.getId()));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createReadFeedback(
+                submission.getSubmissionItem(), submission.getTeamId(), member.getId()));
 
         final TeamDashboardSummaryResponse response =
                 contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
 
         assertThat(response.unreadFeedbackCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("[성공] 제출물이 삭제돼도 남아 있는 피드백은 unreadFeedbackCount에 반영된다.")
+    void 제출물이_삭제돼도_남아_있는_피드백은_unreadFeedbackCount에_반영된다() {
+        final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        final ContestSubmission submission = submissionRepository.save(ContestSubmissionFixture.createSubmission(team.getId(), item));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(item, team.getId(), member.getId()));
+        submissionRepository.delete(submission);
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.unreadFeedbackCount()).isEqualTo(1L);
+        assertThat(response.latestFeedbackPreview()).isEqualTo(ContestSubmissionFeedbackFixture.FEEDBACK_DESCRIPTION);
+    }
+
+    @Test
+    @DisplayName("[성공] 삭제된 제출 항목의 피드백은 unreadFeedbackCount에 포함되지 않는다.")
+    void 삭제된_제출_항목의_피드백은_unreadFeedbackCount에_포함되지_않는다() {
+        final ContestSubmissionItem item = submissionItemRepository.save(ContestSubmissionFixture.createSubmissionItem(contest));
+        feedbackRepository.save(ContestSubmissionFeedbackFixture.createFeedback(item, team.getId(), member.getId()));
+
+        entityManager.createQuery("UPDATE ContestSubmissionItem i SET i.isDeleted = true WHERE i.id = :id")
+                .setParameter("id", item.getId())
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
+
+        final TeamDashboardSummaryResponse response =
+                contestQueryService.getTeamDashboardSummary(contest.getId(), team.getId(), member);
+
+        assertThat(response.unreadFeedbackCount()).isEqualTo(0L);
+        assertThat(response.latestFeedbackPreview()).isNull();
     }
 
     @Test

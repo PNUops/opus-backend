@@ -224,9 +224,9 @@ public class ContestQueryService {
                 .orElse(null);
 
         final long unreadFeedbackCount =
-                contestSubmissionFeedbackRepository.countBySubmission_TeamIdAndIsReadFalse(teamId);
+                contestSubmissionFeedbackRepository.countByTeamIdAndIsReadFalseAndSubmissionItem_IsDeletedFalse(teamId);
         final String latestFeedbackPreview = contestSubmissionFeedbackRepository
-                .findTopBySubmission_TeamIdOrderByCreatedAtDesc(teamId)
+                .findTopByTeamIdAndSubmissionItem_IsDeletedFalseOrderByCreatedAtDesc(teamId)
                 .map(f -> f.getDescription())
                 .orElse(null);
 

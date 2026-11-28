@@ -72,7 +72,8 @@ public class ContestSubmissionQueryService {
         final String trackName = track != null ? track.getTrackName() : null;
         final List<FileDocument> fileDocuments = fileDocumentConvenience.findAllBySubmissionId(submissionId);
 
-        final long feedbackCount = contestSubmissionFeedbackRepository.countBySubmissionId(submissionId);
+        final long feedbackCount = contestSubmissionFeedbackRepository.countBySubmissionItemIdAndTeamId(
+                submission.getSubmissionItem().getId(), team.getId());
 
         final SubmissionStatus status = submission.isLate() ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED;
         return ContestSubmissionDetailResponse.of(submission, team, trackName, fileDocuments, feedbackCount, status);
@@ -159,12 +160,9 @@ public class ContestSubmissionQueryService {
 
         final long totalItemCount = contestSubmissionItemRepository.countByContestAndTrack(contestId,
                 team.getTrackId());
-        final List<ContestSubmission> submissions = contestSubmissionRepository.findAllByTeamIdAndContestId(teamId,
-                contestId);
-        final long submittedCount = submissions.size();
-        final List<Long> submissionIds = submissions.stream().map(ContestSubmission::getId).toList();
-        final long totalFeedbackCount = submissionIds.isEmpty() ? 0
-                : contestSubmissionFeedbackRepository.countBySubmissionIdIn(submissionIds);
+        final long submittedCount = contestSubmissionRepository.countByTeamIdAndContestId(teamId, contestId);
+        final long totalFeedbackCount =
+                contestSubmissionFeedbackRepository.countByTeamIdAndSubmissionItem_IsDeletedFalse(teamId);
 
         return new TeamSubmissionSummaryResponse(totalItemCount, submittedCount, totalFeedbackCount);
     }

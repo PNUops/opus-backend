@@ -1,8 +1,9 @@
 package com.opus.opus.contest.application;
 
-import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.INVALID_SUBMISSION_FOR_CONTEST;
+import static com.opus.opus.modules.contest.exception.ContestSubmissionItemExceptionType.INVALID_SUBMISSION_ITEM_FOR_CONTEST;
 import static com.opus.opus.modules.contest.exception.ContestSubmissionMemoExceptionType.NOT_FOUND_MEMO;
 import static com.opus.opus.modules.team.domain.TeamMemberRoleType.ROLE_팀원;
+import static com.opus.opus.modules.team.exception.TeamExceptionType.TEAM_NOT_IN_CONTEST;
 import static com.opus.opus.modules.team.exception.TeamMemberExceptionType.TEAM_MEMBER_NOT_FOUND_IN_TEAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,6 +21,7 @@ import com.opus.opus.modules.contest.domain.dao.ContestRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionMemoRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionRepository;
 import com.opus.opus.modules.contest.domain.dao.ContestSubmissionItemRepository;
+import com.opus.opus.modules.contest.exception.ContestSubmissionItemException;
 import com.opus.opus.modules.contest.exception.ContestSubmissionMemoException;
 import com.opus.opus.modules.member.domain.Member;
 import com.opus.opus.modules.member.domain.dao.MemberRepository;
@@ -27,6 +29,7 @@ import com.opus.opus.modules.team.domain.Team;
 import com.opus.opus.modules.team.domain.TeamMember;
 import com.opus.opus.modules.team.domain.dao.TeamMemberRepository;
 import com.opus.opus.modules.team.domain.dao.TeamRepository;
+import com.opus.opus.modules.team.exception.TeamException;
 import com.opus.opus.modules.team.exception.TeamMemberException;
 import com.opus.opus.team.TeamFixture;
 import java.util.Set;
@@ -80,11 +83,11 @@ class ContestSubmissionMemoQueryServiceTest extends IntegrationTest {
     @DisplayName("[성공] 팀원이 메모를 조회할 수 있다.")
     void 팀원이_메모를_조회할_수_있다() {
         // given
-        memoRepository.save(ContestSubmissionItemFixture.createMemo(submission));
+        memoRepository.save(ContestSubmissionItemFixture.createMemo(submissionItem, team.getId()));
 
         // when
         final ContestSubmissionMemoResponse response =
-                memoQueryService.getMemo(contest.getId(), team.getId(), submission.getId(), member);
+                memoQueryService.getMemo(contest.getId(), team.getId(), submissionItem.getId(), member);
 
         // then
         assertThat(response.content()).isEqualTo("테스트 메모 내용입니다.");
@@ -92,41 +95,72 @@ class ContestSubmissionMemoQueryServiceTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("[성공] 제출물이 삭제돼도 남아 있는 메모를 조회할 수 있다.")
+    void 제출물이_삭제돼도_남아_있는_메모를_조회할_수_있다() {
+        // given
+        memoRepository.save(ContestSubmissionItemFixture.createMemo(submissionItem, team.getId()));
+        submissionRepository.delete(submission);
+
+        // when
+        final ContestSubmissionMemoResponse response =
+                memoQueryService.getMemo(contest.getId(), team.getId(), submissionItem.getId(), member);
+
+        // then
+        assertThat(response.content()).isEqualTo("테스트 메모 내용입니다.");
+    }
+
+    @Test
     @DisplayName("[실패] 메모가 없을 때 조회하면 NOT_FOUND_MEMO 예외가 발생한다.")
     void 메모가_없을_때_조회하면_예외가_발생한다() {
         // when & then
         assertThatThrownBy(() ->
-                memoQueryService.getMemo(contest.getId(), team.getId(), submission.getId(), member))
+                memoQueryService.getMemo(contest.getId(), team.getId(), submissionItem.getId(), member))
                 .isInstanceOf(ContestSubmissionMemoException.class)
                 .satisfies(e -> assertThat(((ContestSubmissionMemoException) e).exceptionType())
                         .isEqualTo(NOT_FOUND_MEMO));
     }
 
     @Test
-    @DisplayName("[실패] 다른 대회의 contestId로 조회하면 INVALID_SUBMISSION_FOR_CONTEST 예외가 발생한다.")
-    void 다른_대회의_contestId로_조회하면_예외가_발생한다() {
+    @DisplayName("[실패] 다른 대회의 contestId로 조회하면 TEAM_NOT_IN_CONTEST 예외가 발생한다.")
+    void 다른_대회의_contestId로_조회하면_TEAM_NOT_IN_CONTEST_예외가_발생한다() {
         // given
-        memoRepository.save(ContestSubmissionItemFixture.createMemo(submission));
+        memoRepository.save(ContestSubmissionItemFixture.createMemo(submissionItem, team.getId()));
         final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(2L));
 
         // when & then
         assertThatThrownBy(() ->
-                memoQueryService.getMemo(otherContest.getId(), team.getId(), submission.getId(), member))
-                .isInstanceOf(ContestSubmissionMemoException.class)
-                .satisfies(e -> assertThat(((ContestSubmissionMemoException) e).exceptionType())
-                        .isEqualTo(INVALID_SUBMISSION_FOR_CONTEST));
+                memoQueryService.getMemo(otherContest.getId(), team.getId(), submissionItem.getId(), member))
+                .isInstanceOf(TeamException.class)
+                .satisfies(e -> assertThat(((TeamException) e).exceptionType())
+                        .isEqualTo(TEAM_NOT_IN_CONTEST));
+    }
+
+    @Test
+    @DisplayName("[실패] 다른 대회의 제출 항목으로 조회하면 INVALID_SUBMISSION_ITEM_FOR_CONTEST 예외가 발생한다.")
+    void 다른_대회의_제출_항목으로_조회하면_INVALID_SUBMISSION_ITEM_FOR_CONTEST_예외가_발생한다() {
+        // given
+        final Contest otherContest = contestRepository.save(ContestFixture.createContestWithCategoryId(2L));
+        final ContestSubmissionItem otherContestItem =
+                submissionItemRepository.save(ContestSubmissionItemFixture.createSubmissionItem(otherContest));
+
+        // when & then
+        assertThatThrownBy(() ->
+                memoQueryService.getMemo(contest.getId(), team.getId(), otherContestItem.getId(), member))
+                .isInstanceOf(ContestSubmissionItemException.class)
+                .satisfies(e -> assertThat(((ContestSubmissionItemException) e).exceptionType())
+                        .isEqualTo(INVALID_SUBMISSION_ITEM_FOR_CONTEST));
     }
 
     @Test
     @DisplayName("[실패] 팀원이 아닌 사용자가 메모를 조회하면 TEAM_MEMBER_NOT_FOUND_IN_TEAM 예외가 발생한다.")
     void 팀원이_아닌_사용자가_메모를_조회하면_예외가_발생한다() {
         // given
-        memoRepository.save(ContestSubmissionItemFixture.createMemo(submission));
+        memoRepository.save(ContestSubmissionItemFixture.createMemo(submissionItem, team.getId()));
         final Member outsider = memberRepository.save(MemberFixture.createMemberWithUniqueNum(9));
 
         // when & then
         assertThatThrownBy(() ->
-                memoQueryService.getMemo(contest.getId(), team.getId(), submission.getId(), outsider))
+                memoQueryService.getMemo(contest.getId(), team.getId(), submissionItem.getId(), outsider))
                 .isInstanceOf(TeamMemberException.class)
                 .satisfies(e -> assertThat(((TeamMemberException) e).exceptionType())
                         .isEqualTo(TEAM_MEMBER_NOT_FOUND_IN_TEAM));
