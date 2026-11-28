@@ -5,17 +5,22 @@ import static com.opus.opus.modules.invitation.exception.InvitationExceptionType
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.ALREADY_INVITED;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANCELED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_ACCEPT_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_CANCEL_EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVALID_INVITATION_ROLE;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVITATION_EMAIL_MISMATCH;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.NOT_FOUND_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.REPLACED_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.TOO_FREQUENT_REISSUE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -349,6 +354,178 @@ public class InvitationApiDocsTest extends RestDocsTest {
                 .andDo(document("accept-invitation-fail-staff",
                         pathParameters(
                                 parameterWithName("token").description("초대 링크 토큰")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 초대 링크를 재발급하면 201을 반환한다.")
+    void 관리자가_초대_링크를_재발급하면_201을_반환한다() throws Exception {
+        final InvitationCreateResponse response = new InvitationCreateResponse(
+                1L, INVITATION_TOKEN, LocalDateTime.of(2026, 11, 29, 18, 0));
+
+        when(invitationCommandService.reissueInvitation(any(), any())).thenReturn(response);
+
+        mockMvc.perform(post("/admin/invitations/{invitationId}/reissue", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isCreated())
+                .andDo(document("reissue-invitation",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        pathParameters(
+                                parameterWithName("invitationId").description("재발급할 초대 ID")
+                        ),
+                        responseFields(
+                                numberFieldWithPath("invitationId", "초대 ID"),
+                                stringFieldWithPath("token", "새 초대 링크 토큰 (재발급 응답에서만 원문 제공)"),
+                                dateTimeFieldWithPath("expiresAt", "새 토큰 만료 시각 (재발급 후 48시간)")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 초대의 링크를 재발급하면 404 에러를 반환한다.")
+    void 존재하지_않는_초대의_링크를_재발급하면_404_에러를_반환한다() throws Exception {
+        when(invitationCommandService.reissueInvitation(any(), any()))
+                .thenThrow(new InvitationException(NOT_FOUND_INVITATION));
+
+        mockMvc.perform(post("/admin/invitations/{invitationId}/reissue", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("reissue-invitation-fail-not-found",
+                        pathParameters(
+                                parameterWithName("invitationId").description("존재하지 않는 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 수락된 초대의 링크를 재발급하면 409 에러를 반환한다.")
+    void 수락된_초대의_링크를_재발급하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.reissueInvitation(any(), any()))
+                .thenThrow(new InvitationException(ALREADY_ACCEPTED_INVITATION));
+
+        mockMvc.perform(post("/admin/invitations/{invitationId}/reissue", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("reissue-invitation-fail-already-accepted",
+                        pathParameters(
+                                parameterWithName("invitationId").description("수락된 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 취소된 초대의 링크를 재발급하면 409 에러를 반환한다.")
+    void 취소된_초대의_링크를_재발급하면_409_에러를_반환한다() throws Exception {
+        when(invitationCommandService.reissueInvitation(any(), any()))
+                .thenThrow(new InvitationException(CANCELED_INVITATION));
+
+        mockMvc.perform(post("/admin/invitations/{invitationId}/reissue", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("reissue-invitation-fail-canceled",
+                        pathParameters(
+                                parameterWithName("invitationId").description("취소된 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 마지막 발급 직후 링크를 재발급하면 429 에러를 반환한다.")
+    void 마지막_발급_직후_링크를_재발급하면_429_에러를_반환한다() throws Exception {
+        when(invitationCommandService.reissueInvitation(any(), any()))
+                .thenThrow(new InvitationException(TOO_FREQUENT_REISSUE));
+
+        mockMvc.perform(post("/admin/invitations/{invitationId}/reissue", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isTooManyRequests())
+                .andDo(document("reissue-invitation-fail-too-frequent",
+                        pathParameters(
+                                parameterWithName("invitationId").description("초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[성공] 관리자가 대기 중인 초대를 취소하면 204를 반환한다.")
+    void 관리자가_대기_중인_초대를_취소하면_204를_반환한다() throws Exception {
+        doNothing().when(invitationCommandService).cancelInvitation(any(), any());
+
+        mockMvc.perform(patch("/admin/invitations/{invitationId}/cancel", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNoContent())
+                .andDo(document("cancel-invitation",
+                        requestHeaders(
+                                headerWithName(HttpHeaders.AUTHORIZATION).description("Bearer {accessToken} (관리자)")
+                        ),
+                        pathParameters(
+                                parameterWithName("invitationId").description("취소할 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 존재하지 않는 초대를 취소하면 404 에러를 반환한다.")
+    void 존재하지_않는_초대를_취소하면_404_에러를_반환한다() throws Exception {
+        doThrow(new InvitationException(NOT_FOUND_INVITATION))
+                .when(invitationCommandService).cancelInvitation(any(), any());
+
+        mockMvc.perform(patch("/admin/invitations/{invitationId}/cancel", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isNotFound())
+                .andDo(document("cancel-invitation-fail-not-found",
+                        pathParameters(
+                                parameterWithName("invitationId").description("존재하지 않는 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 만료된 초대를 취소하면 409 에러를 반환한다.")
+    void 만료된_초대를_취소하면_409_에러를_반환한다() throws Exception {
+        doThrow(new InvitationException(CANNOT_CANCEL_EXPIRED_INVITATION))
+                .when(invitationCommandService).cancelInvitation(any(), any());
+
+        mockMvc.perform(patch("/admin/invitations/{invitationId}/cancel", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("cancel-invitation-fail-expired",
+                        pathParameters(
+                                parameterWithName("invitationId").description("만료된 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 수락된 초대를 취소하면 409 에러를 반환한다.")
+    void 수락된_초대를_취소하면_409_에러를_반환한다() throws Exception {
+        doThrow(new InvitationException(ALREADY_ACCEPTED_INVITATION))
+                .when(invitationCommandService).cancelInvitation(any(), any());
+
+        mockMvc.perform(patch("/admin/invitations/{invitationId}/cancel", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("cancel-invitation-fail-already-accepted",
+                        pathParameters(
+                                parameterWithName("invitationId").description("수락된 초대 ID")
+                        )
+                ));
+    }
+
+    @Test
+    @DisplayName("[실패] 이미 취소된 초대를 취소하면 409 에러를 반환한다.")
+    void 이미_취소된_초대를_취소하면_409_에러를_반환한다() throws Exception {
+        doThrow(new InvitationException(CANCELED_INVITATION))
+                .when(invitationCommandService).cancelInvitation(any(), any());
+
+        mockMvc.perform(patch("/admin/invitations/{invitationId}/cancel", 1L)
+                        .header(HttpHeaders.AUTHORIZATION, ADMIN_TOKEN))
+                .andExpect(status().isConflict())
+                .andDo(document("cancel-invitation-fail-canceled",
+                        pathParameters(
+                                parameterWithName("invitationId").description("이미 취소된 초대 ID")
                         )
                 ));
     }

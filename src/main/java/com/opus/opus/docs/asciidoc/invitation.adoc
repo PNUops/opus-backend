@@ -226,3 +226,138 @@ include::{snippets}/accept-invitation-fail-staff/http-request.adoc[]
 include::{snippets}/accept-invitation-fail-staff/http-response.adoc[]
 
 ====
+
+== `POST`: 외부멘토 초대 링크 재발급 (관리자)
+
+관리자가 대기 중이거나 만료된 초대의 링크를 새로 발급합니다. 새 토큰은 발급 후 48시간 동안 유효하고, 이전 링크는 재발급으로 교체된 링크가 되어 더 이상 수락할 수 없습니다. 횟수 제한은 없지만, 마지막 발급 후 10초가 지나지 않았으면 재발급할 수 없습니다. 수락되었거나 취소된 초대는 재발급할 수 없습니다.
+
+.HTTP Request Headers
+include::{snippets}/reissue-invitation/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/reissue-invitation/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/reissue-invitation/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/reissue-invitation/http-response.adoc[]
+
+.Response Body's Fields
+include::{snippets}/reissue-invitation/response-fields.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/reissue-invitation-fail-not-found/http-request.adoc[]
+
+include::{snippets}/reissue-invitation-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 수락된 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/reissue-invitation-fail-already-accepted/http-request.adoc[]
+
+include::{snippets}/reissue-invitation-fail-already-accepted/http-response.adoc[]
+
+====
+
+.❌ Case 3: 취소된 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/reissue-invitation-fail-canceled/http-request.adoc[]
+
+include::{snippets}/reissue-invitation-fail-canceled/http-response.adoc[]
+
+====
+
+.❌ Case 4: 마지막 발급 후 10초 이내
+
+[%collapsible]
+
+====
+
+include::{snippets}/reissue-invitation-fail-too-frequent/http-request.adoc[]
+
+include::{snippets}/reissue-invitation-fail-too-frequent/http-response.adoc[]
+
+====
+
+== `PATCH`: 외부멘토 초대 취소 (관리자)
+
+관리자가 대기 중인 초대를 취소합니다. 취소하면 해당 초대의 링크로는 더 이상 수락할 수 없고, 같은 이메일로 다시 초대할 수 있습니다. 만료된 초대는 취소할 수 없고 재발급만 할 수 있습니다. 수락되었거나 이미 취소된 초대도 취소할 수 없습니다.
+
+.HTTP Request Headers
+include::{snippets}/cancel-invitation/request-headers.adoc[]
+
+.Path Parameters
+include::{snippets}/cancel-invitation/path-parameters.adoc[]
+
+.HTTP Request
+include::{snippets}/cancel-invitation/http-request.adoc[]
+
+.HTTP Response
+include::{snippets}/cancel-invitation/http-response.adoc[]
+
+=== ⚠️ 실패 케이스
+
+.❌ Case 1: 존재하지 않는 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/cancel-invitation-fail-not-found/http-request.adoc[]
+
+include::{snippets}/cancel-invitation-fail-not-found/http-response.adoc[]
+
+====
+
+.❌ Case 2: 만료된 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/cancel-invitation-fail-expired/http-request.adoc[]
+
+include::{snippets}/cancel-invitation-fail-expired/http-response.adoc[]
+
+====
+
+.❌ Case 3: 수락된 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/cancel-invitation-fail-already-accepted/http-request.adoc[]
+
+include::{snippets}/cancel-invitation-fail-already-accepted/http-response.adoc[]
+
+====
+
+.❌ Case 4: 이미 취소된 초대
+
+[%collapsible]
+
+====
+
+include::{snippets}/cancel-invitation-fail-canceled/http-request.adoc[]
+
+include::{snippets}/cancel-invitation-fail-canceled/http-response.adoc[]
+
+====
