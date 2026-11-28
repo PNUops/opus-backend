@@ -14,6 +14,8 @@ public enum InvitationExceptionType implements BaseExceptionType {
     EXPIRED_INVITATION(HttpStatus.CONFLICT, "만료된 초대 링크입니다."),
     INVITATION_EMAIL_MISMATCH(HttpStatus.FORBIDDEN, "초대받은 이메일과 로그인한 계정의 이메일이 다릅니다."),
     CANNOT_ACCEPT_INVITATION(HttpStatus.CONFLICT, "직원 계정은 초대를 수락할 수 없습니다."),
+    CANNOT_CANCEL_EXPIRED_INVITATION(HttpStatus.CONFLICT, "만료된 초대는 재발급만 할 수 있습니다."),
+    TOO_FREQUENT_REISSUE(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해 주세요."),
     ;
 
     private final HttpStatus httpStatus;

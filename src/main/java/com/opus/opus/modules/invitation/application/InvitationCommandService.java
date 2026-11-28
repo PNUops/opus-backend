@@ -4,11 +4,13 @@ import static com.opus.opus.modules.invitation.exception.InvitationExceptionType
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.ALREADY_INVITED;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANCELED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_ACCEPT_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.CANNOT_CANCEL_EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.EXPIRED_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVALID_INVITATION_ROLE;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.INVITATION_EMAIL_MISMATCH;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.NOT_FOUND_INVITATION;
 import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.REPLACED_INVITATION;
+import static com.opus.opus.modules.invitation.exception.InvitationExceptionType.TOO_FREQUENT_REISSUE;
 
 import com.opus.opus.global.security.JwtProvider;
 import com.opus.opus.modules.contest.application.convenience.ContestConvenience;
@@ -42,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InvitationCommandService {
 
     private static final long INVITATION_TOKEN_TTL_HOURS = 48L;
+    private static final long REISSUE_INTERVAL_SECONDS = 10L;
 
     private final InvitationRepository invitationRepository;
     private final InvitationTokenRepository invitationTokenRepository;
@@ -68,21 +71,38 @@ public class InvitationCommandService {
                 .role(request.role())
                 .build());
 
-        final String token = invitationTokenProvider.generate();
-        final InvitationToken invitationToken = invitationTokenRepository.save(InvitationToken.builder()
-                .invitation(invitation)
-                .tokenHash(invitationTokenProvider.hash(token))
-                .expiresAt(LocalDateTime.now().plusHours(INVITATION_TOKEN_TTL_HOURS))
-                .issuedBy(adminId)
-                .build());
+        return issueToken(adminId, invitation, LocalDateTime.now());
+    }
 
-        return InvitationCreateResponse.from(invitation, invitationToken, token);
+    public InvitationCreateResponse reissueInvitation(final Long adminId, final Long invitationId) {
+        final Invitation invitation = getValidateExistInvitationForUpdate(invitationId);
+        validateNotClosed(invitation);
+
+        final LocalDateTime now = LocalDateTime.now();
+        final InvitationToken latestToken = invitationTokenRepository.findLatestByInvitationIdForUpdate(invitationId)
+                .orElseThrow(() -> new InvitationException(NOT_FOUND_INVITATION));
+        validateReissueInterval(latestToken, now);
+
+        return issueToken(adminId, invitation, now);
+    }
+
+    public void cancelInvitation(final Long adminId, final Long invitationId) {
+        final Invitation invitation = getValidateExistInvitationForUpdate(invitationId);
+        validateNotClosed(invitation);
+
+        final LocalDateTime now = LocalDateTime.now();
+        final InvitationToken latestToken = invitationTokenRepository.findLatestByInvitationIdForUpdate(invitationId)
+                .orElseThrow(() -> new InvitationException(NOT_FOUND_INVITATION));
+        if (latestToken.isExpired(now)) {
+            throw new InvitationException(CANNOT_CANCEL_EXPIRED_INVITATION);
+        }
+
+        invitation.cancel(adminId, now);
     }
 
     public SignInResponse acceptInvitation(final Long memberId, final String token) {
         final InvitationToken invitationToken = invitationConvenience.getValidateExistToken(token);
-        final Invitation invitation = invitationRepository.findByIdForUpdate(invitationToken.getInvitation().getId())
-                .orElseThrow(() -> new InvitationException(NOT_FOUND_INVITATION));
+        final Invitation invitation = getValidateExistInvitationForUpdate(invitationToken.getInvitation().getId());
         final Member member = memberConvenience.getValidateExistMemberForUpdate(memberId);
 
         if (invitation.isAcceptedBy(memberId)) {
@@ -99,6 +119,39 @@ public class InvitationCommandService {
         return createSignInResponse(member);
     }
 
+    private InvitationCreateResponse issueToken(final Long adminId, final Invitation invitation,
+                                                final LocalDateTime now) {
+        final String token = invitationTokenProvider.generate();
+        final InvitationToken invitationToken = invitationTokenRepository.save(InvitationToken.builder()
+                .invitation(invitation)
+                .tokenHash(invitationTokenProvider.hash(token))
+                .expiresAt(now.plusHours(INVITATION_TOKEN_TTL_HOURS))
+                .issuedBy(adminId)
+                .build());
+
+        return InvitationCreateResponse.from(invitation, invitationToken, token);
+    }
+
+    private Invitation getValidateExistInvitationForUpdate(final Long invitationId) {
+        return invitationRepository.findByIdForUpdate(invitationId)
+                .orElseThrow(() -> new InvitationException(NOT_FOUND_INVITATION));
+    }
+
+    private void validateNotClosed(final Invitation invitation) {
+        if (invitation.isCanceled()) {
+            throw new InvitationException(CANCELED_INVITATION);
+        }
+        if (invitation.isAccepted()) {
+            throw new InvitationException(ALREADY_ACCEPTED_INVITATION);
+        }
+    }
+
+    private void validateReissueInterval(final InvitationToken latestToken, final LocalDateTime now) {
+        if (latestToken.getCreatedAt().plusSeconds(REISSUE_INTERVAL_SECONDS).isAfter(now)) {
+            throw new InvitationException(TOO_FREQUENT_REISSUE);
+        }
+    }
+
     private void validateInvitationRole(final MemberRoleType role) {
         if (role != MemberRoleType.ROLE_외부멘토) {
             throw new InvitationException(INVALID_INVITATION_ROLE);
@@ -113,12 +166,7 @@ public class InvitationCommandService {
 
     private void validateAcceptable(final Invitation invitation, final InvitationToken invitationToken,
                                     final Member member, final LocalDateTime now) {
-        if (invitation.isCanceled()) {
-            throw new InvitationException(CANCELED_INVITATION);
-        }
-        if (invitation.isAccepted()) {
-            throw new InvitationException(ALREADY_ACCEPTED_INVITATION);
-        }
+        validateNotClosed(invitation);
         if (!invitationConvenience.isLatestTokenForUpdate(invitationToken)) {
             throw new InvitationException(REPLACED_INVITATION);
         }

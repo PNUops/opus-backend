@@ -76,4 +76,10 @@ public class Invitation extends BaseEntity {
         this.acceptedMemberId = memberId;
         this.acceptedAt = now;
     }
+
+    public void cancel(final Long adminId, final LocalDateTime now) {
+        this.status = InvitationStatus.CANCELED;
+        this.canceledBy = adminId;
+        this.canceledAt = now;
+    }
 }
